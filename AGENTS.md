@@ -41,6 +41,7 @@ src/
 - Do not remove the React/Tailwind Vite plugins even if Tailwind looks unused — required by Figma Make tooling.
 
 ## Features (update this list as features change)
+- **Global Search**: search icon in the main nav (after Settings, right-aligned) opens a full-container-width dropdown searching Members/Chanda/Donation-Ads/Expenses at once (names, phones, amounts, status, etc). Purely client-side filter over data already in React state (`src/app/components/GlobalSearch.tsx`) — no DB query, no backend involvement. Respects per-page permissions.
 - **Dashboard**: overview of puja committee stats.
 - **Members**: manage committee/community members. Designation is a fixed dropdown: President, Vice President, Secretary, Assistant Secretary, Treasurer, Executive/General Members, Advisory Committee/Patrons, Volunteer — stored as a canonical key (`members.role.*`), displayed via translation.
 - **Chanda Collection**: track donation collection. Fields: donor's name*, amount*, **Paid Method** (Not Selected [default] / Cash / QR Scan / Online Banking / Check Payment), **Payment Status*** (Paid / Pending / Partially Paid / Rejected — Partially Paid reveals a "Paid Amount (Partial)" field), date, Phone Number 1, Phone Number 2 (optional), remarks.

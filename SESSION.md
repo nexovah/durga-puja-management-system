@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (15)
+- Added a global search bar (search icon after Settings in the nav, right-aligned). Opens a full-container-width dropdown searching Members, Chanda Collection, Donation/Ads Collection, and Expenses at once — client-side only, no DB changes. Matches names, phones, amounts, remarks, and status/category/paid-method both by canonical key and current-language translation. Grouped results (8 per section) with "See all", permission-aware, closes on outside click/Escape/selection. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (14)
 - Login session now persists across page refreshes for 1 week (localStorage `puja-session`, `{user, expiresAt}`). Restored on app load if not expired; expired/invalid sessions auto-clear; logout clears it immediately. Verified `npm run build` passes. Pushed to `main`.
 
