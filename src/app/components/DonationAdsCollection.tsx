@@ -482,7 +482,6 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
                 {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
@@ -506,7 +505,6 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.phone || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.phone2 || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.remarks || '-'}</td>
                   {canEdit && (
                     <td className="px-6 py-4 text-right">
