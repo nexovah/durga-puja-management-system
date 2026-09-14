@@ -46,8 +46,17 @@ src/
 - **Chanda Collection**: track donation collection.
 - **Treasury**: fund tracking.
 - **Expenses**: expense tracking.
-- **Settings**: app configuration.
+- **Settings**: app configuration, incl. **Language** tab.
 - **Login**: auth entry page.
+- **Multilingual UI**: English (default), Bengali, Hindi — switchable from Settings → Language. See `src/app/i18n/`.
+
+## i18n
+- `src/app/i18n/translations.ts` — flat key→string dictionaries for `en`/`bn`/`hi`, plus `LANGUAGES` and `LOCALE_MAP`.
+- `src/app/i18n/LanguageContext.tsx` — `LanguageProvider` + `useLanguage()` hook (`{ language, setLanguage, t, locale }`). Persists to `localStorage['puja-language']`. Default: `en`.
+- All UI chrome (nav, buttons, labels, messages, table headers, placeholders) uses `t('key')`. User-entered data (member names, committee info, donor names) is never translated.
+- Expense categories are stored as canonical English keys (`construction`, `decoration`, ...) and displayed via `expenses.category.<key>` translation lookup, not as raw language text.
+- Dates use `toLocaleDateString(locale)` where `locale` comes from `useLanguage()`.
+- When adding new UI text: add the key to all three language blocks in `translations.ts`, never hardcode strings in components.
 
 ## Dev commands
 ```bash
