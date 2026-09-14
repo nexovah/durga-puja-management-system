@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (20)
+- Added enable/disable login toggle per user in Settings → User Management (Ban/CheckCircle icon button, "Disabled" badge, admin accounts can't be disabled). New `supabase/004_user_enable_disable.sql`: `app_users.is_active` column + `login()` recreated to require it + `set_app_user_active` RPC. A disabled account gets the same generic "Invalid username or password" message on login. Threaded `isActive` through User type/db.ts/App.tsx/Settings.tsx. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (19)
 - Added view-only "Access Level" for users (Settings → User Management → below Permissions): "Can Edit & Manage" (default) or "View Only". View-only users keep their per-page permissions but Add/Edit/Delete/Import and the Action column are hidden on Members/Chanda/Donation-Ads/Expenses; Committee Info and Developer Info forms become disabled; Export and Change Password remain available.
 - New `supabase/003_view_only_access.sql`: `app_users.can_edit` column (default true) + recreated `login`/`create_app_user`/`update_app_user` RPCs to carry it. Enforced client-side only, per the standing no-Supabase-Auth trade-off — flagged in the migration file.
