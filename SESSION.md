@@ -4,6 +4,10 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (9)
+- Added "Paid Method" dropdown (Not Selected [default], Cash, QR Scan, Online Banking, Check Payment) right after Amount in Chanda Collection and both Donation/Ads Collection entry types. New `PaidMethod` type + `paidMethod` field on `Chanda`/`DonationAd`. Table columns and CSV export/import updated for both pages. Backward-compat: existing records default to "Not Selected". Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+- Chanda table: amount cell now styled by payment status — red + strikethrough for Rejected, yellow for Partially Paid.
+
 ## 2026-09-14 (8)
 - Chanda Collection: added Payment Status field (Paid/Pending/Partially Paid/Rejected) after Amount. Partially Paid reveals a "Paid Amount (Partial)" input. New `getChandaCreditAmount()` helper in App.tsx is the sole logic for how much of a record counts toward totals — used consistently across Chanda page total, Dashboard tile, Treasury totals/monthly report/top donors. Backward-compat: old records default to 'paid'. CSV export/import updated. Translated EN/BN/HI.
 - Donation/Ads Collection: table view only — moved Category column from first to right after Amount (form and CSV export/import left unchanged, per explicit request).
