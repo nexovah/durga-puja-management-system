@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (6)
+- Members: Designation changed from free text to a dropdown (President, Vice President, Secretary, Assistant Secretary, Treasurer, Executive/General Members, Advisory Committee/Patrons, Volunteer). Stored as canonical key, displayed translated. Seed data updated. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (5)
 - Added CSV Import for Chanda Collection and Donation/Ads Collection, alongside existing Export.
 - New `src/app/lib/csv.ts`: shared RFC4180-style CSV parse/serialize helpers (handles quoted fields with commas).

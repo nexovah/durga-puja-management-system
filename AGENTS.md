@@ -42,7 +42,7 @@ src/
 
 ## Features (update this list as features change)
 - **Dashboard**: overview of puja committee stats.
-- **Members**: manage committee/community members.
+- **Members**: manage committee/community members. Designation is a fixed dropdown: President, Vice President, Secretary, Assistant Secretary, Treasurer, Executive/General Members, Advisory Committee/Patrons, Volunteer — stored as a canonical key (`members.role.*`), displayed via translation.
 - **Chanda Collection**: track donation collection.
 - **Donation/Ads Collection**: separate credit stream with a Category select (Donation Collection / Ads Collection, default Ads). Donation entries: donor's name*, amount*, donation in kinds (free text), date, phone, remarks. Ads entries: donor's name, company name, amount*, **Ads Category dropdown** (Hand Book, Souvenir, Bill, Gate, Banner, Others — replaces the free-text field), date, phone, remarks. Grand credit = Chanda + Donation/Ads; Treasury balance = grand credit − expenses.
 - **Treasury**: fund tracking (Chanda + Donation/Ads combined).
