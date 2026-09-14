@@ -172,10 +172,43 @@ const EMPTY_DEVELOPER_INFO: DeveloperInfo = {
   version: '',
 };
 
+const SESSION_STORAGE_KEY = 'puja-session';
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+interface StoredSession {
+  user: User;
+  expiresAt: number;
+}
+
+function loadStoredSession(): User | null {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const session: StoredSession = JSON.parse(raw);
+    if (!session.expiresAt || Date.now() > session.expiresAt) {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      return null;
+    }
+    return session.user;
+  } catch {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    return null;
+  }
+}
+
+function saveSession(user: User) {
+  const session: StoredSession = { user, expiresAt: Date.now() + SESSION_DURATION_MS };
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
 export default function App() {
   const { t } = useLanguage();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
+  const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'treasury' | 'settings'>('dashboard');
 
   const [dataLoading, setDataLoading] = useState(true);
@@ -329,6 +362,7 @@ export default function App() {
       if (user) {
         setCurrentUser(user);
         setIsLoggedIn(true);
+        saveSession(user);
         return true;
       }
       return false;
@@ -342,6 +376,7 @@ export default function App() {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setCurrentPage('dashboard');
+    clearStoredSession();
   };
 
   if (loadError === 'not-configured') {
