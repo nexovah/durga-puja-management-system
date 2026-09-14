@@ -1,36 +1,47 @@
-import { TrendingUp, TrendingDown, Wallet, Download } from 'lucide-react';
-import { Chanda, Expense } from '../App';
+import { TrendingUp, TrendingDown, Wallet, Download, Gift } from 'lucide-react';
+import { Chanda, DonationAd, Expense } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
 interface TreasuryProps {
   chandaList: Chanda[];
+  donationAdsList: DonationAd[];
   expenses: Expense[];
 }
 
-export function Treasury({ chandaList, expenses }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
+  const totalCredit = totalChanda + totalDonationAds;
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const balance = totalChanda - totalExpenses;
+  const balance = totalCredit - totalExpenses;
 
   // Monthly data
   const getMonthlyData = () => {
-    const monthlyData: { [key: string]: { chanda: number; expenses: number } } = {};
+    const monthlyData: { [key: string]: { chanda: number; donationAds: number; expenses: number } } = {};
 
     chandaList.forEach(c => {
       const month = new Date(c.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, expenses: 0 };
       }
       monthlyData[month].chanda += c.amount;
+    });
+
+    donationAdsList.forEach(d => {
+      const month = new Date(d.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
+      if (!monthlyData[month]) {
+        monthlyData[month] = { chanda: 0, donationAds: 0, expenses: 0 };
+      }
+      monthlyData[month].donationAds += d.amount;
     });
 
     expenses.forEach(e => {
       const month = new Date(e.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, expenses: 0 };
       }
       monthlyData[month].expenses += e.amount;
     });
@@ -39,20 +50,23 @@ export function Treasury({ chandaList, expenses }: TreasuryProps) {
       .map(([month, data]) => ({
         month,
         chanda: data.chanda,
+        donationAds: data.donationAds,
         expenses: data.expenses,
-        balance: data.chanda - data.expenses,
+        balance: data.chanda + data.donationAds - data.expenses,
       }))
       .sort((a, b) => b.month.localeCompare(a.month));
   };
 
   const monthlyData = getMonthlyData();
 
-  // Top donors
+  // Top donors (Chanda + Donation/Ads combined)
   const topDonors = Object.entries(
-    chandaList.reduce((acc, c) => {
-      acc[c.donorName] = (acc[c.donorName] || 0) + c.amount;
-      return acc;
-    }, {} as { [key: string]: number })
+    [...chandaList.map(c => ({ name: c.donorName, amount: c.amount })),
+     ...donationAdsList.map(d => ({ name: d.donorName || d.companyName || '-', amount: d.amount }))]
+      .reduce((acc, entry) => {
+        acc[entry.name] = (acc[entry.name] || 0) + entry.amount;
+        return acc;
+      }, {} as { [key: string]: number })
   )
     .map(([name, amount]) => ({ name, amount }))
     .sort((a, b) => b.amount - a.amount)
@@ -95,7 +109,7 @@ export function Treasury({ chandaList, expenses }: TreasuryProps) {
       </PageHeading>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalChanda')}</h3>
@@ -103,6 +117,15 @@ export function Treasury({ chandaList, expenses }: TreasuryProps) {
           </div>
           <p className="text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
           <p className="text-sm text-gray-500 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalDonationAds')}</h3>
+            <Gift className="text-emerald-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-emerald-600">₹{totalDonationAds.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
@@ -137,6 +160,7 @@ export function Treasury({ chandaList, expenses }: TreasuryProps) {
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('treasury.month')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.chanda')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.donationAds')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.expenses')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.balance')}</th>
               </tr>
@@ -147,6 +171,9 @@ export function Treasury({ chandaList, expenses }: TreasuryProps) {
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{data.month}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">
                     ₹{data.chanda.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-emerald-600 font-bold text-right">
+                    ₹{data.donationAds.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">
                     ₹{data.expenses.toLocaleString()}

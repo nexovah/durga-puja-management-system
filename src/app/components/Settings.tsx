@@ -18,6 +18,7 @@ interface SettingsProps {
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   members: 'permission.members',
   chanda: 'permission.chanda',
+  donationAds: 'permission.donationAds',
   expenses: 'permission.expenses',
   treasury: 'permission.treasury',
   settings: 'permission.settings',
@@ -49,6 +50,7 @@ export function Settings({
     permissions: {
       members: true,
       chanda: true,
+      donationAds: true,
       expenses: true,
       treasury: true,
       settings: false,
@@ -134,6 +136,7 @@ export function Settings({
       permissions: {
         members: true,
         chanda: true,
+        donationAds: true,
         expenses: true,
         treasury: true,
         settings: false,
@@ -471,6 +474,7 @@ export function Settings({
                       permissions: {
                         members: true,
                         chanda: true,
+                        donationAds: true,
                         expenses: true,
                         treasury: true,
                         settings: false,

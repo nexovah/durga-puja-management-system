@@ -1,18 +1,21 @@
-import { Users, DollarSign, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList } from 'lucide-react';
-import { Member, Chanda, Expense } from '../App';
+import { Users, DollarSign, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift } from 'lucide-react';
+import { Member, Chanda, DonationAd, Expense } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface DashboardProps {
   members: Member[];
   chandaList: Chanda[];
+  donationAdsList: DonationAd[];
   expenses: Expense[];
 }
 
-export function Dashboard({ members, chandaList, expenses }: DashboardProps) {
+export function Dashboard({ members, chandaList, donationAdsList, expenses }: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
+  const totalCredit = totalChanda + totalDonationAds;
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const balance = totalChanda - totalExpenses;
+  const balance = totalCredit - totalExpenses;
 
   const recentChanda = chandaList.length > 0
     ? [...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].amount
@@ -21,6 +24,7 @@ export function Dashboard({ members, chandaList, expenses }: DashboardProps) {
   const tiles = [
     { title: t('dashboard.totalMembers'), value: members.length, icon: Users, color: 'from-blue-500 to-blue-600', textColor: 'text-white' },
     { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: DollarSign, color: 'from-green-500 to-green-600', textColor: 'text-white' },
+    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600', textColor: 'text-white' },
     { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600', textColor: 'text-white', fullWidth: true },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600', textColor: 'text-white' },
     { title: t('dashboard.expenses'), value: expenses.length, icon: ClipboardList, color: 'from-orange-500 to-orange-600', textColor: 'text-white' },

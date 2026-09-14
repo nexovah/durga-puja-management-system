@@ -3,6 +3,7 @@ import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { ChandaCollection } from './components/ChandaCollection';
+import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
@@ -17,6 +18,7 @@ export interface User {
   permissions: {
     members: boolean;
     chanda: boolean;
+    donationAds: boolean;
     expenses: boolean;
     treasury: boolean;
     settings: boolean;
@@ -57,6 +59,20 @@ export interface Chanda {
   remarks: string;
 }
 
+export type DonationAdCategory = 'donation' | 'ads';
+
+export interface DonationAd {
+  id: string;
+  category: DonationAdCategory;
+  donorName: string;
+  companyName?: string; // Ads only
+  amount: number;
+  inKind: string; // Donation/Ads in kinds (free text)
+  date: string;
+  phone: string;
+  remarks: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
@@ -70,8 +86,8 @@ export default function App() {
   const { t } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'expenses' | 'treasury' | 'settings'>('dashboard');
-  
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'treasury' | 'settings'>('dashboard');
+
   const [users, setUsers] = useState<User[]>([
     {
       id: '1',
@@ -82,6 +98,7 @@ export default function App() {
       permissions: {
         members: true,
         chanda: true,
+        donationAds: true,
         expenses: true,
         treasury: true,
         settings: true,
@@ -134,6 +151,8 @@ export default function App() {
     },
   ]);
 
+  const [donationAdsList, setDonationAdsList] = useState<DonationAd[]>([]);
+
   const [expenses, setExpenses] = useState<Expense[]>([
     {
       id: '1',
@@ -158,13 +177,22 @@ export default function App() {
     const savedCommittee = localStorage.getItem('puja-committee');
     const savedMembers = localStorage.getItem('puja-members');
     const savedChanda = localStorage.getItem('puja-chanda');
+    const savedDonationAds = localStorage.getItem('puja-donation-ads');
     const savedExpenses = localStorage.getItem('puja-expenses');
     const savedDeveloper = localStorage.getItem('puja-developer');
 
-    if (savedUsers) setUsers(JSON.parse(savedUsers));
+    if (savedUsers) {
+      const parsedUsers = JSON.parse(savedUsers);
+      // Backward compatibility: ensure donationAds permission exists on users saved before this feature
+      setUsers(parsedUsers.map((u: User) => ({
+        ...u,
+        permissions: { donationAds: u.isAdmin, ...u.permissions },
+      })));
+    }
     if (savedCommittee) setCommitteeInfo(JSON.parse(savedCommittee));
     if (savedMembers) setMembers(JSON.parse(savedMembers));
     if (savedChanda) setChandaList(JSON.parse(savedChanda));
+    if (savedDonationAds) setDonationAdsList(JSON.parse(savedDonationAds));
     if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
     if (savedDeveloper) setDeveloperInfo(JSON.parse(savedDeveloper));
   }, []);
@@ -185,6 +213,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('puja-chanda', JSON.stringify(chandaList));
   }, [chandaList]);
+
+  useEffect(() => {
+    localStorage.setItem('puja-donation-ads', JSON.stringify(donationAdsList));
+  }, [donationAdsList]);
 
   useEffect(() => {
     localStorage.setItem('puja-expenses', JSON.stringify(expenses));
@@ -288,6 +320,14 @@ export default function App() {
                 {t('nav.chanda')}
               </NavButton>
             )}
+            {currentUser?.permissions.donationAds && (
+              <NavButton
+                active={currentPage === 'donationAds'}
+                onClick={() => setCurrentPage('donationAds')}
+              >
+                {t('nav.donationAds')}
+              </NavButton>
+            )}
             {currentUser?.permissions.expenses && (
               <NavButton
                 active={currentPage === 'expenses'}
@@ -322,6 +362,7 @@ export default function App() {
           <Dashboard
             members={members}
             chandaList={chandaList}
+            donationAdsList={donationAdsList}
             expenses={expenses}
           />
         )}
@@ -331,11 +372,14 @@ export default function App() {
         {currentPage === 'chanda' && (
           <ChandaCollection chandaList={chandaList} setChandaList={setChandaList} />
         )}
+        {currentPage === 'donationAds' && (
+          <DonationAdsCollection donationAdsList={donationAdsList} setDonationAdsList={setDonationAdsList} />
+        )}
         {currentPage === 'expenses' && (
           <Expenses expenses={expenses} setExpenses={setExpenses} />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} expenses={expenses} />
+          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
         )}
         {currentPage === 'settings' && (
           <Settings
