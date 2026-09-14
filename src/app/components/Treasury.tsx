@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Wallet, Download, Gift } from 'lucide-react';
-import { Chanda, DonationAd, Expense, getChandaCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -15,7 +15,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalCredit = totalChanda + totalDonationAds;
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const balance = totalCredit - totalExpenses;
 
   // Monthly data
@@ -43,7 +43,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
       if (!monthlyData[month]) {
         monthlyData[month] = { chanda: 0, donationAds: 0, expenses: 0 };
       }
-      monthlyData[month].expenses += e.amount;
+      monthlyData[month].expenses += getExpenseCreditAmount(e);
     });
 
     return Object.entries(monthlyData)
@@ -75,7 +75,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
   // Expense categories
   const expenseCategories = Object.entries(
     expenses.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + e.amount;
+      acc[e.category] = (acc[e.category] || 0) + getExpenseCreditAmount(e);
       return acc;
     }, {} as { [key: string]: number })
   )

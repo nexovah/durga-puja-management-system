@@ -100,13 +100,37 @@ export interface DonationAd {
   remarks: string;
 }
 
+export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
+export type PaidThrough = 'notSelected' | 'cash' | 'check';
+
 export interface Expense {
   id: string;
   title: string;
-  amount: number;
+  amount: number; // Amount billed/agreed
+  paymentStatus: ExpensePaymentStatus;
+  // Up to 5 partial payment installments; only meaningful when paymentStatus === 'partial'.
+  // The first entry is required when partial, the rest are optional.
+  partialAmounts?: (number | undefined)[];
+  paidThrough: PaidThrough;
   date: string;
   category: string;
   remarks: string;
+}
+
+// The amount actually counted toward total expense, based on payment status:
+// paid -> full amount, partial -> sum of entered partial installments, cancelled -> 0.
+export function getExpenseCreditAmount(expense: Expense): number {
+  switch (expense.paymentStatus) {
+    case 'paid':
+      return expense.amount;
+    case 'partial':
+      return (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
+    case 'cancelled':
+      return 0;
+    default:
+      // Backward compatibility: records saved before this feature had no status.
+      return expense.amount;
+  }
 }
 
 export default function App() {
@@ -187,6 +211,8 @@ export default function App() {
       id: '1',
       title: 'পণ্ডাল নির্মাণ',
       amount: 50000,
+      paymentStatus: 'paid',
+      paidThrough: 'cash',
       date: '2026-01-20',
       category: 'construction',
       remarks: 'বাঁশ ও কাপড়',
@@ -237,7 +263,15 @@ export default function App() {
         ...d,
       })));
     }
-    if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
+    if (savedExpenses) {
+      const parsedExpenses = JSON.parse(savedExpenses);
+      // Backward compatibility: records saved before payment status/paid through existed default accordingly
+      setExpenses(parsedExpenses.map((exp: Expense) => ({
+        paymentStatus: 'paid',
+        paidThrough: 'notSelected',
+        ...exp,
+      })));
+    }
     if (savedDeveloper) setDeveloperInfo(JSON.parse(savedDeveloper));
   }, []);
 

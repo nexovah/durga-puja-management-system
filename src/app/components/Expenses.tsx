@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
-import { Expense } from '../App';
+import { useRef, useState } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
+import { Expense, ExpensePaymentStatus, PaidThrough, getExpenseCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
-import { TranslationKey } from '../i18n/translations';
+import { TranslationKey, translations } from '../i18n/translations';
+import { parseCSV, csvField } from '../lib/csv';
 
 interface ExpensesProps {
   expenses: Expense[];
@@ -22,57 +23,155 @@ const categories: { value: string; labelKey: TranslationKey }[] = [
   { value: 'other', labelKey: 'expenses.category.other' },
 ];
 
+const PAYMENT_STATUSES: { value: ExpensePaymentStatus; labelKey: TranslationKey }[] = [
+  { value: 'paid', labelKey: 'expenses.status.paid' },
+  { value: 'partial', labelKey: 'expenses.status.partial' },
+  { value: 'cancelled', labelKey: 'expenses.status.cancelled' },
+];
+
+const PAID_THROUGH_OPTIONS: { value: PaidThrough; labelKey: TranslationKey }[] = [
+  { value: 'notSelected', labelKey: 'expenses.paidThrough.notSelected' },
+  { value: 'cash', labelKey: 'expenses.paidThrough.cash' },
+  { value: 'check', labelKey: 'expenses.paidThrough.check' },
+];
+
+const PARTIAL_LABEL_KEYS: TranslationKey[] = [
+  'expenses.partialAmount1',
+  'expenses.partialAmount2',
+  'expenses.partialAmount3',
+  'expenses.partialAmount4',
+  'expenses.partialAmount5',
+];
+
+const STATUS_BADGE_CLASS: Record<ExpensePaymentStatus, string> = {
+  paid: 'bg-green-100 text-green-700',
+  partial: 'bg-yellow-100 text-yellow-700',
+  cancelled: 'bg-red-100 text-red-700',
+};
+
+const emptyForm = {
+  title: '',
+  amount: '',
+  paymentStatus: 'paid' as ExpensePaymentStatus,
+  partialAmounts: ['', '', '', '', ''],
+  paidThrough: 'notSelected' as PaidThrough,
+  date: new Date().toISOString().split('T')[0],
+  category: '',
+  remarks: '',
+};
+
 export function Expenses({ expenses, setExpenses }: ExpensesProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    category: '',
-    remarks: '',
-  });
+  const [formData, setFormData] = useState(emptyForm);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const categoryLabel = (value: string) => {
     const found = categories.find(c => c.value === value);
     return found ? t(found.labelKey) : value;
   };
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const statusLabel = (status: ExpensePaymentStatus) => {
+    const found = PAYMENT_STATUSES.find(s => s.value === status);
+    return found ? t(found.labelKey) : status;
+  };
+
+  const paidThroughLabel = (method: PaidThrough) => {
+    const found = PAID_THROUGH_OPTIONS.find(m => m.value === method);
+    return found ? t(found.labelKey) : method;
+  };
+
+  // Accept status/paid-through values from a CSV in any supported language, or their canonical keys.
+  const normalize = (s: string) => s.trim().toLowerCase();
+
+  const parseStatusInput = (raw: string): ExpensePaymentStatus => {
+    const value = normalize(raw || '');
+    const byValue = PAYMENT_STATUSES.find(s => normalize(s.value) === value);
+    if (byValue) return byValue.value;
+    for (const status of PAYMENT_STATUSES) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[status.labelKey]) === value) return status.value;
+      }
+    }
+    return 'paid';
+  };
+
+  const parsePaidThroughInput = (raw: string): PaidThrough => {
+    const value = normalize(raw || '');
+    const byValue = PAID_THROUGH_OPTIONS.find(m => normalize(m.value) === value);
+    if (byValue) return byValue.value;
+    for (const method of PAID_THROUGH_OPTIONS) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[method.labelKey]) === value) return method.value;
+      }
+    }
+    return 'notSelected';
+  };
+
+  const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
+
+  const isPartial = formData.paymentStatus === 'partial';
+
+  const partialSumFromForm = () =>
+    formData.partialAmounts.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const amount = parseFloat(formData.amount) || 0;
+    const partialAmounts = formData.partialAmounts.map(v => (v.trim() === '' ? undefined : parseFloat(v) || 0));
+    const partialSum = partialAmounts.reduce((sum: number, v) => sum + (v || 0), 0);
+
+    if (formData.paymentStatus === 'partial' && partialSum > amount) {
+      alert(
+        t('expenses.partialExceedsAmount')
+          .replace('{sum}', partialSum.toLocaleString())
+          .replace('{amount}', amount.toLocaleString())
+      );
+      return;
+    }
+
+    const payload = {
+      title: formData.title,
+      amount,
+      paymentStatus: formData.paymentStatus,
+      partialAmounts: formData.paymentStatus === 'partial' ? partialAmounts : undefined,
+      paidThrough: formData.paidThrough,
+      date: formData.date,
+      category: formData.category,
+      remarks: formData.remarks,
+    };
 
     if (editingId) {
       // Edit existing expense
       setExpenses(expenses.map(exp =>
         exp.id === editingId
-          ? { ...exp, ...formData, amount: parseFloat(formData.amount) }
+          ? { ...exp, ...payload }
           : exp
       ));
     } else {
       // Add new expense
       const newExpense: Expense = {
         id: Date.now().toString(),
-        title: formData.title,
-        amount: parseFloat(formData.amount),
-        date: formData.date,
-        category: formData.category,
-        remarks: formData.remarks,
+        ...payload,
       };
       setExpenses([...expenses, newExpense]);
     }
 
-    setFormData({ title: '', amount: '', date: new Date().toISOString().split('T')[0], category: '', remarks: '' });
+    setFormData(emptyForm);
     setShowForm(false);
     setEditingId(null);
   };
 
   const handleEdit = (expense: Expense) => {
+    const partials = expense.partialAmounts || [];
     setFormData({
       title: expense.title,
       amount: expense.amount.toString(),
+      paymentStatus: expense.paymentStatus || 'paid',
+      partialAmounts: [0, 1, 2, 3, 4].map(i => (partials[i] !== undefined ? String(partials[i]) : '')),
+      paidThrough: expense.paidThrough || 'notSelected',
       date: expense.date,
       category: expense.category,
       remarks: expense.remarks,
@@ -88,15 +187,41 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
   };
 
   const handleCancel = () => {
-    setFormData({ title: '', amount: '', date: new Date().toISOString().split('T')[0], category: '', remarks: '' });
+    setFormData(emptyForm);
     setShowForm(false);
     setEditingId(null);
   };
 
   const handleExport = () => {
     const csvContent = [
-      [t('expenses.csv.title'), t('expenses.csv.amount'), t('expenses.csv.date'), t('expenses.csv.category'), t('expenses.csv.remarks')].join(','),
-      ...expenses.map(exp => [exp.title, exp.amount, exp.date, categoryLabel(exp.category), exp.remarks].join(','))
+      [
+        t('expenses.csv.title'),
+        t('expenses.csv.amount'),
+        t('expenses.csv.status'),
+        t('expenses.partialAmount1'),
+        t('expenses.partialAmount2'),
+        t('expenses.partialAmount3'),
+        t('expenses.partialAmount4'),
+        t('expenses.partialAmount5'),
+        t('expenses.csv.paidThrough'),
+        t('expenses.csv.date'),
+        t('expenses.csv.category'),
+        t('expenses.csv.remarks'),
+      ].map(csvField).join(','),
+      ...expenses.map(exp => [
+        exp.title,
+        exp.amount,
+        statusLabel(exp.paymentStatus || 'paid'),
+        exp.partialAmounts?.[0] ?? '',
+        exp.partialAmounts?.[1] ?? '',
+        exp.partialAmounts?.[2] ?? '',
+        exp.partialAmounts?.[3] ?? '',
+        exp.partialAmounts?.[4] ?? '',
+        paidThroughLabel(exp.paidThrough || 'notSelected'),
+        exp.date,
+        categoryLabel(exp.category),
+        exp.remarks,
+      ].map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -106,10 +231,68 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
     link.click();
   };
 
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(String(reader.result || ''));
+      if (rows.length === 0) return;
+
+      // Skip a header row if the amount column (index 1) isn't numeric
+      const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][1] || '') ? 0 : 1;
+
+      const imported: Expense[] = [];
+      for (let i = firstDataRow; i < rows.length; i++) {
+        const [
+          title, amountRaw, statusRaw,
+          p1, p2, p3, p4, p5,
+          paidThroughRaw, date, categoryRaw, remarks,
+        ] = rows[i];
+        const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
+        if (!title || isNaN(amount)) continue;
+
+        const paymentStatus = parseStatusInput(statusRaw || '');
+        const parsedPartials = [p1, p2, p3, p4, p5].map(v =>
+          (v || '').trim() === '' ? undefined : parseFloat((v || '').replace(/,/g, '')) || 0
+        );
+        const hasAnyPartial = parsedPartials.some(v => v !== undefined);
+
+        const categoryRawTrim = (categoryRaw || '').trim();
+        const category = categories.find(c => c.value === categoryRawTrim)
+          || categories.find(c => Object.values(translations).some(lang => normalize(lang[c.labelKey]) === normalize(categoryRawTrim)));
+
+        imported.push({
+          id: `${Date.now()}-${i}`,
+          title: title.trim(),
+          amount,
+          paymentStatus,
+          partialAmounts: paymentStatus === 'partial' && hasAnyPartial ? parsedPartials : undefined,
+          paidThrough: parsePaidThroughInput(paidThroughRaw || ''),
+          date: (date || '').trim() || new Date().toISOString().split('T')[0],
+          category: category ? category.value : categoryRawTrim,
+          remarks: (remarks || '').trim(),
+        });
+      }
+
+      if (imported.length > 0) {
+        setExpenses([...expenses, ...imported]);
+      }
+      alert(`${t('common.importResult')}: ${imported.length}`);
+    };
+    reader.readAsText(file);
+  };
+
   const categoryTotals = categories.map(cat => ({
     category: cat.value,
     label: t(cat.labelKey),
-    total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + exp.amount, 0),
+    total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
   })).filter(ct => ct.total > 0);
 
   return (
@@ -117,6 +300,21 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
       <PageHeading
         action={
           <div className="flex gap-3">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+              style={{ backgroundColor: '#383737' }}
+            >
+              <Upload size={20} />
+              {t('common.import')}
+            </button>
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
@@ -188,6 +386,69 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                 placeholder={t('expenses.amountPlaceholder')}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.paymentStatus')} *</label>
+              <select
+                required
+                value={formData.paymentStatus}
+                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as ExpensePaymentStatus })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAYMENT_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.paidThrough')}</label>
+              <select
+                value={formData.paidThrough}
+                onChange={(e) => setFormData({ ...formData, paidThrough: e.target.value as PaidThrough })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAID_THROUGH_OPTIONS.map((m) => (
+                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+
+            {isPartial && (
+              <div className="md:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                  {PARTIAL_LABEL_KEYS.map((labelKey, index) => (
+                    <div key={labelKey}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t(labelKey)} {index === 0 ? '*' : ''}
+                      </label>
+                      <input
+                        type="number"
+                        required={index === 0}
+                        min="0"
+                        step="0.01"
+                        value={formData.partialAmounts[index]}
+                        onChange={(e) => {
+                          const next = [...formData.partialAmounts];
+                          next[index] = e.target.value;
+                          setFormData({ ...formData, partialAmounts: next });
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className={`text-sm mt-2 font-medium ${
+                  partialSumFromForm() >= (parseFloat(formData.amount) || 0) && (parseFloat(formData.amount) || 0) > 0
+                    ? 'text-green-600'
+                    : 'text-yellow-600'
+                }`}>
+                  ₹{partialSumFromForm().toLocaleString()} / ₹{(parseFloat(formData.amount) || 0).toLocaleString()}
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
               <input
@@ -249,6 +510,8 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.title')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.paidThrough')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
@@ -256,37 +519,59 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{expense.title}</td>
-                  <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{expense.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(expense.date).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                      {categoryLabel(expense.category)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(expense)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(expense.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {[...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((expense) => {
+                const status = expense.paymentStatus || 'paid';
+                const partialSum = (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
+                const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
+                return (
+                  <tr key={expense.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">{expense.title}</td>
+                    <td className={`px-6 py-4 text-sm font-bold ${
+                      status === 'cancelled'
+                        ? 'text-red-600 line-through'
+                        : status === 'partial'
+                        ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
+                        : 'text-red-600'
+                    }`}>₹{expense.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                        {statusLabel(status)}
+                      </span>
+                      {status === 'partial' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ₹{partialSum.toLocaleString()} / ₹{expense.amount.toLocaleString()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{paidThroughLabel(expense.paidThrough || 'notSelected')}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(expense.date).toLocaleDateString(locale)}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                        {categoryLabel(expense.category)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(expense)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(expense.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {expenses.length === 0 && (
