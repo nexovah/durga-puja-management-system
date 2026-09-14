@@ -1,6 +1,7 @@
 import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift, HandCoins } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
+import { DashboardChart } from './DashboardChart';
 
 interface DashboardProps {
   members: Member[];
@@ -61,19 +62,22 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
         {t('dashboard.manageCommittee')}
       </button>
 
-      {/* Key figures — compact horizontal cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+      {/* Collections vs Expenses chart */}
+      <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
+
+      {/* Key figures — bigger cards, capped at 4 per row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {statTiles.map((tile, index) => (
           <div
             key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3 sm:p-4 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3`}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
           >
-            <div className="bg-white/20 p-2.5 rounded-lg shrink-0">
-              <tile.icon className="text-white" size={20} />
+            <div className="bg-white/20 p-3 rounded-xl shrink-0">
+              <tile.icon className="text-white" size={26} />
             </div>
             <div className="min-w-0">
-              <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
-              <p className="text-white text-lg sm:text-xl font-bold leading-tight truncate">{tile.value}</p>
+              <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.title}</p>
+              <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
             </div>
           </div>
         ))}
