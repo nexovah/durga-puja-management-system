@@ -28,6 +28,7 @@ const emptyForm = {
   inKind: '',
   date: new Date().toISOString().split('T')[0],
   phone: '',
+  phone2: '',
   remarks: '',
 };
 
@@ -89,6 +90,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       inKind: formData.inKind,
       date: formData.date,
       phone: formData.phone,
+      phone2: formData.phone2,
       remarks: formData.remarks,
     };
 
@@ -118,6 +120,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       inKind: item.inKind || '',
       date: item.date,
       phone: item.phone,
+      phone2: item.phone2 || '',
       remarks: item.remarks,
     });
     setEditingId(item.id);
@@ -146,6 +149,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         t('donationAds.inKindOrAdsCategory'),
         t('donationAds.csv.date'),
         t('donationAds.csv.phone'),
+        t('donationAds.csv.phone2'),
         t('donationAds.csv.remarks'),
       ].map(csvField).join(','),
       ...donationAdsList.map(item => [
@@ -156,6 +160,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         inKindDisplay(item),
         item.date,
         item.phone,
+        item.phone2 || '',
         item.remarks,
       ].map(csvField).join(','))
     ].join('\n');
@@ -186,7 +191,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
 
       const imported: DonationAd[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [categoryRaw, donorName, companyName, amountRaw, inKindRaw, date, phone, remarks] = rows[i];
+        const [categoryRaw, donorName, companyName, amountRaw, inKindRaw, date, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (isNaN(amount)) continue;
 
@@ -203,6 +208,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
           inKind: !isDonationRow ? parseAdsCategoryInput(inKindRaw || '') : (inKindRaw || '').trim(),
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           phone: (phone || '').trim(),
+          phone2: (phone2 || '').trim(),
           remarks: (remarks || '').trim(),
         });
       }
@@ -361,11 +367,22 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone1')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('donationAds.phonePlaceholder')}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone2')}</label>
+              <input
+                type="tel"
+                value={formData.phone2}
+                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.phonePlaceholder')}
               />
@@ -413,7 +430,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
@@ -436,6 +454,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.phone || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{item.phone2 || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.remarks || '-'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">

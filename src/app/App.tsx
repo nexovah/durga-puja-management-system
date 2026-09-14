@@ -55,7 +55,8 @@ export interface Chanda {
   donorName: string;
   amount: number;
   date: string;
-  phone: string;
+  phone: string; // Phone Number 1
+  phone2?: string; // Phone Number 2 (optional)
   remarks: string;
 }
 
@@ -69,7 +70,8 @@ export interface DonationAd {
   amount: number;
   inKind: string; // Donation/Ads in kinds (free text)
   date: string;
-  phone: string;
+  phone: string; // Phone Number 1
+  phone2?: string; // Phone Number 2 (optional)
   remarks: string;
 }
 

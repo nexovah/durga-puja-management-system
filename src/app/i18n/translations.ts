@@ -47,6 +47,8 @@ export const translations = {
     'common.action': 'Action',
     'common.name': 'Name',
     'common.phone': 'Phone Number',
+    'common.phone1': 'Phone Number 1',
+    'common.phone2': 'Phone Number 2',
     'common.address': 'Address',
     'common.remarks': 'Remarks',
     'common.date': 'Date',
@@ -117,6 +119,7 @@ export const translations = {
     'chanda.csv.amount': 'Amount',
     'chanda.csv.date': 'Date',
     'chanda.csv.phone': 'Phone',
+    'chanda.csv.phone2': 'Phone 2',
     'chanda.csv.remarks': 'Remarks',
 
     // Donation/Ads Collection
@@ -151,6 +154,7 @@ export const translations = {
     'donationAds.csv.amount': 'Amount',
     'donationAds.csv.date': 'Date',
     'donationAds.csv.phone': 'Phone',
+    'donationAds.csv.phone2': 'Phone 2',
     'donationAds.csv.remarks': 'Remarks',
 
     // Expenses
@@ -320,6 +324,8 @@ export const translations = {
     'common.action': 'অ্যাকশন',
     'common.name': 'নাম',
     'common.phone': 'ফোন নম্বর',
+    'common.phone1': 'ফোন নম্বর ১',
+    'common.phone2': 'ফোন নম্বর ২',
     'common.address': 'ঠিকানা',
     'common.remarks': 'মন্তব্য',
     'common.date': 'তারিখ',
@@ -387,6 +393,7 @@ export const translations = {
     'chanda.csv.amount': 'পরিমাণ',
     'chanda.csv.date': 'তারিখ',
     'chanda.csv.phone': 'ফোন',
+    'chanda.csv.phone2': 'ফোন ২',
     'chanda.csv.remarks': 'মন্তব্য',
 
     // Donation/Ads Collection
@@ -421,6 +428,7 @@ export const translations = {
     'donationAds.csv.amount': 'পরিমাণ',
     'donationAds.csv.date': 'তারিখ',
     'donationAds.csv.phone': 'ফোন',
+    'donationAds.csv.phone2': 'ফোন ২',
     'donationAds.csv.remarks': 'মন্তব্য',
 
     'expenses.pageTitle': 'খরচ - মোট',
@@ -586,6 +594,8 @@ export const translations = {
     'common.action': 'कार्रवाई',
     'common.name': 'नाम',
     'common.phone': 'फ़ोन नंबर',
+    'common.phone1': 'फ़ोन नंबर 1',
+    'common.phone2': 'फ़ोन नंबर 2',
     'common.address': 'पता',
     'common.remarks': 'टिप्पणी',
     'common.date': 'तारीख़',
@@ -653,6 +663,7 @@ export const translations = {
     'chanda.csv.amount': 'राशि',
     'chanda.csv.date': 'तारीख़',
     'chanda.csv.phone': 'फ़ोन',
+    'chanda.csv.phone2': 'फ़ोन 2',
     'chanda.csv.remarks': 'टिप्पणी',
 
     // Donation/Ads Collection
@@ -687,6 +698,7 @@ export const translations = {
     'donationAds.csv.amount': 'राशि',
     'donationAds.csv.date': 'तारीख़',
     'donationAds.csv.phone': 'फ़ोन',
+    'donationAds.csv.phone2': 'फ़ोन 2',
     'donationAds.csv.remarks': 'टिप्पणी',
 
     'expenses.pageTitle': 'खर्च - कुल',

@@ -19,6 +19,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     amount: '',
     date: new Date().toISOString().split('T')[0],
     phone: '',
+    phone2: '',
     remarks: '',
   });
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -43,12 +44,13 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
         amount: parseFloat(formData.amount),
         date: formData.date,
         phone: formData.phone,
+        phone2: formData.phone2,
         remarks: formData.remarks,
       };
       setChandaList([...chandaList, newChanda]);
     }
 
-    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', remarks: '' });
+    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', phone2: '', remarks: '' });
     setShowForm(false);
     setEditingId(null);
   };
@@ -59,6 +61,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
       amount: chanda.amount.toString(),
       date: chanda.date,
       phone: chanda.phone,
+      phone2: chanda.phone2 || '',
       remarks: chanda.remarks,
     });
     setEditingId(chanda.id);
@@ -72,15 +75,15 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
   };
 
   const handleCancel = () => {
-    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', remarks: '' });
+    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', phone2: '', remarks: '' });
     setShowForm(false);
     setEditingId(null);
   };
 
   const handleExport = () => {
     const csvContent = [
-      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.remarks')].map(csvField).join(','),
-      ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.remarks].map(csvField).join(','))
+      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.phone2'), t('chanda.csv.remarks')].map(csvField).join(','),
+      ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.phone2 || '', c.remarks].map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -109,7 +112,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
       const imported: Chanda[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountRaw, date, phone, remarks] = rows[i];
+        const [donorName, amountRaw, date, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (!donorName || isNaN(amount)) continue;
         imported.push({
@@ -118,6 +121,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           amount,
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           phone: (phone || '').trim(),
+          phone2: (phone2 || '').trim(),
           remarks: (remarks || '').trim(),
         });
       }
@@ -217,11 +221,21 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone1')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('chanda.phonePlaceholder')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone2')}</label>
+              <input
+                type="tel"
+                value={formData.phone2}
+                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.phonePlaceholder')}
               />
@@ -264,7 +278,8 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
@@ -278,6 +293,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                     {new Date(chanda.date).toLocaleDateString(locale)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
