@@ -62,7 +62,6 @@ export const translations = {
     'common.egPrefix': 'e.g.',
 
     // Dashboard
-    'dashboard.manageCommittee': '📋 Manage Committee Members',
     'dashboard.totalMembers': 'Total Members',
     'dashboard.totalChanda': 'Total Chanda',
     'dashboard.donationAdsTotal': 'Donation/Ads Collection',
@@ -390,7 +389,6 @@ export const translations = {
     'common.optional': 'ঐচ্ছিক',
     'common.egPrefix': 'যেমন',
 
-    'dashboard.manageCommittee': '📋 কমিটি সদস্য পরিচালনা',
     'dashboard.totalMembers': 'মোট সদস্য',
     'dashboard.totalChanda': 'মোট চাঁদা',
     'dashboard.donationAdsTotal': 'দান/বিজ্ঞাপন সংগ্রহ',
@@ -712,7 +710,6 @@ export const translations = {
     'common.optional': 'वैकल्पिक',
     'common.egPrefix': 'उदाहरण',
 
-    'dashboard.manageCommittee': '📋 समिति सदस्य प्रबंधन',
     'dashboard.totalMembers': 'कुल सदस्य',
     'dashboard.totalChanda': 'कुल चंदा',
     'dashboard.donationAdsTotal': 'दान/विज्ञापन संग्रह',

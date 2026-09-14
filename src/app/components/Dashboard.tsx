@@ -57,11 +57,6 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
 
   return (
     <div className="space-y-4">
-      {/* Management Button */}
-      <button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all">
-        {t('dashboard.manageCommittee')}
-      </button>
-
       {/* Collections vs Expenses chart */}
       <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
 
