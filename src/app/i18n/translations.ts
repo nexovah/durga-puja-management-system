@@ -53,6 +53,8 @@ export const translations = {
     'common.amount': 'Amount',
     'common.download': 'Download',
     'common.export': 'Export',
+    'common.import': 'Import',
+    'common.importResult': 'Records imported',
     'common.optional': 'optional',
     'common.egPrefix': 'e.g.',
 
@@ -315,6 +317,8 @@ export const translations = {
     'common.amount': 'পরিমাণ',
     'common.download': 'ডাউনলোড',
     'common.export': 'এক্সপোর্ট',
+    'common.import': 'ইম্পোর্ট',
+    'common.importResult': 'আমদানি করা রেকর্ড',
     'common.optional': 'ঐচ্ছিক',
     'common.egPrefix': 'যেমন',
 
@@ -570,6 +574,8 @@ export const translations = {
     'common.amount': 'राशि',
     'common.download': 'डाउनलोड',
     'common.export': 'एक्सपोर्ट',
+    'common.import': 'इम्पोर्ट',
+    'common.importResult': 'आयातित रिकॉर्ड',
     'common.optional': 'वैकल्पिक',
     'common.egPrefix': 'उदाहरण',
 

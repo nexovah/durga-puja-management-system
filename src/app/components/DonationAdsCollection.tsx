@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { DonationAd, DonationAdCategory } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
-import { TranslationKey } from '../i18n/translations';
+import { TranslationKey, translations } from '../i18n/translations';
+import { parseCSV, csvField } from '../lib/csv';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -35,6 +36,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
 
@@ -48,6 +50,33 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
 
   const inKindDisplay = (item: DonationAd) =>
     item.category === 'ads' ? adsCategoryLabel(item.inKind) : item.inKind;
+
+  // Accept category/ads-category values from a CSV in any supported language,
+  // or the raw canonical keys ('donation'/'ads', 'handBook', ...).
+  const normalize = (s: string) => s.trim().toLowerCase();
+
+  const parseCategoryInput = (raw: string): DonationAdCategory => {
+    const value = normalize(raw || '');
+    if (value === 'donation') return 'donation';
+    if (value === 'ads') return 'ads';
+    for (const lang of Object.values(translations)) {
+      if (normalize(lang['donationAds.category.donation']) === value) return 'donation';
+      if (normalize(lang['donationAds.category.ads']) === value) return 'ads';
+    }
+    return 'ads';
+  };
+
+  const parseAdsCategoryInput = (raw: string): string => {
+    const value = normalize(raw || '');
+    const byValue = ADS_CATEGORIES.find(c => normalize(c.value) === value);
+    if (byValue) return byValue.value;
+    for (const cat of ADS_CATEGORIES) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[cat.labelKey]) === value) return cat.value;
+      }
+    }
+    return raw.trim();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +147,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         t('donationAds.csv.date'),
         t('donationAds.csv.phone'),
         t('donationAds.csv.remarks'),
-      ].join(','),
+      ].map(csvField).join(','),
       ...donationAdsList.map(item => [
         categoryLabel(item.category),
         item.donorName,
@@ -128,7 +157,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         item.date,
         item.phone,
         item.remarks,
-      ].join(','))
+      ].map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -138,6 +167,54 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
     link.click();
   };
 
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(String(reader.result || ''));
+      if (rows.length === 0) return;
+
+      // Skip a header row if the amount column (index 3) isn't numeric
+      const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][3] || '') ? 0 : 1;
+
+      const imported: DonationAd[] = [];
+      for (let i = firstDataRow; i < rows.length; i++) {
+        const [categoryRaw, donorName, companyName, amountRaw, inKindRaw, date, phone, remarks] = rows[i];
+        const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
+        if (isNaN(amount)) continue;
+
+        const category = parseCategoryInput(categoryRaw);
+        const isDonationRow = category === 'donation';
+        if (isDonationRow && !donorName) continue;
+
+        imported.push({
+          id: `${Date.now()}-${i}`,
+          category,
+          donorName: (donorName || '').trim(),
+          companyName: !isDonationRow ? (companyName || '').trim() : '',
+          amount,
+          inKind: !isDonationRow ? parseAdsCategoryInput(inKindRaw || '') : (inKindRaw || '').trim(),
+          date: (date || '').trim() || new Date().toISOString().split('T')[0],
+          phone: (phone || '').trim(),
+          remarks: (remarks || '').trim(),
+        });
+      }
+
+      if (imported.length > 0) {
+        setDonationAdsList([...donationAdsList, ...imported]);
+      }
+      alert(`${t('common.importResult')}: ${imported.length}`);
+    };
+    reader.readAsText(file);
+  };
+
   const isDonation = formData.category === 'donation';
 
   return (
@@ -145,6 +222,21 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       <PageHeading
         action={
           <div className="flex gap-3">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+              style={{ backgroundColor: '#383737' }}
+            >
+              <Upload size={20} />
+              {t('common.import')}
+            </button>
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"

@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Chanda } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
+import { parseCSV, csvField } from '../lib/csv';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -20,6 +21,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     phone: '',
     remarks: '',
   });
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
 
@@ -77,8 +79,8 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
   const handleExport = () => {
     const csvContent = [
-      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.remarks')].join(','),
-      ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.remarks].join(','))
+      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.remarks')].map(csvField).join(','),
+      ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.remarks].map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -88,11 +90,66 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     link.click();
   };
 
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(String(reader.result || ''));
+      if (rows.length === 0) return;
+
+      // Skip a header row if the first cell isn't a positive number (amount column)
+      const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][1] || '') ? 0 : 1;
+
+      const imported: Chanda[] = [];
+      for (let i = firstDataRow; i < rows.length; i++) {
+        const [donorName, amountRaw, date, phone, remarks] = rows[i];
+        const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
+        if (!donorName || isNaN(amount)) continue;
+        imported.push({
+          id: `${Date.now()}-${i}`,
+          donorName: donorName.trim(),
+          amount,
+          date: (date || '').trim() || new Date().toISOString().split('T')[0],
+          phone: (phone || '').trim(),
+          remarks: (remarks || '').trim(),
+        });
+      }
+
+      if (imported.length > 0) {
+        setChandaList([...chandaList, ...imported]);
+      }
+      alert(`${t('common.importResult')}: ${imported.length}`);
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeading
         action={
           <div className="flex gap-3">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+              style={{ backgroundColor: '#383737' }}
+            >
+              <Upload size={20} />
+              {t('common.import')}
+            </button>
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
