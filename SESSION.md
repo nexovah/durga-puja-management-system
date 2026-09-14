@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (11)
+- Expenses: added Payment Status (Paid/Partially Paid/Cancelled) after Amount, plus Paid Through (Not Selected/Cash/Check Payment). Partially Paid reveals 5 side-by-side "Partial Amount 1-5" fields (field 1 required); their sum is validated on submit against the billed amount (blocks save with an alert if exceeded). New `getExpenseCreditAmount()` helper drives every total: Paid→full, Partial→sum of installments, Cancelled→0. Applied consistently across Expenses total, category summary, Dashboard tile, Treasury totals/monthly report/expense categories. Table amount cell: cancelled = red+strikethrough, partial = yellow→green once fully covered. CSV export/import extended. Backward-compat defaults applied on load. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (10)
 - Donation/Ads Collection: Amount field no longer mandatory in add/edit form — lets a record be created early (category, donor, company, phone, etc.) with the amount filled in later when money is actually collected. Empty amount defaults to 0. Verified `npm run build` passes. Pushed to `main`.
 
