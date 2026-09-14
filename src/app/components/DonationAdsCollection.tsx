@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { DonationAd, DonationAdCategory } from '../App';
+import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -20,11 +20,20 @@ const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'others', labelKey: 'donationAds.adsCategory.others' },
 ];
 
+const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
+  { value: 'notSelected', labelKey: 'common.paidMethod.notSelected' },
+  { value: 'cash', labelKey: 'common.paidMethod.cash' },
+  { value: 'qrScan', labelKey: 'common.paidMethod.qrScan' },
+  { value: 'onlineBanking', labelKey: 'common.paidMethod.onlineBanking' },
+  { value: 'check', labelKey: 'common.paidMethod.check' },
+];
+
 const emptyForm = {
   category: 'ads' as DonationAdCategory,
   donorName: '',
   companyName: '',
   amount: '',
+  paidMethod: 'notSelected' as PaidMethod,
   inKind: '',
   date: new Date().toISOString().split('T')[0],
   phone: '',
@@ -51,6 +60,11 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
 
   const inKindDisplay = (item: DonationAd) =>
     item.category === 'ads' ? adsCategoryLabel(item.inKind) : item.inKind;
+
+  const paidMethodLabel = (method: PaidMethod) => {
+    const found = PAID_METHODS.find(m => m.value === method);
+    return found ? t(found.labelKey) : method;
+  };
 
   // Accept category/ads-category values from a CSV in any supported language,
   // or the raw canonical keys ('donation'/'ads', 'handBook', ...).
@@ -79,6 +93,18 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
     return raw.trim();
   };
 
+  const parsePaidMethodInput = (raw: string): PaidMethod => {
+    const value = normalize(raw || '');
+    const byValue = PAID_METHODS.find(m => normalize(m.value) === value);
+    if (byValue) return byValue.value;
+    for (const method of PAID_METHODS) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[method.labelKey]) === value) return method.value;
+      }
+    }
+    return 'notSelected';
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -87,6 +113,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       donorName: formData.donorName,
       companyName: formData.category === 'ads' ? formData.companyName : '',
       amount: parseFloat(formData.amount),
+      paidMethod: formData.paidMethod,
       inKind: formData.inKind,
       date: formData.date,
       phone: formData.phone,
@@ -117,6 +144,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       donorName: item.donorName,
       companyName: item.companyName || '',
       amount: item.amount.toString(),
+      paidMethod: item.paidMethod || 'notSelected',
       inKind: item.inKind || '',
       date: item.date,
       phone: item.phone,
@@ -146,6 +174,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         t('donationAds.donorName'),
         t('donationAds.companyName'),
         t('donationAds.csv.amount'),
+        t('common.paidMethod'),
         t('donationAds.inKindOrAdsCategory'),
         t('donationAds.csv.date'),
         t('donationAds.csv.phone'),
@@ -157,6 +186,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         item.donorName,
         item.companyName || '',
         item.amount,
+        paidMethodLabel(item.paidMethod || 'notSelected'),
         inKindDisplay(item),
         item.date,
         item.phone,
@@ -191,7 +221,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
 
       const imported: DonationAd[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [categoryRaw, donorName, companyName, amountRaw, inKindRaw, date, phone, phone2, remarks] = rows[i];
+        const [categoryRaw, donorName, companyName, amountRaw, paidMethodRaw, inKindRaw, date, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (isNaN(amount)) continue;
 
@@ -205,6 +235,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
           donorName: (donorName || '').trim(),
           companyName: !isDonationRow ? (companyName || '').trim() : '',
           amount,
+          paidMethod: parsePaidMethodInput(paidMethodRaw || ''),
           inKind: !isDonationRow ? parseAdsCategoryInput(inKindRaw || '') : (inKindRaw || '').trim(),
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           phone: (phone || '').trim(),
@@ -329,6 +360,19 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+              <select
+                value={formData.paidMethod}
+                onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAID_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+
             {isDonation ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.inKind')}</label>
@@ -427,6 +471,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.companyName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.paidMethod')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
@@ -442,6 +487,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'

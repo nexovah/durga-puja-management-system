@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { Chanda, PaymentStatus, getChandaCreditAmount } from '../App';
+import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -18,6 +18,14 @@ const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
   { value: 'rejected', labelKey: 'chanda.status.rejected' },
 ];
 
+const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
+  { value: 'notSelected', labelKey: 'common.paidMethod.notSelected' },
+  { value: 'cash', labelKey: 'common.paidMethod.cash' },
+  { value: 'qrScan', labelKey: 'common.paidMethod.qrScan' },
+  { value: 'onlineBanking', labelKey: 'common.paidMethod.onlineBanking' },
+  { value: 'check', labelKey: 'common.paidMethod.check' },
+];
+
 const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
   paid: 'bg-green-100 text-green-700',
   pending: 'bg-yellow-100 text-yellow-700',
@@ -28,6 +36,7 @@ const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
 const emptyForm = {
   donorName: '',
   amount: '',
+  paidMethod: 'notSelected' as PaidMethod,
   paymentStatus: 'paid' as PaymentStatus,
   partialAmount: '',
   date: new Date().toISOString().split('T')[0],
@@ -64,12 +73,30 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     return 'paid';
   };
 
+  const paidMethodLabel = (method: PaidMethod) => {
+    const found = PAID_METHODS.find(m => m.value === method);
+    return found ? t(found.labelKey) : method;
+  };
+
+  const parsePaidMethodInput = (raw: string): PaidMethod => {
+    const value = normalize(raw || '');
+    const byValue = PAID_METHODS.find(m => normalize(m.value) === value);
+    if (byValue) return byValue.value;
+    for (const method of PAID_METHODS) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[method.labelKey]) === value) return method.value;
+      }
+    }
+    return 'notSelected';
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload = {
       donorName: formData.donorName,
       amount: parseFloat(formData.amount),
+      paidMethod: formData.paidMethod,
       paymentStatus: formData.paymentStatus,
       partialAmount: formData.paymentStatus === 'partial' ? parseFloat(formData.partialAmount || '0') : undefined,
       date: formData.date,
@@ -103,6 +130,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     setFormData({
       donorName: chanda.donorName,
       amount: chanda.amount.toString(),
+      paidMethod: chanda.paidMethod || 'notSelected',
       paymentStatus: chanda.paymentStatus || 'paid',
       partialAmount: chanda.partialAmount !== undefined ? chanda.partialAmount.toString() : '',
       date: chanda.date,
@@ -131,6 +159,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
       [
         t('chanda.csv.donorName'),
         t('chanda.csv.amount'),
+        t('common.paidMethod'),
         t('chanda.csv.status'),
         t('chanda.csv.partialAmount'),
         t('chanda.csv.date'),
@@ -141,6 +170,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
       ...chandaList.map(c => [
         c.donorName,
         c.amount,
+        paidMethodLabel(c.paidMethod || 'notSelected'),
         statusLabel(c.paymentStatus || 'paid'),
         c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
         c.date,
@@ -176,7 +206,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
       const imported: Chanda[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountRaw, statusRaw, partialAmountRaw, date, phone, phone2, remarks] = rows[i];
+        const [donorName, amountRaw, paidMethodRaw, statusRaw, partialAmountRaw, date, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (!donorName || isNaN(amount)) continue;
 
@@ -189,6 +219,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           id: `${Date.now()}-${i}`,
           donorName: donorName.trim(),
           amount,
+          paidMethod: parsePaidMethodInput(paidMethodRaw || ''),
           paymentStatus,
           partialAmount,
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
@@ -283,6 +314,19 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.amountPlaceholder')}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+              <select
+                value={formData.paidMethod}
+                onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAID_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -383,6 +427,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.paidMethod')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
@@ -404,6 +449,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                         ? 'text-yellow-600'
                         : 'text-green-600'
                     }`}>₹{chanda.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
                         {statusLabel(status)}

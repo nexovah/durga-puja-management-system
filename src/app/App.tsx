@@ -52,10 +52,13 @@ export interface Member {
 
 export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
 
+export type PaidMethod = 'notSelected' | 'cash' | 'qrScan' | 'onlineBanking' | 'check';
+
 export interface Chanda {
   id: string;
   donorName: string;
   amount: number; // Amount mentioned/committed
+  paidMethod: PaidMethod;
   paymentStatus: PaymentStatus;
   partialAmount?: number; // Only meaningful when paymentStatus === 'partial'
   date: string;
@@ -89,6 +92,7 @@ export interface DonationAd {
   donorName: string;
   companyName?: string; // Ads only
   amount: number;
+  paidMethod: PaidMethod;
   inKind: string; // Donation/Ads in kinds (free text)
   date: string;
   phone: string; // Phone Number 1
@@ -168,6 +172,7 @@ export default function App() {
       id: '1',
       donorName: 'অমিত শর্মা',
       amount: 5000,
+      paidMethod: 'cash',
       paymentStatus: 'paid',
       date: '2026-01-15',
       phone: '9876543212',
@@ -217,13 +222,21 @@ export default function App() {
     if (savedMembers) setMembers(JSON.parse(savedMembers));
     if (savedChanda) {
       const parsedChanda = JSON.parse(savedChanda);
-      // Backward compatibility: records saved before payment status existed default to 'paid'
+      // Backward compatibility: records saved before payment status/paid method existed default accordingly
       setChandaList(parsedChanda.map((c: Chanda) => ({
         paymentStatus: 'paid',
+        paidMethod: 'notSelected',
         ...c,
       })));
     }
-    if (savedDonationAds) setDonationAdsList(JSON.parse(savedDonationAds));
+    if (savedDonationAds) {
+      const parsedDonationAds = JSON.parse(savedDonationAds);
+      // Backward compatibility: records saved before paid method existed default to 'notSelected'
+      setDonationAdsList(parsedDonationAds.map((d: DonationAd) => ({
+        paidMethod: 'notSelected',
+        ...d,
+      })));
+    }
     if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
     if (savedDeveloper) setDeveloperInfo(JSON.parse(savedDeveloper));
   }, []);
