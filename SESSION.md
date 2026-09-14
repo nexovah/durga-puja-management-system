@@ -4,6 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (19)
+- Added view-only "Access Level" for users (Settings → User Management → below Permissions): "Can Edit & Manage" (default) or "View Only". View-only users keep their per-page permissions but Add/Edit/Delete/Import and the Action column are hidden on Members/Chanda/Donation-Ads/Expenses; Committee Info and Developer Info forms become disabled; Export and Change Password remain available.
+- New `supabase/003_view_only_access.sql`: `app_users.can_edit` column (default true) + recreated `login`/`create_app_user`/`update_app_user` RPCs to carry it. Enforced client-side only, per the standing no-Supabase-Auth trade-off — flagged in the migration file.
+- Threaded `canEdit` through `User` type, `db.ts`, `App.tsx`, `Settings.tsx`, and the 4 data pages. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (18)
 - Dashboard: key-figure widgets made bigger and capped at 4 per row (grid-cols-2 sm:grid-cols-4) per explicit request — 7 widgets now read as two clear rows (4+3) instead of many small columns.
 - New `DashboardChart.tsx`: recharts AreaChart, Income (Chanda + Donation/Ads) vs Expenses over time, gradient-filled, with an Income/Expenses/Net Balance summary line and 7D/This Week/Last Week/30D/3M/6M range presets (daily/weekly/monthly bucketing via date-fns). Sits above the key-figure widgets. Client-side only.
