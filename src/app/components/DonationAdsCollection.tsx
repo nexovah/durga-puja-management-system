@@ -112,7 +112,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       category: formData.category,
       donorName: formData.donorName,
       companyName: formData.category === 'ads' ? formData.companyName : '',
-      amount: parseFloat(formData.amount),
+      amount: parseFloat(formData.amount) || 0,
       paidMethod: formData.paidMethod,
       inKind: formData.inKind,
       date: formData.date,
@@ -347,10 +347,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.amountLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.amountLabel')}</label>
               <input
                 type="number"
-                required
                 min="0"
                 step="0.01"
                 value={formData.amount}
