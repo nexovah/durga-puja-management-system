@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (14)
+- Login session now persists across page refreshes for 1 week (localStorage `puja-session`, `{user, expiresAt}`). Restored on app load if not expired; expired/invalid sessions auto-clear; logout clears it immediately. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (13)
 - Wired the frontend to Supabase — removed all `localStorage` data persistence.
 - Added `supabase/002_user_management.sql` (`update_app_user`, `delete_app_user` RPCs for Settings → User Management).
