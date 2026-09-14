@@ -427,47 +427,43 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-amber-100 via-orange-100 to-amber-100 shadow-lg border-b-4 border-orange-500">
-        <div className="container mx-auto px-4 py-4">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-orange-800">{committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}</h1>
-            <div className="text-sm text-gray-700 mt-1 space-y-0.5">
-              <p>{t('header.regd')}—{committeeInfo.established} | <strong>{t('header.regdNo')}:—{committeeInfo.regNumber}</strong></p>
-              <p>{t('header.post')}:—{committeeInfo.post}, {t('header.ps')}:—{committeeInfo.districtPS}, <strong>{t('header.pin')}:—{committeeInfo.pinCode}</strong></p>
-              <p><strong>{t('header.mobNo')}:—{committeeInfo.mobile1}</strong>{committeeInfo.mobile2 && ` | ${committeeInfo.mobile2}`}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* User Info Bar */}
+      {/* Header + User Info Bar (combined, compact) */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-lg overflow-hidden">
+        <div className="container mx-auto px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="bg-white/20 p-2 rounded-lg overflow-hidden shrink-0">
                 {committeeInfo.logo && (committeeInfo.logo.startsWith('data:') || committeeInfo.logo.startsWith('http')) ? (
                   <img
                     src={committeeInfo.logo}
                     alt="Logo"
-                    className="w-10 h-10 object-cover rounded"
+                    className="w-9 h-9 object-cover rounded"
                   />
                 ) : (
-                  <span className="text-2xl">{committeeInfo.logo || '🕉️'}</span>
+                  <span className="text-xl">{committeeInfo.logo || '🕉️'}</span>
                 )}
               </div>
-              <div className="text-white">
-                <p className="font-bold">{t('header.you')}, {currentUser?.name}</p>
-                <p className="text-sm opacity-90">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
+              <div className="text-white min-w-0">
+                <p className="font-bold text-sm sm:text-base truncate">
+                  {committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
+                </p>
+                <p className="text-[11px] sm:text-xs opacity-90 truncate hidden sm:block">
+                  {t('header.regd')}—{committeeInfo.established} · {t('header.regdNo')}:—{committeeInfo.regNumber} · {t('header.post')}:—{committeeInfo.post} · {t('header.pin')}:—{committeeInfo.pinCode} · {t('header.mobNo')}:—{committeeInfo.mobile1}{committeeInfo.mobile2 && ` / ${committeeInfo.mobile2}`}
+                </p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg"
-            >
-              {t('header.logout')}
-            </button>
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="text-white text-right hidden md:block">
+                <p className="font-bold text-sm leading-tight">{t('header.you')}, {currentUser?.name}</p>
+                <p className="text-xs opacity-90 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-1.5 sm:px-6 sm:py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg text-sm sm:text-base"
+              >
+                {t('header.logout')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

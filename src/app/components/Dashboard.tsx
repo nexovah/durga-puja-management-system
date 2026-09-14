@@ -29,68 +29,84 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
     return sum;
   }, 0);
 
-  const tiles = [
-    { title: t('dashboard.totalMembers'), value: members.length, icon: Users, color: 'from-blue-500 to-blue-600', textColor: 'text-white' },
-    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600', textColor: 'text-white' },
-    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600', textColor: 'text-white' },
-    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600', textColor: 'text-white' },
-    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, color: 'from-amber-500 to-amber-600', textColor: 'text-white' },
-    { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600', textColor: 'text-white' },
-    { title: t('dashboard.expenses'), value: expenses.length, icon: ClipboardList, color: 'from-orange-500 to-orange-600', textColor: 'text-white' },
-    { title: t('dashboard.sales'), value: '0', icon: ShoppingCart, color: 'from-purple-600 to-purple-700', textColor: 'text-white' },
-    { title: t('dashboard.treasuryManagement'), value: '', icon: Wallet, color: 'from-cyan-500 to-cyan-600', textColor: 'text-white' },
-    { title: t('dashboard.arbitration'), value: '', icon: FileText, color: 'from-pink-500 to-pink-600', textColor: 'text-white' },
-    { title: t('dashboard.budget'), value: '', icon: BarChart3, color: 'from-indigo-500 to-indigo-600', textColor: 'text-white' },
-    { title: t('dashboard.daily'), value: '', icon: Calendar, color: 'from-teal-600 to-teal-700', textColor: 'text-white' },
-    { title: t('dashboard.messages'), value: '', icon: MessageSquare, color: 'from-blue-600 to-blue-700', textColor: 'text-white' },
-    { title: t('dashboard.securityAudit'), value: '', icon: Shield, color: 'from-red-600 to-red-700', textColor: 'text-white' },
-    { title: t('dashboard.subscriptions'), value: '', icon: UserCheck, color: 'from-purple-600 to-purple-700', textColor: 'text-white' },
-    { title: t('dashboard.review'), value: '', icon: PieChart, color: 'from-purple-500 to-purple-600', textColor: 'text-white' },
-    { title: t('dashboard.backup'), value: '', icon: Database, color: 'from-gray-600 to-gray-700', textColor: 'text-white' },
+  // Key figures: compact, data-dense cards
+  const statTiles = [
+    { title: t('dashboard.totalMembers'), value: members.length.toString(), icon: Users, color: 'from-blue-500 to-blue-600' },
+    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600' },
+    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600' },
+    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600' },
+    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, color: 'from-amber-500 to-amber-600' },
+    { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600' },
+    { title: t('dashboard.expenses'), value: expenses.length.toString(), icon: ClipboardList, color: 'from-orange-500 to-orange-600' },
+  ];
+
+  // Quick-access shortcuts: no live number yet, so a smaller icon+label tile
+  const actionTiles = [
+    { title: t('dashboard.sales'), icon: ShoppingCart, color: 'from-purple-600 to-purple-700' },
+    { title: t('dashboard.treasuryManagement'), icon: Wallet, color: 'from-cyan-500 to-cyan-600' },
+    { title: t('dashboard.arbitration'), icon: FileText, color: 'from-pink-500 to-pink-600' },
+    { title: t('dashboard.budget'), icon: BarChart3, color: 'from-indigo-500 to-indigo-600' },
+    { title: t('dashboard.daily'), icon: Calendar, color: 'from-teal-600 to-teal-700' },
+    { title: t('dashboard.messages'), icon: MessageSquare, color: 'from-blue-600 to-blue-700' },
+    { title: t('dashboard.securityAudit'), icon: Shield, color: 'from-red-600 to-red-700' },
+    { title: t('dashboard.subscriptions'), icon: UserCheck, color: 'from-purple-600 to-purple-700' },
+    { title: t('dashboard.review'), icon: PieChart, color: 'from-fuchsia-500 to-fuchsia-600' },
+    { title: t('dashboard.backup'), icon: Database, color: 'from-gray-600 to-gray-700' },
   ];
 
   return (
     <div className="space-y-4">
       {/* Management Button */}
-      <button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all">
+      <button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all">
         {t('dashboard.manageCommittee')}
       </button>
 
-      {/* Tiles Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {tiles.map((tile, index) => (
+      {/* Key figures — compact horizontal cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        {statTiles.map((tile, index) => (
           <div
             key={index}
-            className={`${tile.fullWidth ? 'col-span-2 sm:col-span-3' : ''} bg-gradient-to-br ${tile.color} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer group`}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3 sm:p-4 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3`}
           >
-            <div className="flex flex-col items-center justify-center text-center space-y-3">
-              <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
-                <tile.icon className={tile.textColor} size={32} />
-              </div>
-              <p className={`font-bold text-base ${tile.textColor}`}>{tile.title}</p>
-              {tile.value && (
-                <p className={`text-3xl font-bold ${tile.textColor}`}>{tile.value}</p>
-              )}
+            <div className="bg-white/20 p-2.5 rounded-lg shrink-0">
+              <tile.icon className="text-white" size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
+              <p className="text-white text-lg sm:text-xl font-bold leading-tight truncate">{tile.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Year Selector and Download */}
-      <div className="flex gap-3 items-center bg-white rounded-xl p-4 shadow-md">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="bg-orange-500 p-2 rounded-lg">
-            <Calendar className="text-white" size={24} />
+      {/* Quick access — small icon tiles */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-2.5 sm:gap-3">
+        {actionTiles.map((tile, index) => (
+          <div
+            key={index}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 aspect-square sm:aspect-auto sm:h-[4.5rem] p-2`}
+          >
+            <tile.icon className="text-white" size={18} />
+            <p className="text-white text-[11px] sm:text-xs font-bold leading-tight">{tile.title}</p>
           </div>
-          <select className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none">
+        ))}
+      </div>
+
+      {/* Year Selector and Download */}
+      <div className="flex gap-3 items-center bg-white rounded-xl p-3 sm:p-4 shadow-md flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <div className="bg-orange-500 p-2 rounded-lg shrink-0">
+            <Calendar className="text-white" size={20} />
+          </div>
+          <select className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm">
             <option value="2026">{t('dashboard.selectYear')}: 2026</option>
             <option value="2025">2025</option>
             <option value="2024">2024</option>
             <option value="2023">2023</option>
           </select>
         </div>
-        <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md flex items-center gap-2">
-          <FileText size={20} />
+        <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-2.5 rounded-lg font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md flex items-center gap-2 text-sm">
+          <FileText size={18} />
           {t('dashboard.download')}
         </button>
       </div>
