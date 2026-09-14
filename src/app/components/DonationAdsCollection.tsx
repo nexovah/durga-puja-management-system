@@ -3,11 +3,21 @@ import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
 import { DonationAd, DonationAdCategory } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
   setDonationAdsList: (list: DonationAd[]) => void;
 }
+
+const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'handBook', labelKey: 'donationAds.adsCategory.handBook' },
+  { value: 'souvenir', labelKey: 'donationAds.adsCategory.souvenir' },
+  { value: 'bill', labelKey: 'donationAds.adsCategory.bill' },
+  { value: 'gate', labelKey: 'donationAds.adsCategory.gate' },
+  { value: 'banner', labelKey: 'donationAds.adsCategory.banner' },
+  { value: 'others', labelKey: 'donationAds.adsCategory.others' },
+];
 
 const emptyForm = {
   category: 'ads' as DonationAdCategory,
@@ -30,6 +40,14 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
 
   const categoryLabel = (category: DonationAdCategory) =>
     category === 'donation' ? t('donationAds.category.donation') : t('donationAds.category.ads');
+
+  const adsCategoryLabel = (value: string) => {
+    const found = ADS_CATEGORIES.find(c => c.value === value);
+    return found ? t(found.labelKey) : value;
+  };
+
+  const inKindDisplay = (item: DonationAd) =>
+    item.category === 'ads' ? adsCategoryLabel(item.inKind) : item.inKind;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +114,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         t('donationAds.donorName'),
         t('donationAds.companyName'),
         t('donationAds.csv.amount'),
-        t('donationAds.inKind'),
+        t('donationAds.inKindOrAdsCategory'),
         t('donationAds.csv.date'),
         t('donationAds.csv.phone'),
         t('donationAds.csv.remarks'),
@@ -106,7 +124,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         item.donorName,
         item.companyName || '',
         item.amount,
-        item.inKind,
+        inKindDisplay(item),
         item.date,
         item.phone,
         item.remarks,
@@ -164,7 +182,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
               <select
                 required
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory, inKind: '' })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 <option value="ads">{t('donationAds.category.ads')}</option>
@@ -213,16 +231,32 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.inKind')}</label>
-              <input
-                type="text"
-                value={formData.inKind}
-                onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('donationAds.inKindPlaceholder')}
-              />
-            </div>
+            {isDonation ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.inKind')}</label>
+                <input
+                  type="text"
+                  value={formData.inKind}
+                  onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('donationAds.inKindPlaceholder')}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.adsCategory')}</label>
+                <select
+                  value={formData.inKind}
+                  onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('donationAds.selectAdsCategory')}</option>
+                  {ADS_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')}</label>
@@ -285,7 +319,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.companyName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKind')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
@@ -305,7 +339,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.inKind || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{inKindDisplay(item) || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
                   </td>
