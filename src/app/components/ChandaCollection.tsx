@@ -397,7 +397,13 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 return (
                   <tr key={chanda.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-800 font-medium">{chanda.donorName}</td>
-                    <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{chanda.amount.toLocaleString()}</td>
+                    <td className={`px-6 py-4 text-sm font-bold ${
+                      status === 'rejected'
+                        ? 'text-red-600 line-through'
+                        : status === 'partial'
+                        ? 'text-yellow-600'
+                        : 'text-green-600'
+                    }`}>₹{chanda.amount.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
                         {statusLabel(status)}
