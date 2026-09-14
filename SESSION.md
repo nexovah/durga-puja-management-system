@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (10)
+- Donation/Ads Collection: Amount field no longer mandatory in add/edit form — lets a record be created early (category, donor, company, phone, etc.) with the amount filled in later when money is actually collected. Empty amount defaults to 0. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (9)
 - Added "Paid Method" dropdown (Not Selected [default], Cash, QR Scan, Online Banking, Check Payment) right after Amount in Chanda Collection and both Donation/Ads Collection entry types. New `PaidMethod` type + `paidMethod` field on `Chanda`/`DonationAd`. Table columns and CSV export/import updated for both pages. Backward-compat: existing records default to "Not Selected". Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
 - Chanda table: amount cell now styled by payment status — red + strikethrough for Rejected, yellow for Partially Paid.
