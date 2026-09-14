@@ -3,11 +3,23 @@ import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { Member } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
 interface MembersProps {
   members: Member[];
   setMembers: (members: Member[]) => void;
 }
+
+const ROLES: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'president', labelKey: 'members.role.president' },
+  { value: 'vicePresident', labelKey: 'members.role.vicePresident' },
+  { value: 'secretary', labelKey: 'members.role.secretary' },
+  { value: 'assistantSecretary', labelKey: 'members.role.assistantSecretary' },
+  { value: 'treasurer', labelKey: 'members.role.treasurer' },
+  { value: 'executiveMember', labelKey: 'members.role.executiveMember' },
+  { value: 'advisoryPatron', labelKey: 'members.role.advisoryPatron' },
+  { value: 'volunteer', labelKey: 'members.role.volunteer' },
+];
 
 export function Members({ members, setMembers }: MembersProps) {
   const { t, locale } = useLanguage();
@@ -54,6 +66,11 @@ export function Members({ members, setMembers }: MembersProps) {
     });
     setEditingId(member.id);
     setShowForm(true);
+  };
+
+  const roleLabel = (value: string) => {
+    const found = ROLES.find(r => r.value === value);
+    return found ? t(found.labelKey) : value;
   };
 
   const handleDelete = (id: string) => {
@@ -130,15 +147,18 @@ export function Members({ members, setMembers }: MembersProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')}</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')} *</label>
+              <select
                 required
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('members.rolePlaceholder')}
-              />
+              >
+                <option value="">{t('members.selectRole')}</option>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{t(r.labelKey)}</option>
+                ))}
+              </select>
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button
@@ -177,7 +197,7 @@ export function Members({ members, setMembers }: MembersProps) {
               {members.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800">{member.name}</td>
-                  <td className="px-6 py-4 text-sm text-orange-600 font-medium">{member.role}</td>
+                  <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.address}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">

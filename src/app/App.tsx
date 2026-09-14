@@ -127,7 +127,7 @@ export default function App() {
       name: 'রাজেশ কুমার',
       phone: '9876543210',
       address: 'কলকাতা',
-      role: 'সভাপতি',
+      role: 'president',
       joinDate: '2024-01-01',
     },
     {
@@ -135,7 +135,7 @@ export default function App() {
       name: 'সুমন দাস',
       phone: '9876543211',
       address: 'কলকাতা',
-      role: 'সম্পাদক',
+      role: 'secretary',
       joinDate: '2024-01-01',
     },
   ]);
