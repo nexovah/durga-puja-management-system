@@ -187,6 +187,7 @@ function fromUserRow(row: any): User {
     password: '', // never stored/returned client-side; see supabase/README.md
     isAdmin: row.is_admin,
     canEdit: row.can_edit !== false, // defaults true for older rows before this column existed
+    isActive: row.is_active !== false, // defaults true for older rows before this column existed
     permissions: row.permissions,
   };
 }
@@ -353,6 +354,12 @@ export async function deleteUserRequest(userId: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('delete_app_user', { p_user_id: userId });
   if (error) throw error;
   return Boolean(data);
+}
+
+export async function setUserActiveRequest(userId: string, isActive: boolean): Promise<User> {
+  const { data, error } = await supabase.rpc('set_app_user_active', { p_user_id: userId, p_is_active: isActive });
+  if (error) throw error;
+  return fromUserRow(data[0]);
 }
 
 export async function changeOwnPasswordRequest(

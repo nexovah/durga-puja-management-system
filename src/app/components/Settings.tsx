@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages } from 'lucide-react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2 } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -16,6 +16,7 @@ interface SettingsProps {
   onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean) => Promise<User>;
   onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, newPassword?: string) => Promise<User>;
   onDeleteUser: (userId: string) => Promise<boolean>;
+  onSetUserActive: (userId: string, isActive: boolean) => Promise<User>;
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
@@ -38,6 +39,7 @@ export function Settings({
   onCreateUser,
   onUpdateUser,
   onDeleteUser,
+  onSetUserActive,
   onChangeOwnPassword,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
@@ -174,6 +176,19 @@ export function Settings({
       setMessage(ok ? t('settings.msg.userDeleted') : t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
     }
+  };
+
+  const handleToggleUserActive = async (user: User) => {
+    const nextActive = user.isActive === false;
+    if (!nextActive && !confirm(t('settings.confirmDisableUser'))) return;
+    try {
+      await onSetUserActive(user.id, nextActive);
+      setMessage(nextActive ? t('settings.msg.userEnabled') : t('settings.msg.userDisabled'));
+    } catch (err) {
+      console.error('Failed to change user active state', err);
+      setMessage(t('common.saveError'));
+    }
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const handleDeveloperSubmit = (e: React.FormEvent) => {
@@ -655,6 +670,11 @@ export function Settings({
                                 {user.canEdit === false ? t('settings.accessLevel.view') : t('settings.accessLevel.edit')}
                               </span>
                             )}
+                            {user.isActive === false && (
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                {t('settings.userDisabled')}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
@@ -667,6 +687,17 @@ export function Settings({
                           <div className="flex items-center justify-end gap-2">
                             {!user.isAdmin && (
                               <>
+                                <button
+                                  onClick={() => handleToggleUserActive(user)}
+                                  title={user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
+                                  className={`p-2 rounded-lg transition-colors ${
+                                    user.isActive === false
+                                      ? 'text-green-600 hover:bg-green-50'
+                                      : 'text-gray-500 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {user.isActive === false ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+                                </button>
                                 <button
                                   onClick={() => handleEditUser(user)}
                                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

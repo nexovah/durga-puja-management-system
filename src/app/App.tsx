@@ -22,6 +22,7 @@ import {
   createUserRequest,
   updateUserRequest,
   deleteUserRequest,
+  setUserActiveRequest,
   changeOwnPasswordRequest,
   DeveloperInfo,
 } from './lib/db';
@@ -33,6 +34,7 @@ export interface User {
   password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
   canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Delete/Import
+  isActive: boolean; // false = login disabled
   permissions: {
     members: boolean;
     chanda: boolean;
@@ -357,6 +359,12 @@ export default function App() {
     return ok;
   };
 
+  const handleSetUserActive = async (userId: string, isActive: boolean) => {
+    const updated = await setUserActiveRequest(userId, isActive);
+    setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    return updated;
+  };
+
   const handleChangeOwnPassword = async (userId: string, currentPassword: string, newPassword: string) =>
     changeOwnPasswordRequest(userId, currentPassword, newPassword);
 
@@ -579,6 +587,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onCreateUser={handleCreateUser}
             onUpdateUser={handleUpdateUser}
             onDeleteUser={handleDeleteUser}
+            onSetUserActive={handleSetUserActive}
             onChangeOwnPassword={handleChangeOwnPassword}
           />
         )}
