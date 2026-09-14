@@ -4,6 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (8)
+- Chanda Collection: added Payment Status field (Paid/Pending/Partially Paid/Rejected) after Amount. Partially Paid reveals a "Paid Amount (Partial)" input. New `getChandaCreditAmount()` helper in App.tsx is the sole logic for how much of a record counts toward totals — used consistently across Chanda page total, Dashboard tile, Treasury totals/monthly report/top donors. Backward-compat: old records default to 'paid'. CSV export/import updated. Translated EN/BN/HI.
+- Donation/Ads Collection: table view only — moved Category column from first to right after Amount (form and CSV export/import left unchanged, per explicit request).
+- Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (7)
 - Chanda Collection and Donation/Ads Collection: existing Phone field relabeled "Phone Number 1", new optional "Phone Number 2" field added to both. Data models (`Chanda.phone2`, `DonationAd.phone2`), forms, table columns, CSV export/import all updated. Translated (EN/BN/HI). Verified `npm run build` passes. Pushed to `main`.
 
