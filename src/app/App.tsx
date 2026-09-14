@@ -434,8 +434,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             <h1 className="text-2xl font-bold text-orange-800">{committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}</h1>
             <div className="text-sm text-gray-700 mt-1 space-y-0.5">
               <p>{t('header.regd')}—{committeeInfo.established} | <strong>{t('header.regdNo')}:—{committeeInfo.regNumber}</strong></p>
-              <p>{t('header.post')}:—{committeeInfo.post}, {t('header.ps')}:—{committeeInfo.districtPS}</p>
-              <p><strong>{t('header.pin')}:—{committeeInfo.pinCode}</strong></p>
+              <p>{t('header.post')}:—{committeeInfo.post}, {t('header.ps')}:—{committeeInfo.districtPS}, <strong>{t('header.pin')}:—{committeeInfo.pinCode}</strong></p>
               <p><strong>{t('header.mobNo')}:—{committeeInfo.mobile1}</strong>{committeeInfo.mobile2 && ` | ${committeeInfo.mobile2}`}</p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { Users, DollarSign, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift } from 'lucide-react';
+import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift, HandCoins } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -21,11 +21,20 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
     ? getChandaCreditAmount([...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0])
     : 0;
 
+  // Amount still owed by donors: full amount for 'pending', the unpaid
+  // remainder for 'partial'. 'rejected' is excluded (donor declined to pay).
+  const pendingDueChanda = chandaList.reduce((sum, chanda) => {
+    if (chanda.paymentStatus === 'pending') return sum + chanda.amount;
+    if (chanda.paymentStatus === 'partial') return sum + Math.max(0, chanda.amount - (chanda.partialAmount || 0));
+    return sum;
+  }, 0);
+
   const tiles = [
     { title: t('dashboard.totalMembers'), value: members.length, icon: Users, color: 'from-blue-500 to-blue-600', textColor: 'text-white' },
-    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: DollarSign, color: 'from-green-500 to-green-600', textColor: 'text-white' },
+    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600', textColor: 'text-white' },
     { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600', textColor: 'text-white' },
-    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600', textColor: 'text-white', fullWidth: true },
+    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600', textColor: 'text-white' },
+    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, color: 'from-amber-500 to-amber-600', textColor: 'text-white' },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600', textColor: 'text-white' },
     { title: t('dashboard.expenses'), value: expenses.length, icon: ClipboardList, color: 'from-orange-500 to-orange-600', textColor: 'text-white' },
     { title: t('dashboard.sales'), value: '0', icon: ShoppingCart, color: 'from-purple-600 to-purple-700', textColor: 'text-white' },
