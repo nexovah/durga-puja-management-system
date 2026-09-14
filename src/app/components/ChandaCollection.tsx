@@ -9,6 +9,7 @@ import { parseCSV, csvField } from '../lib/csv';
 interface ChandaCollectionProps {
   chandaList: Chanda[];
   setChandaList: (chandaList: Chanda[]) => void;
+  canEdit: boolean;
 }
 
 const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
@@ -45,7 +46,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function ChandaCollection({ chandaList, setChandaList }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -244,21 +245,25 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
       <PageHeading
         action={
           <div className="flex gap-3">
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-            <button
-              onClick={handleImportClick}
-              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
-              style={{ backgroundColor: '#383737' }}
-            >
-              <Upload size={20} />
-              {t('common.import')}
-            </button>
+            {canEdit && (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleImportFile}
+                  className="hidden"
+                />
+                <button
+                  onClick={handleImportClick}
+                  className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+                  style={{ backgroundColor: '#383737' }}
+                >
+                  <Upload size={20} />
+                  {t('common.import')}
+                </button>
+              </>
+            )}
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
@@ -266,13 +271,15 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               <Download size={20} />
               {t('common.export')}
             </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
-            >
-              <Plus size={20} />
-              {t('chanda.addNew')}
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+              >
+                <Plus size={20} />
+                {t('chanda.addNew')}
+              </button>
+            )}
           </div>
         }
       >
@@ -280,7 +287,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
       </PageHeading>
 
       {/* Form */}
-      {showForm && (
+      {canEdit && showForm && (
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
@@ -433,7 +440,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
+                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -466,22 +473,24 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(chanda)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(chanda.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+                    {canEdit && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(chanda)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(chanda.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

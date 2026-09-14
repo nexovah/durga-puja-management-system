@@ -32,6 +32,7 @@ export interface User {
   username: string;
   password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
+  canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Delete/Import
   permissions: {
     members: boolean;
     chanda: boolean;
@@ -330,9 +331,10 @@ export default function App() {
     name: string,
     username: string,
     password: string,
-    permissions: User['permissions']
+    permissions: User['permissions'],
+    canEdit: boolean
   ) => {
-    const newUser = await createUserRequest(name, username, password, permissions);
+    const newUser = await createUserRequest(name, username, password, permissions, canEdit);
     setUsers(prev => [...prev, newUser]);
     return newUser;
   };
@@ -341,9 +343,10 @@ export default function App() {
     userId: string,
     name: string,
     permissions: User['permissions'],
+    canEdit: boolean,
     newPassword?: string
   ) => {
-    const updated = await updateUserRequest(userId, name, permissions, newPassword);
+    const updated = await updateUserRequest(userId, name, permissions, canEdit, newPassword);
     setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
     return updated;
   };
@@ -551,16 +554,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'members' && (
-          <Members members={members} setMembers={setMembers} />
+          <Members members={members} setMembers={setMembers} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'chanda' && (
-          <ChandaCollection chandaList={chandaList} setChandaList={setChandaList} />
+          <ChandaCollection chandaList={chandaList} setChandaList={setChandaList} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'donationAds' && (
-          <DonationAdsCollection donationAdsList={donationAdsList} setDonationAdsList={setDonationAdsList} />
+          <DonationAdsCollection donationAdsList={donationAdsList} setDonationAdsList={setDonationAdsList} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'expenses' && (
-          <Expenses expenses={expenses} setExpenses={setExpenses} />
+          <Expenses expenses={expenses} setExpenses={setExpenses} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'treasury' && (
           <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />

@@ -13,8 +13,8 @@ interface SettingsProps {
   currentUser: User | null;
   developerInfo: DeveloperInfo;
   setDeveloperInfo: (info: DeveloperInfo) => void;
-  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions']) => Promise<User>;
-  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], newPassword?: string) => Promise<User>;
+  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean) => Promise<User>;
+  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, newPassword?: string) => Promise<User>;
   onDeleteUser: (userId: string) => Promise<boolean>;
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
 }
@@ -54,6 +54,7 @@ export function Settings({
     name: '',
     username: '',
     password: '',
+    canEdit: true,
     permissions: {
       members: true,
       chanda: true,
@@ -109,7 +110,7 @@ export function Settings({
     try {
       if (editingUserId) {
         // Edit existing user (password only changes if a new one was typed)
-        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.password || undefined);
+        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.password || undefined);
         setMessage(t('settings.msg.userUpdated'));
       } else {
         // Check if username already exists
@@ -119,7 +120,7 @@ export function Settings({
           return;
         }
 
-        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions);
+        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit);
         setMessage(t('settings.msg.userCreated'));
       }
     } catch (err) {
@@ -133,6 +134,7 @@ export function Settings({
       name: '',
       username: '',
       password: '',
+      canEdit: true,
       permissions: {
         members: true,
         chanda: true,
@@ -152,6 +154,7 @@ export function Settings({
       name: user.name,
       username: user.username,
       password: '', // left blank; only sent if the admin types a new one
+      canEdit: user.canEdit !== false,
       permissions: user.permissions,
     });
     setEditingUserId(user.id);
@@ -262,6 +265,7 @@ export function Settings({
           {/* Committee Info Tab */}
           {activeTab === 'committee' && (
             <form onSubmit={handleCommitteeSubmit} className="space-y-4">
+            <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.uploadLogo')}</label>
                 <input
@@ -419,6 +423,7 @@ export function Settings({
                 <Save size={20} />
                 {t('common.save')}
               </button>
+            </fieldset>
             </form>
           )}
 
@@ -478,6 +483,7 @@ export function Settings({
                       name: '',
                       username: '',
                       password: '',
+                      canEdit: true,
                       permissions: {
                         members: true,
                         chanda: true,
@@ -562,6 +568,40 @@ export function Settings({
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.accessLevel')}</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label
+                          className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                            userForm.canEdit ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="canEdit"
+                            checked={userForm.canEdit}
+                            onChange={() => setUserForm({ ...userForm, canEdit: true })}
+                            className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                          />
+                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.edit')}</span>
+                        </label>
+                        <label
+                          className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                            !userForm.canEdit ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="canEdit"
+                            checked={!userForm.canEdit}
+                            onChange={() => setUserForm({ ...userForm, canEdit: false })}
+                            className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                          />
+                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.view')}</span>
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-3">
                       <button
                         type="submit"
@@ -602,11 +642,20 @@ export function Settings({
                         <td className="px-6 py-4 text-sm text-gray-800 font-medium">{user.name}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">{user.username}</td>
                         <td className="px-6 py-4 text-sm">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            user.isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {user.isAdmin ? t('header.admin') : t('header.user')}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              user.isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {user.isAdmin ? t('header.admin') : t('header.user')}
+                            </span>
+                            {!user.isAdmin && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                user.canEdit === false ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {user.canEdit === false ? t('settings.accessLevel.view') : t('settings.accessLevel.edit')}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {Object.entries(user.permissions)
@@ -679,6 +728,7 @@ export function Settings({
           {/* Developer Info Tab */}
           {activeTab === 'developer' && (
             <form onSubmit={handleDeveloperSubmit} className="space-y-4 max-w-md">
+            <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.developerName')}</label>
                 <input
@@ -726,6 +776,7 @@ export function Settings({
                 <Save size={20} />
                 {t('common.save')}
               </button>
+            </fieldset>
 
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h4 className="font-bold text-gray-800 mb-2">{t('settings.currentInfo')}</h4>

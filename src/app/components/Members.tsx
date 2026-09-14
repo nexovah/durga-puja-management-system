@@ -8,6 +8,7 @@ import { TranslationKey } from '../i18n/translations';
 interface MembersProps {
   members: Member[];
   setMembers: (members: Member[]) => void;
+  canEdit: boolean;
 }
 
 const ROLES: { value: string; labelKey: TranslationKey }[] = [
@@ -21,7 +22,7 @@ const ROLES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'volunteer', labelKey: 'members.role.volunteer' },
 ];
 
-export function Members({ members, setMembers }: MembersProps) {
+export function Members({ members, setMembers, canEdit }: MembersProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -89,20 +90,22 @@ export function Members({ members, setMembers }: MembersProps) {
     <div className="space-y-6">
       <PageHeading
         action={
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
-          >
-            <Plus size={20} />
-            {t('members.addNew')}
-          </button>
+          canEdit && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+            >
+              <Plus size={20} />
+              {t('members.addNew')}
+            </button>
+          )
         }
       >
         {t('members.pageTitle')}
       </PageHeading>
 
       {/* Form */}
-      {showForm && (
+      {canEdit && showForm && (
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
@@ -190,7 +193,7 @@ export function Members({ members, setMembers }: MembersProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.address')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
+                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -203,22 +206,24 @@ export function Members({ members, setMembers }: MembersProps) {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(member.joinDate).toLocaleDateString(locale)}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(member)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(member.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+                  {canEdit && (
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(member)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(member.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

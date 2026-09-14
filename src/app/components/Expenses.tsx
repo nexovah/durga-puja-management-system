@@ -7,6 +7,7 @@ import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 
 interface ExpensesProps {
+  canEdit: boolean;
   expenses: Expense[];
   setExpenses: (expenses: Expense[]) => void;
 }
@@ -60,7 +61,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Expenses({ expenses, setExpenses }: ExpensesProps) {
+export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -300,21 +301,25 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
       <PageHeading
         action={
           <div className="flex gap-3">
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-            <button
-              onClick={handleImportClick}
-              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
-              style={{ backgroundColor: '#383737' }}
-            >
-              <Upload size={20} />
-              {t('common.import')}
-            </button>
+            {canEdit && (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleImportFile}
+                  className="hidden"
+                />
+                <button
+                  onClick={handleImportClick}
+                  className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+                  style={{ backgroundColor: '#383737' }}
+                >
+                  <Upload size={20} />
+                  {t('common.import')}
+                </button>
+              </>
+            )}
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
@@ -322,13 +327,15 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
               <Download size={20} />
               {t('common.export')}
             </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
-            >
-              <Plus size={20} />
-              {t('expenses.addNew')}
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+              >
+                <Plus size={20} />
+                {t('expenses.addNew')}
+              </button>
+            )}
           </div>
         }
       >
@@ -351,7 +358,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
       )}
 
       {/* Form */}
-      {showForm && (
+      {canEdit && showForm && (
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
@@ -515,7 +522,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
+                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -553,22 +560,24 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(expense)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(expense.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+                    {canEdit && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

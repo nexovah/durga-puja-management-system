@@ -186,6 +186,7 @@ function fromUserRow(row: any): User {
     username: row.username,
     password: '', // never stored/returned client-side; see supabase/README.md
     isAdmin: row.is_admin,
+    canEdit: row.can_edit !== false, // defaults true for older rows before this column existed
     permissions: row.permissions,
   };
 }
@@ -316,13 +317,15 @@ export async function createUserRequest(
   name: string,
   username: string,
   password: string,
-  permissions: User['permissions']
+  permissions: User['permissions'],
+  canEdit: boolean
 ): Promise<User> {
   const { data, error } = await supabase.rpc('create_app_user', {
     p_name: name,
     p_username: username,
     p_password: password,
     p_permissions: permissions,
+    p_can_edit: canEdit,
   });
   if (error) throw error;
   return fromUserRow(data[0]);
@@ -332,6 +335,7 @@ export async function updateUserRequest(
   userId: string,
   name: string,
   permissions: User['permissions'],
+  canEdit: boolean,
   newPassword?: string
 ): Promise<User> {
   const { data, error } = await supabase.rpc('update_app_user', {
@@ -339,6 +343,7 @@ export async function updateUserRequest(
     p_name: name,
     p_permissions: permissions,
     p_new_password: newPassword || null,
+    p_can_edit: canEdit,
   });
   if (error) throw error;
   return fromUserRow(data[0]);
