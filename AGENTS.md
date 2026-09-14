@@ -62,6 +62,14 @@ src/
 - Dates use `toLocaleDateString(locale)` where `locale` comes from `useLanguage()`.
 - When adding new UI text: add the key to all three language blocks in `translations.ts`, never hardcode strings in components.
 
+## Backend (database)
+- The app currently persists all data (members, chanda, donation/ads, expenses, users, committee/developer info) to browser `localStorage` only, under keys prefixed `puja-*` — this is being migrated to a real Postgres database on **Supabase**.
+- `supabase/schema.sql` — full DDL: `app_users` (custom username/password login, bcrypt-hashed via pgcrypto — **not** Supabase Auth, by explicit request), `committee_info` / `developer_info` (singleton rows), `members`, `chanda`, `donation_ads`, `expenses`. Includes RLS policies, `updated_at` triggers, and 3 RPC functions (`login`, `create_app_user`, `change_password`).
+- `supabase/storage.sql` — a public `logos` Storage bucket for the committee logo upload (no separate file server needed).
+- `supabase/README.md` — setup steps, REST API reference (GET/POST/PATCH/DELETE per table via PostgREST), field-name mapping (camelCase frontend ↔ snake_case DB), and a security note (no Supabase Auth yet ⇒ anon key has full table access, same trust level as the current browser-only app).
+- `DEPLOYMENT.md` — Hostinger static hosting steps (manual upload or GitHub Actions auto-deploy) for the frontend once built.
+- **As of this writing the React frontend has not been rewired to call this API** — it still reads/writes `localStorage`. That wiring (swapping `useState`/`localStorage` in `App.tsx` and each page's handlers for API calls) is a deliberately separate, not-yet-done step — do it when asked, not proactively, since the user wanted to review the schema first.
+
 ## Dev commands
 ```bash
 npm i           # install deps

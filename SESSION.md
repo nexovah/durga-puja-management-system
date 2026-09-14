@@ -4,6 +4,12 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (12)
+- Delivered the PostgreSQL/Supabase backend: `supabase/schema.sql` (all 6 tables — app_users, committee_info, developer_info, members, chanda, donation_ads, expenses — matching the localStorage data model field-for-field, RLS, triggers, and `login`/`create_app_user`/`change_password` RPC functions using bcrypt via pgcrypto, per explicit request to skip Supabase Auth for now), `supabase/storage.sql` (public `logos` bucket for the committee logo), `supabase/README.md` (setup steps + REST API reference with curl examples + field-name mapping + security note about the anon key having full table access without Supabase Auth).
+- Added `DEPLOYMENT.md`: Hostinger static hosting (manual upload or GitHub Actions auto-deploy) + Supabase backend pointers.
+- Frontend NOT yet wired to the new API — still on localStorage; that's a deliberate next step, not done in this pass since the user wanted to review the schema first.
+- Updated README.md/AGENTS.md to reference the new supabase/ and DEPLOYMENT.md files. Pushed to `main`.
+
 ## 2026-09-14 (11)
 - Expenses: added Payment Status (Paid/Partially Paid/Cancelled) after Amount, plus Paid Through (Not Selected/Cash/Check Payment). Partially Paid reveals 5 side-by-side "Partial Amount 1-5" fields (field 1 required); their sum is validated on submit against the billed amount (blocks save with an alert if exceeded). New `getExpenseCreditAmount()` helper drives every total: Paid→full, Partial→sum of installments, Cancelled→0. Applied consistently across Expenses total, category summary, Dashboard tile, Treasury totals/monthly report/expense categories. Table amount cell: cancelled = red+strikethrough, partial = yellow→green once fully covered. CSV export/import extended. Backward-compat defaults applied on load. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
 

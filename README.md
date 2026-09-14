@@ -27,6 +27,12 @@ src/
   styles/
 ```
 
+## Backend / Database
+PostgreSQL schema for Supabase lives in [supabase/](./supabase/) — see [supabase/README.md](./supabase/README.md) for setup + REST API reference. The frontend currently runs on browser `localStorage`; wiring it to this API is a separate upcoming step.
+
+## Deployment
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for hosting the frontend on Hostinger and the backend on Supabase.
+
 ## Repository
 - GitHub: https://github.com/nexovah/durga-puja-management-system (private)
 - Branch: `main`
