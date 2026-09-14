@@ -4,6 +4,15 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (3)
+- Added "Donation/Ads Collection" page/nav tab (`DonationAdsCollection.tsx`), separate from Chanda Collection.
+- Add-New form has a Category select first (Donation Collection / Ads Collection, default Ads); fields switch dynamically — Donation: donor's name*, amount*, donation in kinds, date, phone, remarks. Ads: donor's name, company name, amount*, donation in kinds, date, phone, remarks.
+- New `DonationAd` model + `puja-donation-ads` localStorage key; new `donationAds` permission (nav gating + Settings checkbox), with backward-compat migration for existing saved users.
+- Dashboard: new tile for Donation/Ads Collection total.
+- Treasury: Chanda + Donation/Ads now combine into grand credit; balance = grand credit − expenses. Monthly report and top donors updated to include both sources.
+- Fully translated (EN/BN/HI).
+- Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (2)
 - Added multilingual support: English, Bengali, Hindi.
 - New `src/app/i18n/` module: `translations.ts` (dictionaries) + `LanguageContext.tsx` (provider/hook). Default language English; persisted to `localStorage`.
