@@ -4,7 +4,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 
 interface LoginPageProps {
   logo: string;
-  onLogin: (username: string, password: string) => boolean;
+  onLogin: (username: string, password: string) => Promise<boolean>;
 }
 
 export function LoginPage({ logo, onLogin }: LoginPageProps) {
@@ -13,8 +13,9 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -23,7 +24,9 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
       return;
     }
 
-    const success = onLogin(username, password);
+    setSubmitting(true);
+    const success = await onLogin(username, password);
+    setSubmitting(false);
     if (!success) {
       setError(t('login.invalidCredentials'));
     }
@@ -110,9 +113,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
 
             <button
               type="submit"
-              className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg"
+              disabled={submitting}
+              className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {t('login.submit')}
+              {submitting ? t('login.submitting') : t('login.submit')}
             </button>
           </form>
 
@@ -122,10 +126,6 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
               {t('login.tagline2')}
             </p>
           </div>
-        </div>
-
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p>{t('login.defaultLogin')}</p>
         </div>
       </div>
     </div>

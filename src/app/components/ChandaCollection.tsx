@@ -115,7 +115,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     } else {
       // Add new chanda
       const newChanda: Chanda = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         ...payload,
       };
       setChandaList([...chandaList, newChanda]);
@@ -216,7 +216,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           : undefined;
 
         imported.push({
-          id: `${Date.now()}-${i}`,
+          id: crypto.randomUUID(),
           donorName: donorName.trim(),
           amount,
           paidMethod: parsePaidMethodInput(paidMethodRaw || ''),

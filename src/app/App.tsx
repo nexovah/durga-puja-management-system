@@ -8,12 +8,28 @@ import { Expenses } from './components/Expenses';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
 import { useLanguage } from './i18n/LanguageContext';
+import { isSupabaseConfigured } from './lib/supabaseClient';
+import {
+  fetchAllData,
+  syncMembers,
+  syncChanda,
+  syncDonationAds,
+  syncExpenses,
+  updateCommitteeInfo,
+  updateDeveloperInfo,
+  loginRequest,
+  createUserRequest,
+  updateUserRequest,
+  deleteUserRequest,
+  changeOwnPasswordRequest,
+  DeveloperInfo,
+} from './lib/db';
 
 export interface User {
   id: string;
   name: string;
   username: string;
-  password: string;
+  password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
   permissions: {
     members: boolean;
@@ -27,7 +43,7 @@ export interface User {
 
 export interface CommitteeInfo {
   name: string;
-  logo: string; // Base64 image data or image URL
+  logo: string; // Base64 image data, an http(s) URL (e.g. Supabase Storage), or an emoji
   established: string; // Year of establishment
   regNumber: string; // Registration number
   association: string; // Association/Committee name
@@ -133,185 +149,193 @@ export function getExpenseCreditAmount(expense: Expense): number {
   }
 }
 
+const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
+  name: '',
+  logo: '🕉️',
+  established: '',
+  regNumber: '',
+  association: '',
+  post: '',
+  districtPS: '',
+  pinCode: '',
+  mobile1: '',
+  mobile2: '',
+  address: '',
+  phone: '',
+  year: '',
+};
+
+const EMPTY_DEVELOPER_INFO: DeveloperInfo = {
+  name: '',
+  email: '',
+  phone: '',
+  version: '',
+};
+
 export default function App() {
   const { t } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'treasury' | 'settings'>('dashboard');
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      name: 'Admin User',
-      username: 'admin',
-      password: 'admin123',
-      isAdmin: true,
-      permissions: {
-        members: true,
-        chanda: true,
-        donationAds: true,
-        expenses: true,
-        treasury: true,
-        settings: true,
-      },
-    },
-  ]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [committeeInfo, setCommitteeInfo] = useState<CommitteeInfo>({
-    name: 'শ্রী শ্রী দুর্গা পূজা কমিটি',
-    logo: '🕉️',
-    established: '২০১৯',
-    regNumber: '৮০০১৪৮৬৪',
-    association: 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি',
-    post: 'পোস্ট',
-    districtPS: 'কালিপাড়া পোস্ট, দুর্গা পূজা ময়দান, কালিপাড়া বাজার',
-    pinCode: '৭৪১২৩৯',
-    mobile1: '৯৭৭৫৭৬৭৪০২',
-    address: 'কলকাতা, পশ্চিমবঙ্গ',
-    phone: '৯৮৭৬৫৪৩২১০',
-    year: '২০২৬',
-  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [committeeInfo, setCommitteeInfoState] = useState<CommitteeInfo>(EMPTY_COMMITTEE_INFO);
+  const [members, setMembersState] = useState<Member[]>([]);
+  const [chandaList, setChandaListState] = useState<Chanda[]>([]);
+  const [donationAdsList, setDonationAdsListState] = useState<DonationAd[]>([]);
+  const [expenses, setExpensesState] = useState<Expense[]>([]);
+  const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
 
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: '1',
-      name: 'রাজেশ কুমার',
-      phone: '9876543210',
-      address: 'কলকাতা',
-      role: 'president',
-      joinDate: '2024-01-01',
-    },
-    {
-      id: '2',
-      name: 'সুমন দাস',
-      phone: '9876543211',
-      address: 'কলকাতা',
-      role: 'secretary',
-      joinDate: '2024-01-01',
-    },
-  ]);
-
-  const [chandaList, setChandaList] = useState<Chanda[]>([
-    {
-      id: '1',
-      donorName: 'অমিত শর্মা',
-      amount: 5000,
-      paidMethod: 'cash',
-      paymentStatus: 'paid',
-      date: '2026-01-15',
-      phone: '9876543212',
-      remarks: 'প্রথম চাঁদা',
-    },
-  ]);
-
-  const [donationAdsList, setDonationAdsList] = useState<DonationAd[]>([]);
-
-  const [expenses, setExpenses] = useState<Expense[]>([
-    {
-      id: '1',
-      title: 'পণ্ডাল নির্মাণ',
-      amount: 50000,
-      paymentStatus: 'paid',
-      paidThrough: 'cash',
-      date: '2026-01-20',
-      category: 'construction',
-      remarks: 'বাঁশ ও কাপড়',
-    },
-  ]);
-
-  const [developerInfo, setDeveloperInfo] = useState({
-    name: 'Developer Name',
-    email: 'developer@example.com',
-    phone: '1234567890',
-    version: '1.0.0',
-  });
-
-  // Load data from localStorage
+  // Load everything from Supabase on mount.
   useEffect(() => {
-    const savedUsers = localStorage.getItem('puja-users');
-    const savedCommittee = localStorage.getItem('puja-committee');
-    const savedMembers = localStorage.getItem('puja-members');
-    const savedChanda = localStorage.getItem('puja-chanda');
-    const savedDonationAds = localStorage.getItem('puja-donation-ads');
-    const savedExpenses = localStorage.getItem('puja-expenses');
-    const savedDeveloper = localStorage.getItem('puja-developer');
-
-    if (savedUsers) {
-      const parsedUsers = JSON.parse(savedUsers);
-      // Backward compatibility: ensure donationAds permission exists on users saved before this feature
-      setUsers(parsedUsers.map((u: User) => ({
-        ...u,
-        permissions: { donationAds: u.isAdmin, ...u.permissions },
-      })));
+    if (!isSupabaseConfigured) {
+      setDataLoading(false);
+      setLoadError('not-configured');
+      return;
     }
-    if (savedCommittee) setCommitteeInfo(JSON.parse(savedCommittee));
-    if (savedMembers) setMembers(JSON.parse(savedMembers));
-    if (savedChanda) {
-      const parsedChanda = JSON.parse(savedChanda);
-      // Backward compatibility: records saved before payment status/paid method existed default accordingly
-      setChandaList(parsedChanda.map((c: Chanda) => ({
-        paymentStatus: 'paid',
-        paidMethod: 'notSelected',
-        ...c,
-      })));
-    }
-    if (savedDonationAds) {
-      const parsedDonationAds = JSON.parse(savedDonationAds);
-      // Backward compatibility: records saved before paid method existed default to 'notSelected'
-      setDonationAdsList(parsedDonationAds.map((d: DonationAd) => ({
-        paidMethod: 'notSelected',
-        ...d,
-      })));
-    }
-    if (savedExpenses) {
-      const parsedExpenses = JSON.parse(savedExpenses);
-      // Backward compatibility: records saved before payment status/paid through existed default accordingly
-      setExpenses(parsedExpenses.map((exp: Expense) => ({
-        paymentStatus: 'paid',
-        paidThrough: 'notSelected',
-        ...exp,
-      })));
-    }
-    if (savedDeveloper) setDeveloperInfo(JSON.parse(savedDeveloper));
+    (async () => {
+      try {
+        const data = await fetchAllData();
+        setMembersState(data.members);
+        setChandaListState(data.chandaList);
+        setDonationAdsListState(data.donationAdsList);
+        setExpensesState(data.expenses);
+        setCommitteeInfoState(data.committeeInfo);
+        setDeveloperInfoState(data.developerInfo);
+        setUsers(data.users);
+      } catch (err: any) {
+        console.error('Failed to load data from Supabase', err);
+        setLoadError(err?.message || 'unknown-error');
+      } finally {
+        setDataLoading(false);
+      }
+    })();
   }, []);
 
-  // Save data to localStorage
-  useEffect(() => {
-    localStorage.setItem('puja-users', JSON.stringify(users));
-  }, [users]);
+  // --- List setters: keep the exact `setX(wholeNewArray)` signature every
+  // page already uses, but sync the diff to Supabase behind the scenes. ---
 
-  useEffect(() => {
-    localStorage.setItem('puja-committee', JSON.stringify(committeeInfo));
-  }, [committeeInfo]);
-
-  useEffect(() => {
-    localStorage.setItem('puja-members', JSON.stringify(members));
-  }, [members]);
-
-  useEffect(() => {
-    localStorage.setItem('puja-chanda', JSON.stringify(chandaList));
-  }, [chandaList]);
-
-  useEffect(() => {
-    localStorage.setItem('puja-donation-ads', JSON.stringify(donationAdsList));
-  }, [donationAdsList]);
-
-  useEffect(() => {
-    localStorage.setItem('puja-expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
-  useEffect(() => {
-    localStorage.setItem('puja-developer', JSON.stringify(developerInfo));
-  }, [developerInfo]);
-
-  const handleLogin = (username: string, password: string) => {
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      return true;
+  const setMembers = async (newList: Member[]) => {
+    const previous = members;
+    setMembersState(newList);
+    try {
+      await syncMembers(previous, newList);
+    } catch (err) {
+      console.error('Failed to save member changes', err);
+      alert(t('common.saveError'));
+      setMembersState(previous);
     }
-    return false;
+  };
+
+  const setChandaList = async (newList: Chanda[]) => {
+    const previous = chandaList;
+    setChandaListState(newList);
+    try {
+      await syncChanda(previous, newList);
+    } catch (err) {
+      console.error('Failed to save chanda changes', err);
+      alert(t('common.saveError'));
+      setChandaListState(previous);
+    }
+  };
+
+  const setDonationAdsList = async (newList: DonationAd[]) => {
+    const previous = donationAdsList;
+    setDonationAdsListState(newList);
+    try {
+      await syncDonationAds(previous, newList);
+    } catch (err) {
+      console.error('Failed to save donation/ads changes', err);
+      alert(t('common.saveError'));
+      setDonationAdsListState(previous);
+    }
+  };
+
+  const setExpenses = async (newList: Expense[]) => {
+    const previous = expenses;
+    setExpensesState(newList);
+    try {
+      await syncExpenses(previous, newList);
+    } catch (err) {
+      console.error('Failed to save expense changes', err);
+      alert(t('common.saveError'));
+      setExpensesState(previous);
+    }
+  };
+
+  const setCommitteeInfo = async (info: CommitteeInfo) => {
+    const previous = committeeInfo;
+    setCommitteeInfoState(info);
+    try {
+      await updateCommitteeInfo(info);
+    } catch (err) {
+      console.error('Failed to save committee info', err);
+      alert(t('common.saveError'));
+      setCommitteeInfoState(previous);
+    }
+  };
+
+  const setDeveloperInfo = async (info: DeveloperInfo) => {
+    const previous = developerInfo;
+    setDeveloperInfoState(info);
+    try {
+      await updateDeveloperInfo(info);
+    } catch (err) {
+      console.error('Failed to save developer info', err);
+      alert(t('common.saveError'));
+      setDeveloperInfoState(previous);
+    }
+  };
+
+  // --- User management: goes through RPC functions, not direct table writes ---
+
+  const handleCreateUser = async (
+    name: string,
+    username: string,
+    password: string,
+    permissions: User['permissions']
+  ) => {
+    const newUser = await createUserRequest(name, username, password, permissions);
+    setUsers(prev => [...prev, newUser]);
+    return newUser;
+  };
+
+  const handleUpdateUser = async (
+    userId: string,
+    name: string,
+    permissions: User['permissions'],
+    newPassword?: string
+  ) => {
+    const updated = await updateUserRequest(userId, name, permissions, newPassword);
+    setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    return updated;
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const ok = await deleteUserRequest(userId);
+    if (ok) setUsers(prev => prev.filter(u => u.id !== userId));
+    return ok;
+  };
+
+  const handleChangeOwnPassword = async (userId: string, currentPassword: string, newPassword: string) =>
+    changeOwnPasswordRequest(userId, currentPassword, newPassword);
+
+  const handleLogin = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const user = await loginRequest(username, password);
+      if (user) {
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Login failed', err);
+      return false;
+    }
   };
 
   const handleLogout = () => {
@@ -319,6 +343,47 @@ export default function App() {
     setCurrentUser(null);
     setCurrentPage('dashboard');
   };
+
+  if (loadError === 'not-configured') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-lg bg-white rounded-xl shadow-md p-8 border border-red-200">
+          <h1 className="text-xl font-bold text-red-700 mb-3">Supabase is not configured</h1>
+          <p className="text-gray-700 mb-3">
+            Create a <code className="bg-gray-100 px-1 rounded">.env</code> file in the project root (copy{' '}
+            <code className="bg-gray-100 px-1 rounded">.env.example</code>) with your Supabase project's URL and
+            anon key, then restart the dev server / rebuild the app.
+          </p>
+          <pre className="bg-gray-100 text-sm p-3 rounded overflow-x-auto">
+{`VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key`}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-lg bg-white rounded-xl shadow-md p-8 border border-red-200">
+          <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't load data</h1>
+          <p className="text-gray-700">{loadError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          Loading…
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <LoginPage logo={committeeInfo.logo} onLogin={handleLogin} />;
@@ -348,9 +413,9 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg overflow-hidden">
                 {committeeInfo.logo && (committeeInfo.logo.startsWith('data:') || committeeInfo.logo.startsWith('http')) ? (
-                  <img 
-                    src={committeeInfo.logo} 
-                    alt="Logo" 
+                  <img
+                    src={committeeInfo.logo}
+                    alt="Logo"
                     className="w-10 h-10 object-cover rounded"
                   />
                 ) : (
@@ -464,10 +529,13 @@ export default function App() {
             committeeInfo={committeeInfo}
             setCommitteeInfo={setCommitteeInfo}
             users={users}
-            setUsers={setUsers}
             currentUser={currentUser}
             developerInfo={developerInfo}
             setDeveloperInfo={setDeveloperInfo}
+            onCreateUser={handleCreateUser}
+            onUpdateUser={handleUpdateUser}
+            onDeleteUser={handleDeleteUser}
+            onChangeOwnPassword={handleChangeOwnPassword}
           />
         )}
       </main>

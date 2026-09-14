@@ -10,11 +10,12 @@ React 18 + TypeScript, Vite 6, Tailwind CSS 4, Radix UI + MUI components, react-
 See [AGENTS.md](./AGENTS.md) for full architecture/feature breakdown and [SESSION.md](./SESSION.md) for the change log.
 
 ## Getting started
-```bash
-npm i           # install dependencies
-npm run dev     # start dev server → http://localhost:5173
-npm run build   # production build
-```
+1. `npm i` — installs dependencies (including `@supabase/supabase-js`).
+2. Copy `.env.example` to `.env` and fill in your Supabase project's URL + anon key (see [supabase/README.md](./supabase/README.md) if you haven't created the project/database yet).
+3. `npm run dev` — start dev server → http://localhost:5173
+4. `npm run build` — production build (needs the same `.env` values present at build time)
+
+The app requires a configured Supabase backend to run — without it, it shows a "Supabase is not configured" screen instead of data.
 
 ## Project structure
 ```
@@ -28,7 +29,7 @@ src/
 ```
 
 ## Backend / Database
-PostgreSQL schema for Supabase lives in [supabase/](./supabase/) — see [supabase/README.md](./supabase/README.md) for setup + REST API reference. The frontend currently runs on browser `localStorage`; wiring it to this API is a separate upcoming step.
+PostgreSQL schema for Supabase lives in [supabase/](./supabase/) — see [supabase/README.md](./supabase/README.md) for setup + REST API reference. The frontend is fully wired to it (`src/app/lib/db.ts`) — no `localStorage` data storage remains.
 
 ## Deployment
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for hosting the frontend on Hostinger and the backend on Supabase.

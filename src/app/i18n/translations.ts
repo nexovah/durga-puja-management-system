@@ -39,6 +39,7 @@ export const translations = {
 
     // Common
     'common.save': 'Save',
+    'common.saveError': 'Failed to save your change. Please check your internet connection and try again.',
     'common.add': 'Add',
     'common.update': 'Update',
     'common.cancel': 'Cancel',
@@ -266,6 +267,7 @@ export const translations = {
     'settings.uploadLogo': 'Upload Logo (JPG/PNG)',
     'settings.removeLogo': 'Remove Logo',
     'settings.uploadLogoHint': 'Upload a JPG or PNG file',
+    'settings.uploadingLogo': 'Uploading logo…',
     'settings.establishedYear': 'Established (Year) *',
     'settings.registrationNumber': 'Registration Number *',
     'settings.associationName': 'Association/Committee Name *',
@@ -285,6 +287,7 @@ export const translations = {
     'settings.editUser': 'Edit User',
     'settings.username': 'Username *',
     'settings.password': 'Password *',
+    'settings.leaveBlankToKeep': 'leave blank to keep unchanged',
     'settings.permissions': 'Permissions',
     'settings.table.name': 'Name',
     'settings.table.username': 'Username',
@@ -321,9 +324,9 @@ export const translations = {
     'login.password': 'Password',
     'login.passwordPlaceholder': 'Enter your password',
     'login.submit': 'Log In',
+    'login.submitting': 'Logging in…',
     'login.tagline1': 'Manage all activities of the Durga Puja committee with ease.',
     'login.tagline2': 'Members, chanda, expenses and accounts, all in one place.',
-    'login.defaultLogin': 'Default login: admin / admin123',
   },
 
   bn: {
@@ -348,6 +351,7 @@ export const translations = {
     'nav.settings': 'সেটিংস',
 
     'common.save': 'সংরক্ষণ করুন',
+    'common.saveError': 'আপনার পরিবর্তন সংরক্ষণ করা যায়নি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
     'common.add': 'যোগ করুন',
     'common.update': 'আপডেট করুন',
     'common.cancel': 'বাতিল করুন',
@@ -569,6 +573,7 @@ export const translations = {
     'settings.uploadLogo': 'লোগো আপলোড করুন (JPG/PNG)',
     'settings.removeLogo': 'লোগো মুছে ফেলুন',
     'settings.uploadLogoHint': 'JPG বা PNG ফাইল আপলোড করুন',
+    'settings.uploadingLogo': 'লোগো আপলোড হচ্ছে…',
     'settings.establishedYear': 'স্থাপিত (বছর) *',
     'settings.registrationNumber': 'রেজিস্ট্রেশন নম্বর *',
     'settings.associationName': 'সংগঠন/কমিটির নাম *',
@@ -588,6 +593,7 @@ export const translations = {
     'settings.editUser': 'ইউজার সম্পাদনা করুন',
     'settings.username': 'ইউজারনেম *',
     'settings.password': 'পাসওয়ার্ড *',
+    'settings.leaveBlankToKeep': 'অপরিবর্তিত রাখতে খালি রাখুন',
     'settings.permissions': 'অনুমতি',
     'settings.table.name': 'নাম',
     'settings.table.username': 'ইউজারনেম',
@@ -623,9 +629,9 @@ export const translations = {
     'login.password': 'পাসওয়ার্ড',
     'login.passwordPlaceholder': 'আপনার পাসওয়ার্ড লিখুন',
     'login.submit': 'লগইন করুন',
+    'login.submitting': 'লগইন হচ্ছে…',
     'login.tagline1': 'দুর্গা পূজা কমিটির সকল কার্যক্রম সহজে পরিচালনা করুন।',
     'login.tagline2': 'সদস্য, চাঁদা, খরচ ও আর্থিক হিসাব এক জায়গায়।',
-    'login.defaultLogin': 'ডিফল্ট লগইন: admin / admin123',
   },
 
   hi: {
@@ -650,6 +656,7 @@ export const translations = {
     'nav.settings': 'सेटिंग्स',
 
     'common.save': 'सहेजें',
+    'common.saveError': 'आपका बदलाव सहेजा नहीं जा सका। कृपया अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।',
     'common.add': 'जोड़ें',
     'common.update': 'अपडेट करें',
     'common.cancel': 'रद्द करें',
@@ -871,6 +878,7 @@ export const translations = {
     'settings.uploadLogo': 'लोगो अपलोड करें (JPG/PNG)',
     'settings.removeLogo': 'लोगो हटाएं',
     'settings.uploadLogoHint': 'JPG या PNG फ़ाइल अपलोड करें',
+    'settings.uploadingLogo': 'लोगो अपलोड हो रहा है…',
     'settings.establishedYear': 'स्थापना (वर्ष) *',
     'settings.registrationNumber': 'पंजीकरण संख्या *',
     'settings.associationName': 'संगठन/समिति का नाम *',
@@ -890,6 +898,7 @@ export const translations = {
     'settings.editUser': 'यूज़र संपादित करें',
     'settings.username': 'यूज़रनेम *',
     'settings.password': 'पासवर्ड *',
+    'settings.leaveBlankToKeep': 'अपरिवर्तित रखने के लिए खाली छोड़ें',
     'settings.permissions': 'अनुमतियाँ',
     'settings.table.name': 'नाम',
     'settings.table.username': 'यूज़रनेम',
@@ -925,9 +934,9 @@ export const translations = {
     'login.password': 'पासवर्ड',
     'login.passwordPlaceholder': 'अपना पासवर्ड दर्ज करें',
     'login.submit': 'लॉग इन करें',
+    'login.submitting': 'लॉग इन हो रहा है…',
     'login.tagline1': 'दुर्गा पूजा समिति की सभी गतिविधियों को आसानी से प्रबंधित करें।',
     'login.tagline2': 'सदस्य, चंदा, खर्च और वित्तीय हिसाब — सब एक जगह।',
-    'login.defaultLogin': 'डिफ़ॉल्ट लॉगिन: admin / admin123',
   },
 } as const satisfies Record<Language, Record<string, string>>;
 

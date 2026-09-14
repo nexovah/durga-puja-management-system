@@ -153,7 +153,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
     } else {
       // Add new expense
       const newExpense: Expense = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         ...payload,
       };
       setExpenses([...expenses, newExpense]);
@@ -269,7 +269,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
           || categories.find(c => Object.values(translations).some(lang => normalize(lang[c.labelKey]) === normalize(categoryRawTrim)));
 
         imported.push({
-          id: `${Date.now()}-${i}`,
+          id: crypto.randomUUID(),
           title: title.trim(),
           amount,
           paymentStatus,

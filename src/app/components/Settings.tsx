@@ -4,15 +4,19 @@ import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
+import { uploadLogo, DeveloperInfo } from '../lib/db';
 
 interface SettingsProps {
   committeeInfo: CommitteeInfo;
   setCommitteeInfo: (info: CommitteeInfo) => void;
   users: User[];
-  setUsers: (users: User[]) => void;
   currentUser: User | null;
-  developerInfo: any;
-  setDeveloperInfo: (info: any) => void;
+  developerInfo: DeveloperInfo;
+  setDeveloperInfo: (info: DeveloperInfo) => void;
+  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions']) => Promise<User>;
+  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], newPassword?: string) => Promise<User>;
+  onDeleteUser: (userId: string) => Promise<boolean>;
+  onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
@@ -28,10 +32,13 @@ export function Settings({
   committeeInfo,
   setCommitteeInfo,
   users,
-  setUsers,
   currentUser,
   developerInfo,
   setDeveloperInfo,
+  onCreateUser,
+  onUpdateUser,
+  onDeleteUser,
+  onChangeOwnPassword,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState<'committee' | 'password' | 'users' | 'developer' | 'language'>('committee');
@@ -58,6 +65,7 @@ export function Settings({
   });
   const [devForm, setDevForm] = useState(developerInfo);
   const [message, setMessage] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const handleCommitteeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,16 +74,10 @@ export function Settings({
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!currentUser) return;
-
-    if (passwordForm.currentPassword !== currentUser.password) {
-      setMessage(t('settings.msg.wrongCurrentPassword'));
-      setTimeout(() => setMessage(''), 3000);
-      return;
-    }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setMessage(t('settings.msg.passwordMismatch'));
@@ -89,44 +91,42 @@ export function Settings({
       return;
     }
 
-    setUsers(users.map(u =>
-      u.id === currentUser.id
-        ? { ...u, password: passwordForm.newPassword }
-        : u
-    ));
+    const ok = await onChangeOwnPassword(currentUser.id, passwordForm.currentPassword, passwordForm.newPassword);
+    if (!ok) {
+      setMessage(t('settings.msg.wrongCurrentPassword'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
 
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     setMessage(t('settings.msg.passwordChanged'));
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const handleUserSubmit = (e: React.FormEvent) => {
+  const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingUserId) {
-      // Edit existing user
-      setUsers(users.map(u =>
-        u.id === editingUserId
-          ? { ...u, ...userForm, isAdmin: false }
-          : u
-      ));
-      setMessage(t('settings.msg.userUpdated'));
-    } else {
-      // Check if username already exists
-      if (users.some(u => u.username === userForm.username)) {
-        setMessage(t('settings.msg.usernameExists'));
-        setTimeout(() => setMessage(''), 3000);
-        return;
-      }
+    try {
+      if (editingUserId) {
+        // Edit existing user (password only changes if a new one was typed)
+        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.password || undefined);
+        setMessage(t('settings.msg.userUpdated'));
+      } else {
+        // Check if username already exists
+        if (users.some(u => u.username === userForm.username)) {
+          setMessage(t('settings.msg.usernameExists'));
+          setTimeout(() => setMessage(''), 3000);
+          return;
+        }
 
-      // Add new user
-      const newUser: User = {
-        id: Date.now().toString(),
-        ...userForm,
-        isAdmin: false,
-      };
-      setUsers([...users, newUser]);
-      setMessage(t('settings.msg.userCreated'));
+        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions);
+        setMessage(t('settings.msg.userCreated'));
+      }
+    } catch (err) {
+      console.error('Failed to save user', err);
+      setMessage(t('common.saveError'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
     }
 
     setUserForm({
@@ -151,14 +151,14 @@ export function Settings({
     setUserForm({
       name: user.name,
       username: user.username,
-      password: user.password,
+      password: '', // left blank; only sent if the admin types a new one
       permissions: user.permissions,
     });
     setEditingUserId(user.id);
     setShowUserForm(true);
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     const user = users.find(u => u.id === id);
     if (user?.isAdmin) {
       setMessage(t('settings.msg.adminCannotDelete'));
@@ -167,8 +167,8 @@ export function Settings({
     }
 
     if (confirm(t('settings.confirmDeleteUser'))) {
-      setUsers(users.filter(u => u.id !== id));
-      setMessage(t('settings.msg.userDeleted'));
+      const ok = await onDeleteUser(id);
+      setMessage(ok ? t('settings.msg.userDeleted') : t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
     }
   };
@@ -267,18 +267,25 @@ export function Settings({
                 <input
                   type="file"
                   accept="image/jpeg,image/jpg,image/png"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setCommitteeForm({ ...committeeForm, logo: reader.result as string });
-                      };
-                      reader.readAsDataURL(file);
+                    if (!file) return;
+                    setLogoUploading(true);
+                    try {
+                      const url = await uploadLogo(file);
+                      setCommitteeForm({ ...committeeForm, logo: url });
+                    } catch (err) {
+                      console.error('Logo upload failed', err);
+                      setMessage(t('common.saveError'));
+                      setTimeout(() => setMessage(''), 3000);
+                    } finally {
+                      setLogoUploading(false);
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  disabled={logoUploading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:opacity-60"
                 />
+                {logoUploading && <p className="text-sm text-gray-500 mt-1">{t('settings.uploadingLogo')}</p>}
                 {committeeForm.logo && (
                   <div className="mt-3 flex items-center gap-4">
                     <div className="w-20 h-20 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
@@ -517,10 +524,12 @@ export function Settings({
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.password')}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('settings.password')} {editingUserId ? `(${t('settings.leaveBlankToKeep')})` : ''}
+                        </label>
                         <input
                           type="password"
-                          required
+                          required={!editingUserId}
                           value={userForm.password}
                           onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"

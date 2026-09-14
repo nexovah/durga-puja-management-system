@@ -127,7 +127,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
       ));
     } else {
       const newItem: DonationAd = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         ...payload,
       };
       setDonationAdsList([...donationAdsList, newItem]);
@@ -230,7 +230,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
         if (isDonationRow && !donorName) continue;
 
         imported.push({
-          id: `${Date.now()}-${i}`,
+          id: crypto.randomUUID(),
           category,
           donorName: (donorName || '').trim(),
           companyName: !isDonationRow ? (companyName || '').trim() : '',

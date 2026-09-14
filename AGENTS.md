@@ -62,13 +62,24 @@ src/
 - Dates use `toLocaleDateString(locale)` where `locale` comes from `useLanguage()`.
 - When adding new UI text: add the key to all three language blocks in `translations.ts`, never hardcode strings in components.
 
-## Backend (database)
-- The app currently persists all data (members, chanda, donation/ads, expenses, users, committee/developer info) to browser `localStorage` only, under keys prefixed `puja-*` — this is being migrated to a real Postgres database on **Supabase**.
-- `supabase/schema.sql` — full DDL: `app_users` (custom username/password login, bcrypt-hashed via pgcrypto — **not** Supabase Auth, by explicit request), `committee_info` / `developer_info` (singleton rows), `members`, `chanda`, `donation_ads`, `expenses`. Includes RLS policies, `updated_at` triggers, and 3 RPC functions (`login`, `create_app_user`, `change_password`).
-- `supabase/storage.sql` — a public `logos` Storage bucket for the committee logo upload (no separate file server needed).
-- `supabase/README.md` — setup steps, REST API reference (GET/POST/PATCH/DELETE per table via PostgREST), field-name mapping (camelCase frontend ↔ snake_case DB), and a security note (no Supabase Auth yet ⇒ anon key has full table access, same trust level as the current browser-only app).
+## Backend (database) — Supabase / PostgreSQL
+The app is backed by a real Postgres database on **Supabase**; there is no other server. Every page reads/writes Supabase directly from the browser via `@supabase/supabase-js`.
+- `supabase/schema.sql` — full DDL: `app_users` (custom username/password login, bcrypt-hashed via pgcrypto — **not** Supabase Auth, by explicit request), `committee_info` / `developer_info` (singleton rows), `members`, `chanda`, `donation_ads`, `expenses`. Includes RLS policies, `updated_at` triggers, and the `login`/`create_app_user`/`change_password` RPC functions.
+- `supabase/002_user_management.sql` — `update_app_user` (edit name/permissions/optionally reset password) and `delete_app_user` RPC functions, for the Settings → User Management screen.
+- `supabase/storage.sql` — a public `logos` Storage bucket for the committee logo upload (Settings → Committee Info uploads straight to it via `uploadLogo()` in `db.ts`; no separate file server).
+- `supabase/README.md` — setup steps, REST API reference (GET/POST/PATCH/DELETE per table via PostgREST), field-name mapping (camelCase frontend ↔ snake_case DB), and a security note (no Supabase Auth yet ⇒ anon key has full table access — acceptable trust level per explicit product decision, flagged for future hardening).
 - `DEPLOYMENT.md` — Hostinger static hosting steps (manual upload or GitHub Actions auto-deploy) for the frontend once built.
-- **As of this writing the React frontend has not been rewired to call this API** — it still reads/writes `localStorage`. That wiring (swapping `useState`/`localStorage` in `App.tsx` and each page's handlers for API calls) is a deliberately separate, not-yet-done step — do it when asked, not proactively, since the user wanted to review the schema first.
+
+### Frontend data layer
+- `src/app/lib/supabaseClient.ts` — creates the Supabase client from `import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (set in a local `.env`, see `.env.example`). If unset, `App.tsx` shows a "Supabase is not configured" screen instead of crashing.
+- `src/app/lib/db.ts` — the only place that talks to Supabase. Maps camelCase (frontend) ↔ snake_case (DB) per entity, and exposes:
+  - `fetchAllData()` — loads members/chanda/donationAds/expenses/committeeInfo/developerInfo/users once on app start.
+  - `syncMembers`/`syncChanda`/`syncDonationAds`/`syncExpenses` — generic **diff-based sync**: given an old array and a new array (both keyed by `id`), computes the minimal insert/update/delete and applies it. This is what lets `App.tsx` keep passing `setMembers`/`setChandaList`/`setDonationAdsList`/`setExpenses` down to pages with the exact same `(wholeNewArray) => void` signature they had under localStorage — **no page component (Members/ChandaCollection/DonationAdsCollection/Expenses) needed its CRUD logic rewritten**, only their `id: Date.now().toString()` generators were changed to `crypto.randomUUID()` (Postgres `uuid` primary keys need real UUIDs).
+  - `updateCommitteeInfo`/`updateDeveloperInfo` — singleton row updates.
+  - `uploadLogo(file)` — uploads to the `logos` Storage bucket, returns the public URL.
+  - `loginRequest`/`createUserRequest`/`updateUserRequest`/`deleteUserRequest`/`changeOwnPasswordRequest` — call the RPC functions; **`Settings.tsx` was rewired** to use these instead of a local `setUsers(array)`, since `app_users` writes are blocked at the DB for direct table access (must go through the SECURITY DEFINER functions, which hash passwords server-side and never return `password_hash`).
+- `App.tsx`: on mount, calls `fetchAllData()` (shows a loading spinner meanwhile); wraps each list setter to call the matching `sync*` function and roll back local state + show `common.saveError` on failure; login is now `async` (`loginRequest` via the `login` RPC) — `LoginPage.tsx`'s `onLogin` prop and `handleSubmit` were updated to `async`/`await` accordingly, with a disabled/"Logging in…" state on the submit button.
+- The `User` type still carries a `password` field for shape-compatibility with existing code, but it is **always `''`** client-side — the database never sends a password or its hash to the browser.
 
 ## Dev commands
 ```bash

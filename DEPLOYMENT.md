@@ -47,8 +47,20 @@ Hostinger's shared hosting doesn't run your build step itself, so let GitHub Act
    ```
 4. Push to `main` → Actions tab shows the build+upload running → site updates automatically a couple minutes later.
 
-### Once the frontend talks to Supabase
-When we wire the app to the API, you'll add two build-time environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) — for Option A, put them in a local `.env` file before running `npm run build`; for Option B, add them as GitHub Actions secrets and pass them via `env:` to the build step. Vite bakes them into the static build, so nothing needs configuring on the Hostinger side itself.
+### Required environment variables
+The app needs two Supabase values present when you run `npm run build` (Vite bakes them into the static output — nothing to configure on the Hostinger side itself):
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+- **Option A**: put them in a local `.env` file (copy `.env.example`) before running `npm run build`.
+- **Option B**: add them as GitHub Actions secrets and pass them via `env:` on the build step, e.g.:
+  ```yaml
+  - run: npm run build
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+  ```
 
 ### Notes
 - No `.htaccess` rewrite rules are needed — this app doesn't use client-side routing (no react-router), it's one `index.html` with in-page navigation, so there's no "refresh on a sub-page 404s" issue to solve.

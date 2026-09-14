@@ -1,24 +1,37 @@
 # Supabase / PostgreSQL Backend
 
-This folder is the complete database for the Durga Puja Management System: schema, security rules, and login functions. It mirrors the app's current browser-localStorage data model field-for-field, so nothing about the UI needs to change to use it.
+This folder is the complete database for the Durga Puja Management System: schema, security rules, and login functions. It mirrors the app's data model field-for-field, and the React frontend (`src/app/lib/db.ts`, `src/app/App.tsx`) is wired to read/write this database directly.
 
-**Status**: this gives you a working Postgres database + REST API on Supabase. The React frontend still reads/writes `localStorage` today — wiring the two together (swapping the `useState`/`localStorage` calls in `src/app/App.tsx` for calls to this API) is a separate, later step, once you've confirmed the schema looks right.
+**Status**: the frontend is live-connected to Supabase — all pages (Members, Chanda, Donation/Ads, Expenses, Treasury, Settings, login) read and write here. It no longer uses `localStorage` for data. You just need to point your local/deployed build at your project (see "Connect the frontend" below).
 
 ## What's here
-- `schema.sql` — every table (`app_users`, `committee_info`, `developer_info`, `members`, `chanda`, `donation_ads`, `expenses`), triggers, RLS policies, and 3 login/user-management functions.
-- `storage.sql` — a public `logos` file bucket for the committee logo upload (no separate file server needed — Supabase Storage serves it directly).
+- `schema.sql` — every table (`app_users`, `committee_info`, `developer_info`, `members`, `chanda`, `donation_ads`, `expenses`), triggers, RLS policies, and the `login`/`create_app_user`/`change_password` functions.
+- `002_user_management.sql` — two more functions the Settings → User Management screen needs: `update_app_user` (edit name/permissions/optionally reset password) and `delete_app_user`.
+- `storage.sql` — a public `logos` file bucket for the committee logo upload (no separate file server needed — Supabase Storage serves it directly, and Settings → Committee Info uploads straight to it).
 
 ## 1. Create the Supabase project
 1. Go to [supabase.com](https://supabase.com) → New project.
 2. Pick a name/region, set a strong **database password** (save it — you'll want it if you ever need direct `psql` access), wait ~2 min for provisioning.
 
 ## 2. Run the schema
-1. In your project, open **SQL Editor** → **New query**.
-2. Open `schema.sql` from this folder, copy the whole file, paste it in, click **Run**.
-3. Open a new query, paste `storage.sql`, click **Run**.
-4. **Before or right after running schema.sql**, edit the bootstrap admin block near the bottom (search for `CHANGE THIS`) and re-run just that block with your real admin email/username/password — or run it once with the placeholder and immediately call `change_password` (see below) to set a real one.
+Run these 3 files, in order, in **SQL Editor → New query** (paste the whole file, click **Run**, repeat for the next file):
+1. `schema.sql`
+2. `002_user_management.sql`
+3. `storage.sql`
 
-That's it — no "upload table by table" needed. The whole database is created by running these two files once.
+**Before or right after running schema.sql**, edit the bootstrap admin block near the bottom of it (search for `CHANGE THIS`) and re-run just that block with your real admin email/username/password — or run it once with the placeholder and immediately call `change_password` (see below) to set a real one.
+
+That's it — no "upload table by table" needed. The whole database is created by running these three files once.
+
+## 2b. Connect the frontend
+1. In the project root, copy `.env.example` to `.env`.
+2. Fill in your `Project URL` and `anon` key (from Project Settings → API, see step 3 below):
+   ```
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
+3. Run `npm i` (installs `@supabase/supabase-js`) then `npm run dev`. The app now loads its data from your Supabase project.
+4. For a production build, the same two variables need to be present when you run `npm run build` (a local `.env` file for a manual build, or as build-step secrets/env vars for CI — see `DEPLOYMENT.md`), since Vite bakes them into the static output at build time.
 
 ## 3. Get your API keys
 **Project Settings → API**:
@@ -154,12 +167,11 @@ The frontend's JS objects use camelCase; the database uses snake_case (Postgres 
 | `pinCode` | `pin_code` |
 | `logo` | `logo_url` |
 
-## 6. Once you're ready to wire the frontend
-Two options when that day comes:
-1. **Direct REST calls** (`fetch`) — works from any client, including a future mobile app, no extra dependency.
-2. **`@supabase/supabase-js` client** — a thin wrapper around the same REST API with a nicer JS interface (`supabase.from('chanda').select()` etc.) and built-in retry/typing. Recommended for the React app; either way hits the exact same database.
-
-I can do this wiring whenever you say go — it's a contained change to `src/app/App.tsx` and each page component's `handleSubmit`/`handleDelete` functions, no schema changes needed.
+## 6. How the frontend is wired (for reference)
+- `src/app/lib/supabaseClient.ts` — creates the `@supabase/supabase-js` client from your env vars.
+- `src/app/lib/db.ts` — every read/write and the camelCase↔snake_case field mapping. `fetchAllData()` loads everything once on app start; `syncMembers`/`syncChanda`/`syncDonationAds`/`syncExpenses` diff an old array against a new one and issue the minimal insert/update/delete calls, so Members/Chanda/Donation-Ads/Expenses pages keep calling `setX(wholeNewArray)` exactly like they did with localStorage — no page UI changed.
+- User management (create/edit/delete/password) goes through the RPC functions, not direct table writes, since `app_users` writes are blocked for the API roles (see the RLS section below).
+- A future mobile app can either use the same `@supabase/supabase-js` client, or call the REST endpoints in section 4 directly with any HTTP client — same database either way.
 
 ## 7. Security note (please read)
 See the long comment block near the bottom of `schema.sql`. Short version: because there's no Supabase Auth yet, the API is reachable by anyone with your site's anon key (which ships in your public JS bundle) — login only gates the *app's screens*, not the database itself. This matches the trust level of today's browser-only app (nothing was ever truly private in localStorage either), but it's worth moving to real Supabase Auth + Row Level Security before this holds sensitive donor data at real scale. Say the word whenever you want that upgrade.

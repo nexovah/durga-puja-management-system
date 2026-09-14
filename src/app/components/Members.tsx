@@ -45,7 +45,7 @@ export function Members({ members, setMembers }: MembersProps) {
     } else {
       // Add new member
       const newMember: Member = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         ...formData,
         joinDate: new Date().toISOString().split('T')[0],
       };

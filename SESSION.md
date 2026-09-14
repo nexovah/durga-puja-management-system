@@ -4,6 +4,18 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (13)
+- Wired the frontend to Supabase — removed all `localStorage` data persistence.
+- Added `supabase/002_user_management.sql` (`update_app_user`, `delete_app_user` RPCs for Settings → User Management).
+- New `src/app/lib/supabaseClient.ts` (client from `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`) and `src/app/lib/db.ts` (camelCase↔snake_case mapping, `fetchAllData()`, generic diff-based `syncMembers`/`syncChanda`/`syncDonationAds`/`syncExpenses`, `updateCommitteeInfo`/`updateDeveloperInfo`, `uploadLogo()` to the `logos` Storage bucket, and `loginRequest`/`createUserRequest`/`updateUserRequest`/`deleteUserRequest`/`changeOwnPasswordRequest` RPC wrappers).
+- `App.tsx`: fetches everything from Supabase on mount (loading spinner + "not configured" screen), list setters now diff-sync to the DB with rollback + error alert on failure, login is async via the `login` RPC.
+- `LoginPage.tsx`: `onLogin`/`handleSubmit` now async, submit button shows "Logging in…" while pending; removed the hardcoded "Default login: admin/admin123" hint (credentials are DB-managed now).
+- `Settings.tsx`: user management (create/edit/delete/password reset) now goes through the RPC functions instead of a local array — `password` field only required when creating a new user (optional "leave blank to keep unchanged" when editing); own-password change verified server-side via `change_password` RPC; committee logo upload now calls `uploadLogo()` (Supabase Storage) instead of embedding base64 in local state.
+- `Members.tsx`/`ChandaCollection.tsx`/`DonationAdsCollection.tsx`/`Expenses.tsx`/`Settings.tsx`: changed new-record id generation from `Date.now().toString()` to `crypto.randomUUID()` (required for Postgres `uuid` primary keys) — no other changes, all page UI/CRUD logic untouched.
+- Added `@supabase/supabase-js` dependency, `.env.example`.
+- Updated `supabase/README.md`/`AGENTS.md`/`README.md`/`DEPLOYMENT.md` to reflect the frontend now being live-wired (not a future step).
+- Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (12)
 - Delivered the PostgreSQL/Supabase backend: `supabase/schema.sql` (all 6 tables — app_users, committee_info, developer_info, members, chanda, donation_ads, expenses — matching the localStorage data model field-for-field, RLS, triggers, and `login`/`create_app_user`/`change_password` RPC functions using bcrypt via pgcrypto, per explicit request to skip Supabase Auth for now), `supabase/storage.sql` (public `logos` bucket for the committee logo), `supabase/README.md` (setup steps + REST API reference with curl examples + field-name mapping + security note about the anon key having full table access without Supabase Auth).
 - Added `DEPLOYMENT.md`: Hostinger static hosting (manual upload or GitHub Actions auto-deploy) + Supabase backend pointers.
