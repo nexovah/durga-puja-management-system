@@ -48,11 +48,11 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
       </button>
 
       {/* Tiles Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {tiles.map((tile, index) => (
           <div
             key={index}
-            className={`${tile.fullWidth ? 'col-span-2' : ''} bg-gradient-to-br ${tile.color} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer group`}
+            className={`${tile.fullWidth ? 'col-span-2 sm:col-span-3' : ''} bg-gradient-to-br ${tile.color} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer group`}
           >
             <div className="flex flex-col items-center justify-center text-center space-y-3">
               <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
