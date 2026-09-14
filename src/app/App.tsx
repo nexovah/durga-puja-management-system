@@ -7,6 +7,7 @@ import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
+import { GlobalSearch } from './components/GlobalSearch';
 import { useLanguage } from './i18n/LanguageContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import {
@@ -474,62 +475,72 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
       {/* Navigation */}
       <nav className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto">
-            <NavButton
-              active={currentPage === 'dashboard'}
-              onClick={() => setCurrentPage('dashboard')}
-            >
-              {t('nav.dashboard')}
-            </NavButton>
-            {currentUser?.permissions.members && (
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1 overflow-x-auto">
               <NavButton
-                active={currentPage === 'members'}
-                onClick={() => setCurrentPage('members')}
+                active={currentPage === 'dashboard'}
+                onClick={() => setCurrentPage('dashboard')}
               >
-                {t('nav.members')}
+                {t('nav.dashboard')}
               </NavButton>
-            )}
-            {currentUser?.permissions.chanda && (
-              <NavButton
-                active={currentPage === 'chanda'}
-                onClick={() => setCurrentPage('chanda')}
-              >
-                {t('nav.chanda')}
-              </NavButton>
-            )}
-            {currentUser?.permissions.donationAds && (
-              <NavButton
-                active={currentPage === 'donationAds'}
-                onClick={() => setCurrentPage('donationAds')}
-              >
-                {t('nav.donationAds')}
-              </NavButton>
-            )}
-            {currentUser?.permissions.expenses && (
-              <NavButton
-                active={currentPage === 'expenses'}
-                onClick={() => setCurrentPage('expenses')}
-              >
-                {t('nav.expenses')}
-              </NavButton>
-            )}
-            {currentUser?.permissions.treasury && (
-              <NavButton
-                active={currentPage === 'treasury'}
-                onClick={() => setCurrentPage('treasury')}
-              >
-                {t('nav.treasury')}
-              </NavButton>
-            )}
-            {currentUser?.permissions.settings && (
-              <NavButton
-                active={currentPage === 'settings'}
-                onClick={() => setCurrentPage('settings')}
-              >
-                {t('nav.settings')}
-              </NavButton>
-            )}
+              {currentUser?.permissions.members && (
+                <NavButton
+                  active={currentPage === 'members'}
+                  onClick={() => setCurrentPage('members')}
+                >
+                  {t('nav.members')}
+                </NavButton>
+              )}
+              {currentUser?.permissions.chanda && (
+                <NavButton
+                  active={currentPage === 'chanda'}
+                  onClick={() => setCurrentPage('chanda')}
+                >
+                  {t('nav.chanda')}
+                </NavButton>
+              )}
+              {currentUser?.permissions.donationAds && (
+                <NavButton
+                  active={currentPage === 'donationAds'}
+                  onClick={() => setCurrentPage('donationAds')}
+                >
+                  {t('nav.donationAds')}
+                </NavButton>
+              )}
+              {currentUser?.permissions.expenses && (
+                <NavButton
+                  active={currentPage === 'expenses'}
+                  onClick={() => setCurrentPage('expenses')}
+                >
+                  {t('nav.expenses')}
+                </NavButton>
+              )}
+              {currentUser?.permissions.treasury && (
+                <NavButton
+                  active={currentPage === 'treasury'}
+                  onClick={() => setCurrentPage('treasury')}
+                >
+                  {t('nav.treasury')}
+                </NavButton>
+              )}
+              {currentUser?.permissions.settings && (
+                <NavButton
+                  active={currentPage === 'settings'}
+                  onClick={() => setCurrentPage('settings')}
+                >
+                  {t('nav.settings')}
+                </NavButton>
+              )}
+            </div>
+            <GlobalSearch
+              members={members}
+              chandaList={chandaList}
+              donationAdsList={donationAdsList}
+              expenses={expenses}
+              currentUser={currentUser}
+              onNavigate={setCurrentPage}
+            />
           </div>
         </div>
       </nav>

@@ -1,0 +1,272 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Search, X, Users, DollarSign, Gift, TrendingDown } from 'lucide-react';
+import { Member, Chanda, DonationAd, Expense, User } from '../App';
+import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
+
+type SearchablePage = 'members' | 'chanda' | 'donationAds' | 'expenses';
+
+interface GlobalSearchProps {
+  members: Member[];
+  chandaList: Chanda[];
+  donationAdsList: DonationAd[];
+  expenses: Expense[];
+  currentUser: User | null;
+  onNavigate: (page: SearchablePage) => void;
+}
+
+const RESULTS_PER_SECTION = 8;
+
+export function GlobalSearch({ members, chandaList, donationAdsList, expenses, currentUser, onNavigate }: GlobalSearchProps) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  // Translate a canonical key (e.g. "paid", "president"); falls back to the
+  // raw value itself if there's no matching translation (keeps search + the
+  // fallback text both usable even for unmapped/legacy values).
+  const label = (key: string, fallback: string) => {
+    const value = t(key as TranslationKey);
+    return value === key ? fallback : value;
+  };
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return { members: [] as Member[], chanda: [] as Chanda[], donationAds: [] as DonationAd[], expenses: [] as Expense[] };
+    }
+
+    const matches = (parts: (string | number | undefined | null)[]) =>
+      parts.some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
+
+    const memberResults = currentUser?.permissions.members
+      ? members.filter(m => matches([
+          m.name, m.phone, m.address,
+          label(`members.role.${m.role}`, m.role),
+        ])).slice(0, RESULTS_PER_SECTION)
+      : [];
+
+    const chandaResults = currentUser?.permissions.chanda
+      ? chandaList.filter(c => matches([
+          c.donorName, c.phone, c.phone2, c.remarks, c.amount, c.date,
+          label(`chanda.status.${c.paymentStatus}`, c.paymentStatus),
+          label(`common.paidMethod.${c.paidMethod}`, c.paidMethod),
+        ])).slice(0, RESULTS_PER_SECTION)
+      : [];
+
+    const donationAdsResults = currentUser?.permissions.donationAds
+      ? donationAdsList.filter(d => matches([
+          d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.amount, d.inKind, d.date,
+          label(`donationAds.category.${d.category}`, d.category),
+          label(`common.paidMethod.${d.paidMethod}`, d.paidMethod),
+        ])).slice(0, RESULTS_PER_SECTION)
+      : [];
+
+    const expenseResults = currentUser?.permissions.expenses
+      ? expenses.filter(exp => matches([
+          exp.title, exp.remarks, exp.amount, exp.date,
+          label(`expenses.category.${exp.category}`, exp.category),
+          label(`expenses.status.${exp.paymentStatus}`, exp.paymentStatus),
+          label(`expenses.paidThrough.${exp.paidThrough}`, exp.paidThrough),
+        ])).slice(0, RESULTS_PER_SECTION)
+      : [];
+
+    return { members: memberResults, chanda: chandaResults, donationAds: donationAdsResults, expenses: expenseResults };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, members, chandaList, donationAdsList, expenses, currentUser]);
+
+  const totalResults = results.members.length + results.chanda.length + results.donationAds.length + results.expenses.length;
+
+  const handleSelect = (page: SearchablePage) => {
+    onNavigate(page);
+    setOpen(false);
+    setQuery('');
+  };
+
+  return (
+    <div ref={wrapperRef}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={t('search.placeholder')}
+        className={`p-3 rounded-lg transition-colors shrink-0 ${
+          open ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+        }`}
+      >
+        <Search size={20} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full bg-white border-t border-b border-gray-200 shadow-lg z-40">
+          <div className="container mx-auto px-4 py-4">
+            <div className="relative">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('search.placeholder')}
+                className="w-full pl-10 pr-10 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-base"
+              />
+              <button
+                onClick={() => setOpen(false)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {query.trim() === '' ? (
+              <p className="text-sm text-gray-500 mt-3">{t('search.typeToSearch')}</p>
+            ) : totalResults === 0 ? (
+              <p className="text-sm text-gray-500 mt-3">{t('search.noResults')}</p>
+            ) : (
+              <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-4">
+                {results.members.length > 0 && (
+                  <ResultSection
+                    icon={<Users size={16} />}
+                    title={t('nav.members')}
+                    onSeeAll={() => handleSelect('members')}
+                  >
+                    {results.members.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => handleSelect('members')}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-gray-800">{m.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {label(`members.role.${m.role}`, m.role)}{m.phone ? ` · ${m.phone}` : ''}
+                        </p>
+                      </button>
+                    ))}
+                  </ResultSection>
+                )}
+
+                {results.chanda.length > 0 && (
+                  <ResultSection
+                    icon={<DollarSign size={16} />}
+                    title={t('nav.chanda')}
+                    onSeeAll={() => handleSelect('chanda')}
+                  >
+                    {results.chanda.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => handleSelect('chanda')}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-gray-800">
+                          {c.donorName} <span className="text-green-600 font-bold">₹{c.amount.toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {label(`chanda.status.${c.paymentStatus}`, c.paymentStatus)}{c.phone ? ` · ${c.phone}` : ''}
+                        </p>
+                      </button>
+                    ))}
+                  </ResultSection>
+                )}
+
+                {results.donationAds.length > 0 && (
+                  <ResultSection
+                    icon={<Gift size={16} />}
+                    title={t('nav.donationAds')}
+                    onSeeAll={() => handleSelect('donationAds')}
+                  >
+                    {results.donationAds.map((d) => (
+                      <button
+                        key={d.id}
+                        onClick={() => handleSelect('donationAds')}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-gray-800">
+                          {d.donorName || d.companyName || '-'} <span className="text-green-600 font-bold">₹{d.amount.toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {label(`donationAds.category.${d.category}`, d.category)}{d.phone ? ` · ${d.phone}` : ''}
+                        </p>
+                      </button>
+                    ))}
+                  </ResultSection>
+                )}
+
+                {results.expenses.length > 0 && (
+                  <ResultSection
+                    icon={<TrendingDown size={16} />}
+                    title={t('nav.expenses')}
+                    onSeeAll={() => handleSelect('expenses')}
+                  >
+                    {results.expenses.map((exp) => (
+                      <button
+                        key={exp.id}
+                        onClick={() => handleSelect('expenses')}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-gray-800">
+                          {exp.title} <span className="text-red-600 font-bold">₹{exp.amount.toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {label(`expenses.status.${exp.paymentStatus}`, exp.paymentStatus)} · {label(`expenses.category.${exp.category}`, exp.category)}
+                        </p>
+                      </button>
+                    ))}
+                  </ResultSection>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultSection({
+  icon,
+  title,
+  onSeeAll,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onSeeAll: () => void;
+  children: React.ReactNode;
+}) {
+  const { t } = useLanguage();
+  return (
+    <div>
+      <div className="flex items-center justify-between px-3 mb-1">
+        <div className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-wide">
+          {icon}
+          {title}
+        </div>
+        <button onClick={onSeeAll} className="text-xs text-orange-600 hover:underline font-medium">
+          {t('search.seeAll')}
+        </button>
+      </div>
+      <div className="divide-y divide-gray-100">{children}</div>
+    </div>
+  );
+}

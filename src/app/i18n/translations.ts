@@ -327,6 +327,12 @@ export const translations = {
     'login.submitting': 'Logging in…',
     'login.tagline1': 'Manage all activities of the Durga Puja committee with ease.',
     'login.tagline2': 'Members, chanda, expenses and accounts, all in one place.',
+
+    // Global Search
+    'search.placeholder': 'Search members, chanda, donation/ads, expenses…',
+    'search.typeToSearch': 'Type to search across Members, Chanda Collection, Donation/Ads Collection and Expenses — names, amounts, phone numbers, paid/pending status, and more.',
+    'search.noResults': 'No results found.',
+    'search.seeAll': 'See all →',
   },
 
   bn: {
@@ -632,6 +638,12 @@ export const translations = {
     'login.submitting': 'লগইন হচ্ছে…',
     'login.tagline1': 'দুর্গা পূজা কমিটির সকল কার্যক্রম সহজে পরিচালনা করুন।',
     'login.tagline2': 'সদস্য, চাঁদা, খরচ ও আর্থিক হিসাব এক জায়গায়।',
+
+    // Global Search
+    'search.placeholder': 'সদস্য, চাঁদা, দান/বিজ্ঞাপন, খরচ খুঁজুন…',
+    'search.typeToSearch': 'সদস্য, চাঁদা সংগ্রহ, দান/বিজ্ঞাপন সংগ্রহ এবং খরচের মধ্যে খুঁজতে টাইপ করুন — নাম, পরিমাণ, ফোন নম্বর, পরিশোধিত/বিচারাধীন অবস্থা ইত্যাদি।',
+    'search.noResults': 'কোনো ফলাফল পাওয়া যায়নি।',
+    'search.seeAll': 'সব দেখুন →',
   },
 
   hi: {
@@ -937,6 +949,12 @@ export const translations = {
     'login.submitting': 'लॉग इन हो रहा है…',
     'login.tagline1': 'दुर्गा पूजा समिति की सभी गतिविधियों को आसानी से प्रबंधित करें।',
     'login.tagline2': 'सदस्य, चंदा, खर्च और वित्तीय हिसाब — सब एक जगह।',
+
+    // Global Search
+    'search.placeholder': 'सदस्य, चंदा, दान/विज्ञापन, खर्च खोजें…',
+    'search.typeToSearch': 'सदस्य, चंदा संग्रह, दान/विज्ञापन संग्रह और खर्च में खोजने के लिए टाइप करें — नाम, राशि, फ़ोन नंबर, भुगतान/लंबित स्थिति आदि।',
+    'search.noResults': 'कोई परिणाम नहीं मिला।',
+    'search.seeAll': 'सभी देखें →',
   },
 } as const satisfies Record<Language, Record<string, string>>;
 
