@@ -4,6 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (17)
+- Redesigned Dashboard: split the one uniform tile grid into compact horizontal "key figures" cards + smaller square "quick access" icon tiles, with column counts tuned per breakpoint (2/3/4/6 and 3/4/5/8) so the dashboard stays short and legible at 1024/1366/1600 laptop widths and on mobile, not just desktop-wide.
+- Merged the separate committee-info header and orange user-info bar into one compact bar (logo + name + single truncating detail line, user name + logout) — roughly halves header height.
+- Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (16)
 - Header shortened to 3 lines (merged Pin into the Post/PS line) to reduce header height.
 - Dashboard: Total Chanda tile icon changed from generic dollar sign to IndianRupee (₹). New "Pending / Due Chanda" widget beside Recent Chanda Collection (pending full amount + partial's unpaid remainder, rejected excluded). Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
