@@ -4,6 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (18)
+- Dashboard: key-figure widgets made bigger and capped at 4 per row (grid-cols-2 sm:grid-cols-4) per explicit request — 7 widgets now read as two clear rows (4+3) instead of many small columns.
+- New `DashboardChart.tsx`: recharts AreaChart, Income (Chanda + Donation/Ads) vs Expenses over time, gradient-filled, with an Income/Expenses/Net Balance summary line and 7D/This Week/Last Week/30D/3M/6M range presets (daily/weekly/monthly bucketing via date-fns). Sits above the key-figure widgets. Client-side only.
+- Translated new chart strings EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (17)
 - Redesigned Dashboard: split the one uniform tile grid into compact horizontal "key figures" cards + smaller square "quick access" icon tiles, with column counts tuned per breakpoint (2/3/4/6 and 3/4/5/8) so the dashboard stays short and legible at 1024/1366/1600 laptop widths and on mobile, not just desktop-wide.
 - Merged the separate committee-info header and orange user-info bar into one compact bar (logo + name + single truncating detail line, user name + logout) — roughly halves header height.
