@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
 import { Chanda } from '../App';
 import { PageHeading } from './PageHeading';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -9,6 +10,7 @@ interface ChandaCollectionProps {
 }
 
 export function ChandaCollection({ chandaList, setChandaList }: ChandaCollectionProps) {
+  const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -23,11 +25,11 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingId) {
       // Edit existing chanda
-      setChandaList(chandaList.map(c => 
-        c.id === editingId 
+      setChandaList(chandaList.map(c =>
+        c.id === editingId
           ? { ...c, ...formData, amount: parseFloat(formData.amount) }
           : c
       ));
@@ -62,7 +64,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('আপনি কি নিশ্চিত এই চাঁদা রেকর্ড মুছে ফেলতে চান?')) {
+    if (confirm(t('chanda.confirmDelete'))) {
       setChandaList(chandaList.filter(c => c.id !== id));
     }
   };
@@ -75,10 +77,10 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
   const handleExport = () => {
     const csvContent = [
-      ['দাতার নাম', 'পরিমাণ', 'তারিখ', 'ফোন', 'মন্তব্য'].join(','),
+      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.remarks')].join(','),
       ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.remarks].join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -96,19 +98,19 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
             >
               <Download size={20} />
-              এক্সপোর্ট
+              {t('common.export')}
             </button>
             <button
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
             >
               <Plus size={20} />
-              নতুন চাঁদা যোগ করুন
+              {t('chanda.addNew')}
             </button>
           </div>
         }
       >
-        চাঁদা সংগ্রহ - মোট: ₹{totalChanda.toLocaleString()}
+        {t('chanda.pageTitle')}: ₹{totalChanda.toLocaleString()}
       </PageHeading>
 
       {/* Form */}
@@ -116,7 +118,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? 'চাঁদা সম্পাদনা করুন' : 'নতুন চাঁদা যোগ করুন'}
+              {editingId ? t('chanda.editChanda') : t('chanda.addNew')}
             </h3>
             <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
               <X size={24} />
@@ -124,18 +126,18 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">দাতার নাম *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.donorName')} *</label>
               <input
                 type="text"
                 required
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="দাতার নাম"
+                placeholder={t('chanda.donorNamePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">পরিমাণ (₹) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amountLabel')} *</label>
               <input
                 type="number"
                 required
@@ -144,11 +146,11 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="পরিমাণ"
+                placeholder={t('chanda.amountPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">তারিখ *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
               <input
                 type="date"
                 required
@@ -158,22 +160,22 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ফোন নম্বর</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="ফোন নম্বর"
+                placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">মন্তব্য</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="কোনো মন্তব্য"
+                placeholder={t('chanda.remarksPlaceholder')}
                 rows={2}
               />
             </div>
@@ -182,14 +184,14 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 type="submit"
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
               >
-                {editingId ? 'আপডেট করুন' : 'যোগ করুন'}
+                {editingId ? t('common.update') : t('common.add')}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                বাতিল করুন
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -202,12 +204,12 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">দাতার নাম</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">পরিমাণ</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">তারিখ</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ফোন</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">মন্তব্য</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">অ্যাকশন</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.donorName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -216,7 +218,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{chanda.donorName}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{chanda.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(chanda.date).toLocaleDateString('bn-IN')}
+                    {new Date(chanda.date).toLocaleDateString(locale)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
@@ -242,7 +244,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
           </table>
           {chandaList.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              কোনো চাঁদা রেকর্ড নেই। নতুন চাঁদা যোগ করুন।
+              {t('chanda.empty')}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LoginPageProps {
   logo: string;
@@ -7,6 +8,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ logo, onLogin }: LoginPageProps) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,15 +17,15 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!username || !password) {
-      setError('ইউজারনেম এবং পাসওয়ার্ড দিন');
+      setError(t('login.enterCredentials'));
       return;
     }
 
     const success = onLogin(username, password);
     if (!success) {
-      setError('ভুল ইউজারনেম অথবা পাসওয়ার্ড');
+      setError(t('login.invalidCredentials'));
     }
   };
 
@@ -43,9 +45,9 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                 {isEmoji ? (
                   <div className="text-9xl">{logo}</div>
                 ) : logo ? (
-                  <img 
-                    src={logo} 
-                    alt="Logo" 
+                  <img
+                    src={logo}
+                    alt="Logo"
                     className="w-full h-full object-contain rounded-full"
                   />
                 ) : (
@@ -54,10 +56,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white px-6 py-3 rounded-full inline-block shadow-lg">
             <h1 className="text-xl font-bold text-orange-600">
-              কমিটি ম্যানেজমেন্ট সিস্টেম
+              {t('login.systemTitle')}
             </h1>
           </div>
         </div>
@@ -67,20 +69,20 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-base font-semibold text-gray-800 mb-3">
-                ইউজার আইডি
+                {t('login.userId')}
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                placeholder="আপনার ইউজার আইডি লিখুন"
+                placeholder={t('login.userIdPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-base font-semibold text-gray-800 mb-3">
-                পাসওয়ার্ড
+                {t('login.password')}
               </label>
               <div className="relative">
                 <input
@@ -88,7 +90,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pr-12 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                  placeholder="আপনার পাসওয়ার্ড লিখুন"
+                  placeholder={t('login.passwordPlaceholder')}
                 />
                 <button
                   type="button"
@@ -110,20 +112,20 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
               type="submit"
               className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg"
             >
-              লগইন করুন
+              {t('login.submit')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-700 leading-relaxed">
-              দুর্গা পূজা কমিটির সকল কার্যক্রম সহজে পরিচালনা করুন।<br />
-              সদস্য, চাঁদা, খরচ ও আর্থিক হিসাব এক জায়গায়।
+              {t('login.tagline1')}<br />
+              {t('login.tagline2')}
             </p>
           </div>
         </div>
 
         <div className="mt-4 text-center text-sm text-gray-600">
-          <p>ডিফল্ট লগইন: admin / admin123</p>
+          <p>{t('login.defaultLogin')}</p>
         </div>
       </div>
     </div>

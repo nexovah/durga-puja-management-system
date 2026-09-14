@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { Member } from '../App';
 import { PageHeading } from './PageHeading';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface MembersProps {
   members: Member[];
@@ -9,6 +10,7 @@ interface MembersProps {
 }
 
 export function Members({ members, setMembers }: MembersProps) {
+  const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -20,11 +22,11 @@ export function Members({ members, setMembers }: MembersProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingId) {
       // Edit existing member
-      setMembers(members.map(m => 
-        m.id === editingId 
+      setMembers(members.map(m =>
+        m.id === editingId
           ? { ...m, ...formData }
           : m
       ));
@@ -55,7 +57,7 @@ export function Members({ members, setMembers }: MembersProps) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('আপনি কি নিশ্চিত এই সদস্য মুছে ফেলতে চান?')) {
+    if (confirm(t('members.confirmDelete'))) {
       setMembers(members.filter(m => m.id !== id));
     }
   };
@@ -75,11 +77,11 @@ export function Members({ members, setMembers }: MembersProps) {
             className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
           >
             <Plus size={20} />
-            নতুন সদস্য যোগ করুন
+            {t('members.addNew')}
           </button>
         }
       >
-        কমিটির সদস্য
+        {t('members.pageTitle')}
       </PageHeading>
 
       {/* Form */}
@@ -87,7 +89,7 @@ export function Members({ members, setMembers }: MembersProps) {
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? 'সদস্য সম্পাদনা করুন' : 'নতুন সদস্য যোগ করুন'}
+              {editingId ? t('members.editMember') : t('members.addNew')}
             </h3>
             <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
               <X size={24} />
@@ -95,47 +97,47 @@ export function Members({ members, setMembers }: MembersProps) {
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">নাম *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="সদস্যের নাম"
+                placeholder={t('members.namePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ফোন নম্বর *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')} *</label>
               <input
                 type="tel"
                 required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="ফোন নম্বর"
+                placeholder={t('members.phonePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ঠিকানা *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.address')} *</label>
               <input
                 type="text"
                 required
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="ঠিকানা"
+                placeholder={t('members.addressPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">পদবী *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')}</label>
               <input
                 type="text"
                 required
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="যেমন: সভাপতি, সম্পাদক"
+                placeholder={t('members.rolePlaceholder')}
               />
             </div>
             <div className="md:col-span-2 flex gap-3">
@@ -143,14 +145,14 @@ export function Members({ members, setMembers }: MembersProps) {
                 type="submit"
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
               >
-                {editingId ? 'আপডেট করুন' : 'যোগ করুন'}
+                {editingId ? t('common.update') : t('common.add')}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                বাতিল করুন
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -163,12 +165,12 @@ export function Members({ members, setMembers }: MembersProps) {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">নাম</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">পদবী</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ফোন</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ঠিকানা</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">যোগদানের তারিখ</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">অ্যাকশন</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.name')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.role')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.address')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -179,7 +181,7 @@ export function Members({ members, setMembers }: MembersProps) {
                   <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.address}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(member.joinDate).toLocaleDateString('bn-IN')}
+                    {new Date(member.joinDate).toLocaleDateString(locale)}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -203,7 +205,7 @@ export function Members({ members, setMembers }: MembersProps) {
           </table>
           {members.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              কোনো সদস্য নেই। নতুন সদস্য যোগ করুন।
+              {t('members.empty')}
             </div>
           )}
         </div>

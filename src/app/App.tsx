@@ -6,6 +6,7 @@ import { ChandaCollection } from './components/ChandaCollection';
 import { Expenses } from './components/Expenses';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
+import { useLanguage } from './i18n/LanguageContext';
 
 export interface User {
   id: string;
@@ -66,6 +67,7 @@ export interface Expense {
 }
 
 export default function App() {
+  const { t } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'expenses' | 'treasury' | 'settings'>('dashboard');
@@ -138,7 +140,7 @@ export default function App() {
       title: 'পণ্ডাল নির্মাণ',
       amount: 50000,
       date: '2026-01-20',
-      category: 'নির্মাণ',
+      category: 'construction',
       remarks: 'বাঁশ ও কাপড়',
     },
   ]);
@@ -220,10 +222,10 @@ export default function App() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-orange-800">{committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}</h1>
             <div className="text-sm text-gray-700 mt-1 space-y-0.5">
-              <p>রেজিঃ—{committeeInfo.established} | <strong>Regd. No.:—{committeeInfo.regNumber}</strong></p>
-              <p>সা:—{committeeInfo.post}, থানা:—{committeeInfo.districtPS}</p>
-              <p><strong>Pin:—{committeeInfo.pinCode}</strong></p>
-              <p><strong>Mob. No.:—{committeeInfo.mobile1}</strong>{committeeInfo.mobile2 && ` | ${committeeInfo.mobile2}`}</p>
+              <p>{t('header.regd')}—{committeeInfo.established} | <strong>{t('header.regdNo')}:—{committeeInfo.regNumber}</strong></p>
+              <p>{t('header.post')}:—{committeeInfo.post}, {t('header.ps')}:—{committeeInfo.districtPS}</p>
+              <p><strong>{t('header.pin')}:—{committeeInfo.pinCode}</strong></p>
+              <p><strong>{t('header.mobNo')}:—{committeeInfo.mobile1}</strong>{committeeInfo.mobile2 && ` | ${committeeInfo.mobile2}`}</p>
             </div>
           </div>
         </div>
@@ -246,15 +248,15 @@ export default function App() {
                 )}
               </div>
               <div className="text-white">
-                <p className="font-bold">আপনি, {currentUser?.name}</p>
-                <p className="text-sm opacity-90">{currentUser?.isAdmin ? 'অ্যাডমিন' : 'ইউজার'} (Active)</p>
+                <p className="font-bold">{t('header.you')}, {currentUser?.name}</p>
+                <p className="text-sm opacity-90">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
               className="px-6 py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg"
             >
-              লগ আউট
+              {t('header.logout')}
             </button>
           </div>
         </div>
@@ -268,14 +270,14 @@ export default function App() {
               active={currentPage === 'dashboard'}
               onClick={() => setCurrentPage('dashboard')}
             >
-              ড্যাশবোর্ড
+              {t('nav.dashboard')}
             </NavButton>
             {currentUser?.permissions.members && (
               <NavButton
                 active={currentPage === 'members'}
                 onClick={() => setCurrentPage('members')}
               >
-                সদস্য
+                {t('nav.members')}
               </NavButton>
             )}
             {currentUser?.permissions.chanda && (
@@ -283,7 +285,7 @@ export default function App() {
                 active={currentPage === 'chanda'}
                 onClick={() => setCurrentPage('chanda')}
               >
-                চাঁদা সংগ্রহ
+                {t('nav.chanda')}
               </NavButton>
             )}
             {currentUser?.permissions.expenses && (
@@ -291,7 +293,7 @@ export default function App() {
                 active={currentPage === 'expenses'}
                 onClick={() => setCurrentPage('expenses')}
               >
-                খরচ
+                {t('nav.expenses')}
               </NavButton>
             )}
             {currentUser?.permissions.treasury && (
@@ -299,7 +301,7 @@ export default function App() {
                 active={currentPage === 'treasury'}
                 onClick={() => setCurrentPage('treasury')}
               >
-                কোষাধ্যক্ষ
+                {t('nav.treasury')}
               </NavButton>
             )}
             {currentUser?.permissions.settings && (
@@ -307,7 +309,7 @@ export default function App() {
                 active={currentPage === 'settings'}
                 onClick={() => setCurrentPage('settings')}
               >
-                সেটিংস
+                {t('nav.settings')}
               </NavButton>
             )}
           </div>

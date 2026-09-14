@@ -2,20 +2,28 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download } from 'lucide-react';
 import { Expense } from '../App';
 import { PageHeading } from './PageHeading';
+import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
-const categories = [
-  'নির্মাণ',
-  'সাজসজ্জা',
-  'প্রতিমা',
-  'আলোকসজ্জা',
-  'খাবার',
-  'প্রচার',
-  'নিরাপত্তা',
-  'পরিবহন',
-  'অন্যান্য',
+interface ExpensesProps {
+  expenses: Expense[];
+  setExpenses: (expenses: Expense[]) => void;
+}
+
+const categories: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'construction', labelKey: 'expenses.category.construction' },
+  { value: 'decoration', labelKey: 'expenses.category.decoration' },
+  { value: 'idol', labelKey: 'expenses.category.idol' },
+  { value: 'lighting', labelKey: 'expenses.category.lighting' },
+  { value: 'food', labelKey: 'expenses.category.food' },
+  { value: 'publicity', labelKey: 'expenses.category.publicity' },
+  { value: 'security', labelKey: 'expenses.category.security' },
+  { value: 'transport', labelKey: 'expenses.category.transport' },
+  { value: 'other', labelKey: 'expenses.category.other' },
 ];
 
 export function Expenses({ expenses, setExpenses }: ExpensesProps) {
+  const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -26,15 +34,20 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
     remarks: '',
   });
 
+  const categoryLabel = (value: string) => {
+    const found = categories.find(c => c.value === value);
+    return found ? t(found.labelKey) : value;
+  };
+
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingId) {
       // Edit existing expense
-      setExpenses(expenses.map(exp => 
-        exp.id === editingId 
+      setExpenses(expenses.map(exp =>
+        exp.id === editingId
           ? { ...exp, ...formData, amount: parseFloat(formData.amount) }
           : exp
       ));
@@ -69,7 +82,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('আপনি কি নিশ্চিত এই খরচ রেকর্ড মুছে ফেলতে চান?')) {
+    if (confirm(t('expenses.confirmDelete'))) {
       setExpenses(expenses.filter(exp => exp.id !== id));
     }
   };
@@ -82,10 +95,10 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
 
   const handleExport = () => {
     const csvContent = [
-      ['শিরোনাম', 'পরিমাণ', 'তারিখ', 'বিভাগ', 'মন্তব্য'].join(','),
-      ...expenses.map(exp => [exp.title, exp.amount, exp.date, exp.category, exp.remarks].join(','))
+      [t('expenses.csv.title'), t('expenses.csv.amount'), t('expenses.csv.date'), t('expenses.csv.category'), t('expenses.csv.remarks')].join(','),
+      ...expenses.map(exp => [exp.title, exp.amount, exp.date, categoryLabel(exp.category), exp.remarks].join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -94,8 +107,9 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
   };
 
   const categoryTotals = categories.map(cat => ({
-    category: cat,
-    total: expenses.filter(exp => exp.category === cat).reduce((sum, exp) => sum + exp.amount, 0),
+    category: cat.value,
+    label: t(cat.labelKey),
+    total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + exp.amount, 0),
   })).filter(ct => ct.total > 0);
 
   return (
@@ -108,29 +122,29 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
             >
               <Download size={20} />
-              এক্সপোর্ট
+              {t('common.export')}
             </button>
             <button
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
             >
               <Plus size={20} />
-              নতুন খরচ যোগ করুন
+              {t('expenses.addNew')}
             </button>
           </div>
         }
       >
-        খরচ - মোট: ₹{totalExpenses.toLocaleString()}
+        {t('expenses.pageTitle')}: ₹{totalExpenses.toLocaleString()}
       </PageHeading>
 
       {/* Category Summary */}
       {categoryTotals.length > 0 && (
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">বিভাগ অনুযায়ী খরচ</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4">{t('expenses.byCategory')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {categoryTotals.map((ct) => (
               <div key={ct.category} className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-gray-600">{ct.category}</p>
+                <p className="text-sm text-gray-600">{ct.label}</p>
                 <p className="text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
               </div>
             ))}
@@ -143,7 +157,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? 'খরচ সম্পাদনা করুন' : 'নতুন খরচ যোগ করুন'}
+              {editingId ? t('expenses.editExpense') : t('expenses.addNew')}
             </h3>
             <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
               <X size={24} />
@@ -151,18 +165,18 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">শিরোনাম *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.title')} *</label>
               <input
                 type="text"
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="খরচের শিরোনাম"
+                placeholder={t('expenses.titlePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">পরিমাণ (₹) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.amountLabel')} *</label>
               <input
                 type="number"
                 required
@@ -171,11 +185,11 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="পরিমাণ"
+                placeholder={t('expenses.amountPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">তারিখ *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
               <input
                 type="date"
                 required
@@ -185,26 +199,26 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">বিভাগ *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.category')} *</label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
-                <option value="">বিভাগ নির্বাচন করুন</option>
+                <option value="">{t('expenses.selectCategory')}</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
                 ))}
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">মন্তব্য</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder="কোনো মন্তব্য"
+                placeholder={t('expenses.remarksPlaceholder')}
                 rows={2}
               />
             </div>
@@ -213,14 +227,14 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                 type="submit"
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
               >
-                {editingId ? 'আপডেট করুন' : 'যোগ করুন'}
+                {editingId ? t('common.update') : t('common.add')}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                বাতিল করুন
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -233,12 +247,12 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">শিরোনাম</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">পরিমাণ</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">তারিখ</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">বিভাগ</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">মন্তব্য</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">অ্যাকশন</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.title')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -247,11 +261,11 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{expense.title}</td>
                   <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{expense.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(expense.date).toLocaleDateString('bn-IN')}
+                    {new Date(expense.date).toLocaleDateString(locale)}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                      {expense.category}
+                      {categoryLabel(expense.category)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
@@ -277,7 +291,7 @@ export function Expenses({ expenses, setExpenses }: ExpensesProps) {
           </table>
           {expenses.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              কোনো খরচ রেকর্ড নেই। নতুন খরচ যোগ করুন।
+              {t('expenses.empty')}
             </div>
           )}
         </div>
