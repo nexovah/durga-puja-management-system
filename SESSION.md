@@ -4,6 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (4)
+- Donation/Ads Collection: for Ads Collection entries, replaced the "Donation in Kinds" free-text field with an "Ads Category" dropdown (Hand Book, Souvenir, Bill, Gate, Banner, Others). Donation Collection entries unchanged (still free-text "Donation in Kinds").
+- Form, table column, and CSV export adapt per entry's category (`inKindDisplay` resolves the stored value to a translated label for Ads, raw text for Donation).
+- Translated new keys (EN/BN/HI). Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (3)
 - Added "Donation/Ads Collection" page/nav tab (`DonationAdsCollection.tsx`), separate from Chanda Collection.
 - Add-New form has a Category select first (Donation Collection / Ads Collection, default Ads); fields switch dynamically — Donation: donor's name*, amount*, donation in kinds, date, phone, remarks. Ads: donor's name, company name, amount*, donation in kinds, date, phone, remarks.

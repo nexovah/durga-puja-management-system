@@ -44,7 +44,7 @@ src/
 - **Dashboard**: overview of puja committee stats.
 - **Members**: manage committee/community members.
 - **Chanda Collection**: track donation collection.
-- **Donation/Ads Collection**: separate credit stream with a Category select (Donation Collection / Ads Collection, default Ads). Donation entries: donor's name*, amount*, donation in kinds, date, phone, remarks. Ads entries: donor's name, company name, amount*, donation in kinds, date, phone, remarks. Grand credit = Chanda + Donation/Ads; Treasury balance = grand credit − expenses.
+- **Donation/Ads Collection**: separate credit stream with a Category select (Donation Collection / Ads Collection, default Ads). Donation entries: donor's name*, amount*, donation in kinds (free text), date, phone, remarks. Ads entries: donor's name, company name, amount*, **Ads Category dropdown** (Hand Book, Souvenir, Bill, Gate, Banner, Others — replaces the free-text field), date, phone, remarks. Grand credit = Chanda + Donation/Ads; Treasury balance = grand credit − expenses.
 - **Treasury**: fund tracking (Chanda + Donation/Ads combined).
 - **Expenses**: expense tracking.
 - **Settings**: app configuration, incl. **Language** tab.
