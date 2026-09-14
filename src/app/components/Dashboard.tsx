@@ -1,5 +1,5 @@
 import { Users, DollarSign, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift } from 'lucide-react';
-import { Member, Chanda, DonationAd, Expense } from '../App';
+import { Member, Chanda, DonationAd, Expense, getChandaCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface DashboardProps {
@@ -11,14 +11,14 @@ interface DashboardProps {
 
 export function Dashboard({ members, chandaList, donationAdsList, expenses }: DashboardProps) {
   const { t } = useLanguage();
-  const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalCredit = totalChanda + totalDonationAds;
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const balance = totalCredit - totalExpenses;
 
   const recentChanda = chandaList.length > 0
-    ? [...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].amount
+    ? getChandaCreditAmount([...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0])
     : 0;
 
   const tiles = [

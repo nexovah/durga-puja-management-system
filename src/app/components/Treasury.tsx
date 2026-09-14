@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Wallet, Download, Gift } from 'lucide-react';
-import { Chanda, DonationAd, Expense } from '../App';
+import { Chanda, DonationAd, Expense, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -12,7 +12,7 @@ interface TreasuryProps {
 
 export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProps) {
   const { t, locale } = useLanguage();
-  const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalCredit = totalChanda + totalDonationAds;
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -27,7 +27,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
       if (!monthlyData[month]) {
         monthlyData[month] = { chanda: 0, donationAds: 0, expenses: 0 };
       }
-      monthlyData[month].chanda += c.amount;
+      monthlyData[month].chanda += getChandaCreditAmount(c);
     });
 
     donationAdsList.forEach(d => {
@@ -61,7 +61,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
 
   // Top donors (Chanda + Donation/Ads combined)
   const topDonors = Object.entries(
-    [...chandaList.map(c => ({ name: c.donorName, amount: c.amount })),
+    [...chandaList.map(c => ({ name: c.donorName, amount: getChandaCreditAmount(c) })),
      ...donationAdsList.map(d => ({ name: d.donorName || d.companyName || '-', amount: d.amount }))]
       .reduce((acc, entry) => {
         acc[entry.name] = (acc[entry.name] || 0) + entry.amount;

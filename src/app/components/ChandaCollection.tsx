@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { Chanda } from '../App';
+import { Chanda, PaymentStatus, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 
 interface ChandaCollectionProps {
@@ -10,47 +11,90 @@ interface ChandaCollectionProps {
   setChandaList: (chandaList: Chanda[]) => void;
 }
 
+const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
+  { value: 'paid', labelKey: 'chanda.status.paid' },
+  { value: 'pending', labelKey: 'chanda.status.pending' },
+  { value: 'partial', labelKey: 'chanda.status.partial' },
+  { value: 'rejected', labelKey: 'chanda.status.rejected' },
+];
+
+const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
+  paid: 'bg-green-100 text-green-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+  partial: 'bg-blue-100 text-blue-700',
+  rejected: 'bg-red-100 text-red-700',
+};
+
+const emptyForm = {
+  donorName: '',
+  amount: '',
+  paymentStatus: 'paid' as PaymentStatus,
+  partialAmount: '',
+  date: new Date().toISOString().split('T')[0],
+  phone: '',
+  phone2: '',
+  remarks: '',
+};
+
 export function ChandaCollection({ chandaList, setChandaList }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    donorName: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    phone: '',
-    phone2: '',
-    remarks: '',
-  });
+  const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  const totalChanda = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
+
+  const statusLabel = (status: PaymentStatus) => {
+    const found = PAYMENT_STATUSES.find(s => s.value === status);
+    return found ? t(found.labelKey) : status;
+  };
+
+  // Accept a payment status from a CSV in any supported language, or its canonical key.
+  const normalize = (s: string) => s.trim().toLowerCase();
+  const parseStatusInput = (raw: string): PaymentStatus => {
+    const value = normalize(raw || '');
+    const byValue = PAYMENT_STATUSES.find(s => normalize(s.value) === value);
+    if (byValue) return byValue.value;
+    for (const status of PAYMENT_STATUSES) {
+      for (const lang of Object.values(translations)) {
+        if (normalize(lang[status.labelKey]) === value) return status.value;
+      }
+    }
+    return 'paid';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const payload = {
+      donorName: formData.donorName,
+      amount: parseFloat(formData.amount),
+      paymentStatus: formData.paymentStatus,
+      partialAmount: formData.paymentStatus === 'partial' ? parseFloat(formData.partialAmount || '0') : undefined,
+      date: formData.date,
+      phone: formData.phone,
+      phone2: formData.phone2,
+      remarks: formData.remarks,
+    };
 
     if (editingId) {
       // Edit existing chanda
       setChandaList(chandaList.map(c =>
         c.id === editingId
-          ? { ...c, ...formData, amount: parseFloat(formData.amount) }
+          ? { ...c, ...payload }
           : c
       ));
     } else {
       // Add new chanda
       const newChanda: Chanda = {
         id: Date.now().toString(),
-        donorName: formData.donorName,
-        amount: parseFloat(formData.amount),
-        date: formData.date,
-        phone: formData.phone,
-        phone2: formData.phone2,
-        remarks: formData.remarks,
+        ...payload,
       };
       setChandaList([...chandaList, newChanda]);
     }
 
-    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', phone2: '', remarks: '' });
+    setFormData(emptyForm);
     setShowForm(false);
     setEditingId(null);
   };
@@ -59,6 +103,8 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     setFormData({
       donorName: chanda.donorName,
       amount: chanda.amount.toString(),
+      paymentStatus: chanda.paymentStatus || 'paid',
+      partialAmount: chanda.partialAmount !== undefined ? chanda.partialAmount.toString() : '',
       date: chanda.date,
       phone: chanda.phone,
       phone2: chanda.phone2 || '',
@@ -75,15 +121,33 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
   };
 
   const handleCancel = () => {
-    setFormData({ donorName: '', amount: '', date: new Date().toISOString().split('T')[0], phone: '', phone2: '', remarks: '' });
+    setFormData(emptyForm);
     setShowForm(false);
     setEditingId(null);
   };
 
   const handleExport = () => {
     const csvContent = [
-      [t('chanda.csv.donorName'), t('chanda.csv.amount'), t('chanda.csv.date'), t('chanda.csv.phone'), t('chanda.csv.phone2'), t('chanda.csv.remarks')].map(csvField).join(','),
-      ...chandaList.map(c => [c.donorName, c.amount, c.date, c.phone, c.phone2 || '', c.remarks].map(csvField).join(','))
+      [
+        t('chanda.csv.donorName'),
+        t('chanda.csv.amount'),
+        t('chanda.csv.status'),
+        t('chanda.csv.partialAmount'),
+        t('chanda.csv.date'),
+        t('chanda.csv.phone'),
+        t('chanda.csv.phone2'),
+        t('chanda.csv.remarks'),
+      ].map(csvField).join(','),
+      ...chandaList.map(c => [
+        c.donorName,
+        c.amount,
+        statusLabel(c.paymentStatus || 'paid'),
+        c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
+        c.date,
+        c.phone,
+        c.phone2 || '',
+        c.remarks,
+      ].map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -112,13 +176,21 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
 
       const imported: Chanda[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountRaw, date, phone, phone2, remarks] = rows[i];
+        const [donorName, amountRaw, statusRaw, partialAmountRaw, date, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (!donorName || isNaN(amount)) continue;
+
+        const paymentStatus = parseStatusInput(statusRaw || '');
+        const partialAmount = paymentStatus === 'partial'
+          ? parseFloat((partialAmountRaw || '0').replace(/,/g, '')) || 0
+          : undefined;
+
         imported.push({
           id: `${Date.now()}-${i}`,
           donorName: donorName.trim(),
           amount,
+          paymentStatus,
+          partialAmount,
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           phone: (phone || '').trim(),
           phone2: (phone2 || '').trim(),
@@ -133,6 +205,8 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
     };
     reader.readAsText(file);
   };
+
+  const isPartial = formData.paymentStatus === 'partial';
 
   return (
     <div className="space-y-6">
@@ -210,6 +284,38 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
                 placeholder={t('chanda.amountPlaceholder')}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.paymentStatus')} *</label>
+              <select
+                required
+                value={formData.paymentStatus}
+                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAYMENT_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+
+            {isPartial && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.partialAmountLabel')} *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  max={formData.amount || undefined}
+                  value={formData.partialAmount}
+                  onChange={(e) => setFormData({ ...formData, partialAmount: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.partialAmountPlaceholder')}
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
               <input
@@ -277,6 +383,7 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
@@ -285,34 +392,47 @@ export function ChandaCollection({ chandaList, setChandaList }: ChandaCollection
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((chanda) => (
-                <tr key={chanda.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{chanda.donorName}</td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{chanda.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(chanda.date).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(chanda)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(chanda.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {[...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((chanda) => {
+                const status = chanda.paymentStatus || 'paid';
+                return (
+                  <tr key={chanda.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">{chanda.donorName}</td>
+                    <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{chanda.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                        {statusLabel(status)}
+                      </span>
+                      {status === 'partial' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ₹{(chanda.partialAmount || 0).toLocaleString()} / ₹{chanda.amount.toLocaleString()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(chanda.date).toLocaleDateString(locale)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(chanda)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(chanda.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {chandaList.length === 0 && (

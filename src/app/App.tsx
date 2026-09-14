@@ -50,14 +50,35 @@ export interface Member {
   joinDate: string;
 }
 
+export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
+
 export interface Chanda {
   id: string;
   donorName: string;
-  amount: number;
+  amount: number; // Amount mentioned/committed
+  paymentStatus: PaymentStatus;
+  partialAmount?: number; // Only meaningful when paymentStatus === 'partial'
   date: string;
   phone: string; // Phone Number 1
   phone2?: string; // Phone Number 2 (optional)
   remarks: string;
+}
+
+// The amount actually credited toward total collection, based on payment status:
+// paid -> full amount, partial -> the partial amount entered, pending/rejected -> 0.
+export function getChandaCreditAmount(chanda: Chanda): number {
+  switch (chanda.paymentStatus) {
+    case 'paid':
+      return chanda.amount;
+    case 'partial':
+      return chanda.partialAmount || 0;
+    case 'pending':
+    case 'rejected':
+      return 0;
+    default:
+      // Backward compatibility: records saved before this feature had no status.
+      return chanda.amount;
+  }
 }
 
 export type DonationAdCategory = 'donation' | 'ads';
@@ -147,6 +168,7 @@ export default function App() {
       id: '1',
       donorName: 'অমিত শর্মা',
       amount: 5000,
+      paymentStatus: 'paid',
       date: '2026-01-15',
       phone: '9876543212',
       remarks: 'প্রথম চাঁদা',
@@ -193,7 +215,14 @@ export default function App() {
     }
     if (savedCommittee) setCommitteeInfo(JSON.parse(savedCommittee));
     if (savedMembers) setMembers(JSON.parse(savedMembers));
-    if (savedChanda) setChandaList(JSON.parse(savedChanda));
+    if (savedChanda) {
+      const parsedChanda = JSON.parse(savedChanda);
+      // Backward compatibility: records saved before payment status existed default to 'paid'
+      setChandaList(parsedChanda.map((c: Chanda) => ({
+        paymentStatus: 'paid',
+        ...c,
+      })));
+    }
     if (savedDonationAds) setDonationAdsList(JSON.parse(savedDonationAds));
     if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
     if (savedDeveloper) setDeveloperInfo(JSON.parse(savedDeveloper));

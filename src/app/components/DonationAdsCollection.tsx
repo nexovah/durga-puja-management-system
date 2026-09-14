@@ -424,10 +424,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.donorName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.companyName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
@@ -439,6 +439,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
             <tbody className="divide-y divide-gray-200">
               {[...donationAdsList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -446,9 +449,6 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList }: D
                       {categoryLabel(item.category)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{inKindDisplay(item) || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
