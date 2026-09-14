@@ -42,7 +42,7 @@ src/
 
 ## Features (update this list as features change)
 - **Global Search**: search icon in the main nav (after Settings, right-aligned) opens a full-container-width dropdown searching Members/Chanda/Donation-Ads/Expenses at once (names, phones, amounts, status, etc). Purely client-side filter over data already in React state (`src/app/components/GlobalSearch.tsx`) — no DB query, no backend involvement. Respects per-page permissions.
-- **Dashboard**: overview of puja committee stats.
+- **Dashboard**: overview of puja committee stats. Includes a "Pending / Due Chanda" widget (sum of pending chanda + unpaid remainder of partially-paid chanda; rejected excluded) next to Recent Chanda Collection.
 - **Members**: manage committee/community members. Designation is a fixed dropdown: President, Vice President, Secretary, Assistant Secretary, Treasurer, Executive/General Members, Advisory Committee/Patrons, Volunteer — stored as a canonical key (`members.role.*`), displayed via translation.
 - **Chanda Collection**: track donation collection. Fields: donor's name*, amount*, **Paid Method** (Not Selected [default] / Cash / QR Scan / Online Banking / Check Payment), **Payment Status*** (Paid / Pending / Partially Paid / Rejected — Partially Paid reveals a "Paid Amount (Partial)" field), date, Phone Number 1, Phone Number 2 (optional), remarks.
   - **Credit logic** (`getChandaCreditAmount` in `src/app/App.tsx`, the single source of truth): Paid → full `amount` counts; Partially Paid → only `partialAmount` counts; Pending / Rejected → 0 counts. Every total (Chanda page total, Dashboard tile, Treasury totals/monthly report/top donors) sums this credited amount, never the raw `amount` field. Records saved before this feature default to `paid` on load.
