@@ -46,6 +46,7 @@ src/
 - **Chanda Collection**: track donation collection.
 - **Donation/Ads Collection**: separate credit stream with a Category select (Donation Collection / Ads Collection, default Ads). Donation entries: donor's name*, amount*, donation in kinds (free text), date, phone, remarks. Ads entries: donor's name, company name, amount*, **Ads Category dropdown** (Hand Book, Souvenir, Bill, Gate, Banner, Others — replaces the free-text field), date, phone, remarks. Grand credit = Chanda + Donation/Ads; Treasury balance = grand credit − expenses.
 - **Treasury**: fund tracking (Chanda + Donation/Ads combined).
+- **CSV Import/Export**: Chanda Collection and Donation/Ads Collection both have Export (existing) and **Import** (grey `#383737` button, white text) — bulk-add records from a `.csv` file, matching the export column layout. Shared parser/serializer: `src/app/lib/csv.ts`. Donation/Ads import matches category and Ads Category values against labels in any of the 3 languages so a CSV exported in one language re-imports correctly.
 - **Expenses**: expense tracking.
 - **Settings**: app configuration, incl. **Language** tab.
 - **Login**: auth entry page.

@@ -4,6 +4,13 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-14 (5)
+- Added CSV Import for Chanda Collection and Donation/Ads Collection, alongside existing Export.
+- New `src/app/lib/csv.ts`: shared RFC4180-style CSV parse/serialize helpers (handles quoted fields with commas).
+- Import button styled grey `#383737` / white text, placed left of Export in both pages' header actions.
+- Donation/Ads import resolves category and Ads Category values against labels in any of EN/BN/HI (or canonical keys), so re-importing an export works regardless of the language it was exported in.
+- Added `common.import` / `common.importResult` translations. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (4)
 - Donation/Ads Collection: for Ads Collection entries, replaced the "Donation in Kinds" free-text field with an "Ads Category" dropdown (Hand Book, Souvenir, Bill, Gate, Banner, Others). Donation Collection entries unchanged (still free-text "Donation in Kinds").
 - Form, table column, and CSV export adapt per entry's category (`inKindDisplay` resolves the stored value to a translated label for Ads, raw text for Donation).
