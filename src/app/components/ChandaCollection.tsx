@@ -37,10 +37,13 @@ const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
 const emptyForm = {
   donorName: '',
   amount: '',
+  amount1: '',
+  amount2: '',
   paidMethod: 'notSelected' as PaidMethod,
   paymentStatus: 'paid' as PaymentStatus,
   partialAmount: '',
   date: new Date().toISOString().split('T')[0],
+  billNumber: '',
   phone: '',
   phone2: '',
   remarks: '',
@@ -91,16 +94,32 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
     return 'notSelected';
   };
 
+  // Amount 01 / Amount 02 are an optional breakdown of the main Amount field.
+  // Leaving both blank lets Amount work as a single freely-typed value;
+  // filling either one makes Amount always reflect their sum.
+  const handleSubAmountChange = (field: 'amount1' | 'amount2', value: string) => {
+    const next = { ...formData, [field]: value };
+    const a1 = field === 'amount1' ? value : formData.amount1;
+    const a2 = field === 'amount2' ? value : formData.amount2;
+    if (a1.trim() !== '' || a2.trim() !== '') {
+      next.amount = ((parseFloat(a1) || 0) + (parseFloat(a2) || 0)).toString();
+    }
+    setFormData(next);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload = {
       donorName: formData.donorName,
       amount: parseFloat(formData.amount),
+      amount1: formData.amount1.trim() !== '' ? parseFloat(formData.amount1) : undefined,
+      amount2: formData.amount2.trim() !== '' ? parseFloat(formData.amount2) : undefined,
       paidMethod: formData.paidMethod,
       paymentStatus: formData.paymentStatus,
       partialAmount: formData.paymentStatus === 'partial' ? parseFloat(formData.partialAmount || '0') : undefined,
       date: formData.date,
+      billNumber: formData.billNumber,
       phone: formData.phone,
       phone2: formData.phone2,
       remarks: formData.remarks,
@@ -131,10 +150,13 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
     setFormData({
       donorName: chanda.donorName,
       amount: chanda.amount.toString(),
+      amount1: chanda.amount1 !== undefined ? chanda.amount1.toString() : '',
+      amount2: chanda.amount2 !== undefined ? chanda.amount2.toString() : '',
       paidMethod: chanda.paidMethod || 'notSelected',
       paymentStatus: chanda.paymentStatus || 'paid',
       partialAmount: chanda.partialAmount !== undefined ? chanda.partialAmount.toString() : '',
       date: chanda.date,
+      billNumber: chanda.billNumber || '',
       phone: chanda.phone,
       phone2: chanda.phone2 || '',
       remarks: chanda.remarks,
@@ -160,10 +182,13 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
       [
         t('chanda.csv.donorName'),
         t('chanda.csv.amount'),
+        t('chanda.csv.amount1'),
+        t('chanda.csv.amount2'),
         t('common.paidMethod'),
         t('chanda.csv.status'),
         t('chanda.csv.partialAmount'),
         t('chanda.csv.date'),
+        t('chanda.csv.billNumber'),
         t('chanda.csv.phone'),
         t('chanda.csv.phone2'),
         t('chanda.csv.remarks'),
@@ -171,10 +196,13 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
       ...chandaList.map(c => [
         c.donorName,
         c.amount,
+        c.amount1 ?? '',
+        c.amount2 ?? '',
         paidMethodLabel(c.paidMethod || 'notSelected'),
         statusLabel(c.paymentStatus || 'paid'),
         c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
         c.date,
+        c.billNumber || '',
         c.phone,
         c.phone2 || '',
         c.remarks,
@@ -207,7 +235,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
 
       const imported: Chanda[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountRaw, paidMethodRaw, statusRaw, partialAmountRaw, date, phone, phone2, remarks] = rows[i];
+        const [donorName, amountRaw, amount1Raw, amount2Raw, paidMethodRaw, statusRaw, partialAmountRaw, date, billNumber, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (!donorName || isNaN(amount)) continue;
 
@@ -215,15 +243,20 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
         const partialAmount = paymentStatus === 'partial'
           ? parseFloat((partialAmountRaw || '0').replace(/,/g, '')) || 0
           : undefined;
+        const amount1 = (amount1Raw || '').trim() !== '' ? parseFloat((amount1Raw || '').replace(/,/g, '')) : undefined;
+        const amount2 = (amount2Raw || '').trim() !== '' ? parseFloat((amount2Raw || '').replace(/,/g, '')) : undefined;
 
         imported.push({
           id: crypto.randomUUID(),
           donorName: donorName.trim(),
           amount,
+          amount1,
+          amount2,
           paidMethod: parsePaidMethodInput(paidMethodRaw || ''),
           paymentStatus,
           partialAmount,
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
+          billNumber: (billNumber || '').trim(),
           phone: (phone || '').trim(),
           phone2: (phone2 || '').trim(),
           remarks: (remarks || '').trim(),
@@ -323,6 +356,33 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
               />
             </div>
 
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amount1Label')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.amount1}
+                  onChange={(e) => handleSubAmountChange('amount1', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.amountPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amount2Label')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.amount2}
+                  onChange={(e) => handleSubAmountChange('amount2', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.amountPlaceholder')}
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
               <select
@@ -375,6 +435,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.billNumber')}</label>
+              <input
+                type="text"
+                value={formData.billNumber}
+                onChange={(e) => setFormData({ ...formData, billNumber: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('chanda.billNumberPlaceholder')}
               />
             </div>
             <div>
@@ -437,6 +507,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.paidMethod')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.billNumber')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
@@ -470,6 +541,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {new Date(chanda.date).toLocaleDateString(locale)}
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.billNumber || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>

@@ -83,10 +83,13 @@ export interface Chanda {
   id: string;
   donorName: string;
   amount: number; // Amount mentioned/committed
+  amount1?: number; // Optional split of `amount` — when either amount1/amount2 is set, amount = amount1 + amount2
+  amount2?: number;
   paidMethod: PaidMethod;
   paymentStatus: PaymentStatus;
   partialAmount?: number; // Only meaningful when paymentStatus === 'partial'
   date: string;
+  billNumber?: string;
   phone: string; // Phone Number 1
   phone2?: string; // Phone Number 2 (optional)
   remarks: string;
