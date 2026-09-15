@@ -180,6 +180,9 @@ export const translations = {
 
     // Donation/Ads Collection
     'donationAds.pageTitle': 'Donation/Ads Collection',
+    'donationAds.widget.total': 'Total Collection',
+    'donationAds.widget.donation': 'Donation Collection',
+    'donationAds.widget.ads': 'Ads Collection',
     'donationAds.addNew': 'Add New Entry',
     'donationAds.editEntry': 'Edit Entry',
     'donationAds.category': 'Category',
@@ -618,6 +621,9 @@ export const translations = {
 
     // Donation/Ads Collection
     'donationAds.pageTitle': 'দান/বিজ্ঞাপন সংগ্রহ',
+    'donationAds.widget.total': 'মোট সংগ্রহ',
+    'donationAds.widget.donation': 'দান সংগ্রহ',
+    'donationAds.widget.ads': 'বিজ্ঞাপন সংগ্রহ',
     'donationAds.addNew': 'নতুন এন্ট্রি যোগ করুন',
     'donationAds.editEntry': 'এন্ট্রি সম্পাদনা করুন',
     'donationAds.category': 'বিভাগ',
@@ -1051,6 +1057,9 @@ export const translations = {
 
     // Donation/Ads Collection
     'donationAds.pageTitle': 'दान/विज्ञापन संग्रह',
+    'donationAds.widget.total': 'कुल संग्रह',
+    'donationAds.widget.donation': 'दान संग्रह',
+    'donationAds.widget.ads': 'विज्ञापन संग्रह',
     'donationAds.addNew': 'नई प्रविष्टि जोड़ें',
     'donationAds.editEntry': 'प्रविष्टि संपादित करें',
     'donationAds.category': 'श्रेणी',

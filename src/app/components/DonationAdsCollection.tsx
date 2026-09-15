@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -55,6 +55,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
+  const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
+  const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
 
   const categoryLabel = (category: DonationAdCategory) =>
     category === 'donation' ? t('donationAds.category.donation') : t('donationAds.category.ads');
@@ -319,6 +321,31 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       >
         {t('donationAds.pageTitle')}
       </PageHeading>
+
+      {/* Widgets — Treasury-style summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-purple-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.total')}</h3>
+            <Wallet className="text-purple-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-emerald-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.donation')}</h3>
+            <Gift className="text-emerald-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-600">₹{totalDonation.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-blue-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.ads')}</h3>
+            <Megaphone className="text-blue-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">₹{totalAds.toLocaleString()}</p>
+        </div>
+      </div>
 
       {/* Form */}
       {canEdit && showForm && (
