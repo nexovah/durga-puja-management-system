@@ -5,6 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
+import { Pagination, usePagination } from './Pagination';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -313,6 +314,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
   })).filter(ct => ct.total > 0);
 
+  const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const pagination = usePagination(sortedExpenses);
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -573,7 +577,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((expense) => {
+              {pagination.pageItems.map((expense) => {
                 const status = expense.paymentStatus || 'paid';
                 const partialSum = (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
@@ -640,6 +644,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

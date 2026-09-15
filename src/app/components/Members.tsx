@@ -4,6 +4,7 @@ import { Member } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
+import { Pagination, usePagination } from './Pagination';
 
 interface MembersProps {
   members: Member[];
@@ -91,6 +92,8 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
     setShowForm(false);
     setEditingId(null);
   };
+
+  const pagination = usePagination(members);
 
   return (
     <div className="space-y-6">
@@ -203,7 +206,7 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {members.map((member) => (
+              {pagination.pageItems.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800">{member.name}</td>
                   <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
@@ -244,6 +247,16 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

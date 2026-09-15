@@ -5,6 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
+import { Pagination, usePagination } from './Pagination';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -269,6 +270,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const isDonation = formData.category === 'donation';
 
+  const sortedDonationAds = [...donationAdsList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const pagination = usePagination(sortedDonationAds);
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -514,7 +518,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...donationAdsList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item) => (
+              {pagination.pageItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
@@ -565,6 +569,16 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

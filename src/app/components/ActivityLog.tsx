@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule } from '../lib/db';
+import { Pagination, usePagination } from './Pagination';
 
 // Read-only audit trail: append-only `activity_log` table (RLS grants only
 // select+insert — no update/delete — so once a row lands here it can't be
@@ -45,6 +46,8 @@ export function ActivityLog() {
 
   const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'users', 'settings'];
   const actions: ActivityAction[] = ['create', 'update', 'delete', 'bulk_import'];
+
+  const pagination = usePagination(filtered);
 
   return (
     <div>
@@ -105,7 +108,7 @@ export function ActivityLog() {
                   </td>
                 </tr>
               )}
-              {filtered.map(entry => (
+              {pagination.pageItems.map(entry => (
                 <tr key={entry.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap text-gray-500">
                     {new Date(entry.createdAt).toLocaleString(locale)}
@@ -126,6 +129,16 @@ export function ActivityLog() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

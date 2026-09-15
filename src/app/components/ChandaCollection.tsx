@@ -5,6 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
+import { Pagination, usePagination } from './Pagination';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -281,6 +282,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const isPartial = formData.paymentStatus === 'partial';
 
+  const sortedChanda = [...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const pagination = usePagination(sortedChanda);
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -523,7 +527,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((chanda) => {
+              {pagination.pageItems.map((chanda) => {
                 const status = chanda.paymentStatus || 'paid';
                 return (
                   <tr key={chanda.id} className="hover:bg-gray-50">
@@ -586,6 +590,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

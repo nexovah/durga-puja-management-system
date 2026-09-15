@@ -5,6 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { csvField } from '../lib/csv';
+import { Pagination, usePagination } from './Pagination';
 
 interface VendorsProps {
   expenses: Expense[];
@@ -60,6 +61,8 @@ export function Vendors({ expenses }: VendorsProps) {
   }, [expenses]);
 
   const viewingVendor = vendorGroups.find(g => g.key === viewingKey) || null;
+
+  const pagination = usePagination(vendorGroups);
 
   const handleExport = () => {
     const csvContent = [
@@ -183,7 +186,7 @@ export function Vendors({ expenses }: VendorsProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {vendorGroups.map((g) => (
+              {pagination.pageItems.map((g) => (
                 <tr key={g.key} className={`hover:bg-gray-50 ${viewingKey === g.key ? 'bg-orange-50' : ''}`}>
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{g.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{g.contact || '-'}</td>
@@ -217,6 +220,16 @@ export function Vendors({ expenses }: VendorsProps) {
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );

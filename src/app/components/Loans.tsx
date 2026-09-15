@@ -5,6 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
+import { Pagination, usePagination } from './Pagination';
 
 interface LoansProps {
   loansList: Loan[];
@@ -198,6 +199,9 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     reader.readAsText(file);
   };
 
+  const sortedLoans = [...loansList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const pagination = usePagination(sortedLoans);
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -377,7 +381,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...loansList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((loan) => (
+              {pagination.pageItems.map((loan) => (
                 <tr key={loan.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{loan.donorName}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
@@ -422,6 +426,16 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             </div>
           )}
         </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          pageSize={pagination.pageSize}
+          onPageSizeChange={pagination.setPageSize}
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+        />
       </div>
     </div>
   );
