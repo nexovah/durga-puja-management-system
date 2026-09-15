@@ -72,24 +72,25 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
         </div>
       </div>
 
-      {/* Key figures — bigger cards, capped at 4 per row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Key figures — one per row on mobile (amounts up to ₹9,99,999 need
+          room), 2 per row on tablets, capped at 4 per row on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statTiles.map((tile, index) => (
           <div
             key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
           >
-            <div className="bg-white/20 p-3 rounded-xl shrink-0">
-              <tile.icon className="text-white" size={26} />
+            <div className="bg-white/20 p-2.5 sm:p-3 rounded-xl shrink-0">
+              <tile.icon className="text-white" size={22} />
             </div>
             <div className="min-w-0">
-              <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.title}</p>
-              <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
+              <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
+              <p className="text-white text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
             </div>
             {'subValue' in tile && (
-              <div className="bg-white/15 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 min-w-0 shrink-0">
-                <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.subLabel}</p>
-                <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.subValue}</p>
+              <div className="bg-white/15 rounded-lg px-2.5 py-1.5 sm:px-4 sm:py-2 min-w-0 shrink-0">
+                <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.subLabel}</p>
+                <p className="text-white text-lg sm:text-2xl font-bold leading-tight truncate">{tile.subValue}</p>
               </div>
             )}
           </div>
