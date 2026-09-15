@@ -378,7 +378,6 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
           </div>
         }
-        total={`${t('common.total')}: ₹${totalExpenses.toLocaleString()}`}
       >
         {t('expenses.pageTitle')}
       </PageHeading>
@@ -566,19 +565,21 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       )}
 
       {/* Category Summary — Treasury-style widgets, kept to one row */}
-      {categoryTotals.length > 0 && (
-        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
-          {categoryTotals.map((ct) => (
-            <div
-              key={ct.category}
-              className="bg-white rounded-xl shadow-md p-3 sm:p-4 border-l-4 border-red-500 shrink-0 min-w-[140px] sm:min-w-[160px]"
-            >
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{ct.label}</h3>
-              <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
-            </div>
-          ))}
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
+        <div className="bg-white rounded-xl shadow-md p-3 sm:p-4 border-l-4 border-green-500 shrink-0 min-w-[140px] sm:min-w-[160px]">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{t('expenses.widget.total')}</h3>
+          <p className="text-lg sm:text-xl font-bold text-green-600">₹{totalExpenses.toLocaleString()}</p>
         </div>
-      )}
+        {categoryTotals.map((ct) => (
+          <div
+            key={ct.category}
+            className="bg-white rounded-xl shadow-md p-3 sm:p-4 border-l-4 border-red-500 shrink-0 min-w-[140px] sm:min-w-[160px]"
+          >
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{ct.label}</h3>
+            <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
 
       {/* Expenses List */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">

@@ -246,6 +246,7 @@ export const translations = {
 
     // Expenses
     'expenses.pageTitle': 'Expenses',
+    'expenses.widget.total': 'Total Expenses',
     'expenses.addNew': 'Add New Expense',
     'expenses.editExpense': 'Edit Expense',
     'expenses.byCategory': 'Expenses by Category',
@@ -746,6 +747,7 @@ export const translations = {
     'donationAds.csv.voucherNumber': 'ভাউচার/বিল নম্বর',
 
     'expenses.pageTitle': 'খরচ',
+    'expenses.widget.total': 'মোট খরচ',
     'expenses.addNew': 'নতুন খরচ যোগ করুন',
     'expenses.editExpense': 'খরচ সম্পাদনা করুন',
     'expenses.byCategory': 'বিভাগ অনুযায়ী খরচ',
@@ -1242,6 +1244,7 @@ export const translations = {
     'donationAds.csv.voucherNumber': 'वाउचर/बिल नंबर',
 
     'expenses.pageTitle': 'खर्च',
+    'expenses.widget.total': 'कुल खर्च',
     'expenses.addNew': 'नया खर्च जोड़ें',
     'expenses.editExpense': 'खर्च संपादित करें',
     'expenses.byCategory': 'श्रेणी अनुसार खर्च',
