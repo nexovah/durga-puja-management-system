@@ -40,6 +40,9 @@ src/
 - Custom Vite plugin `figma-asset-resolver` resolves `figma:asset/...` imports to `src/assets`.
 - Do not remove the React/Tailwind Vite plugins even if Tailwind looks unused — required by Figma Make tooling.
 
+### Routing
+`currentPage` (App.tsx) is still manual React state, not `react-router` (the package is a dependency but unused for routing) — but it's synced to a **hash-based URL** so pages survive refresh/back-forward: `PAGE_SLUGS`/`SLUG_TO_PAGE` map each `PageKey` to a `#/slug` (`#/dashboard`, `#/chanda-collection`, `#/donation-ads-collection`, `#/activity-log`, etc.); `currentPage` initializes from `getPageFromHash()` on load, a `useEffect` pushes a new hash whenever it changes (`window.history.pushState`), and a `hashchange` listener handles back/forward. Hash-based (not path-based) is deliberate: a hard refresh never hits the server for a different path, so no `.htaccess`/rewrite rule is needed on static hosting (Hostinger) — the existing `DEPLOYMENT.md` steps are unaffected. When adding a new top-level page, add it to both `PageKey` and `PAGE_SLUGS`.
+
 ## Features (update this list as features change)
 - **Global Search**: search icon in the main nav (after Settings, right-aligned) opens a full-container-width dropdown searching Members/Chanda/Donation-Ads/Expenses at once (names, phones, amounts, status, etc). Purely client-side filter over data already in React state (`src/app/components/GlobalSearch.tsx`) — no DB query, no backend involvement. Respects per-page permissions.
 - **Dashboard**: overview of puja committee stats.

@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (11)
+- **URL routing**: every page now has a stable hash URL (`#/dashboard`, `#/chanda-collection`, `#/donation-ads-collection`, `#/expenses`, `#/vendors`, `#/loans`, `#/treasury`, `#/settings`, `#/activity-log`, `#/tasks`, `#/members`) — refresh, back/forward, and bookmarking now land back on the same page instead of always resetting to Dashboard. Hash-based (not path-based), so no server rewrite rule is needed on static hosting. Frontend-only, no DB/deploy changes.
+
 ## 2026-09-15 (10)
 - Tasks: click a title (or new Eye icon) to open a read-only **view modal** with full details incl. who created it. **Only the task's creator or an admin can Edit/Delete/Mark Complete** it now — everyone else with the Tasks permission can still view every task. New migration `supabase/014_tasks_creator.sql` — **run in Supabase SQL Editor**.
 
