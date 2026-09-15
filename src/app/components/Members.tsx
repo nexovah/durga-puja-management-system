@@ -144,6 +144,18 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
     return found ? t(found.labelKey) : value;
   };
 
+  const statusLabel = (status: PaymentStatus) => {
+    const found = PAYMENT_STATUSES.find(s => s.value === status);
+    return found ? t(found.labelKey) : status;
+  };
+
+  const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
+    paid: 'bg-green-100 text-green-700',
+    pending: 'bg-yellow-100 text-yellow-700',
+    partial: 'bg-blue-100 text-blue-700',
+    rejected: 'bg-red-100 text-red-700',
+  };
+
   const handleDelete = (id: string) => {
     if (confirm(t('members.confirmDelete'))) {
       const target = members.find(m => m.id === id);
@@ -368,20 +380,33 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.name')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.role')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.address')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.membershipAmount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
                 {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {pagination.pageItems.map((member) => (
+              {pagination.pageItems.map((member) => {
+                const hasPayment = member.membershipAmount !== undefined && member.membershipAmount !== null;
+                const status = member.membershipPaymentStatus || 'pending';
+                return (
                 <tr key={member.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800">{member.name}</td>
                   <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{member.address}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(member.joinDate).toLocaleDateString(locale)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">
+                    {hasPayment ? `₹${(member.membershipAmount || 0).toLocaleString()}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    {hasPayment ? (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                        {statusLabel(status)}
+                      </span>
+                    ) : '-'}
                   </td>
                   {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
@@ -406,7 +431,8 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
                     </td>
                   )}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {members.length === 0 && (
