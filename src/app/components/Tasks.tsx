@@ -5,6 +5,9 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
+import { FormModal } from './FormModal';
+import { Toast } from './Toast';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface TasksProps {
   tasksList: Task[];
@@ -53,6 +56,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const [formData, setFormData] = useState(getEmptyForm);
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
   const [activeTab, setActiveTab] = useState<'all' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,6 +105,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
           : task
       ));
       onLog('update', 'tasks', formData.title);
+      setToastMessage(t('common.updatedSuccess'));
     } else {
       const newTask: Task = {
         id: crypto.randomUUID(),
@@ -114,6 +120,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       };
       setTasksList([...tasksList, newTask]);
       onLog('create', 'tasks', formData.title);
+      setToastMessage(t('common.savedSuccess'));
     }
 
     setFormData(getEmptyForm());
@@ -139,10 +146,15 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const handleDelete = (id: string) => {
     const target = tasksList.find(task => task.id === id);
     if (!target || !canDeleteTask(target)) return;
-    if (confirm(t('tasks.confirmDelete'))) {
-      setTasksList(tasksList.filter(task => task.id !== id));
-      onLog('delete', 'tasks', target.title);
-    }
+    setDeleteTarget(target);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setTasksList(tasksList.filter(task => task.id !== deleteTarget.id));
+    onLog('delete', 'tasks', deleteTarget.title);
+    setDeleteTarget(null);
+    setToastMessage(t('common.deletedSuccess'));
   };
 
   const handleCancel = () => {
@@ -188,17 +200,30 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       </PageHeading>
 
       {/* Form */}
-      {canEdit && showForm && (
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? t('tasks.editTask') : t('tasks.addNew')}
-            </h3>
-            <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
+      <FormModal
+        open={canEdit && showForm}
+        title={editingId ? t('tasks.editTask') : t('tasks.addNew')}
+        onClose={handleCancel}
+        footer={
+          <>
+            <button
+              type="submit"
+              form="tasks-form"
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+            >
+              {editingId ? t('common.update') : t('common.add')}
             </button>
-          </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              {t('common.cancel')}
+            </button>
+          </>
+        }
+      >
+          <form id="tasks-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('tasks.title')} *</label>
               <input
@@ -288,24 +313,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
               />
             </div>
 
-            <div className="md:col-span-2 flex gap-3">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                {editingId ? t('common.update') : t('common.add')}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
           </form>
-        </div>
-      )}
+      </FormModal>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
@@ -558,6 +567,14 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
           </div>
         </div>
       )}
+
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget?.title}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

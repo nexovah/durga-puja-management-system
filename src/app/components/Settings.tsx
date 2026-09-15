@@ -5,6 +5,8 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
 import { uploadLogo, DeveloperInfo } from '../lib/db';
+import { FormModal } from './FormModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface SettingsProps {
   committeeInfo: CommitteeInfo;
@@ -54,6 +56,7 @@ export function Settings({
     confirmPassword: '',
   });
   const [showUserForm, setShowUserForm] = useState(false);
+  const [deleteUserTarget, setDeleteUserTarget] = useState<User | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState({
     name: '',
@@ -178,19 +181,23 @@ export function Settings({
     setShowUserForm(true);
   };
 
-  const handleDeleteUser = async (id: string) => {
+  const handleDeleteUser = (id: string) => {
     const user = users.find(u => u.id === id);
-    if (user?.isAdmin) {
+    if (!user) return;
+    if (user.isAdmin) {
       setMessage(t('settings.msg.adminCannotDelete'));
       setTimeout(() => setMessage(''), 3000);
       return;
     }
+    setDeleteUserTarget(user);
+  };
 
-    if (confirm(t('settings.confirmDeleteUser'))) {
-      const ok = await onDeleteUser(id);
-      setMessage(ok ? t('settings.msg.userDeleted') : t('common.saveError'));
-      setTimeout(() => setMessage(''), 3000);
-    }
+  const confirmDeleteUser = async () => {
+    if (!deleteUserTarget) return;
+    const ok = await onDeleteUser(deleteUserTarget.id);
+    setMessage(ok ? t('settings.msg.userDeleted') : t('common.saveError'));
+    setTimeout(() => setMessage(''), 3000);
+    setDeleteUserTarget(null);
   };
 
   const handleToggleUserActive = async (user: User) => {
@@ -536,12 +543,30 @@ export function Settings({
                 </button>
               </div>
 
-              {showUserForm && (
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <h4 className="font-bold text-gray-800 mb-4">
-                    {editingUserId ? t('settings.editUser') : t('settings.createNewUser')}
-                  </h4>
-                  <form onSubmit={handleUserSubmit} className="space-y-4">
+              <FormModal
+                open={showUserForm}
+                title={editingUserId ? t('settings.editUser') : t('settings.createNewUser')}
+                onClose={() => { setShowUserForm(false); setEditingUserId(null); }}
+                footer={
+                  <>
+                    <button
+                      type="submit"
+                      form="user-form"
+                      className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                    >
+                      {editingUserId ? t('common.update') : t('common.add')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowUserForm(false); setEditingUserId(null); }}
+                      className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                  </>
+                }
+              >
+                  <form id="user-form" onSubmit={handleUserSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
@@ -668,27 +693,8 @@ export function Settings({
                       </div>
                     )}
 
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                      >
-                        {editingUserId ? t('common.update') : t('common.add')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowUserForm(false);
-                          setEditingUserId(null);
-                        }}
-                        className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                      >
-                        {t('common.cancel')}
-                      </button>
-                    </div>
                   </form>
-                </div>
-              )}
+              </FormModal>
 
               {/* Users List */}
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -886,6 +892,13 @@ export function Settings({
           )}
         </div>
       </div>
+
+      <DeleteConfirmModal
+        open={!!deleteUserTarget}
+        itemLabel={deleteUserTarget?.name}
+        onCancel={() => setDeleteUserTarget(null)}
+        onConfirm={confirmDeleteUser}
+      />
     </div>
   );
 }

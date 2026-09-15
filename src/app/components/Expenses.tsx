@@ -8,6 +8,9 @@ import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
+import { FormModal } from './FormModal';
+import { Toast } from './Toast';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -77,6 +80,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Expense[]; toUpdate: Expense[]; errors: ImportRowError[]; totalRows: number } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
   const categoryLabel = (value: string) => {
     const found = categories.find(c => c.value === value);
@@ -174,6 +179,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           : exp
       ));
       onLog('update', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
+      setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new expense
       const newExpense: Expense = {
@@ -182,6 +188,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       };
       setExpenses([...expenses, newExpense]);
       onLog('create', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
+      setToastMessage(t('common.savedSuccess'));
     }
 
     setFormData(emptyForm);
@@ -209,11 +216,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('expenses.confirmDelete'))) {
-      const target = expenses.find(exp => exp.id === id);
-      setExpenses(expenses.filter(exp => exp.id !== id));
-      if (target) onLog('delete', 'expenses', `${target.title} — ₹${target.amount.toLocaleString()}`);
-    }
+    const target = expenses.find(exp => exp.id === id);
+    if (target) setDeleteTarget(target);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setExpenses(expenses.filter(exp => exp.id !== deleteTarget.id));
+    onLog('delete', 'expenses', `${deleteTarget.title} — ₹${deleteTarget.amount.toLocaleString()}`);
+    setDeleteTarget(null);
+    setToastMessage(t('common.deletedSuccess'));
   };
 
   const handleCancel = () => {
@@ -383,17 +395,30 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       </PageHeading>
 
       {/* Form */}
-      {canEdit && showForm && (
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? t('expenses.editExpense') : t('expenses.addNew')}
-            </h3>
-            <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
+      <FormModal
+        open={canEdit && showForm}
+        title={editingId ? t('expenses.editExpense') : t('expenses.addNew')}
+        onClose={handleCancel}
+        footer={
+          <>
+            <button
+              type="submit"
+              form="expenses-form"
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+            >
+              {editingId ? t('common.update') : t('common.add')}
             </button>
-          </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              {t('common.cancel')}
+            </button>
+          </>
+        }
+      >
+          <form id="expenses-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.title')} *</label>
               <input
@@ -545,24 +570,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 rows={2}
               />
             </div>
-            <div className="md:col-span-2 flex gap-3">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                {editingId ? t('common.update') : t('common.add')}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
           </form>
-        </div>
-      )}
+      </FormModal>
 
       {/* Category Summary — Treasury-style widgets, kept to one row */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
@@ -686,6 +695,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}
+      />
+
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget?.title}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );

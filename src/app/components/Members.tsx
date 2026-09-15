@@ -5,6 +5,9 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
+import { FormModal } from './FormModal';
+import { Toast } from './Toast';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface MembersProps {
   members: Member[];
@@ -68,6 +71,8 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const [showMembershipPayment, setShowMembershipPayment] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +116,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           : m
       ));
       onLog('update', 'members', formData.name);
+      setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new member
       const newMember: Member = {
@@ -120,6 +126,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       };
       setMembers([...members, newMember]);
       onLog('create', 'members', formData.name);
+      setToastMessage(t('common.savedSuccess'));
     }
 
     setFormData(emptyForm);
@@ -165,11 +172,16 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('members.confirmDelete'))) {
-      const target = members.find(m => m.id === id);
-      setMembers(members.filter(m => m.id !== id));
-      if (target) onLog('delete', 'members', target.name);
-    }
+    const target = members.find(m => m.id === id);
+    if (target) setDeleteTarget(target);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setMembers(members.filter(m => m.id !== deleteTarget.id));
+    onLog('delete', 'members', deleteTarget.name);
+    setDeleteTarget(null);
+    setToastMessage(t('common.deletedSuccess'));
   };
 
   const handleCancel = () => {
@@ -220,17 +232,30 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       </div>
 
       {/* Form */}
-      {canEdit && showForm && (
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">
-              {editingId ? t('members.editMember') : t('members.addNew')}
-            </h3>
-            <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
+      <FormModal
+        open={canEdit && showForm}
+        title={editingId ? t('members.editMember') : t('members.addNew')}
+        onClose={handleCancel}
+        footer={
+          <>
+            <button
+              type="submit"
+              form="members-form"
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+            >
+              {editingId ? t('common.update') : t('common.add')}
             </button>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              {t('common.cancel')}
+            </button>
+          </>
+        }
+      >
+          <form id="members-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
@@ -377,24 +402,8 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
               )}
             </div>
 
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                {editingId ? t('common.update') : t('common.add')}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
           </form>
-        </div>
-      )}
+      </FormModal>
 
       {/* Members List */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
@@ -495,6 +504,14 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           endIndex={pagination.endIndex}
         />
       </div>
+
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget?.name}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
