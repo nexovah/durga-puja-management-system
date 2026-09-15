@@ -572,23 +572,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                   {t('nav.treasury')}
                 </NavButton>
               )}
-              {currentUser?.permissions.settings && (
-                <NavButton
-                  active={currentPage === 'settings'}
-                  onClick={() => setCurrentPage('settings')}
-                >
-                  {t('nav.settings')}
-                </NavButton>
-              )}
             </div>
-            {(currentUser?.permissions.expenses || currentUser?.permissions.loans) && (
-              <MoreMenu
-                showVendors={!!currentUser?.permissions.expenses}
-                showLoans={!!currentUser?.permissions.loans}
-                active={currentPage === 'vendors' || currentPage === 'loans'}
-                onSelect={setCurrentPage}
-              />
-            )}
             <GlobalSearch
               members={members}
               chandaList={chandaList}
@@ -597,6 +581,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               currentUser={currentUser}
               onNavigate={setCurrentPage}
             />
+            {(currentUser?.permissions.expenses || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
+              <MoreMenu
+                showVendors={!!currentUser?.permissions.expenses}
+                showLoans={!!currentUser?.permissions.loans}
+                showSettings={!!currentUser?.permissions.settings}
+                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings'}
+                onSelect={setCurrentPage}
+              />
+            )}
           </div>
         </div>
       </nav>
@@ -671,13 +664,15 @@ function NavButton({ active, onClick, children }: { active: boolean; onClick: ()
 function MoreMenu({
   showVendors,
   showLoans,
+  showSettings,
   active,
   onSelect,
 }: {
   showVendors: boolean;
   showLoans: boolean;
+  showSettings: boolean;
   active: boolean;
-  onSelect: (page: 'vendors' | 'loans') => void;
+  onSelect: (page: 'vendors' | 'loans' | 'settings') => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -723,6 +718,14 @@ function MoreMenu({
               className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
               {t('nav.loans')}
+            </button>
+          )}
+          {showSettings && (
+            <button
+              onClick={() => { onSelect('settings'); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            >
+              {t('nav.settings')}
             </button>
           )}
         </div>
