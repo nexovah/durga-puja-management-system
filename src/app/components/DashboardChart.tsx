@@ -8,7 +8,7 @@ import {
   eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format,
 } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import { Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
@@ -16,6 +16,7 @@ interface DashboardChartProps {
   chandaList: Chanda[];
   donationAdsList: DonationAd[];
   expenses: Expense[];
+  loansList: Loan[];
 }
 
 type RangeKey = '7d' | 'thisWeek' | 'lastWeek' | '30d' | '3m' | '6m';
@@ -60,14 +61,15 @@ function sumInRange(records: Record_[], start: Date, end: Date): number {
   }, 0);
 }
 
-export function DashboardChart({ chandaList, donationAdsList, expenses }: DashboardChartProps) {
+export function DashboardChart({ chandaList, donationAdsList, expenses, loansList }: DashboardChartProps) {
   const { t } = useLanguage();
   const [range, setRange] = useState<RangeKey>('30d');
 
   const incomeRecords: Record_[] = useMemo(() => [
     ...chandaList.map(c => ({ date: c.date, amount: getChandaCreditAmount(c) })),
     ...donationAdsList.map(d => ({ date: d.date, amount: d.amount })),
-  ], [chandaList, donationAdsList]);
+    ...loansList.map(l => ({ date: l.date, amount: getLoanNetAmount(l) })),
+  ], [chandaList, donationAdsList, loansList]);
 
   const expenseRecords: Record_[] = useMemo(() => (
     expenses.map(e => ({ date: e.date, amount: getExpenseCreditAmount(e) }))
@@ -131,7 +133,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses }: Dashbo
             <span className="text-green-600 font-semibold">{t('dashboard.chart.income')}: ₹{totalIncome.toLocaleString()}</span>
             <span className="text-red-600 font-semibold">{t('dashboard.chart.expenses')}: ₹{totalExpense.toLocaleString()}</span>
             <span className={`font-semibold ${netBalance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
-              {t('dashboard.chart.net')}: ₹{netBalance.toLocaleString()}
+              {t('dashboard.chart.newBalance')}: ₹{netBalance.toLocaleString()}
             </span>
           </div>
         </div>

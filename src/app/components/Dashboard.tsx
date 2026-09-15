@@ -61,7 +61,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   return (
     <div className="space-y-4">
       {/* Collections vs Expenses chart */}
-      <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
+      <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
 
       {/* Key figures — bigger cards, capped at 4 per row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
