@@ -244,6 +244,10 @@ export const translations = {
     'vendors.name': "Vendor/Supplier's Name",
     'vendors.contact': 'Contact',
     'vendors.empty': 'No vendor records yet. Add a Vendor/Supplier Name to an expense to see it here.',
+    'vendors.transactions': 'Transactions',
+    'vendors.totalAmount': 'Total Amount Received',
+    'vendors.paymentHistory': 'Payment History',
+    'vendors.view': 'View details',
 
     // Loans
     'loans.pageTitle': 'Loans - Total',
@@ -615,6 +619,10 @@ export const translations = {
     'vendors.name': 'ভেন্ডর/সরবরাহকারীর নাম',
     'vendors.contact': 'যোগাযোগ',
     'vendors.empty': 'কোনো ভেন্ডর রেকর্ড নেই। একটি খরচে ভেন্ডর/সরবরাহকারীর নাম যোগ করলে এখানে দেখাবে।',
+    'vendors.transactions': 'লেনদেন',
+    'vendors.totalAmount': 'মোট প্রাপ্ত পরিমাণ',
+    'vendors.paymentHistory': 'পেমেন্ট ইতিহাস',
+    'vendors.view': 'বিস্তারিত দেখুন',
 
     // Loans
     'loans.pageTitle': 'ঋণ - মোট',
@@ -983,6 +991,10 @@ export const translations = {
     'vendors.name': 'विक्रेता/आपूर्तिकर्ता का नाम',
     'vendors.contact': 'संपर्क',
     'vendors.empty': 'अभी तक कोई विक्रेता रिकॉर्ड नहीं है। किसी खर्च में विक्रेता/आपूर्तिकर्ता का नाम जोड़ें तो यहाँ दिखेगा।',
+    'vendors.transactions': 'लेनदेन',
+    'vendors.totalAmount': 'कुल प्राप्त राशि',
+    'vendors.paymentHistory': 'भुगतान इतिहास',
+    'vendors.view': 'विवरण देखें',
 
     // Loans
     'loans.pageTitle': 'ऋण - कुल',
