@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (9)
+- Tasks: new **Completed** priority (green) + two tabs above the table — **All Tasks** / **Completed**, each with a live count. Marking a task Completed (via the Priority dropdown or a new one-click checkmark action) moves it to the Completed tab. New migration `supabase/013_tasks_completed_priority.sql` — **run in Supabase SQL Editor**.
+
 ## 2026-09-15 (8)
 - Tasks gain **Assign To** (multi-select of saved Members, checkbox dropdown), **Task Created** (read-only, auto today), **Task Expiry** (defaults created+15 days, editable). Members page gets an always-visible "Assigned Tasks" column showing every task assigned to that member (colored-dot badge per priority). New migration `supabase/012_tasks_assign_expiry.sql` — **run in Supabase SQL Editor**.
 
