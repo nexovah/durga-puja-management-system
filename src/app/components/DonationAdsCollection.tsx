@@ -6,7 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
-import { normalizeKey, splitByDuplicateKey } from '../lib/uniqueCheck';
+import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface DonationAdsCollectionProps {
@@ -55,7 +55,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [importPreview, setImportPreview] = useState<{ rows: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
+  const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
@@ -273,25 +273,20 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         });
       }
 
-      const existingVoucherNumbers = new Set(
-        donationAdsList.map(item => normalizeKey(item.voucherNumber)).filter(Boolean)
-      );
-      const { validRows, errors } = splitByDuplicateKey(
-        imported,
-        (row) => row.voucherNumber,
-        existingVoucherNumbers,
-        t('donationAds.voucherNumber') + ' ' + t('import.duplicateInDatabase'),
-        t('donationAds.voucherNumber') + ' ' + t('import.duplicateInFile')
-      );
-      setImportPreview({ rows: validRows, errors, totalRows: imported.length });
+      const { toInsert, toUpdate } = prepareImportUpsert(imported, (row) => row.voucherNumber, donationAdsList);
+      setImportPreview({ toInsert, toUpdate, errors: [], totalRows: imported.length });
     };
     reader.readAsText(file);
   };
 
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    setDonationAdsList([...donationAdsList, ...importPreview.rows]);
-    onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    const { toInsert, toUpdate } = importPreview;
+    const updatedIds = new Set(toUpdate.map(r => r.id));
+    const merged = donationAdsList.map(item => (updatedIds.has(item.id) ? toUpdate.find(u => u.id === item.id)! : item));
+    setDonationAdsList([...merged, ...toInsert]);
+    const count = toInsert.length + toUpdate.length;
+    onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${count} (${toInsert.length} new, ${toUpdate.length} updated)`, count);
     setImportPreview(null);
   };
 
@@ -638,7 +633,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         open={!!importPreview}
         title={t('import.preview.title')}
         totalRows={importPreview?.totalRows || 0}
-        validCount={importPreview?.rows.length || 0}
+        insertCount={importPreview?.toInsert.length || 0}
+        updateCount={importPreview?.toUpdate.length || 0}
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}

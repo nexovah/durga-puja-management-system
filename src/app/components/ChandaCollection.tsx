@@ -6,7 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
-import { normalizeKey, splitByDuplicateKey } from '../lib/uniqueCheck';
+import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface ChandaCollectionProps {
@@ -61,7 +61,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [importPreview, setImportPreview] = useState<{ rows: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
+  const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
 
@@ -293,25 +293,20 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         });
       }
 
-      const existingBillNumbers = new Set(
-        chandaList.map(c => normalizeKey(c.billNumber)).filter(Boolean)
-      );
-      const { validRows, errors } = splitByDuplicateKey(
-        imported,
-        (row) => row.billNumber,
-        existingBillNumbers,
-        t('chanda.billNumber') + ' ' + t('import.duplicateInDatabase'),
-        t('chanda.billNumber') + ' ' + t('import.duplicateInFile')
-      );
-      setImportPreview({ rows: validRows, errors, totalRows: imported.length });
+      const { toInsert, toUpdate } = prepareImportUpsert(imported, (row) => row.billNumber, chandaList);
+      setImportPreview({ toInsert, toUpdate, errors: [], totalRows: imported.length });
     };
     reader.readAsText(file);
   };
 
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    setChandaList([...chandaList, ...importPreview.rows]);
-    onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    const { toInsert, toUpdate } = importPreview;
+    const updatedIds = new Set(toUpdate.map(r => r.id));
+    const merged = chandaList.map(c => (updatedIds.has(c.id) ? toUpdate.find(u => u.id === c.id)! : c));
+    setChandaList([...merged, ...toInsert]);
+    const count = toInsert.length + toUpdate.length;
+    onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${count} (${toInsert.length} new, ${toUpdate.length} updated)`, count);
     setImportPreview(null);
   };
 
@@ -667,7 +662,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         open={!!importPreview}
         title={t('import.preview.title')}
         totalRows={importPreview?.totalRows || 0}
-        validCount={importPreview?.rows.length || 0}
+        insertCount={importPreview?.toInsert.length || 0}
+        updateCount={importPreview?.toUpdate.length || 0}
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}

@@ -1,8 +1,8 @@
-import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, PlusCircle, RefreshCcw, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export interface ImportRowError {
-  line: number; // 1-based CSV data-row number (header excluded), for the user to find it in their file
+  line: number; // 1-based row number within the file (header excluded)
   reason: string;
 }
 
@@ -10,22 +10,28 @@ interface ImportPreviewModalProps {
   open: boolean;
   title: string;
   totalRows: number;
-  validCount: number;
+  insertCount: number;
+  updateCount: number;
   errors: ImportRowError[];
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-// Shown after a CSV is selected, before it's actually saved: cross-checks
-// the file against what's already in the table (and against itself, for
-// duplicate bill/voucher numbers within the same file) and shows exactly
-// what will happen — how many rows will be added, and which ones are
-// blocked and why — so the user can decide before committing.
-export function ImportPreviewModal({ open, title, totalRows, validCount, errors, onCancel, onConfirm }: ImportPreviewModalProps) {
+// Shown after a CSV is selected, before anything is saved: cross-checks the
+// file against what's already in the table (matched by the unique Bill/
+// Voucher Number field where one exists) and shows exactly what will
+// happen — a row whose number matches an existing record updates that
+// record's other fields (name, amount, date, status, ...); a row with a
+// new or blank number is added as a new record — so the user can see the
+// intelligence behind the import before committing.
+export function ImportPreviewModal({
+  open, title, totalRows, insertCount, updateCount, errors, onCancel, onConfirm,
+}: ImportPreviewModalProps) {
   const { t } = useLanguage();
   if (!open) return null;
 
   const hasErrors = errors.length > 0;
+  const totalChanges = insertCount + updateCount;
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
@@ -44,6 +50,25 @@ export function ImportPreviewModal({ open, title, totalRows, validCount, errors,
           <p className="text-sm text-gray-600">
             {t('import.rowsFound').replace('{count}', String(totalRows))}
           </p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-2.5">
+            <PlusCircle className="text-blue-600 shrink-0 mt-0.5" size={20} />
+            <p className="text-sm text-blue-800 font-medium">
+              {t('import.willAdd').replace('{count}', String(insertCount))}
+            </p>
+          </div>
+
+          {updateCount > 0 && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-start gap-2.5">
+              <RefreshCcw className="text-purple-600 shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="text-sm text-purple-800 font-medium">
+                  {t('import.willUpdate').replace('{count}', String(updateCount))}
+                </p>
+                <p className="text-xs text-purple-700 mt-0.5">{t('import.willUpdateHint')}</p>
+              </div>
+            </div>
+          )}
 
           {hasErrors ? (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -64,27 +89,21 @@ export function ImportPreviewModal({ open, title, totalRows, validCount, errors,
                 ))}
               </div>
             </div>
-          ) : (
+          ) : totalChanges > 0 ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2.5">
               <CheckCircle2 className="text-green-600 shrink-0 mt-0.5" size={20} />
               <p className="text-sm text-green-800 font-medium">{t('import.noErrors')}</p>
             </div>
-          )}
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800 font-semibold">
-              {t('import.willAdd').replace('{count}', String(validCount))}
-            </p>
-          </div>
+          ) : null}
         </div>
 
         <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
           <button
             onClick={onConfirm}
-            disabled={validCount === 0}
+            disabled={totalChanges === 0}
             className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            {t('import.confirm').replace('{count}', String(validCount))}
+            {t('import.confirm').replace('{count}', String(totalChanges))}
           </button>
           <button
             onClick={onCancel}

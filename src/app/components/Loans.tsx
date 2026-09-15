@@ -42,7 +42,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [importPreview, setImportPreview] = useState<{ rows: Loan[]; errors: ImportRowError[]; totalRows: number } | null>(null);
+  const [importPreview, setImportPreview] = useState<{ toInsert: Loan[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
 
@@ -192,15 +192,15 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         });
       }
 
-      setImportPreview({ rows: imported, errors: [], totalRows: imported.length });
+      setImportPreview({ toInsert: imported, errors: [], totalRows: imported.length });
     };
     reader.readAsText(file);
   };
 
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    setLoansList([...loansList, ...importPreview.rows]);
-    onLog('bulk_import', 'loans', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    setLoansList([...loansList, ...importPreview.toInsert]);
+    onLog('bulk_import', 'loans', `${t('common.importResult')}: ${importPreview.toInsert.length}`, importPreview.toInsert.length);
     setImportPreview(null);
   };
 
@@ -448,7 +448,8 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         open={!!importPreview}
         title={t('import.preview.title')}
         totalRows={importPreview?.totalRows || 0}
-        validCount={importPreview?.rows.length || 0}
+        insertCount={importPreview?.toInsert.length || 0}
+        updateCount={0}
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}

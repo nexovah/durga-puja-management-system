@@ -1,46 +1,55 @@
-// Shared duplicate-detection for unique fields (Bill/Voucher numbers): used
-// both by Add/Edit form validation and by the CSV Import Preview modal.
-// Case-insensitive, trims whitespace, and treats a blank value as "no
-// check" since these fields are optional.
+// Shared CSV-import matching for unique fields (Bill/Voucher numbers): used
+// by the Import Preview modal to decide, per row, whether it's a brand new
+// record or an update to an existing one matched by that field — case-
+// insensitive, trims whitespace, blank value never matches (the field is
+// optional, so a blank bill/voucher number always inserts as new).
 
 export const normalizeKey = (v?: string | null) => (v || '').trim().toLowerCase();
 
 export interface DedupeError {
-  line: number; // 1-based row number within the imported rows (not the raw CSV line, which may include a header)
+  line: number;
   reason: string;
 }
 
-// Splits `rows` into the ones safe to import and the ones rejected because
-// their key (e.g. bill number) either already exists in `existingKeys` or
-// repeats an earlier row in the same file. Rows with a blank key always pass.
-export function splitByDuplicateKey<T>(
+// Splits freshly-parsed CSV rows into inserts (brand new records) and
+// updates (an existing record whose unique key — e.g. Bill Number — this
+// row matches; the row's own `id` is swapped for the matched record's id so
+// the caller can merge it straight in). If the same key appears more than
+// once within the file, the later row wins — earlier ones are folded in,
+// not reported as errors, since it's a legitimate "this file corrects
+// itself" case, not a mistake.
+export function prepareImportUpsert<T extends { id: string }>(
   rows: T[],
   getKey: (row: T) => string | undefined,
-  existingKeys: Set<string>,
-  dbMessage: string,
-  fileMessage: string
-): { validRows: T[]; errors: DedupeError[] } {
-  const seenInFile = new Set<string>();
-  const validRows: T[] = [];
-  const errors: DedupeError[] = [];
+  existingRows: T[]
+): { toInsert: T[]; toUpdate: T[] } {
+  const existingByKey = new Map<string, string>(); // normalized key -> existing row id
+  for (const row of existingRows) {
+    const key = normalizeKey(getKey(row));
+    if (key) existingByKey.set(key, row.id);
+  }
 
-  rows.forEach((row, index) => {
+  const insertsByKey = new Map<string, T>();
+  const updatesByKey = new Map<string, T>();
+  const inserts: T[] = []; // rows with no key at all — always new, never deduped against each other
+
+  for (const row of rows) {
     const key = normalizeKey(getKey(row));
     if (!key) {
-      validRows.push(row);
-      return;
+      inserts.push(row);
+      continue;
     }
-    if (existingKeys.has(key)) {
-      errors.push({ line: index + 1, reason: dbMessage });
-      return;
+    const existingId = existingByKey.get(key);
+    if (existingId) {
+      updatesByKey.set(key, { ...row, id: existingId });
+      insertsByKey.delete(key); // a later row can still turn an earlier "new" row into an update
+    } else {
+      insertsByKey.set(key, row);
     }
-    if (seenInFile.has(key)) {
-      errors.push({ line: index + 1, reason: fileMessage });
-      return;
-    }
-    seenInFile.add(key);
-    validRows.push(row);
-  });
+  }
 
-  return { validRows, errors };
+  return {
+    toInsert: [...inserts, ...insertsByKey.values()],
+    toUpdate: [...updatesByKey.values()],
+  };
 }
