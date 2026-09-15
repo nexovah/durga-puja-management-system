@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -197,10 +197,27 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             </button>
           )
         }
-        total={`${t('members.widget.totalPayments')}: ₹${totalMembershipPayments.toLocaleString()}`}
       >
         {t('members.pageTitle')}
       </PageHeading>
+
+      {/* Widgets — Treasury-style summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-green-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('members.widget.totalPayments')}</h3>
+            <IndianRupee className="text-green-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalMembershipPayments.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-blue-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('members.widget.totalMembers')}</h3>
+            <Users className="text-blue-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">{members.length}</p>
+        </div>
+      </div>
 
       {/* Form */}
       {canEdit && showForm && (
