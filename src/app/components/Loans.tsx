@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface LoansProps {
   loansList: Loan[];
@@ -41,6 +42,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{ rows: Loan[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
 
@@ -190,13 +192,16 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         });
       }
 
-      if (imported.length > 0) {
-        setLoansList([...loansList, ...imported]);
-        onLog('bulk_import', 'loans', `${t('common.importResult')}: ${imported.length}`, imported.length);
-      }
-      alert(`${t('common.importResult')}: ${imported.length}`);
+      setImportPreview({ rows: imported, errors: [], totalRows: imported.length });
     };
     reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (!importPreview) return;
+    setLoansList([...loansList, ...importPreview.rows]);
+    onLog('bulk_import', 'loans', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    setImportPreview(null);
   };
 
   const sortedLoans = [...loansList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -438,6 +443,16 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
           endIndex={pagination.endIndex}
         />
       </div>
+
+      <ImportPreviewModal
+        open={!!importPreview}
+        title={t('import.preview.title')}
+        totalRows={importPreview?.totalRows || 0}
+        validCount={importPreview?.rows.length || 0}
+        errors={importPreview?.errors || []}
+        onCancel={() => setImportPreview(null)}
+        onConfirm={handleConfirmImport}
+      />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { normalizeKey, splitByDuplicateKey } from '../lib/uniqueCheck';
+import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -59,6 +61,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{ rows: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
 
@@ -123,6 +126,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const billKey = normalizeKey(formData.billNumber);
+    if (billKey) {
+      const isDuplicate = chandaList.some(c => c.id !== editingId && normalizeKey(c.billNumber) === billKey);
+      if (isDuplicate) {
+        alert(t('chanda.billNumberDuplicate'));
+        return;
+      }
+    }
 
     const payload = {
       donorName: formData.donorName,
@@ -281,13 +293,26 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         });
       }
 
-      if (imported.length > 0) {
-        setChandaList([...chandaList, ...imported]);
-        onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${imported.length}`, imported.length);
-      }
-      alert(`${t('common.importResult')}: ${imported.length}`);
+      const existingBillNumbers = new Set(
+        chandaList.map(c => normalizeKey(c.billNumber)).filter(Boolean)
+      );
+      const { validRows, errors } = splitByDuplicateKey(
+        imported,
+        (row) => row.billNumber,
+        existingBillNumbers,
+        t('chanda.billNumber') + ' ' + t('import.duplicateInDatabase'),
+        t('chanda.billNumber') + ' ' + t('import.duplicateInFile')
+      );
+      setImportPreview({ rows: validRows, errors, totalRows: imported.length });
     };
     reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (!importPreview) return;
+    setChandaList([...chandaList, ...importPreview.rows]);
+    onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    setImportPreview(null);
   };
 
   const isPartial = formData.paymentStatus === 'partial';
@@ -637,6 +662,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           endIndex={pagination.endIndex}
         />
       </div>
+
+      <ImportPreviewModal
+        open={!!importPreview}
+        title={t('import.preview.title')}
+        totalRows={importPreview?.totalRows || 0}
+        validCount={importPreview?.rows.length || 0}
+        errors={importPreview?.errors || []}
+        onCancel={() => setImportPreview(null)}
+        onConfirm={handleConfirmImport}
+      />
     </div>
   );
 }

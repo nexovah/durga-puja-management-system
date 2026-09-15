@@ -6,6 +6,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { normalizeKey, splitByDuplicateKey } from '../lib/uniqueCheck';
+import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -74,6 +76,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{ rows: Expense[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const categoryLabel = (value: string) => {
     const found = categories.find(c => c.value === value);
@@ -138,6 +141,15 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           .replace('{amount}', amount.toLocaleString())
       );
       return;
+    }
+
+    const voucherKey = normalizeKey(formData.voucherNumber);
+    if (voucherKey) {
+      const isDuplicate = expenses.some(exp => exp.id !== editingId && normalizeKey(exp.voucherNumber) === voucherKey);
+      if (isDuplicate) {
+        alert(t('expenses.voucherNumberDuplicate'));
+        return;
+      }
     }
 
     const payload = {
@@ -299,13 +311,27 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         });
       }
 
-      if (imported.length > 0) {
-        setExpenses([...expenses, ...imported]);
-        onLog('bulk_import', 'expenses', `${t('common.importResult')}: ${imported.length}`, imported.length);
-      }
-      alert(`${t('common.importResult')}: ${imported.length}`);
+      // Note: voucherNumber isn't a column in this CSV format, so there's
+      // nothing to dedupe against here — the modal still shows for a
+      // consistent "review before import" experience across every menu.
+      const { validRows, errors } = splitByDuplicateKey<Expense>(
+        imported,
+        () => undefined,
+        new Set<string>(),
+        '',
+        ''
+      );
+      setImportPreview({ rows: validRows, errors, totalRows: imported.length });
     };
     reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (!importPreview) return;
+    const imported = importPreview.rows;
+    setExpenses([...expenses, ...imported]);
+    onLog('bulk_import', 'expenses', `${t('common.importResult')}: ${imported.length}`, imported.length);
+    setImportPreview(null);
   };
 
   const categoryTotals = categories.map(cat => ({
@@ -656,6 +682,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           endIndex={pagination.endIndex}
         />
       </div>
+
+      <ImportPreviewModal
+        open={!!importPreview}
+        title={t('import.preview.title')}
+        totalRows={importPreview?.totalRows || 0}
+        validCount={importPreview?.rows.length || 0}
+        errors={importPreview?.errors || []}
+        onCancel={() => setImportPreview(null)}
+        onConfirm={handleConfirmImport}
+      />
     </div>
   );
 }

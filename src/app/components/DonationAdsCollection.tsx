@@ -6,6 +6,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { normalizeKey, splitByDuplicateKey } from '../lib/uniqueCheck';
+import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -53,6 +55,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{ rows: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
 
   const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
@@ -115,6 +118,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const voucherKey = formData.category === 'donation' ? normalizeKey(formData.voucherNumber) : '';
+    if (voucherKey) {
+      const isDuplicate = donationAdsList.some(item => item.id !== editingId && normalizeKey(item.voucherNumber) === voucherKey);
+      if (isDuplicate) {
+        alert(t('donationAds.voucherNumberDuplicate'));
+        return;
+      }
+    }
 
     const payload = {
       category: formData.category,
@@ -261,13 +273,26 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         });
       }
 
-      if (imported.length > 0) {
-        setDonationAdsList([...donationAdsList, ...imported]);
-        onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${imported.length}`, imported.length);
-      }
-      alert(`${t('common.importResult')}: ${imported.length}`);
+      const existingVoucherNumbers = new Set(
+        donationAdsList.map(item => normalizeKey(item.voucherNumber)).filter(Boolean)
+      );
+      const { validRows, errors } = splitByDuplicateKey(
+        imported,
+        (row) => row.voucherNumber,
+        existingVoucherNumbers,
+        t('donationAds.voucherNumber') + ' ' + t('import.duplicateInDatabase'),
+        t('donationAds.voucherNumber') + ' ' + t('import.duplicateInFile')
+      );
+      setImportPreview({ rows: validRows, errors, totalRows: imported.length });
     };
     reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (!importPreview) return;
+    setDonationAdsList([...donationAdsList, ...importPreview.rows]);
+    onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${importPreview.rows.length}`, importPreview.rows.length);
+    setImportPreview(null);
   };
 
   const isDonation = formData.category === 'donation';
@@ -608,6 +633,16 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           endIndex={pagination.endIndex}
         />
       </div>
+
+      <ImportPreviewModal
+        open={!!importPreview}
+        title={t('import.preview.title')}
+        totalRows={importPreview?.totalRows || 0}
+        validCount={importPreview?.rows.length || 0}
+        errors={importPreview?.errors || []}
+        onCancel={() => setImportPreview(null)}
+        onConfirm={handleConfirmImport}
+      />
     </div>
   );
 }
