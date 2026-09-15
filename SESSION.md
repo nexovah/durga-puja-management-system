@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (10)
+- Tasks: click a title (or new Eye icon) to open a read-only **view modal** with full details incl. who created it. **Only the task's creator or an admin can Edit/Delete/Mark Complete** it now — everyone else with the Tasks permission can still view every task. New migration `supabase/014_tasks_creator.sql` — **run in Supabase SQL Editor**.
+
 ## 2026-09-15 (9)
 - Tasks: new **Completed** priority (green) + two tabs above the table — **All Tasks** / **Completed**, each with a live count. Marking a task Completed (via the Priority dropdown or a new one-click checkmark action) moves it to the Completed tab. New migration `supabase/013_tasks_completed_priority.sql` — **run in Supabase SQL Editor**.
 
