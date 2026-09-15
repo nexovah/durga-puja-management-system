@@ -11,6 +11,7 @@ import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
 import { ActivityLog } from './components/ActivityLog';
+import { Tasks } from './components/Tasks';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useLanguage } from './i18n/LanguageContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -21,6 +22,7 @@ import {
   syncDonationAds,
   syncExpenses,
   syncLoans,
+  syncTasks,
   updateCommitteeInfo,
   updateDeveloperInfo,
   loginRequest,
@@ -54,6 +56,7 @@ export interface User {
     settings: boolean;
     loans: boolean;
     vendors: boolean;
+    tasks: boolean;
   };
 }
 
@@ -220,6 +223,16 @@ export function getLoanNetAmount(loan: Loan): number {
   return loan.amountReceived - (loan.amountPaid || 0);
 }
 
+export type TaskPriority = 'low' | 'medium' | 'high' | 'note';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  createdAt: string; // set once on creation — the "auto date and time" the task was added
+}
+
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
   name: '',
   logo: '🕉️',
@@ -280,7 +293,7 @@ export default function App() {
   const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog' | 'tasks'>('dashboard');
 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -292,6 +305,7 @@ export default function App() {
   const [donationAdsList, setDonationAdsListState] = useState<DonationAd[]>([]);
   const [expenses, setExpensesState] = useState<Expense[]>([]);
   const [loansList, setLoansListState] = useState<Loan[]>([]);
+  const [tasksList, setTasksListState] = useState<Task[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
 
   // Load everything from Supabase on mount.
@@ -309,6 +323,7 @@ export default function App() {
         setDonationAdsListState(data.donationAdsList);
         setExpensesState(data.expenses);
         setLoansListState(data.loansList);
+        setTasksListState(data.tasksList);
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
@@ -381,6 +396,18 @@ export default function App() {
       console.error('Failed to save loan changes', err);
       alert(t('common.saveError'));
       setLoansListState(previous);
+    }
+  };
+
+  const setTasksList = async (newList: Task[]) => {
+    const previous = tasksList;
+    setTasksListState(newList);
+    try {
+      await syncTasks(previous, newList);
+    } catch (err) {
+      console.error('Failed to save task changes', err);
+      alert(t('common.saveError'));
+      setTasksListState(previous);
     }
   };
 
@@ -643,9 +670,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               <MoreMenu
                 showVendors={!!currentUser?.permissions.vendors}
                 showLoans={!!currentUser?.permissions.loans}
+                showTasks={!!currentUser?.permissions.tasks}
                 showSettings={!!currentUser?.permissions.settings}
                 showActivityLog={!!currentUser?.permissions.settings}
-                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings' || currentPage === 'activityLog'}
+                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'tasks' || currentPage === 'settings' || currentPage === 'activityLog'}
                 onSelect={setCurrentPage}
                 onLogout={handleLogout}
               />
@@ -738,6 +766,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         {currentPage === 'activityLog' && (
           <ActivityLog />
         )}
+        {currentPage === 'tasks' && (
+          <Tasks
+            tasksList={tasksList}
+            setTasksList={setTasksList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            onLog={handleLog}
+          />
+        )}
       </main>
     </div>
   );
@@ -761,6 +798,7 @@ function NavButton({ active, onClick, children }: { active: boolean; onClick: ()
 function MoreMenu({
   showVendors,
   showLoans,
+  showTasks,
   showSettings,
   showActivityLog,
   active,
@@ -769,10 +807,11 @@ function MoreMenu({
 }: {
   showVendors: boolean;
   showLoans: boolean;
+  showTasks: boolean;
   showSettings: boolean;
   showActivityLog: boolean;
   active: boolean;
-  onSelect: (page: 'vendors' | 'loans' | 'settings' | 'activityLog') => void;
+  onSelect: (page: 'vendors' | 'loans' | 'tasks' | 'settings' | 'activityLog') => void;
   onLogout: () => void;
 }) {
   const { t } = useLanguage();
@@ -819,6 +858,14 @@ function MoreMenu({
               className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
               {t('nav.loans')}
+            </button>
+          )}
+          {showTasks && (
+            <button
+              onClick={() => { onSelect('tasks'); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            >
+              {t('nav.tasks')}
             </button>
           )}
           {showSettings && (

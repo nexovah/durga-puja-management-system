@@ -44,7 +44,7 @@ export function ActivityLog() {
     e => (moduleFilter === 'all' || e.module === moduleFilter) && (actionFilter === 'all' || e.action === actionFilter)
   );
 
-  const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'users', 'settings'];
+  const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'tasks', 'users', 'settings'];
   const actions: ActivityAction[] = ['create', 'update', 'delete', 'bulk_import'];
 
   const pagination = usePagination(filtered);
