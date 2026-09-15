@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -12,6 +12,9 @@ interface TasksProps {
   members: Member[];
   canEdit: boolean;
   canDelete: boolean;
+  currentUserId: string;
+  currentUserName: string;
+  isAdmin: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'tasks', summary: string, count?: number) => void;
 }
 
@@ -43,12 +46,13 @@ const getEmptyForm = () => ({
   assignedMemberIds: [] as string[],
 });
 
-export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, onLog }: TasksProps) {
+export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, currentUserId, currentUserName, isAdmin, onLog }: TasksProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(getEmptyForm);
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
 
   const [activeTab, setActiveTab] = useState<'all' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +62,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
   const priorityInfo = (p: TaskPriority) => PRIORITIES.find(pr => pr.value === p) || PRIORITIES[1];
   const memberName = (id: string) => members.find(m => m.id === id)?.name || t('tasks.unknownMember');
   const completedCount = tasksList.filter(task => task.priority === 'completed').length;
+
+  // Only the task's creator, or an admin, can edit/delete it — everyone
+  // else with the Tasks permission (including assigned members) can view.
+  const canEditTask = (task: Task) => canEdit && (isAdmin || task.createdBy === currentUserId);
+  const canDeleteTask = (task: Task) => canDelete && (isAdmin || task.createdBy === currentUserId);
 
   const toggleAssignee = (memberId: string) => {
     setFormData(prev => ({
@@ -69,6 +78,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
   };
 
   const handleMarkComplete = (task: Task) => {
+    if (!canEditTask(task)) return;
     setTasksList(tasksList.map(t2 => (t2.id === task.id ? { ...t2, priority: 'completed' } : t2)));
     onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`);
   };
@@ -99,6 +109,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
         createdAt: new Date().toISOString(),
         expiryDate: formData.expiryDate,
         assignedMemberIds: formData.assignedMemberIds,
+        createdBy: currentUserId,
+        createdByName: currentUserName,
       };
       setTasksList([...tasksList, newTask]);
       onLog('create', 'tasks', formData.title);
@@ -111,6 +123,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
   };
 
   const handleEdit = (task: Task) => {
+    if (!canEditTask(task)) return;
     setFormData({
       title: task.title,
       description: task.description,
@@ -124,10 +137,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
   };
 
   const handleDelete = (id: string) => {
+    const target = tasksList.find(task => task.id === id);
+    if (!target || !canDeleteTask(target)) return;
     if (confirm(t('tasks.confirmDelete'))) {
-      const target = tasksList.find(task => task.id === id);
       setTasksList(tasksList.filter(task => task.id !== id));
-      if (target) onLog('delete', 'tasks', target.title);
+      onLog('delete', 'tasks', target.title);
     }
   };
 
@@ -363,17 +377,24 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('tasks.assignTo')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('tasks.createdAt')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('tasks.expiry')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {pagination.pageItems.map((task) => {
                 const p = priorityInfo(task.priority);
                 const isExpired = task.expiryDate && task.expiryDate < todayISO();
+                const editable = canEditTask(task);
+                const deletable = canDeleteTask(task);
                 return (
                   <tr key={task.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-800 font-medium">
-                      {task.title}
+                      <button
+                        onClick={() => setViewingTask(task)}
+                        className="text-left hover:text-orange-600 hover:underline transition-colors"
+                      >
+                        {task.title}
+                      </button>
                       {task.description && (
                         <p className="text-xs text-gray-500 font-normal mt-0.5 max-w-xs truncate">{task.description}</p>
                       )}
@@ -399,37 +420,42 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
                     <td className={`px-6 py-4 text-sm whitespace-nowrap ${isExpired ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
                       {task.expiryDate ? new Date(task.expiryDate).toLocaleDateString(locale) : '-'}
                     </td>
-                    {(canEdit || canDelete) && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {canEdit && task.priority !== 'completed' && (
-                            <button
-                              onClick={() => handleMarkComplete(task)}
-                              title={t('tasks.markComplete')}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            >
-                              <CheckCircle2 size={18} />
-                            </button>
-                          )}
-                          {canEdit && (
-                            <button
-                              onClick={() => handleEdit(task)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => handleDelete(task.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setViewingTask(task)}
+                          title={t('tasks.view')}
+                          className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        {editable && task.priority !== 'completed' && (
+                          <button
+                            onClick={() => handleMarkComplete(task)}
+                            title={t('tasks.markComplete')}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          >
+                            <CheckCircle2 size={18} />
+                          </button>
+                        )}
+                        {editable && (
+                          <button
+                            onClick={() => handleEdit(task)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {deletable && (
+                          <button
+                            onClick={() => handleDelete(task.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -452,6 +478,86 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
           endIndex={pagination.endIndex}
         />
       </div>
+
+      {/* View modal — full task details, read-only */}
+      {viewingTask && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
+          onClick={() => setViewingTask(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <h3 className="text-xl font-bold text-gray-800">{viewingTask.title}</h3>
+              <button onClick={() => setViewingTask(null)} className="text-gray-500 hover:text-gray-700 shrink-0">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${priorityInfo(viewingTask.priority).badgeClass}`}>
+                  <span className={`w-2 h-2 rounded-full ${priorityInfo(viewingTask.priority).dotClass}`} />
+                  {t(priorityInfo(viewingTask.priority).labelKey)}
+                </span>
+              </div>
+
+              {viewingTask.description && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tasks.description')}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingTask.description}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tasks.assignTo')}</p>
+                <p className="text-sm text-gray-700">
+                  {viewingTask.assignedMemberIds.length === 0
+                    ? '-'
+                    : viewingTask.assignedMemberIds.map(memberName).join(', ')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tasks.createdAt')}</p>
+                  <p className="text-sm text-gray-700">{new Date(viewingTask.createdAt).toLocaleString(locale)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tasks.expiry')}</p>
+                  <p className={`text-sm ${viewingTask.expiryDate && viewingTask.expiryDate < todayISO() ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
+                    {viewingTask.expiryDate ? new Date(viewingTask.expiryDate).toLocaleDateString(locale) : '-'}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('tasks.createdBy')}</p>
+                <p className="text-sm text-gray-700">{viewingTask.createdByName || '-'}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              {canEditTask(viewingTask) && (
+                <button
+                  onClick={() => { const task = viewingTask; setViewingTask(null); handleEdit(task); }}
+                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  {t('common.update')}
+                </button>
+              )}
+              <button
+                onClick={() => setViewingTask(null)}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

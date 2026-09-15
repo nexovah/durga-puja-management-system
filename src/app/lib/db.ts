@@ -203,6 +203,8 @@ function fromTaskRow(row: any): Task {
     createdAt: row.created_at,
     expiryDate: row.expiry_date || '',
     assignedMemberIds: row.assigned_member_ids || [],
+    createdBy: row.created_by || '',
+    createdByName: row.created_by_name || '',
   };
 }
 function toTaskRow(task: Task) {
@@ -214,6 +216,8 @@ function toTaskRow(task: Task) {
     created_at: task.createdAt,
     expiry_date: task.expiryDate || null,
     assigned_member_ids: task.assignedMemberIds || [],
+    created_by: task.createdBy || null,
+    created_by_name: task.createdByName || null,
   };
 }
 

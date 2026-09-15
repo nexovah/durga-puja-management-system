@@ -233,6 +233,8 @@ export interface Task {
   createdAt: string; // set once on creation — the "auto date and time" the task was added
   expiryDate: string; // defaults to 15 days after createdAt, adjustable
   assignedMemberIds: string[]; // one or more Member.id — shown on each assigned member's page
+  createdBy: string; // app_users.id of the creator — only they (or an admin) can edit/delete
+  createdByName: string; // snapshot of the creator's name, so it survives their account being deleted
 }
 
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
@@ -776,6 +778,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             members={members}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
+            currentUserId={currentUser?.id || ''}
+            currentUserName={currentUser?.name || ''}
+            isAdmin={!!currentUser?.isAdmin}
             onLog={handleLog}
           />
         )}
