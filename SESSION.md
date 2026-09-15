@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (8)
+- Tasks gain **Assign To** (multi-select of saved Members, checkbox dropdown), **Task Created** (read-only, auto today), **Task Expiry** (defaults created+15 days, editable). Members page gets an always-visible "Assigned Tasks" column showing every task assigned to that member (colored-dot badge per priority). New migration `supabase/012_tasks_assign_expiry.sql` — **run in Supabase SQL Editor**.
+
 ## 2026-09-15 (7)
 - New **Tasks** menu in the ⋮ more-menu (between Loans and Settings): simple internal to-do list — Title, Description, Priority (High/Medium/Low/Note, 4-color badges), auto-captured created date/time. Filterable by name/priority/date, paginated. New `tasks` permission (Settings checkbox, default on). Logs to Activity Log. New migration `supabase/011_tasks.sql` — **run in Supabase SQL Editor**.
 
