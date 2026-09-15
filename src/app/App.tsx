@@ -293,11 +293,65 @@ function clearStoredSession() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
+// ---------------------------------------------------------------------------
+// URL routing (hash-based, no react-router / server config needed): each
+// page gets a stable "#/slug" in the address bar so refresh, back/forward,
+// and bookmarking land back on the same page instead of always resetting to
+// Dashboard. Hash routing is used deliberately over path-based routing so a
+// hard refresh never needs a server-side rewrite rule (important on static
+// hosts like Hostinger — see DEPLOYMENT.md).
+// ---------------------------------------------------------------------------
+
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog' | 'tasks';
+
+const PAGE_SLUGS: Record<PageKey, string> = {
+  dashboard: 'dashboard',
+  members: 'members',
+  chanda: 'chanda-collection',
+  donationAds: 'donation-ads-collection',
+  expenses: 'expenses',
+  vendors: 'vendors',
+  loans: 'loans',
+  treasury: 'treasury',
+  settings: 'settings',
+  activityLog: 'activity-log',
+  tasks: 'tasks',
+};
+
+const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
+  Object.entries(PAGE_SLUGS).map(([page, slug]) => [slug, page])
+) as Record<string, PageKey>;
+
+function getPageFromHash(): PageKey {
+  const slug = window.location.hash.replace(/^#\/?/, '');
+  return SLUG_TO_PAGE[slug] || 'dashboard';
+}
+
 export default function App() {
   const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog' | 'tasks'>('dashboard');
+  const [currentPage, setCurrentPageState] = useState<PageKey>(() => getPageFromHash());
+
+  // Keep the URL hash in sync whenever the page changes from within the app.
+  useEffect(() => {
+    const newHash = `#/${PAGE_SLUGS[currentPage]}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
+  }, [currentPage]);
+
+  // Back/forward (or manually editing the hash) should navigate the app too.
+  useEffect(() => {
+    const onHashChange = () => {
+      const page = getPageFromHash();
+      setCurrentPageState(prev => (prev === page ? prev : page));
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const setCurrentPage = (page: PageKey) => setCurrentPageState(page);
 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
