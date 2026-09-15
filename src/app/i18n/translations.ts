@@ -135,7 +135,7 @@ export const translations = {
     'members.empty': 'No members yet. Add a new member.',
 
     // Chanda
-    'chanda.pageTitle': 'Chanda Collection - Total',
+    'chanda.pageTitle': 'Chanda Collection',
     'chanda.addNew': 'Add New Chanda',
     'chanda.editChanda': 'Edit Chanda',
     'chanda.donorName': "Donor's Name",
@@ -176,7 +176,7 @@ export const translations = {
     'chanda.csv.remarks': 'Remarks',
 
     // Donation/Ads Collection
-    'donationAds.pageTitle': 'Donation/Ads Collection - Total',
+    'donationAds.pageTitle': 'Donation/Ads Collection',
     'donationAds.addNew': 'Add New Entry',
     'donationAds.editEntry': 'Edit Entry',
     'donationAds.category': 'Category',
@@ -214,7 +214,7 @@ export const translations = {
     'donationAds.csv.voucherNumber': 'Voucher/Bill Number',
 
     // Expenses
-    'expenses.pageTitle': 'Expenses - Total',
+    'expenses.pageTitle': 'Expenses',
     'expenses.addNew': 'Add New Expense',
     'expenses.editExpense': 'Edit Expense',
     'expenses.byCategory': 'Expenses by Category',
@@ -277,7 +277,7 @@ export const translations = {
     'vendors.view': 'View details',
 
     // Loans
-    'loans.pageTitle': 'Loans - Total',
+    'loans.pageTitle': 'Loans',
     'loans.addNew': 'Add New Loan',
     'loans.editLoan': 'Edit Loan',
     'loans.donorName': "Donor's Name",
@@ -570,7 +570,7 @@ export const translations = {
     'members.confirmDelete': 'আপনি কি নিশ্চিত এই সদস্য মুছে ফেলতে চান?',
     'members.empty': 'কোনো সদস্য নেই। নতুন সদস্য যোগ করুন।',
 
-    'chanda.pageTitle': 'চাঁদা সংগ্রহ - মোট',
+    'chanda.pageTitle': 'চাঁদা সংগ্রহ',
     'chanda.addNew': 'নতুন চাঁদা যোগ করুন',
     'chanda.editChanda': 'চাঁদা সম্পাদনা করুন',
     'chanda.donorName': 'দাতার নাম',
@@ -611,7 +611,7 @@ export const translations = {
     'chanda.csv.remarks': 'মন্তব্য',
 
     // Donation/Ads Collection
-    'donationAds.pageTitle': 'দান/বিজ্ঞাপন সংগ্রহ - মোট',
+    'donationAds.pageTitle': 'দান/বিজ্ঞাপন সংগ্রহ',
     'donationAds.addNew': 'নতুন এন্ট্রি যোগ করুন',
     'donationAds.editEntry': 'এন্ট্রি সম্পাদনা করুন',
     'donationAds.category': 'বিভাগ',
@@ -648,7 +648,7 @@ export const translations = {
     'donationAds.voucherNumberPlaceholder': 'যেমন: VCH-2026-014',
     'donationAds.csv.voucherNumber': 'ভাউচার/বিল নম্বর',
 
-    'expenses.pageTitle': 'খরচ - মোট',
+    'expenses.pageTitle': 'খরচ',
     'expenses.addNew': 'নতুন খরচ যোগ করুন',
     'expenses.editExpense': 'খরচ সম্পাদনা করুন',
     'expenses.byCategory': 'বিভাগ অনুযায়ী খরচ',
@@ -711,7 +711,7 @@ export const translations = {
     'vendors.view': 'বিস্তারিত দেখুন',
 
     // Loans
-    'loans.pageTitle': 'ঋণ - মোট',
+    'loans.pageTitle': 'ঋণ',
     'loans.addNew': 'নতুন ঋণ যোগ করুন',
     'loans.editLoan': 'ঋণ সম্পাদনা করুন',
     'loans.donorName': 'দাতার নাম',
@@ -1000,7 +1000,7 @@ export const translations = {
     'members.confirmDelete': 'क्या आप वाकई इस सदस्य को हटाना चाहते हैं?',
     'members.empty': 'कोई सदस्य नहीं है। नया सदस्य जोड़ें।',
 
-    'chanda.pageTitle': 'चंदा संग्रह - कुल',
+    'chanda.pageTitle': 'चंदा संग्रह',
     'chanda.addNew': 'नया चंदा जोड़ें',
     'chanda.editChanda': 'चंदा संपादित करें',
     'chanda.donorName': 'दानकर्ता का नाम',
@@ -1041,7 +1041,7 @@ export const translations = {
     'chanda.csv.remarks': 'टिप्पणी',
 
     // Donation/Ads Collection
-    'donationAds.pageTitle': 'दान/विज्ञापन संग्रह - कुल',
+    'donationAds.pageTitle': 'दान/विज्ञापन संग्रह',
     'donationAds.addNew': 'नई प्रविष्टि जोड़ें',
     'donationAds.editEntry': 'प्रविष्टि संपादित करें',
     'donationAds.category': 'श्रेणी',
@@ -1078,7 +1078,7 @@ export const translations = {
     'donationAds.voucherNumberPlaceholder': 'उदाहरण: VCH-2026-014',
     'donationAds.csv.voucherNumber': 'वाउचर/बिल नंबर',
 
-    'expenses.pageTitle': 'खर्च - कुल',
+    'expenses.pageTitle': 'खर्च',
     'expenses.addNew': 'नया खर्च जोड़ें',
     'expenses.editExpense': 'खर्च संपादित करें',
     'expenses.byCategory': 'श्रेणी अनुसार खर्च',
@@ -1141,7 +1141,7 @@ export const translations = {
     'vendors.view': 'विवरण देखें',
 
     // Loans
-    'loans.pageTitle': 'ऋण - कुल',
+    'loans.pageTitle': 'ऋण',
     'loans.addNew': 'नया ऋण जोड़ें',
     'loans.editLoan': 'ऋण संपादित करें',
     'loans.donorName': 'दानकर्ता का नाम',
