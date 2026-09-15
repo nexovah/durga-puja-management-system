@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (13)
+- **Unique Bill/Voucher numbers**: Chanda's Bill Number, Donation/Ads' Voucher/Bill Number (Donation entries), Expenses' Voucher Number — duplicates now blocked on Add/Edit (alert) and on CSV import, backstopped by a DB partial unique index. New **Import Preview modal** on every CSV import (Chanda/Donation-Ads/Expenses/Loans): shows rows found, valid count, and a line-by-line duplicate/error list before anything saves — nothing commits until confirmed. New migration `supabase/015_unique_bill_voucher_numbers.sql` — **run in Supabase SQL Editor** (will fail if duplicates already exist in the data; query included to find them).
+
 ## 2026-09-15 (12)
 - **URL routing switched hash → clean paths**: `/dashboard` (root `/`), `/chanda-collection`, `/donation-ads-collection`, `/expenses`, `/vendors`, `/loans`, `/treasury`, `/settings`, `/activity-log`, `/tasks`, `/members` — no more `#` in the URL. New `public/.htaccess` (Apache `mod_rewrite`) rewrites unknown paths back to `index.html` so a hard refresh/deep link works on Hostinger's static host; copied into `dist/` automatically. **After deploying, double-check `.htaccess` actually made it to the document root** (dotfiles are easy to miss on manual FTP/zip uploads) — see the note in `DEPLOYMENT.md`.
 
