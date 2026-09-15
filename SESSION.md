@@ -4,6 +4,10 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (16)
+- **Save & Add New**: Members, Chanda Collection, Donation/Ads Collection, Expenses, Tasks (highest-volume forms) get a second submit button in the Add-new modal — saves and keeps the modal open with a blank form for the next entry, instead of closing. Detected via `SubmitEvent.submitter`, only shown when adding (not editing).
+- **Activity Log**: new "All Users" filter dropdown, built from distinct users already in the loaded log — filter to one user's activity history. Front-end only, no DB changes.
+
 ## 2026-09-15 (15)
 - **Add/Edit forms are now modals everywhere** (Members, Chanda, Donation/Ads, Expenses, Loans, Tasks, Settings → User Management): centered dialog on desktop, full-screen on mobile with Save/Cancel pinned to a sticky bottom bar. New `FormModal.tsx`, `Toast.tsx` (auto-dismissing success banner after save), `DeleteConfirmModal.tsx` (replaces every native `confirm()` on delete — shows a fresh random 4-digit PIN each time, user must retype it to enable the delete button). Purely front-end, no DB changes.
 
