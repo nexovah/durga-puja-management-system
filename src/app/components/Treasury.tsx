@@ -25,12 +25,12 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
   // Monthly data
   const getMonthlyData = () => {
-    const monthlyData: { [key: string]: { chanda: number; donationAds: number; membership: number; expenses: number } } = {};
+    const monthlyData: { [key: string]: { chanda: number; donationAds: number; membership: number; loans: number; expenses: number } } = {};
 
     chandaList.forEach(c => {
       const month = new Date(c.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
       }
       monthlyData[month].chanda += getChandaCreditAmount(c);
     });
@@ -38,7 +38,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     donationAdsList.forEach(d => {
       const month = new Date(d.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
       }
       monthlyData[month].donationAds += d.amount;
     });
@@ -47,15 +47,23 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       if (!m.membershipDate) return;
       const month = new Date(m.membershipDate).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
       }
       monthlyData[month].membership += getMemberCreditAmount(m);
+    });
+
+    loansList.forEach(l => {
+      const month = new Date(l.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
+      if (!monthlyData[month]) {
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+      }
+      monthlyData[month].loans += getLoanNetAmount(l);
     });
 
     expenses.forEach(e => {
       const month = new Date(e.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
       }
       monthlyData[month].expenses += getExpenseCreditAmount(e);
     });
@@ -66,8 +74,9 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
         chanda: data.chanda,
         donationAds: data.donationAds,
         membership: data.membership,
+        loans: data.loans,
         expenses: data.expenses,
-        balance: data.chanda + data.donationAds + data.membership - data.expenses,
+        balance: data.chanda + data.donationAds + data.membership + data.loans - data.expenses,
       }))
       .sort((a, b) => b.month.localeCompare(a.month));
   };
@@ -195,6 +204,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.chanda')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.donationAds')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.totalMembership')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.loansOutstanding')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.expenses')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.balance')}</th>
               </tr>
@@ -211,6 +221,9 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                   </td>
                   <td className="px-6 py-4 text-sm text-violet-600 font-bold text-right">
                     ₹{data.membership.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-sky-600 font-bold text-right">
+                    ₹{data.loans.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">
                     ₹{data.expenses.toLocaleString()}
