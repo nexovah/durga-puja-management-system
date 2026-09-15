@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, LogOut } from 'lucide-react';
+import {
+  MoreVertical, LogOut, LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
+  Store, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
+} from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -670,6 +673,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-1 overflow-x-auto">
               <NavButton
+                icon={LayoutDashboard}
                 active={currentPage === 'dashboard'}
                 onClick={() => setCurrentPage('dashboard')}
               >
@@ -677,6 +681,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               </NavButton>
               {currentUser?.permissions.members && (
                 <NavButton
+                  icon={Users}
                   active={currentPage === 'members'}
                   onClick={() => setCurrentPage('members')}
                 >
@@ -685,6 +690,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               )}
               {currentUser?.permissions.chanda && (
                 <NavButton
+                  icon={HandCoins}
                   active={currentPage === 'chanda'}
                   onClick={() => setCurrentPage('chanda')}
                 >
@@ -693,6 +699,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               )}
               {currentUser?.permissions.donationAds && (
                 <NavButton
+                  icon={Gift}
                   active={currentPage === 'donationAds'}
                   onClick={() => setCurrentPage('donationAds')}
                 >
@@ -701,6 +708,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               )}
               {currentUser?.permissions.expenses && (
                 <NavButton
+                  icon={TrendingDown}
                   active={currentPage === 'expenses'}
                   onClick={() => setCurrentPage('expenses')}
                 >
@@ -709,6 +717,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               )}
               {currentUser?.permissions.treasury && (
                 <NavButton
+                  icon={Wallet}
                   active={currentPage === 'treasury'}
                   onClick={() => setCurrentPage('treasury')}
                 >
@@ -843,16 +852,24 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   );
 }
 
-function NavButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function NavButton({
+  icon: Icon, active, onClick, children,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-3 font-bold transition-colors border-b-4 whitespace-nowrap ${
+      className={`flex items-center gap-2 px-6 py-3 font-bold transition-colors border-b-4 whitespace-nowrap ${
         active
           ? 'border-orange-600 text-orange-600 bg-orange-50'
           : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50'
       }`}
     >
+      <Icon size={18} />
       {children}
     </button>
   );
@@ -910,40 +927,45 @@ function MoreMenu({
           {showVendors && (
             <button
               onClick={() => { onSelect('vendors'); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
+              <Store size={16} />
               {t('nav.vendors')}
             </button>
           )}
           {showLoans && (
             <button
               onClick={() => { onSelect('loans'); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
+              <Landmark size={16} />
               {t('nav.loans')}
             </button>
           )}
           {showTasks && (
             <button
               onClick={() => { onSelect('tasks'); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
+              <CheckSquare size={16} />
               {t('nav.tasks')}
             </button>
           )}
           {showSettings && (
             <button
               onClick={() => { onSelect('settings'); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
+              <SettingsIcon size={16} />
               {t('nav.settings')}
             </button>
           )}
           {showActivityLog && (
             <button
               onClick={() => { onSelect('activityLog'); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
+              <ScrollText size={16} />
               {t('nav.activityLog')}
             </button>
           )}
