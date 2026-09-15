@@ -244,8 +244,9 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             )}
           </div>
         }
+        total={`${t('common.total')}: ₹${totalLoans.toLocaleString()}`}
       >
-        {t('loans.pageTitle')}: ₹{totalLoans.toLocaleString()}
+        {t('loans.pageTitle')}
       </PageHeading>
 
       {canEdit && showForm && (

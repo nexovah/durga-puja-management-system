@@ -44,6 +44,7 @@ export const translations = {
     // Common
     'common.save': 'Save',
     'common.refresh': 'Refresh',
+    'common.total': 'Total',
     'pagination.first': 'First',
     'pagination.back': 'Back',
     'pagination.next': 'Next',
@@ -481,6 +482,7 @@ export const translations = {
 
     'common.save': 'সংরক্ষণ করুন',
     'common.refresh': 'রিফ্রেশ',
+    'common.total': 'মোট',
     'pagination.first': 'প্রথম',
     'pagination.back': 'পেছনে',
     'pagination.next': 'পরবর্তী',
@@ -910,6 +912,7 @@ export const translations = {
 
     'common.save': 'सहेजें',
     'common.refresh': 'रिफ्रेश करें',
+    'common.total': 'कुल',
     'pagination.first': 'पहला',
     'pagination.back': 'पीछे',
     'pagination.next': 'अगला',

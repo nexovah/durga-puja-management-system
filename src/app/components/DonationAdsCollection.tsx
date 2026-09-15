@@ -315,8 +315,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             )}
           </div>
         }
+        total={`${t('common.total')}: ₹${total.toLocaleString()}`}
       >
-        {t('donationAds.pageTitle')}: ₹{total.toLocaleString()}
+        {t('donationAds.pageTitle')}
       </PageHeading>
 
       {/* Form */}

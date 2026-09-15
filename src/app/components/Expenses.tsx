@@ -359,8 +359,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
           </div>
         }
+        total={`${t('common.total')}: ₹${totalExpenses.toLocaleString()}`}
       >
-        {t('expenses.pageTitle')}: ₹{totalExpenses.toLocaleString()}
+        {t('expenses.pageTitle')}
       </PageHeading>
 
       {/* Category Summary — Treasury-style widgets, kept to one row */}

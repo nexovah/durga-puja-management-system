@@ -327,8 +327,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
           </div>
         }
+        total={`${t('common.total')}: ₹${totalChanda.toLocaleString()}`}
       >
-        {t('chanda.pageTitle')}: ₹{totalChanda.toLocaleString()}
+        {t('chanda.pageTitle')}
       </PageHeading>
 
       {/* Form */}
