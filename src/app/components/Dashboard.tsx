@@ -82,19 +82,16 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
             <div className="bg-white/20 p-3 rounded-xl shrink-0">
               <tile.icon className="text-white" size={26} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.title}</p>
-              {'subValue' in tile ? (
-                <div className="flex items-baseline gap-3 min-w-0">
-                  <p className="text-white text-xl sm:text-2xl font-bold leading-tight shrink-0">{tile.value}</p>
-                  <p className="text-white/80 text-xs leading-tight truncate">
-                    {tile.subLabel}: <span className="font-semibold text-white">{tile.subValue}</span>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
-              )}
+              <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
             </div>
+            {'subValue' in tile && (
+              <div className="bg-white/15 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 min-w-0 shrink-0">
+                <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.subLabel}</p>
+                <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.subValue}</p>
+              </div>
+            )}
           </div>
         ))}
       </div>
