@@ -4,6 +4,12 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (23)
+- Loans: split single Amount field into "Amount Received" (credit from lender) and "Amount Paid" (repaid so far, default 0). New `getLoanNetAmount` = received - paid, the outstanding balance held from that lender.
+- This net now feeds into the app's grand credit total everywhere Chanda/Donation-Ads already do: new Dashboard "Loans Outstanding" tile, new Treasury "Loans Outstanding" summary card, both included in totalCredit/balance. Not broken into Treasury's monthly/top-donor/category breakdowns (no repayment-date field to bucket `amountPaid` by).
+- New `supabase/006_loans_amount_paid.sql`: renames `loans.amount` → `amount_received`, adds `amount_paid`.
+- CSV export/import, form, and table updated to the two-field shape. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-15 (22)
 - Fixed the "⋮" (more) nav dropdown not opening — it was inside the scrollable nav-buttons row (`overflow-x-auto`), which clips vertical overflow too, hiding the panel. Moved it out next to the search icon.
 - Vendors page redesigned: rows now merge by Name + Contact (case-insensitive) instead of one row per expense — shows Total Amount Received (summed credited amount across all matching expenses) and a transaction count. New "View details" panel per vendor shows the full payment history (every expense line: date, title, category, voucher, amount, remarks). CSV export matches the merged shape. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
