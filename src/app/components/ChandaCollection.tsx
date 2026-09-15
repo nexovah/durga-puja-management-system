@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
 import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -357,7 +357,6 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
           </div>
         }
-        total={`${t('common.total')}: ₹${totalChanda.toLocaleString()}`}
       >
         {t('chanda.pageTitle')}
       </PageHeading>
@@ -540,7 +539,14 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       )}
 
       {/* Widgets — Treasury-style summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-green-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.total')}</h3>
+            <IndianRupee className="text-green-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
+        </div>
         <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-amber-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
