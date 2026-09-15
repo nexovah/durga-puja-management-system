@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (14)
+- **CSV import now upserts by Bill/Voucher Number** instead of rejecting every match as a duplicate: a matching number updates that existing record's other fields (name, amount, date, status, ...) from the file; a new/blank number inserts. Import Preview modal redesigned to show "N new record(s)" + "M existing record(s) will be updated" instead of an error list. `prepareImportUpsert()` replaces the old `splitByDuplicateKey()`. Applied to Chanda/Donation-Ads/Expenses/Loans. No DB migration needed (015 from earlier today still applies as the uniqueness backstop).
+
 ## 2026-09-15 (13)
 - **Unique Bill/Voucher numbers**: Chanda's Bill Number, Donation/Ads' Voucher/Bill Number (Donation entries), Expenses' Voucher Number — duplicates now blocked on Add/Edit (alert) and on CSV import, backstopped by a DB partial unique index. New **Import Preview modal** on every CSV import (Chanda/Donation-Ads/Expenses/Loans): shows rows found, valid count, and a line-by-line duplicate/error list before anything saves — nothing commits until confirmed. New migration `supabase/015_unique_bill_voucher_numbers.sql` — **run in Supabase SQL Editor** (will fail if duplicates already exist in the data; query included to find them).
 
