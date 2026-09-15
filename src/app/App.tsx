@@ -123,6 +123,7 @@ export interface DonationAd {
   paidMethod: PaidMethod;
   inKind: string; // Donation/Ads in kinds (free text)
   date: string;
+  voucherNumber?: string; // Donation entries only
   phone: string; // Phone Number 1
   phone2?: string; // Phone Number 2 (optional)
   remarks: string;

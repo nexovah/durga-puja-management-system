@@ -37,6 +37,7 @@ const emptyForm = {
   paidMethod: 'notSelected' as PaidMethod,
   inKind: '',
   date: new Date().toISOString().split('T')[0],
+  voucherNumber: '',
   phone: '',
   phone2: '',
   remarks: '',
@@ -117,6 +118,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       paidMethod: formData.paidMethod,
       inKind: formData.inKind,
       date: formData.date,
+      voucherNumber: formData.category === 'donation' ? formData.voucherNumber : '',
       phone: formData.phone,
       phone2: formData.phone2,
       remarks: formData.remarks,
@@ -148,6 +150,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       paidMethod: item.paidMethod || 'notSelected',
       inKind: item.inKind || '',
       date: item.date,
+      voucherNumber: item.voucherNumber || '',
       phone: item.phone,
       phone2: item.phone2 || '',
       remarks: item.remarks,
@@ -178,6 +181,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         t('common.paidMethod'),
         t('donationAds.inKindOrAdsCategory'),
         t('donationAds.csv.date'),
+        t('donationAds.csv.voucherNumber'),
         t('donationAds.csv.phone'),
         t('donationAds.csv.phone2'),
         t('donationAds.csv.remarks'),
@@ -190,6 +194,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         paidMethodLabel(item.paidMethod || 'notSelected'),
         inKindDisplay(item),
         item.date,
+        item.voucherNumber || '',
         item.phone,
         item.phone2 || '',
         item.remarks,
@@ -222,7 +227,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
       const imported: DonationAd[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [categoryRaw, donorName, companyName, amountRaw, paidMethodRaw, inKindRaw, date, phone, phone2, remarks] = rows[i];
+        const [categoryRaw, donorName, companyName, amountRaw, paidMethodRaw, inKindRaw, date, voucherNumber, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (isNaN(amount)) continue;
 
@@ -239,6 +244,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           paidMethod: parsePaidMethodInput(paidMethodRaw || ''),
           inKind: !isDonationRow ? parseAdsCategoryInput(inKindRaw || '') : (inKindRaw || '').trim(),
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
+          voucherNumber: isDonationRow ? (voucherNumber || '').trim() : '',
           phone: (phone || '').trim(),
           phone2: (phone2 || '').trim(),
           remarks: (remarks || '').trim(),
@@ -318,7 +324,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
               <select
                 required
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory, inKind: '' })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory, inKind: '', voucherNumber: '' })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 <option value="ads">{t('donationAds.category.ads')}</option>
@@ -415,6 +421,19 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
+
+            {isDonation && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.voucherNumber')}</label>
+                <input
+                  type="text"
+                  value={formData.voucherNumber}
+                  onChange={(e) => setFormData({ ...formData, voucherNumber: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('donationAds.voucherNumberPlaceholder')}
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone1')}</label>

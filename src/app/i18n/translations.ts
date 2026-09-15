@@ -193,6 +193,9 @@ export const translations = {
     'donationAds.csv.phone': 'Phone',
     'donationAds.csv.phone2': 'Phone 2',
     'donationAds.csv.remarks': 'Remarks',
+    'donationAds.voucherNumber': 'Voucher/Bill Number',
+    'donationAds.voucherNumberPlaceholder': 'e.g. VCH-2026-014',
+    'donationAds.csv.voucherNumber': 'Voucher/Bill Number',
 
     // Expenses
     'expenses.pageTitle': 'Expenses - Total',
@@ -582,6 +585,9 @@ export const translations = {
     'donationAds.csv.phone': 'ফোন',
     'donationAds.csv.phone2': 'ফোন ২',
     'donationAds.csv.remarks': 'মন্তব্য',
+    'donationAds.voucherNumber': 'ভাউচার/বিল নম্বর',
+    'donationAds.voucherNumberPlaceholder': 'যেমন: VCH-2026-014',
+    'donationAds.csv.voucherNumber': 'ভাউচার/বিল নম্বর',
 
     'expenses.pageTitle': 'খরচ - মোট',
     'expenses.addNew': 'নতুন খরচ যোগ করুন',
@@ -967,6 +973,9 @@ export const translations = {
     'donationAds.csv.phone': 'फ़ोन',
     'donationAds.csv.phone2': 'फ़ोन 2',
     'donationAds.csv.remarks': 'टिप्पणी',
+    'donationAds.voucherNumber': 'वाउचर/बिल नंबर',
+    'donationAds.voucherNumberPlaceholder': 'उदाहरण: VCH-2026-014',
+    'donationAds.csv.voucherNumber': 'वाउचर/बिल नंबर',
 
     'expenses.pageTitle': 'खर्च - कुल',
     'expenses.addNew': 'नया खर्च जोड़ें',
