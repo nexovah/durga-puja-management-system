@@ -2,6 +2,7 @@ import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shie
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
+import { DashboardCategoryBars } from './DashboardCategoryBars';
 
 interface DashboardProps {
   members: Member[];
@@ -60,8 +61,15 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
 
   return (
     <div className="space-y-4">
-      {/* Collections vs Expenses chart */}
-      <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
+      {/* Collections vs Expenses chart (3) + category totals bar chart (1) */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-3">
+          <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
+        </div>
+        <div className="lg:col-span-1">
+          <DashboardCategoryBars chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
+        </div>
+      </div>
 
       {/* Key figures — bigger cards, capped at 4 per row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

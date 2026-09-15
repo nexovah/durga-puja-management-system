@@ -12,6 +12,11 @@ Running log of updates made to this project. Newest entries on top.
 - New migration `supabase/009_activity_log_and_permissions.sql` — adds `can_delete`/`can_bulk_import` columns, creates `activity_log`, recreates `login`/`create_app_user`/`update_app_user` RPCs to carry the new fields, and merges `vendors` permission for existing users. **User must run this in Supabase SQL Editor.**
 - Verified `npm run build` passes. Pushed to `main`.
 
+## 2026-09-15 (2)
+- Dashboard chart: Income now includes Loans (net received) alongside Chanda + Donation/Ads; bottom-line label renamed "Net Balance" → "New Balance".
+- Dashboard "Collections vs Expenses" row split 3:1: chart keeps 3 columns, new `DashboardCategoryBars.tsx` bar chart takes the 4th — 5 pillars (Chanda paid, Donation, Ads, Expenses, Loan received), each an all-time total (not tied to the chart's date-range selector), amount labelled above each bar. No DB changes — reuses data already loaded for the other pages.
+- Verified `npm run build` passes. Pushed to `main`.
+
 ---
 
 ## 2026-09-15 (25)
