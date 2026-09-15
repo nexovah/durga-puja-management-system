@@ -146,7 +146,8 @@ function fromLoanRow(row: any): Loan {
   return {
     id: row.id,
     donorName: row.donor_name,
-    amount: Number(row.amount) || 0,
+    amountReceived: Number(row.amount_received) || 0,
+    amountPaid: Number(row.amount_paid) || 0,
     phone: row.phone || '',
     paymentMethod: row.payment_method,
     paymentStatus: 'paid',
@@ -159,7 +160,8 @@ function toLoanRow(l: Loan) {
   return {
     id: l.id,
     donor_name: l.donorName,
-    amount: l.amount,
+    amount_received: l.amountReceived,
+    amount_paid: l.amountPaid || 0,
     phone: l.phone,
     payment_method: l.paymentMethod,
     payment_status: 'paid',

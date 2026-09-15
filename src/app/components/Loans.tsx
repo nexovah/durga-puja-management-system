@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { Loan, PaidMethod } from '../App';
+import { Loan, PaidMethod, getLoanNetAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -22,7 +22,8 @@ const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
 
 const emptyForm = {
   donorName: '',
-  amount: '',
+  amountReceived: '',
+  amountPaid: '',
   phone: '',
   paymentMethod: 'notSelected' as PaidMethod,
   date: new Date().toISOString().split('T')[0],
@@ -37,7 +38,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
   const [formData, setFormData] = useState(emptyForm);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  const totalLoans = loansList.reduce((sum, loan) => sum + loan.amount, 0);
+  const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
 
   const paidMethodLabel = (method: PaidMethod) => {
     const found = PAID_METHODS.find(m => m.value === method);
@@ -62,7 +63,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
 
     const payload = {
       donorName: formData.donorName,
-      amount: parseFloat(formData.amount) || 0,
+      amountReceived: parseFloat(formData.amountReceived) || 0,
+      amountPaid: parseFloat(formData.amountPaid) || 0,
       phone: formData.phone,
       paymentMethod: formData.paymentMethod,
       paymentStatus: 'paid' as const,
@@ -89,7 +91,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
   const handleEdit = (loan: Loan) => {
     setFormData({
       donorName: loan.donorName,
-      amount: loan.amount.toString(),
+      amountReceived: loan.amountReceived.toString(),
+      amountPaid: (loan.amountPaid || 0).toString(),
       phone: loan.phone,
       paymentMethod: loan.paymentMethod || 'notSelected',
       date: loan.date,
@@ -116,7 +119,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
     const csvContent = [
       [
         t('loans.csv.donorName'),
-        t('loans.csv.amount'),
+        t('loans.csv.amountReceived'),
+        t('loans.csv.amountPaid'),
         t('loans.paymentMethod'),
         t('loans.csv.date'),
         t('loans.csv.returnDate'),
@@ -125,7 +129,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
       ].map(csvField).join(','),
       ...loansList.map(l => [
         l.donorName,
-        l.amount,
+        l.amountReceived,
+        l.amountPaid || 0,
         paidMethodLabel(l.paymentMethod || 'notSelected'),
         l.date,
         l.returnDate || '',
@@ -159,14 +164,15 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
 
       const imported: Loan[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountRaw, paidMethodRaw, date, returnDate, phone, remarks] = rows[i];
-        const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
-        if (!donorName || isNaN(amount)) continue;
+        const [donorName, amountReceivedRaw, amountPaidRaw, paidMethodRaw, date, returnDate, phone, remarks] = rows[i];
+        const amountReceived = parseFloat((amountReceivedRaw || '').replace(/,/g, ''));
+        if (!donorName || isNaN(amountReceived)) continue;
 
         imported.push({
           id: crypto.randomUUID(),
           donorName: donorName.trim(),
-          amount,
+          amountReceived,
+          amountPaid: parseFloat((amountPaidRaw || '0').replace(/,/g, '')) || 0,
           phone: (phone || '').trim(),
           paymentMethod: parsePaidMethodInput(paidMethodRaw || ''),
           paymentStatus: 'paid',
@@ -253,14 +259,26 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.amountLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.amountReceivedLabel')} *</label>
               <input
                 type="number"
                 required
                 min="0"
                 step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                value={formData.amountReceived}
+                onChange={(e) => setFormData({ ...formData, amountReceived: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('loans.amountPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.amountPaidLabel')}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.amountPaid}
+                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.amountPlaceholder')}
               />
@@ -341,7 +359,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.amountReceivedLabel')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.amountPaidLabel')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.paymentMethod')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.returnDate')}</th>
@@ -353,7 +372,8 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
               {[...loansList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((loan) => (
                 <tr key={loan.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800 font-medium">{loan.donorName}</td>
-                  <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{loan.amount.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(loan.date).toLocaleDateString(locale)}

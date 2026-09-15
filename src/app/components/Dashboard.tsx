@@ -1,5 +1,5 @@
-import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift, HandCoins } from 'lucide-react';
-import { Member, Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
+import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
+import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
 
@@ -8,13 +8,15 @@ interface DashboardProps {
   chandaList: Chanda[];
   donationAdsList: DonationAd[];
   expenses: Expense[];
+  loansList: Loan[];
 }
 
-export function Dashboard({ members, chandaList, donationAdsList, expenses }: DashboardProps) {
+export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList }: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
-  const totalCredit = totalChanda + totalDonationAds;
+  const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
+  const totalCredit = totalChanda + totalDonationAds + totalLoansNet;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const balance = totalCredit - totalExpenses;
 
@@ -35,6 +37,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses }: Da
     { title: t('dashboard.totalMembers'), value: members.length.toString(), icon: Users, color: 'from-blue-500 to-blue-600' },
     { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600' },
     { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600' },
+    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, color: 'from-sky-500 to-sky-600' },
     { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600' },
     { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, color: 'from-amber-500 to-amber-600' },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600' },

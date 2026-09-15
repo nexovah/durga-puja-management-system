@@ -1,5 +1,5 @@
-import { TrendingUp, TrendingDown, Wallet, Download, Gift } from 'lucide-react';
-import { Chanda, DonationAd, Expense, getChandaCreditAmount, getExpenseCreditAmount } from '../App';
+import { TrendingUp, TrendingDown, Wallet, Download, Gift, Landmark } from 'lucide-react';
+import { Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -8,13 +8,15 @@ interface TreasuryProps {
   chandaList: Chanda[];
   donationAdsList: DonationAd[];
   expenses: Expense[];
+  loansList: Loan[];
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
-  const totalCredit = totalChanda + totalDonationAds;
+  const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
+  const totalCredit = totalChanda + totalDonationAds + totalLoansNet;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const balance = totalCredit - totalExpenses;
 
@@ -109,7 +111,7 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
       </PageHeading>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalChanda')}</h3>
@@ -126,6 +128,15 @@ export function Treasury({ chandaList, donationAdsList, expenses }: TreasuryProp
           </div>
           <p className="text-3xl font-bold text-emerald-600">₹{totalDonationAds.toLocaleString()}</p>
           <p className="text-sm text-gray-500 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-sky-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('treasury.loansOutstanding')}</h3>
+            <Landmark className="text-sky-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-sky-600">₹{totalLoansNet.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">{loansList.length} {t('treasury.transactions')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">

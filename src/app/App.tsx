@@ -164,13 +164,21 @@ export function getExpenseCreditAmount(expense: Expense): number {
 export interface Loan {
   id: string;
   donorName: string;
-  amount: number;
+  amountReceived: number; // received from the lender — credited to the committee's balance
+  amountPaid: number; // repaid back to the lender so far — deducted from that credit
   phone: string;
   paymentMethod: PaidMethod;
   paymentStatus: 'paid'; // loans are always recorded as paid out
   date: string;
   returnDate?: string;
   remarks: string;
+}
+
+// Net contribution of a loan to the committee's balance: what's still held
+// from the lender. Received adds credit, repaying it deducts from that same
+// credit — fully repaid nets to zero.
+export function getLoanNetAmount(loan: Loan): number {
+  return loan.amountReceived - (loan.amountPaid || 0);
 }
 
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
@@ -601,6 +609,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             chandaList={chandaList}
             donationAdsList={donationAdsList}
             expenses={expenses}
+            loansList={loansList}
           />
         )}
         {currentPage === 'members' && (
@@ -622,7 +631,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Loans loansList={loansList} setLoansList={setLoansList} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
+          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
         )}
         {currentPage === 'settings' && (
           <Settings
