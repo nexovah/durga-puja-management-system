@@ -88,8 +88,9 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     if (editingId) {
       setTasksList(tasksList.map(task =>
@@ -123,10 +124,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       setToastMessage(t('common.savedSuccess'));
     }
 
+    const wasEditing = editingId;
     setFormData(getEmptyForm());
     setAssigneePickerOpen(false);
-    setShowForm(false);
     setEditingId(null);
+    setShowForm(saveAndAddNew && !wasEditing);
   };
 
   const handleEdit = (task: Task) => {
@@ -213,6 +215,16 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
+            {!editingId && (
+              <button
+                type="submit"
+                form="tasks-form"
+                value="andNew"
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium"
+              >
+                {t('common.saveAndAddNew')}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCancel}

@@ -129,8 +129,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setFormData(next);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     const billKey = normalizeKey(formData.billNumber);
     if (billKey) {
@@ -176,9 +177,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       setToastMessage(t('common.savedSuccess'));
     }
 
+    const wasEditing = editingId;
     setFormData(emptyForm);
-    setShowForm(false);
     setEditingId(null);
+    setShowForm(saveAndAddNew && !wasEditing);
   };
 
   const handleEdit = (chanda: Chanda) => {
@@ -387,6 +389,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
+            {!editingId && (
+              <button
+                type="submit"
+                form="chanda-form"
+                value="andNew"
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium"
+              >
+                {t('common.saveAndAddNew')}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCancel}

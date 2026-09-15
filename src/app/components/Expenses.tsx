@@ -132,8 +132,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const partialSumFromForm = () =>
     formData.partialAmounts.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     const amount = parseFloat(formData.amount) || 0;
     const partialAmounts = formData.partialAmounts.map(v => (v.trim() === '' ? undefined : parseFloat(v) || 0));
@@ -191,9 +192,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       setToastMessage(t('common.savedSuccess'));
     }
 
+    const wasEditing = editingId;
     setFormData(emptyForm);
-    setShowForm(false);
     setEditingId(null);
+    setShowForm(saveAndAddNew && !wasEditing);
   };
 
   const handleEdit = (expense: Expense) => {
@@ -408,6 +410,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
+            {!editingId && (
+              <button
+                type="submit"
+                form="expenses-form"
+                value="andNew"
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium"
+              >
+                {t('common.saveAndAddNew')}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCancel}

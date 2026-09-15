@@ -16,6 +16,7 @@ export function ActivityLog() {
   const [loading, setLoading] = useState(true);
   const [moduleFilter, setModuleFilter] = useState<'all' | ActivityModule>('all');
   const [actionFilter, setActionFilter] = useState<'all' | ActivityAction>('all');
+  const [userFilter, setUserFilter] = useState<'all' | string>('all');
 
   const load = () => {
     setLoading(true);
@@ -41,11 +42,24 @@ export function ActivityLog() {
   };
 
   const filtered = entries.filter(
-    e => (moduleFilter === 'all' || e.module === moduleFilter) && (actionFilter === 'all' || e.action === actionFilter)
+    e =>
+      (moduleFilter === 'all' || e.module === moduleFilter) &&
+      (actionFilter === 'all' || e.action === actionFilter) &&
+      (userFilter === 'all' || e.userId === userFilter)
   );
 
   const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'tasks', 'users', 'settings'];
   const actions: ActivityAction[] = ['create', 'update', 'delete', 'bulk_import'];
+
+  // Distinct users seen in the log so far — keyed by userId (falls back to
+  // username for older rows saved before userId was tracked, if any).
+  const userOptions = Array.from(
+    new Map(
+      entries
+        .filter(e => e.userId)
+        .map(e => [e.userId as string, e.userName])
+    )
+  ).sort((a, b) => a[1].localeCompare(b[1]));
 
   const pagination = usePagination(filtered);
 
@@ -84,6 +98,16 @@ export function ActivityLog() {
           <option value="all">{t('activityLog.allActions')}</option>
           {actions.map(a => (
             <option key={a} value={a}>{actionLabel(a)}</option>
+          ))}
+        </select>
+        <select
+          value={userFilter}
+          onChange={e => setUserFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+        >
+          <option value="all">{t('activityLog.allUsers')}</option>
+          {userOptions.map(([userId, userName]) => (
+            <option key={userId} value={userId}>{userName}</option>
           ))}
         </select>
       </div>

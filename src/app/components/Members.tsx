@@ -74,8 +74,9 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     const hasMembershipAmount = formData.membershipAmount.trim() !== '';
     const membershipPayload = hasMembershipAmount
@@ -131,8 +132,12 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
 
     setFormData(emptyForm);
     setShowMembershipPayment(false);
-    setShowForm(false);
     setEditingId(null);
+    if (saveAndAddNew && !editingId) {
+      setShowForm(true); // keep the modal open for the next entry
+    } else {
+      setShowForm(false);
+    }
   };
 
   const handleEdit = (member: Member) => {
@@ -245,6 +250,16 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
+            {!editingId && (
+              <button
+                type="submit"
+                form="members-form"
+                value="andNew"
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium"
+              >
+                {t('common.saveAndAddNew')}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCancel}
