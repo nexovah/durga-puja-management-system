@@ -36,7 +36,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
 
   // Key figures: compact, data-dense cards
   const statTiles = [
-    { title: t('dashboard.totalMembers'), value: members.length.toString(), icon: Users, color: 'from-blue-500 to-blue-600' },
+    { title: t('dashboard.totalMembers'), value: members.length.toString(), subLabel: t('dashboard.totalMembersPaid'), subValue: `₹${totalMembershipPayments.toLocaleString()}`, icon: Users, color: 'from-blue-500 to-blue-600' },
     { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600' },
     { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600' },
     { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, color: 'from-sky-500 to-sky-600' },
@@ -82,9 +82,18 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
             <div className="bg-white/20 p-3 rounded-xl shrink-0">
               <tile.icon className="text-white" size={26} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-white/90 text-sm font-medium leading-tight truncate">{tile.title}</p>
-              <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
+              {'subValue' in tile ? (
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <p className="text-white text-xl sm:text-2xl font-bold leading-tight shrink-0">{tile.value}</p>
+                  <p className="text-white/80 text-xs leading-tight truncate">
+                    {tile.subLabel}: <span className="font-semibold text-white">{tile.subValue}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-white text-xl sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
+              )}
             </div>
           </div>
         ))}

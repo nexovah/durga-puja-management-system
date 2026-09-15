@@ -75,6 +75,7 @@ export const translations = {
 
     // Dashboard
     'dashboard.totalMembers': 'Total Members',
+    'dashboard.totalMembersPaid': 'Paid',
     'dashboard.totalChanda': 'Total Chanda',
     'dashboard.donationAdsTotal': 'Donation/Ads Collection',
     'dashboard.recentChanda': 'Recent Chanda Collection',
@@ -524,6 +525,7 @@ export const translations = {
     'common.egPrefix': 'যেমন',
 
     'dashboard.totalMembers': 'মোট সদস্য',
+    'dashboard.totalMembersPaid': 'পরিশোধিত',
     'dashboard.totalChanda': 'মোট চাঁদা',
     'dashboard.donationAdsTotal': 'দান/বিজ্ঞাপন সংগ্রহ',
     'dashboard.recentChanda': 'সাম্প্রতিক চাঁদা সংগ্রহ',
@@ -966,6 +968,7 @@ export const translations = {
     'common.egPrefix': 'उदाहरण',
 
     'dashboard.totalMembers': 'कुल सदस्य',
+    'dashboard.totalMembersPaid': 'भुगतान',
     'dashboard.totalChanda': 'कुल चंदा',
     'dashboard.donationAdsTotal': 'दान/विज्ञापन संग्रह',
     'dashboard.recentChanda': 'हालिया चंदा संग्रह',
