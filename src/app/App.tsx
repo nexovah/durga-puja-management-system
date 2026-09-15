@@ -580,23 +580,25 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 </NavButton>
               )}
             </div>
-            <GlobalSearch
-              members={members}
-              chandaList={chandaList}
-              donationAdsList={donationAdsList}
-              expenses={expenses}
-              currentUser={currentUser}
-              onNavigate={setCurrentPage}
-            />
-            {(currentUser?.permissions.expenses || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
-              <MoreMenu
-                showVendors={!!currentUser?.permissions.expenses}
-                showLoans={!!currentUser?.permissions.loans}
-                showSettings={!!currentUser?.permissions.settings}
-                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings'}
-                onSelect={setCurrentPage}
+            <div className="flex items-center gap-8 shrink-0">
+              <GlobalSearch
+                members={members}
+                chandaList={chandaList}
+                donationAdsList={donationAdsList}
+                expenses={expenses}
+                currentUser={currentUser}
+                onNavigate={setCurrentPage}
               />
-            )}
+              {(currentUser?.permissions.expenses || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
+                <MoreMenu
+                  showVendors={!!currentUser?.permissions.expenses}
+                  showLoans={!!currentUser?.permissions.loans}
+                  showSettings={!!currentUser?.permissions.settings}
+                  active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings'}
+                  onSelect={setCurrentPage}
+                />
+              )}
+            </div>
           </div>
         </div>
       </nav>
