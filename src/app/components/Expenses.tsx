@@ -363,18 +363,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         {t('expenses.pageTitle')}: ₹{totalExpenses.toLocaleString()}
       </PageHeading>
 
-      {/* Category Summary */}
+      {/* Category Summary — Treasury-style widgets, kept to one row */}
       {categoryTotals.length > 0 && (
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">{t('expenses.byCategory')}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categoryTotals.map((ct) => (
-              <div key={ct.category} className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-gray-600">{ct.label}</p>
-                <p className="text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
+          {categoryTotals.map((ct) => (
+            <div
+              key={ct.category}
+              className="bg-white rounded-xl shadow-md p-3 sm:p-4 border-l-4 border-red-500 shrink-0 min-w-[140px] sm:min-w-[160px]"
+            >
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{ct.label}</h3>
+              <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
+            </div>
+          ))}
         </div>
       )}
 
