@@ -194,7 +194,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
     <div className="space-y-6">
       <PageHeading
         action={
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {canEdit && (
               <>
                 <input
@@ -206,7 +206,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
                 />
                 <button
                   onClick={handleImportClick}
-                  className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-opacity hover:opacity-90 font-bold"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 text-white rounded-lg transition-opacity hover:opacity-90 font-bold text-sm sm:text-base whitespace-nowrap"
                   style={{ backgroundColor: '#383737' }}
                 >
                   <Upload size={20} />
@@ -216,7 +216,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
             )}
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
@@ -224,7 +224,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
             {canEdit && (
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus size={20} />
                 {t('loans.addNew')}
