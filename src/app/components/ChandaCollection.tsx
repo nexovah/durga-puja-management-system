@@ -342,31 +342,6 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         {t('chanda.pageTitle')}
       </PageHeading>
 
-      {/* Widgets — Treasury-style summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-amber-500">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
-            <HandCoins className="text-amber-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-orange-500">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount1')}</h3>
-            <Sparkles className="text-orange-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-red-500">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount2')}</h3>
-            <Flame className="text-red-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalAmount2.toLocaleString()}</p>
-        </div>
-      </div>
-
       {/* Form */}
       {canEdit && showForm && (
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
@@ -543,6 +518,31 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           </form>
         </div>
       )}
+
+      {/* Widgets — Treasury-style summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-amber-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
+            <HandCoins className="text-amber-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-orange-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount1')}</h3>
+            <Sparkles className="text-orange-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-red-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount2')}</h3>
+            <Flame className="text-red-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalAmount2.toLocaleString()}</p>
+        </div>
+      </div>
 
       {/* Chanda List */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
