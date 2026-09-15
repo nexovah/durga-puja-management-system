@@ -4,6 +4,16 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15
+- New **Activity Log** page in the ⋮ more-menu (after Settings): append-only `activity_log` table (RLS grants select+insert only — no update/delete, so entries can't be tampered with once written). Every create/edit/delete/bulk-import across Members, Chanda, Donation/Ads, Expenses, Loans and User Management logs one row (`ActivityLog.tsx`, `logActivity`/`fetchActivityLog` in `db.ts`, `onLog` prop threaded into all 5 CRUD pages via `App.tsx`'s `handleLog`). Filterable by module/action, refreshable, shows user/time/action/module/details.
+- **Access Level** is now 3-tier instead of 2: View Only / Can Edit & Manage (no delete) / Can Edit, Manage & Delete. New `app_users.can_delete` column — edit rights no longer imply delete rights. Delete buttons in Members/Chanda/Donation-Ads/Expenses/Loans now gate on `canDelete` separately from `canEdit`.
+- New per-user **Bulk Upload** toggle (`app_users.can_bulk_import`), shown under Access Level in the user form only when the user can edit. Gates the CSV Import button on Chanda/Donation-Ads/Expenses/Loans independently of edit/delete rights — lets an admin give someone add/edit access without risking a bulk-import wiping the database.
+- Vendor menu now has its own `vendors` permission checkbox in Settings → User Management (previously piggy-backed on `expenses`); existing users are migrated to keep their current Vendor access.
+- New migration `supabase/009_activity_log_and_permissions.sql` — adds `can_delete`/`can_bulk_import` columns, creates `activity_log`, recreates `login`/`create_app_user`/`update_app_user` RPCs to carry the new fields, and merges `vendors` permission for existing users. **User must run this in Supabase SQL Editor.**
+- Verified `npm run build` passes. Pushed to `main`.
+
+---
+
 ## 2026-09-15 (25)
 - Header mobile fix: Logout is now icon-only on mobile (LogOut icon, text returns at sm+), same row as logo/name. Address/regd/phone detail line under the name was hidden below sm — now always visible, wraps on narrow screens.
 - Donation/Ads Collection: new "Voucher/Bill Number" field, shown only when Category = Donation Collection, right after Date; resets when switching to Ads. Table view unchanged (avoids extra column); available via edit form and CSV.
