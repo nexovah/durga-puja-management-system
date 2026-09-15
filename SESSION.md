@@ -4,6 +4,10 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (22)
+- Fixed the "⋮" (more) nav dropdown not opening — it was inside the scrollable nav-buttons row (`overflow-x-auto`), which clips vertical overflow too, hiding the panel. Moved it out next to the search icon.
+- Vendors page redesigned: rows now merge by Name + Contact (case-insensitive) instead of one row per expense — shows Total Amount Received (summed credited amount across all matching expenses) and a transaction count. New "View details" panel per vendor shows the full payment history (every expense line: date, title, category, voucher, amount, remarks). CSV export matches the merged shape. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-15 (21)
 - Expenses: added Voucher Number, Vendor/Supplier Name, Contact fields after Category on the add/edit form (not shown in the table itself — avoids horizontal scroll).
 - New "Vendor" page: read-only report auto-collecting every expense with a Vendor/Supplier Name filled in. No own data, no CRUD — just a filtered view of Expenses, with CSV export.
