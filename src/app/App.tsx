@@ -725,7 +725,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 </NavButton>
               )}
             </div>
-            <div className="flex items-center gap-8 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-8 shrink-0">
               <GlobalSearch
                 members={members}
                 chandaList={chandaList}
@@ -863,7 +863,7 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 font-bold transition-colors border-b-4 whitespace-nowrap ${
+      className={`flex items-center gap-1.5 sm:gap-2 px-3 py-3 sm:px-6 font-bold text-sm sm:text-base transition-colors border-b-4 whitespace-nowrap ${
         active
           ? 'border-orange-600 text-orange-600 bg-orange-50'
           : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50'
