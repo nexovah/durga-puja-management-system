@@ -572,15 +572,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                   {t('nav.settings')}
                 </NavButton>
               )}
-              {(currentUser?.permissions.expenses || currentUser?.permissions.loans) && (
-                <MoreMenu
-                  showVendors={!!currentUser?.permissions.expenses}
-                  showLoans={!!currentUser?.permissions.loans}
-                  active={currentPage === 'vendors' || currentPage === 'loans'}
-                  onSelect={setCurrentPage}
-                />
-              )}
             </div>
+            {(currentUser?.permissions.expenses || currentUser?.permissions.loans) && (
+              <MoreMenu
+                showVendors={!!currentUser?.permissions.expenses}
+                showLoans={!!currentUser?.permissions.loans}
+                active={currentPage === 'vendors' || currentPage === 'loans'}
+                onSelect={setCurrentPage}
+              />
+            )}
             <GlobalSearch
               members={members}
               chandaList={chandaList}
