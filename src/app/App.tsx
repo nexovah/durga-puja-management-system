@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, LogOut } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -486,7 +486,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
       {/* Header + User Info Bar (combined, compact) */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">
         <div className="container mx-auto px-4 py-2.5">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="bg-white/20 p-2 rounded-lg overflow-hidden shrink-0">
                 {committeeInfo.logo && (committeeInfo.logo.startsWith('data:') || committeeInfo.logo.startsWith('http')) ? (
@@ -503,7 +503,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 <p className="font-bold text-sm sm:text-base truncate">
                   {committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
                 </p>
-                <p className="text-[11px] sm:text-xs opacity-90 truncate hidden sm:block">
+                <p className="text-[10px] sm:text-xs opacity-90 leading-snug">
                   {t('header.regd')}—{committeeInfo.established} · {t('header.regdNo')}:—{committeeInfo.regNumber} · {t('header.post')}:—{committeeInfo.post} · {t('header.pin')}:—{committeeInfo.pinCode} · {t('header.mobNo')}:—{committeeInfo.mobile1}{committeeInfo.mobile2 && ` / ${committeeInfo.mobile2}`}
                 </p>
               </div>
@@ -515,9 +515,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               </div>
               <button
                 onClick={handleLogout}
-                className="px-4 py-1.5 sm:px-6 sm:py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg text-sm sm:text-base"
+                aria-label={t('header.logout')}
+                title={t('header.logout')}
+                className="p-2.5 sm:px-6 sm:py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg text-sm sm:text-base flex items-center gap-2"
               >
-                {t('header.logout')}
+                <LogOut size={18} />
+                <span className="hidden sm:inline">{t('header.logout')}</span>
               </button>
             </div>
           </div>
