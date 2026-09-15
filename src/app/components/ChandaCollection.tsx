@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame } from 'lucide-react';
 import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -61,6 +61,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
+
+  // Amount still owed by donors: full amount for 'pending', the unpaid
+  // remainder for 'partial'. 'rejected' is excluded (donor declined to pay).
+  const pendingCollection = chandaList.reduce((sum, chanda) => {
+    if (chanda.paymentStatus === 'pending') return sum + chanda.amount;
+    if (chanda.paymentStatus === 'partial') return sum + Math.max(0, chanda.amount - (chanda.partialAmount || 0));
+    return sum;
+  }, 0);
+  const totalAmount1 = chandaList.reduce((sum, chanda) => sum + (chanda.amount1 || 0), 0);
+  const totalAmount2 = chandaList.reduce((sum, chanda) => sum + (chanda.amount2 || 0), 0);
 
   const statusLabel = (status: PaymentStatus) => {
     const found = PAYMENT_STATUSES.find(s => s.value === status);
@@ -331,6 +341,31 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       >
         {t('chanda.pageTitle')}
       </PageHeading>
+
+      {/* Widgets — Treasury-style summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-amber-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
+            <HandCoins className="text-amber-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-orange-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount1')}</h3>
+            <Sparkles className="text-orange-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-red-500">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount2')}</h3>
+            <Flame className="text-red-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalAmount2.toLocaleString()}</p>
+        </div>
+      </div>
 
       {/* Form */}
       {canEdit && showForm && (

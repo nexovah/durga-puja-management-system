@@ -136,6 +136,9 @@ export const translations = {
 
     // Chanda
     'chanda.pageTitle': 'Chanda Collection',
+    'chanda.widget.pending': 'Pending Collection',
+    'chanda.widget.amount1': 'Amount 01 (Durga Puja)',
+    'chanda.widget.amount2': 'Amount 02 (Kali Puja)',
     'chanda.addNew': 'Add New Chanda',
     'chanda.editChanda': 'Edit Chanda',
     'chanda.donorName': "Donor's Name",
@@ -571,6 +574,9 @@ export const translations = {
     'members.empty': 'কোনো সদস্য নেই। নতুন সদস্য যোগ করুন।',
 
     'chanda.pageTitle': 'চাঁদা সংগ্রহ',
+    'chanda.widget.pending': 'বাকি সংগ্রহ',
+    'chanda.widget.amount1': 'পরিমাণ ০১ (দুর্গাপূজা)',
+    'chanda.widget.amount2': 'পরিমাণ ০২ (কালীপূজা)',
     'chanda.addNew': 'নতুন চাঁদা যোগ করুন',
     'chanda.editChanda': 'চাঁদা সম্পাদনা করুন',
     'chanda.donorName': 'দাতার নাম',
@@ -1001,6 +1007,9 @@ export const translations = {
     'members.empty': 'कोई सदस्य नहीं है। नया सदस्य जोड़ें।',
 
     'chanda.pageTitle': 'चंदा संग्रह',
+    'chanda.widget.pending': 'लंबित संग्रह',
+    'chanda.widget.amount1': 'राशि 01 (दुर्गा पूजा)',
+    'chanda.widget.amount2': 'राशि 02 (काली पूजा)',
     'chanda.addNew': 'नया चंदा जोड़ें',
     'chanda.editChanda': 'चंदा संपादित करें',
     'chanda.donorName': 'दानकर्ता का नाम',
