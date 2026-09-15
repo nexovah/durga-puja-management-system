@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (6)
+- **Members**: new optional "Membership Payment" collapsible section (full-width dashed-border toggle, plus/chevron icon) below the Name/Phone/Address/Designation fields on Add/Edit Member — Amount, Paid Method, Payment Status, Partial Amount (when partial), Date, Bill Number, Remarks (reuses Chanda's vocabulary). `getMemberCreditAmount()` folds a member's paid/partial membership payment into every grand-total: Dashboard stat tiles, Dashboard chart income + summary, Dashboard category-totals bar chart (new 6th "Membership" pillar), Treasury totalCredit/balance. Members page header shows a "Total Membership Payments" pill next to the title — no separate widget card. New migration `supabase/010_member_membership_payment.sql` (7 nullable columns) — **run in Supabase SQL Editor**.
+
 ## 2026-09-15
 - New **Activity Log** page in the ⋮ more-menu (after Settings): append-only `activity_log` table (RLS grants select+insert only — no update/delete, so entries can't be tampered with once written). Every create/edit/delete/bulk-import across Members, Chanda, Donation/Ads, Expenses, Loans and User Management logs one row (`ActivityLog.tsx`, `logActivity`/`fetchActivityLog` in `db.ts`, `onLog` prop threaded into all 5 CRUD pages via `App.tsx`'s `handleLog`). Filterable by module/action, refreshable, shows user/time/action/module/details.
 - **Access Level** is now 3-tier instead of 2: View Only / Can Edit & Manage (no delete) / Can Edit, Manage & Delete. New `app_users.can_delete` column — edit rights no longer imply delete rights. Delete buttons in Members/Chanda/Donation-Ads/Expenses/Loans now gate on `canDelete` separately from `canEdit`.
