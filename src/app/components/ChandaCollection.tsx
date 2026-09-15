@@ -10,6 +10,9 @@ interface ChandaCollectionProps {
   chandaList: Chanda[];
   setChandaList: (chandaList: Chanda[]) => void;
   canEdit: boolean;
+  canDelete: boolean;
+  canBulkImport: boolean;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number) => void;
 }
 
 const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
@@ -49,7 +52,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -132,6 +135,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
           ? { ...c, ...payload }
           : c
       ));
+      onLog('update', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
     } else {
       // Add new chanda
       const newChanda: Chanda = {
@@ -139,6 +143,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
         ...payload,
       };
       setChandaList([...chandaList, newChanda]);
+      onLog('create', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
     }
 
     setFormData(emptyForm);
@@ -167,7 +172,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
 
   const handleDelete = (id: string) => {
     if (confirm(t('chanda.confirmDelete'))) {
+      const target = chandaList.find(c => c.id === id);
       setChandaList(chandaList.filter(c => c.id !== id));
+      if (target) onLog('delete', 'chanda', `${target.donorName} — ₹${target.amount.toLocaleString()}`);
     }
   };
 
@@ -265,6 +272,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
 
       if (imported.length > 0) {
         setChandaList([...chandaList, ...imported]);
+        onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${imported.length}`, imported.length);
       }
       alert(`${t('common.importResult')}: ${imported.length}`);
     };
@@ -278,7 +286,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            {canEdit && (
+            {canEdit && canBulkImport && (
               <>
                 <input
                   ref={importInputRef}
@@ -511,7 +519,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -545,21 +553,25 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit }: ChandaC
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
-                    {canEdit && (
+                    {(canEdit || canDelete) && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(chanda)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(chanda.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleEdit(chanda)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(chanda.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}

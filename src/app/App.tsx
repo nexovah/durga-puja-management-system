@@ -10,6 +10,7 @@ import { Vendors } from './components/Vendors';
 import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
+import { ActivityLog } from './components/ActivityLog';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useLanguage } from './i18n/LanguageContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -28,7 +29,10 @@ import {
   deleteUserRequest,
   setUserActiveRequest,
   changeOwnPasswordRequest,
+  logActivity,
   DeveloperInfo,
+  ActivityModule,
+  ActivityAction,
 } from './lib/db';
 
 export interface User {
@@ -37,7 +41,9 @@ export interface User {
   username: string;
   password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
-  canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Delete/Import
+  canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Import
+  canDelete: boolean; // false = can add/edit but not delete records
+  canBulkImport: boolean; // false = hides the CSV Import button everywhere
   isActive: boolean; // false = login disabled
   permissions: {
     members: boolean;
@@ -47,6 +53,7 @@ export interface User {
     treasury: boolean;
     settings: boolean;
     loans: boolean;
+    vendors: boolean;
   };
 }
 
@@ -245,7 +252,7 @@ export default function App() {
   const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog'>('dashboard');
 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -380,10 +387,13 @@ export default function App() {
     username: string,
     password: string,
     permissions: User['permissions'],
-    canEdit: boolean
+    canEdit: boolean,
+    canDelete: boolean,
+    canBulkImport: boolean
   ) => {
-    const newUser = await createUserRequest(name, username, password, permissions, canEdit);
+    const newUser = await createUserRequest(name, username, password, permissions, canEdit, canDelete, canBulkImport);
     setUsers(prev => [...prev, newUser]);
+    handleLog('create', 'users', `${name} (${username})`);
     return newUser;
   };
 
@@ -392,23 +402,45 @@ export default function App() {
     name: string,
     permissions: User['permissions'],
     canEdit: boolean,
+    canDelete: boolean,
+    canBulkImport: boolean,
     newPassword?: string
   ) => {
-    const updated = await updateUserRequest(userId, name, permissions, canEdit, newPassword);
+    const updated = await updateUserRequest(userId, name, permissions, canEdit, canDelete, canBulkImport, newPassword);
     setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    handleLog('update', 'users', `${name} (${updated.username})`);
     return updated;
   };
 
   const handleDeleteUser = async (userId: string) => {
+    const target = users.find(u => u.id === userId);
     const ok = await deleteUserRequest(userId);
-    if (ok) setUsers(prev => prev.filter(u => u.id !== userId));
+    if (ok) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      if (target) handleLog('delete', 'users', `${target.name} (${target.username})`);
+    }
     return ok;
   };
 
   const handleSetUserActive = async (userId: string, isActive: boolean) => {
     const updated = await setUserActiveRequest(userId, isActive);
     setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    handleLog('update', 'users', `${updated.name} (${updated.username}) — ${isActive ? 'enabled' : 'disabled'}`);
     return updated;
+  };
+
+  // --- Activity log: every page's create/update/delete/bulk_import calls this ---
+  const handleLog = (action: ActivityAction, module: ActivityModule, summary: string, count = 1) => {
+    if (!currentUser) return;
+    logActivity({
+      userId: currentUser.id,
+      username: currentUser.username,
+      userName: currentUser.name,
+      action,
+      module,
+      summary,
+      count,
+    }).catch(err => console.error('Failed to write activity log', err));
   };
 
   const handleChangeOwnPassword = async (userId: string, currentPassword: string, newPassword: string) =>
@@ -589,12 +621,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 currentUser={currentUser}
                 onNavigate={setCurrentPage}
               />
-              {(currentUser?.permissions.expenses || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
+              {(currentUser?.permissions.vendors || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
                 <MoreMenu
-                  showVendors={!!currentUser?.permissions.expenses}
+                  showVendors={!!currentUser?.permissions.vendors}
                   showLoans={!!currentUser?.permissions.loans}
                   showSettings={!!currentUser?.permissions.settings}
-                  active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings'}
+                  showActivityLog={!!currentUser?.permissions.settings}
+                  active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings' || currentPage === 'activityLog'}
                   onSelect={setCurrentPage}
                 />
               )}
@@ -615,22 +648,56 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'members' && (
-          <Members members={members} setMembers={setMembers} canEdit={currentUser?.canEdit !== false} />
+          <Members
+            members={members}
+            setMembers={setMembers}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'chanda' && (
-          <ChandaCollection chandaList={chandaList} setChandaList={setChandaList} canEdit={currentUser?.canEdit !== false} />
+          <ChandaCollection
+            chandaList={chandaList}
+            setChandaList={setChandaList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            canBulkImport={currentUser?.canBulkImport !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'donationAds' && (
-          <DonationAdsCollection donationAdsList={donationAdsList} setDonationAdsList={setDonationAdsList} canEdit={currentUser?.canEdit !== false} />
+          <DonationAdsCollection
+            donationAdsList={donationAdsList}
+            setDonationAdsList={setDonationAdsList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            canBulkImport={currentUser?.canBulkImport !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'expenses' && (
-          <Expenses expenses={expenses} setExpenses={setExpenses} canEdit={currentUser?.canEdit !== false} />
+          <Expenses
+            expenses={expenses}
+            setExpenses={setExpenses}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            canBulkImport={currentUser?.canBulkImport !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'vendors' && (
           <Vendors expenses={expenses} />
         )}
         {currentPage === 'loans' && (
-          <Loans loansList={loansList} setLoansList={setLoansList} canEdit={currentUser?.canEdit !== false} />
+          <Loans
+            loansList={loansList}
+            setLoansList={setLoansList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            canBulkImport={currentUser?.canBulkImport !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'treasury' && (
           <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
@@ -649,6 +716,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onSetUserActive={handleSetUserActive}
             onChangeOwnPassword={handleChangeOwnPassword}
           />
+        )}
+        {currentPage === 'activityLog' && (
+          <ActivityLog />
         )}
       </main>
     </div>
@@ -674,14 +744,16 @@ function MoreMenu({
   showVendors,
   showLoans,
   showSettings,
+  showActivityLog,
   active,
   onSelect,
 }: {
   showVendors: boolean;
   showLoans: boolean;
   showSettings: boolean;
+  showActivityLog: boolean;
   active: boolean;
-  onSelect: (page: 'vendors' | 'loans' | 'settings') => void;
+  onSelect: (page: 'vendors' | 'loans' | 'settings' | 'activityLog') => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -735,6 +807,14 @@ function MoreMenu({
               className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             >
               {t('nav.settings')}
+            </button>
+          )}
+          {showActivityLog && (
+            <button
+              onClick={() => { onSelect('activityLog'); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            >
+              {t('nav.activityLog')}
             </button>
           )}
         </div>

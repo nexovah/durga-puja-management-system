@@ -13,8 +13,8 @@ interface SettingsProps {
   currentUser: User | null;
   developerInfo: DeveloperInfo;
   setDeveloperInfo: (info: DeveloperInfo) => void;
-  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean) => Promise<User>;
-  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, newPassword?: string) => Promise<User>;
+  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean) => Promise<User>;
+  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean, newPassword?: string) => Promise<User>;
   onDeleteUser: (userId: string) => Promise<boolean>;
   onSetUserActive: (userId: string, isActive: boolean) => Promise<User>;
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -28,6 +28,7 @@ const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   treasury: 'permission.treasury',
   settings: 'permission.settings',
   loans: 'permission.loans',
+  vendors: 'permission.vendors',
 };
 
 export function Settings({
@@ -58,6 +59,8 @@ export function Settings({
     username: '',
     password: '',
     canEdit: true,
+    canDelete: true,
+    canBulkImport: true,
     permissions: {
       members: true,
       chanda: true,
@@ -65,6 +68,7 @@ export function Settings({
       expenses: true,
       treasury: true,
       loans: true,
+      vendors: true,
       settings: false,
     },
   });
@@ -114,7 +118,7 @@ export function Settings({
     try {
       if (editingUserId) {
         // Edit existing user (password only changes if a new one was typed)
-        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.password || undefined);
+        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined);
         setMessage(t('settings.msg.userUpdated'));
       } else {
         // Check if username already exists
@@ -124,7 +128,7 @@ export function Settings({
           return;
         }
 
-        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit);
+        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport);
         setMessage(t('settings.msg.userCreated'));
       }
     } catch (err) {
@@ -139,6 +143,8 @@ export function Settings({
       username: '',
       password: '',
       canEdit: true,
+      canDelete: true,
+      canBulkImport: true,
       permissions: {
         members: true,
         chanda: true,
@@ -146,6 +152,7 @@ export function Settings({
         expenses: true,
         treasury: true,
         loans: true,
+        vendors: true,
         settings: false,
       },
     });
@@ -160,7 +167,9 @@ export function Settings({
       username: user.username,
       password: '', // left blank; only sent if the admin types a new one
       canEdit: user.canEdit !== false,
-      permissions: user.permissions,
+      canDelete: user.canDelete !== false,
+      canBulkImport: user.canBulkImport !== false,
+      permissions: { vendors: true, ...user.permissions },
     });
     setEditingUserId(user.id);
     setShowUserForm(true);
@@ -502,6 +511,8 @@ export function Settings({
                       username: '',
                       password: '',
                       canEdit: true,
+                      canDelete: true,
+                      canBulkImport: true,
                       permissions: {
                         members: true,
                         chanda: true,
@@ -509,6 +520,7 @@ export function Settings({
                         expenses: true,
                         treasury: true,
                         loans: true,
+                        vendors: true,
                         settings: false,
                       },
                     });
@@ -589,17 +601,31 @@ export function Settings({
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.accessLevel')}</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label
                           className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                            userForm.canEdit ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                            userForm.canEdit && userForm.canDelete ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
                           }`}
                         >
                           <input
                             type="radio"
-                            name="canEdit"
-                            checked={userForm.canEdit}
-                            onChange={() => setUserForm({ ...userForm, canEdit: true })}
+                            name="accessLevel"
+                            checked={userForm.canEdit && userForm.canDelete}
+                            onChange={() => setUserForm({ ...userForm, canEdit: true, canDelete: true })}
+                            className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                          />
+                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.editDelete')}</span>
+                        </label>
+                        <label
+                          className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                            userForm.canEdit && !userForm.canDelete ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="accessLevel"
+                            checked={userForm.canEdit && !userForm.canDelete}
+                            onChange={() => setUserForm({ ...userForm, canEdit: true, canDelete: false })}
                             className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                           />
                           <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.edit')}</span>
@@ -611,15 +637,32 @@ export function Settings({
                         >
                           <input
                             type="radio"
-                            name="canEdit"
+                            name="accessLevel"
                             checked={!userForm.canEdit}
-                            onChange={() => setUserForm({ ...userForm, canEdit: false })}
+                            onChange={() => setUserForm({ ...userForm, canEdit: false, canDelete: false })}
                             className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                           />
                           <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.view')}</span>
                         </label>
                       </div>
                     </div>
+
+                    {userForm.canEdit && (
+                      <div>
+                        <label className="flex items-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={userForm.canBulkImport}
+                            onChange={(e) => setUserForm({ ...userForm, canBulkImport: e.target.checked })}
+                            className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                          />
+                          <span>
+                            <span className="block text-sm text-gray-800 font-medium">{t('settings.bulkImport')}</span>
+                            <span className="block text-xs text-gray-500">{t('settings.bulkImport.description')}</span>
+                          </span>
+                        </label>
+                      </div>
+                    )}
 
                     <div className="flex gap-3">
                       <button
@@ -669,9 +712,22 @@ export function Settings({
                             </span>
                             {!user.isAdmin && (
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                user.canEdit === false ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'
+                                user.canEdit === false
+                                  ? 'bg-gray-100 text-gray-600'
+                                  : user.canDelete === false
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-green-100 text-green-700'
                               }`}>
-                                {user.canEdit === false ? t('settings.accessLevel.view') : t('settings.accessLevel.edit')}
+                                {user.canEdit === false
+                                  ? t('settings.accessLevel.view')
+                                  : user.canDelete === false
+                                  ? t('settings.accessLevel.edit')
+                                  : t('settings.accessLevel.editDelete')}
+                              </span>
+                            )}
+                            {!user.isAdmin && user.canEdit !== false && user.canBulkImport === false && (
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                {t('settings.bulkImport.off')}
                               </span>
                             )}
                             {user.isActive === false && (

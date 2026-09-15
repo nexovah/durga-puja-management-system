@@ -8,8 +8,11 @@ import { parseCSV, csvField } from '../lib/csv';
 
 interface ExpensesProps {
   canEdit: boolean;
+  canDelete: boolean;
+  canBulkImport: boolean;
   expenses: Expense[];
   setExpenses: (expenses: Expense[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number) => void;
 }
 
 const categories: { value: string; labelKey: TranslationKey }[] = [
@@ -64,7 +67,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
+export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImport, onLog }: ExpensesProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -157,6 +160,7 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
           ? { ...exp, ...payload }
           : exp
       ));
+      onLog('update', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
     } else {
       // Add new expense
       const newExpense: Expense = {
@@ -164,6 +168,7 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
         ...payload,
       };
       setExpenses([...expenses, newExpense]);
+      onLog('create', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
     }
 
     setFormData(emptyForm);
@@ -192,7 +197,9 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
 
   const handleDelete = (id: string) => {
     if (confirm(t('expenses.confirmDelete'))) {
+      const target = expenses.find(exp => exp.id === id);
       setExpenses(expenses.filter(exp => exp.id !== id));
+      if (target) onLog('delete', 'expenses', `${target.title} — ₹${target.amount.toLocaleString()}`);
     }
   };
 
@@ -293,6 +300,7 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
 
       if (imported.length > 0) {
         setExpenses([...expenses, ...imported]);
+        onLog('bulk_import', 'expenses', `${t('common.importResult')}: ${imported.length}`, imported.length);
       }
       alert(`${t('common.importResult')}: ${imported.length}`);
     };
@@ -310,7 +318,7 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            {canEdit && (
+            {canEdit && canBulkImport && (
               <>
                 <input
                   ref={importInputRef}
@@ -561,7 +569,7 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -599,21 +607,25 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
-                    {canEdit && (
+                    {(canEdit || canDelete) && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleEdit(expense)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(expense.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}

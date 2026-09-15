@@ -231,6 +231,8 @@ function fromUserRow(row: any): User {
     password: '', // never stored/returned client-side; see supabase/README.md
     isAdmin: row.is_admin,
     canEdit: row.can_edit !== false, // defaults true for older rows before this column existed
+    canDelete: row.can_delete !== false, // defaults true for older rows before this column existed
+    canBulkImport: row.can_bulk_import !== false, // defaults true for older rows before this column existed
     isActive: row.is_active !== false, // defaults true for older rows before this column existed
     permissions: row.permissions,
   };
@@ -367,7 +369,9 @@ export async function createUserRequest(
   username: string,
   password: string,
   permissions: User['permissions'],
-  canEdit: boolean
+  canEdit: boolean,
+  canDelete: boolean,
+  canBulkImport: boolean
 ): Promise<User> {
   const { data, error } = await supabase.rpc('create_app_user', {
     p_name: name,
@@ -375,6 +379,8 @@ export async function createUserRequest(
     p_password: password,
     p_permissions: permissions,
     p_can_edit: canEdit,
+    p_can_delete: canDelete,
+    p_can_bulk_import: canBulkImport,
   });
   if (error) throw error;
   return fromUserRow(data[0]);
@@ -385,6 +391,8 @@ export async function updateUserRequest(
   name: string,
   permissions: User['permissions'],
   canEdit: boolean,
+  canDelete: boolean,
+  canBulkImport: boolean,
   newPassword?: string
 ): Promise<User> {
   const { data, error } = await supabase.rpc('update_app_user', {
@@ -393,6 +401,8 @@ export async function updateUserRequest(
     p_permissions: permissions,
     p_new_password: newPassword || null,
     p_can_edit: canEdit,
+    p_can_delete: canDelete,
+    p_can_bulk_import: canBulkImport,
   });
   if (error) throw error;
   return fromUserRow(data[0]);
@@ -422,4 +432,64 @@ export async function changeOwnPasswordRequest(
   });
   if (error) throw error;
   return Boolean(data);
+}
+
+// ---------------------------------------------------------------------------
+// Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
+// ---------------------------------------------------------------------------
+
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'users' | 'settings';
+export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
+
+export interface ActivityLogEntry {
+  id: string;
+  userId: string | null;
+  username: string;
+  userName: string;
+  action: ActivityAction;
+  module: ActivityModule;
+  summary: string;
+  recordCount: number;
+  createdAt: string;
+}
+
+export async function logActivity(entry: {
+  userId: string;
+  username: string;
+  userName: string;
+  action: ActivityAction;
+  module: ActivityModule;
+  summary: string;
+  count?: number;
+}): Promise<void> {
+  const { error } = await supabase.from('activity_log').insert({
+    user_id: entry.userId,
+    username: entry.username,
+    user_name: entry.userName,
+    action: entry.action,
+    module: entry.module,
+    summary: entry.summary,
+    record_count: entry.count ?? 1,
+  });
+  if (error) throw error;
+}
+
+export async function fetchActivityLog(limit = 200): Promise<ActivityLogEntry[]> {
+  const { data, error } = await supabase
+    .from('activity_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data || []).map(row => ({
+    id: row.id,
+    userId: row.user_id,
+    username: row.username,
+    userName: row.user_name,
+    action: row.action,
+    module: row.module,
+    summary: row.summary,
+    recordCount: row.record_count,
+    createdAt: row.created_at,
+  }));
 }

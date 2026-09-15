@@ -10,6 +10,9 @@ interface LoansProps {
   loansList: Loan[];
   setLoansList: (loans: Loan[]) => void;
   canEdit: boolean;
+  canDelete: boolean;
+  canBulkImport: boolean;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'loans', summary: string, count?: number) => void;
 }
 
 const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
@@ -31,7 +34,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
+export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImport, onLog }: LoansProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,12 +78,14 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
 
     if (editingId) {
       setLoansList(loansList.map(l => (l.id === editingId ? { ...l, ...payload } : l)));
+      onLog('update', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`);
     } else {
       const newLoan: Loan = {
         id: crypto.randomUUID(),
         ...payload,
       };
       setLoansList([...loansList, newLoan]);
+      onLog('create', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`);
     }
 
     setFormData(emptyForm);
@@ -105,7 +110,9 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
 
   const handleDelete = (id: string) => {
     if (confirm(t('loans.confirmDelete'))) {
+      const target = loansList.find(l => l.id === id);
       setLoansList(loansList.filter(l => l.id !== id));
+      if (target) onLog('delete', 'loans', `${target.donorName} — ₹${target.amountReceived.toLocaleString()}`);
     }
   };
 
@@ -184,6 +191,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
 
       if (imported.length > 0) {
         setLoansList([...loansList, ...imported]);
+        onLog('bulk_import', 'loans', `${t('common.importResult')}: ${imported.length}`, imported.length);
       }
       alert(`${t('common.importResult')}: ${imported.length}`);
     };
@@ -195,7 +203,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            {canEdit && (
+            {canEdit && canBulkImport && (
               <>
                 <input
                   ref={importInputRef}
@@ -365,7 +373,7 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.returnDate')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -382,21 +390,25 @@ export function Loans({ loansList, setLoansList, canEdit }: LoansProps) {
                     {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString(locale) : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{loan.remarks || '-'}</td>
-                  {canEdit && (
+                  {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {canEdit && (
                         <button
                           onClick={() => handleEdit(loan)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit2 size={18} />
                         </button>
+                        )}
+                        {canDelete && (
                         <button
                           onClick={() => handleDelete(loan.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 size={18} />
                         </button>
+                        )}
                       </div>
                     </td>
                   )}

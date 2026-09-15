@@ -10,6 +10,9 @@ interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
   setDonationAdsList: (list: DonationAd[]) => void;
   canEdit: boolean;
+  canDelete: boolean;
+  canBulkImport: boolean;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number) => void;
 }
 
 const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
@@ -43,7 +46,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function DonationAdsCollection({ donationAdsList, setDonationAdsList, canEdit }: DonationAdsCollectionProps) {
+export function DonationAdsCollection({ donationAdsList, setDonationAdsList, canEdit, canDelete, canBulkImport, onLog }: DonationAdsCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -128,12 +131,14 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       setDonationAdsList(donationAdsList.map(item =>
         item.id === editingId ? { ...item, ...payload } : item
       ));
+      onLog('update', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
     } else {
       const newItem: DonationAd = {
         id: crypto.randomUUID(),
         ...payload,
       };
       setDonationAdsList([...donationAdsList, newItem]);
+      onLog('create', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
     }
 
     setFormData(emptyForm);
@@ -161,7 +166,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const handleDelete = (id: string) => {
     if (confirm(t('donationAds.confirmDelete'))) {
+      const target = donationAdsList.find(item => item.id === id);
       setDonationAdsList(donationAdsList.filter(item => item.id !== id));
+      if (target) onLog('delete', 'donation_ads', `${target.donorName} — ₹${target.amount.toLocaleString()}`);
     }
   };
 
@@ -253,6 +260,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
       if (imported.length > 0) {
         setDonationAdsList([...donationAdsList, ...imported]);
+        onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${imported.length}`, imported.length);
       }
       alert(`${t('common.importResult')}: ${imported.length}`);
     };
@@ -266,7 +274,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            {canEdit && (
+            {canEdit && canBulkImport && (
               <>
                 <input
                   ref={importInputRef}
@@ -502,7 +510,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -525,21 +533,25 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.phone || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.remarks || '-'}</td>
-                  {canEdit && (
+                  {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   )}

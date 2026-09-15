@@ -9,6 +9,8 @@ interface MembersProps {
   members: Member[];
   setMembers: (members: Member[]) => void;
   canEdit: boolean;
+  canDelete: boolean;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number) => void;
 }
 
 const ROLES: { value: string; labelKey: TranslationKey }[] = [
@@ -22,7 +24,7 @@ const ROLES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'volunteer', labelKey: 'members.role.volunteer' },
 ];
 
-export function Members({ members, setMembers, canEdit }: MembersProps) {
+export function Members({ members, setMembers, canEdit, canDelete, onLog }: MembersProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export function Members({ members, setMembers, canEdit }: MembersProps) {
           ? { ...m, ...formData }
           : m
       ));
+      onLog('update', 'members', formData.name);
     } else {
       // Add new member
       const newMember: Member = {
@@ -51,6 +54,7 @@ export function Members({ members, setMembers, canEdit }: MembersProps) {
         joinDate: new Date().toISOString().split('T')[0],
       };
       setMembers([...members, newMember]);
+      onLog('create', 'members', formData.name);
     }
 
     setFormData({ name: '', phone: '', address: '', role: '' });
@@ -76,7 +80,9 @@ export function Members({ members, setMembers, canEdit }: MembersProps) {
 
   const handleDelete = (id: string) => {
     if (confirm(t('members.confirmDelete'))) {
+      const target = members.find(m => m.id === id);
       setMembers(members.filter(m => m.id !== id));
+      if (target) onLog('delete', 'members', target.name);
     }
   };
 
@@ -193,7 +199,7 @@ export function Members({ members, setMembers, canEdit }: MembersProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.address')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
-                {canEdit && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -206,21 +212,25 @@ export function Members({ members, setMembers, canEdit }: MembersProps) {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(member.joinDate).toLocaleDateString(locale)}
                   </td>
-                  {canEdit && (
+                  {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(member)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(member.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEdit(member)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(member.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   )}
