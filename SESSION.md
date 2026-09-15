@@ -4,6 +4,12 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (24)
+- Nav: moved the "⋮" (more) menu to after the search icon (far right), and moved Settings into it alongside Vendor and Loans — fewer items in the main nav row.
+- Chanda Collection: new "Bill Number" field (same row as Date, with Phone 1 + Phone 2 as their own row right after). New optional "Amount 01" / "Amount 02" fields below Amount — freely editable, and whenever either is non-blank the main Amount auto-updates to their sum; blank keeps Amount as a normal manual field. `amount1`/`amount2` stored for the breakdown, `amount` stays the single total used everywhere. Table gained a Bill Number column. CSV updated.
+- New `supabase/007_chanda_bill_subamounts.sql`: adds `chanda.bill_number`, `amount1`, `amount2`.
+- Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-15 (23)
 - Loans: split single Amount field into "Amount Received" (credit from lender) and "Amount Paid" (repaid so far, default 0). New `getLoanNetAmount` = received - paid, the outstanding balance held from that lender.
 - This net now feeds into the app's grand credit total everywhere Chanda/Donation-Ads already do: new Dashboard "Loans Outstanding" tile, new Treasury "Loans Outstanding" summary card, both included in totalCredit/balance. Not broken into Treasury's monthly/top-donor/category breakdowns (no repayment-date field to bucket `amountPaid` by).
