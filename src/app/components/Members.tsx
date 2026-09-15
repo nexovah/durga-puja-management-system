@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown } from 'lucide-react';
-import { Member, PaymentStatus, PaidMethod, getMemberCreditAmount } from '../App';
+import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -9,10 +9,18 @@ import { Pagination, usePagination } from './Pagination';
 interface MembersProps {
   members: Member[];
   setMembers: (members: Member[]) => void;
+  tasksList: Task[];
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number) => void;
 }
+
+const TASK_PRIORITY_DOT: Record<TaskPriority, string> = {
+  high: 'bg-red-500',
+  medium: 'bg-amber-500',
+  low: 'bg-blue-500',
+  note: 'bg-purple-500',
+};
 
 const ROLES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'president', labelKey: 'members.role.president' },
@@ -54,7 +62,7 @@ const emptyForm = {
   membershipRemarks: '',
 };
 
-export function Members({ members, setMembers, canEdit, canDelete, onLog }: MembersProps) {
+export function Members({ members, setMembers, tasksList, canEdit, canDelete, onLog }: MembersProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -383,6 +391,7 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.membershipAmount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.assignedTasks')}</th>
                 {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
               </tr>
             </thead>
@@ -390,6 +399,7 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
               {pagination.pageItems.map((member) => {
                 const hasPayment = member.membershipAmount !== undefined && member.membershipAmount !== null;
                 const status = member.membershipPaymentStatus || 'pending';
+                const assignedTasks = tasksList.filter(task => task.assignedMemberIds?.includes(member.id));
                 return (
                 <tr key={member.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-800">{member.name}</td>
@@ -407,6 +417,22 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
                         {statusLabel(status)}
                       </span>
                     ) : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    {assignedTasks.length === 0 ? '-' : (
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {assignedTasks.map(task => (
+                          <span
+                            key={task.id}
+                            title={task.description || task.title}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-700"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${TASK_PRIORITY_DOT[task.priority]}`} />
+                            {task.title}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">

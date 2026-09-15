@@ -231,6 +231,8 @@ export interface Task {
   description: string;
   priority: TaskPriority;
   createdAt: string; // set once on creation — the "auto date and time" the task was added
+  expiryDate: string; // defaults to 15 days after createdAt, adjustable
+  assignedMemberIds: string[]; // one or more Member.id — shown on each assigned member's page
 }
 
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
@@ -697,6 +699,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Members
             members={members}
             setMembers={setMembers}
+            tasksList={tasksList}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             onLog={handleLog}
@@ -770,6 +773,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Tasks
             tasksList={tasksList}
             setTasksList={setTasksList}
+            members={members}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             onLog={handleLog}

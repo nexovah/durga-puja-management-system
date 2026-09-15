@@ -201,6 +201,8 @@ function fromTaskRow(row: any): Task {
     description: row.description || '',
     priority: row.priority,
     createdAt: row.created_at,
+    expiryDate: row.expiry_date || '',
+    assignedMemberIds: row.assigned_member_ids || [],
   };
 }
 function toTaskRow(task: Task) {
@@ -210,6 +212,8 @@ function toTaskRow(task: Task) {
     description: task.description || '',
     priority: task.priority,
     created_at: task.createdAt,
+    expiry_date: task.expiryDate || null,
+    assigned_member_ids: task.assignedMemberIds || [],
   };
 }
 
