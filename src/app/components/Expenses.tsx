@@ -58,6 +58,9 @@ const emptyForm = {
   paidThrough: 'notSelected' as PaidThrough,
   date: new Date().toISOString().split('T')[0],
   category: '',
+  voucherNumber: '',
+  vendorName: '',
+  vendorContact: '',
   remarks: '',
 };
 
@@ -141,6 +144,9 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
       paidThrough: formData.paidThrough,
       date: formData.date,
       category: formData.category,
+      voucherNumber: formData.voucherNumber,
+      vendorName: formData.vendorName,
+      vendorContact: formData.vendorContact,
       remarks: formData.remarks,
     };
 
@@ -175,6 +181,9 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
       paidThrough: expense.paidThrough || 'notSelected',
       date: expense.date,
       category: expense.category,
+      voucherNumber: expense.voucherNumber || '',
+      vendorName: expense.vendorName || '',
+      vendorContact: expense.vendorContact || '',
       remarks: expense.remarks,
     });
     setEditingId(expense.id);
@@ -479,6 +488,36 @@ export function Expenses({ expenses, setExpenses, canEdit }: ExpensesProps) {
                   <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.voucherNumber')}</label>
+              <input
+                type="text"
+                value={formData.voucherNumber}
+                onChange={(e) => setFormData({ ...formData, voucherNumber: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('expenses.voucherNumberPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.vendorName')}</label>
+              <input
+                type="text"
+                value={formData.vendorName}
+                onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('expenses.vendorNamePlaceholder')}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.vendorContact')}</label>
+              <input
+                type="tel"
+                value={formData.vendorContact}
+                onChange={(e) => setFormData({ ...formData, vendorContact: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('expenses.vendorContactPlaceholder')}
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>

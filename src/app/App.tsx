@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { MoreVertical } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { ChandaCollection } from './components/ChandaCollection';
 import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
+import { Vendors } from './components/Vendors';
+import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
 import { Settings } from './components/Settings';
 import { GlobalSearch } from './components/GlobalSearch';
@@ -16,6 +19,7 @@ import {
   syncChanda,
   syncDonationAds,
   syncExpenses,
+  syncLoans,
   updateCommitteeInfo,
   updateDeveloperInfo,
   loginRequest,
@@ -42,6 +46,7 @@ export interface User {
     expenses: boolean;
     treasury: boolean;
     settings: boolean;
+    loans: boolean;
   };
 }
 
@@ -134,6 +139,9 @@ export interface Expense {
   paidThrough: PaidThrough;
   date: string;
   category: string;
+  voucherNumber?: string;
+  vendorName?: string;
+  vendorContact?: string;
   remarks: string;
 }
 
@@ -151,6 +159,18 @@ export function getExpenseCreditAmount(expense: Expense): number {
       // Backward compatibility: records saved before this feature had no status.
       return expense.amount;
   }
+}
+
+export interface Loan {
+  id: string;
+  donorName: string;
+  amount: number;
+  phone: string;
+  paymentMethod: PaidMethod;
+  paymentStatus: 'paid'; // loans are always recorded as paid out
+  date: string;
+  returnDate?: string;
+  remarks: string;
 }
 
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
@@ -213,7 +233,7 @@ export default function App() {
   const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'treasury' | 'settings'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings'>('dashboard');
 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -224,6 +244,7 @@ export default function App() {
   const [chandaList, setChandaListState] = useState<Chanda[]>([]);
   const [donationAdsList, setDonationAdsListState] = useState<DonationAd[]>([]);
   const [expenses, setExpensesState] = useState<Expense[]>([]);
+  const [loansList, setLoansListState] = useState<Loan[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
 
   // Load everything from Supabase on mount.
@@ -240,6 +261,7 @@ export default function App() {
         setChandaListState(data.chandaList);
         setDonationAdsListState(data.donationAdsList);
         setExpensesState(data.expenses);
+        setLoansListState(data.loansList);
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
@@ -300,6 +322,18 @@ export default function App() {
       console.error('Failed to save expense changes', err);
       alert(t('common.saveError'));
       setExpensesState(previous);
+    }
+  };
+
+  const setLoansList = async (newList: Loan[]) => {
+    const previous = loansList;
+    setLoansListState(newList);
+    try {
+      await syncLoans(previous, newList);
+    } catch (err) {
+      console.error('Failed to save loan changes', err);
+      alert(t('common.saveError'));
+      setLoansListState(previous);
     }
   };
 
@@ -538,6 +572,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                   {t('nav.settings')}
                 </NavButton>
               )}
+              {(currentUser?.permissions.expenses || currentUser?.permissions.loans) && (
+                <MoreMenu
+                  showVendors={!!currentUser?.permissions.expenses}
+                  showLoans={!!currentUser?.permissions.loans}
+                  active={currentPage === 'vendors' || currentPage === 'loans'}
+                  onSelect={setCurrentPage}
+                />
+              )}
             </div>
             <GlobalSearch
               members={members}
@@ -572,6 +614,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'expenses' && (
           <Expenses expenses={expenses} setExpenses={setExpenses} canEdit={currentUser?.canEdit !== false} />
+        )}
+        {currentPage === 'vendors' && (
+          <Vendors expenses={expenses} />
+        )}
+        {currentPage === 'loans' && (
+          <Loans loansList={loansList} setLoansList={setLoansList} canEdit={currentUser?.canEdit !== false} />
         )}
         {currentPage === 'treasury' && (
           <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} />
@@ -608,5 +656,68 @@ function NavButton({ active, onClick, children }: { active: boolean; onClick: ()
     >
       {children}
     </button>
+  );
+}
+
+function MoreMenu({
+  showVendors,
+  showLoans,
+  active,
+  onSelect,
+}: {
+  showVendors: boolean;
+  showLoans: boolean;
+  active: boolean;
+  onSelect: (page: 'vendors' | 'loans') => void;
+}) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative shrink-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`px-3 py-3 font-bold transition-colors border-b-4 whitespace-nowrap ${
+          active || open
+            ? 'border-orange-600 text-orange-600 bg-orange-50'
+            : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+        }`}
+        aria-label={t('nav.more')}
+      >
+        <MoreVertical size={20} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
+          {showVendors && (
+            <button
+              onClick={() => { onSelect('vendors'); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            >
+              {t('nav.vendors')}
+            </button>
+          )}
+          {showLoans && (
+            <button
+              onClick={() => { onSelect('loans'); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            >
+              {t('nav.loans')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

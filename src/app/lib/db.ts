@@ -11,6 +11,7 @@ import {
   Chanda,
   DonationAd,
   Expense,
+  Loan,
 } from '../App';
 
 export interface DeveloperInfo {
@@ -118,6 +119,9 @@ function fromExpenseRow(row: any): Expense {
     paidThrough: row.paid_through,
     date: row.date,
     category: row.category,
+    voucherNumber: row.voucher_number || '',
+    vendorName: row.vendor_name || '',
+    vendorContact: row.vendor_contact || '',
     remarks: row.remarks || '',
   };
 }
@@ -131,7 +135,37 @@ function toExpenseRow(e: Expense) {
     paid_through: e.paidThrough,
     date: e.date,
     category: e.category,
+    voucher_number: e.voucherNumber || null,
+    vendor_name: e.vendorName || null,
+    vendor_contact: e.vendorContact || null,
     remarks: e.remarks,
+  };
+}
+
+function fromLoanRow(row: any): Loan {
+  return {
+    id: row.id,
+    donorName: row.donor_name,
+    amount: Number(row.amount) || 0,
+    phone: row.phone || '',
+    paymentMethod: row.payment_method,
+    paymentStatus: 'paid',
+    date: row.date,
+    returnDate: row.return_date || '',
+    remarks: row.remarks || '',
+  };
+}
+function toLoanRow(l: Loan) {
+  return {
+    id: l.id,
+    donor_name: l.donorName,
+    amount: l.amount,
+    phone: l.phone,
+    payment_method: l.paymentMethod,
+    payment_status: 'paid',
+    date: l.date,
+    return_date: l.returnDate || null,
+    remarks: l.remarks,
   };
 }
 
@@ -197,19 +231,20 @@ function fromUserRow(row: any): User {
 // ---------------------------------------------------------------------------
 
 export async function fetchAllData() {
-  const [membersRes, chandaRes, donationAdsRes, expensesRes, committeeRes, developerRes, usersRes] =
+  const [membersRes, chandaRes, donationAdsRes, expensesRes, loansRes, committeeRes, developerRes, usersRes] =
     await Promise.all([
       supabase.from('members').select('*').order('join_date', { ascending: false }),
       supabase.from('chanda').select('*').order('date', { ascending: false }),
       supabase.from('donation_ads').select('*').order('date', { ascending: false }),
       supabase.from('expenses').select('*').order('date', { ascending: false }),
+      supabase.from('loans').select('*').order('date', { ascending: false }),
       supabase.from('committee_info').select('*').eq('id', 1).single(),
       supabase.from('developer_info').select('*').eq('id', 1).single(),
       supabase.from('app_users').select('*').order('created_at', { ascending: true }),
     ]);
 
   const firstError =
-    membersRes.error || chandaRes.error || donationAdsRes.error || expensesRes.error ||
+    membersRes.error || chandaRes.error || donationAdsRes.error || expensesRes.error || loansRes.error ||
     committeeRes.error || developerRes.error || usersRes.error;
   if (firstError) throw firstError;
 
@@ -218,6 +253,7 @@ export async function fetchAllData() {
     chandaList: (chandaRes.data || []).map(fromChandaRow),
     donationAdsList: (donationAdsRes.data || []).map(fromDonationAdRow),
     expenses: (expensesRes.data || []).map(fromExpenseRow),
+    loansList: (loansRes.data || []).map(fromLoanRow),
     committeeInfo: fromCommitteeRow(committeeRes.data),
     developerInfo: fromDeveloperRow(developerRes.data),
     users: (usersRes.data || []).map(fromUserRow),
@@ -232,7 +268,7 @@ export async function fetchAllData() {
 // ---------------------------------------------------------------------------
 
 export async function syncList<T extends { id: string }>(
-  table: 'members' | 'chanda' | 'donation_ads' | 'expenses',
+  table: 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans',
   oldList: T[],
   newList: T[],
   toRow: (item: T) => any
@@ -271,6 +307,8 @@ export const syncDonationAds = (oldList: DonationAd[], newList: DonationAd[]) =>
   syncList('donation_ads', oldList, newList, toDonationAdRow);
 export const syncExpenses = (oldList: Expense[], newList: Expense[]) =>
   syncList('expenses', oldList, newList, toExpenseRow);
+export const syncLoans = (oldList: Loan[], newList: Loan[]) =>
+  syncList('loans', oldList, newList, toLoanRow);
 
 // ---------------------------------------------------------------------------
 // Singleton settings rows

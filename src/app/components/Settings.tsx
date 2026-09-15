@@ -27,6 +27,7 @@ const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   expenses: 'permission.expenses',
   treasury: 'permission.treasury',
   settings: 'permission.settings',
+  loans: 'permission.loans',
 };
 
 export function Settings({
@@ -63,6 +64,7 @@ export function Settings({
       donationAds: true,
       expenses: true,
       treasury: true,
+      loans: true,
       settings: false,
     },
   });
@@ -143,6 +145,7 @@ export function Settings({
         donationAds: true,
         expenses: true,
         treasury: true,
+        loans: true,
         settings: false,
       },
     });
@@ -505,6 +508,7 @@ export function Settings({
                         donationAds: true,
                         expenses: true,
                         treasury: true,
+                        loans: true,
                         settings: false,
                       },
                     });
