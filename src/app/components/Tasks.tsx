@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -20,6 +20,7 @@ const PRIORITIES: { value: TaskPriority; labelKey: TranslationKey; badgeClass: s
   { value: 'medium', labelKey: 'tasks.priority.medium', badgeClass: 'bg-amber-100 text-amber-700', dotClass: 'bg-amber-500' },
   { value: 'low', labelKey: 'tasks.priority.low', badgeClass: 'bg-blue-100 text-blue-700', dotClass: 'bg-blue-500' },
   { value: 'note', labelKey: 'tasks.priority.note', badgeClass: 'bg-purple-100 text-purple-700', dotClass: 'bg-purple-500' },
+  { value: 'completed', labelKey: 'tasks.priority.completed', badgeClass: 'bg-green-100 text-green-700', dotClass: 'bg-green-500' },
 ];
 
 const DEFAULT_EXPIRY_DAYS = 15;
@@ -49,12 +50,14 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
   const [formData, setFormData] = useState(getEmptyForm);
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<'all' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
   const [dateFilter, setDateFilter] = useState('');
 
   const priorityInfo = (p: TaskPriority) => PRIORITIES.find(pr => pr.value === p) || PRIORITIES[1];
   const memberName = (id: string) => members.find(m => m.id === id)?.name || t('tasks.unknownMember');
+  const completedCount = tasksList.filter(task => task.priority === 'completed').length;
 
   const toggleAssignee = (memberId: string) => {
     setFormData(prev => ({
@@ -63,6 +66,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
         ? prev.assignedMemberIds.filter(id => id !== memberId)
         : [...prev.assignedMemberIds, memberId],
     }));
+  };
+
+  const handleMarkComplete = (task: Task) => {
+    setTasksList(tasksList.map(t2 => (t2.id === task.id ? { ...t2, priority: 'completed' } : t2)));
+    onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -137,11 +145,12 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
 
   const filteredTasks = useMemo(() => {
     return [...tasksList]
+      .filter(task => (activeTab === 'completed' ? task.priority === 'completed' : task.priority !== 'completed'))
       .filter(task => priorityFilter === 'all' || task.priority === priorityFilter)
       .filter(task => !dateFilter || task.createdAt.slice(0, 10) === dateFilter)
       .filter(task => !searchTerm.trim() || task.title.toLowerCase().includes(searchTerm.trim().toLowerCase()))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [tasksList, priorityFilter, dateFilter, searchTerm]);
+  }, [tasksList, activeTab, priorityFilter, dateFilter, searchTerm]);
 
   const pagination = usePagination(filteredTasks);
 
@@ -284,6 +293,30 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`px-4 py-2.5 font-semibold text-sm border-b-2 -mb-px transition-colors ${
+            activeTab === 'all'
+              ? 'border-orange-600 text-orange-600'
+              : 'border-transparent text-gray-500 hover:text-orange-600'
+          }`}
+        >
+          {t('tasks.tab.all')} ({tasksList.length - completedCount})
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-4 py-2.5 font-semibold text-sm border-b-2 -mb-px transition-colors ${
+            activeTab === 'completed'
+              ? 'border-green-600 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-green-600'
+          }`}
+        >
+          {t('tasks.tab.completed')} ({completedCount})
+        </button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-2 sm:gap-3">
         <input
@@ -369,6 +402,15 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, on
                     {(canEdit || canDelete) && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {canEdit && task.priority !== 'completed' && (
+                            <button
+                              onClick={() => handleMarkComplete(task)}
+                              title={t('tasks.markComplete')}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            >
+                              <CheckCircle2 size={18} />
+                            </button>
+                          )}
                           {canEdit && (
                             <button
                               onClick={() => handleEdit(task)}

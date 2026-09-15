@@ -223,7 +223,7 @@ export function getLoanNetAmount(loan: Loan): number {
   return loan.amountReceived - (loan.amountPaid || 0);
 }
 
-export type TaskPriority = 'low' | 'medium' | 'high' | 'note';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'note' | 'completed';
 
 export interface Task {
   id: string;
