@@ -543,18 +543,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <div className="text-white text-right hidden md:block">
-                <p className="font-bold text-sm leading-tight">{t('header.you')}, {currentUser?.name}</p>
+                <p className="font-bold text-sm leading-tight">{currentUser?.name}</p>
                 <p className="text-xs opacity-90 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
               </div>
-              <button
-                onClick={handleLogout}
-                aria-label={t('header.logout')}
-                title={t('header.logout')}
-                className="p-2.5 sm:px-6 sm:py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-bold shadow-lg text-sm sm:text-base flex items-center gap-2"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">{t('header.logout')}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -621,16 +612,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 currentUser={currentUser}
                 onNavigate={setCurrentPage}
               />
-              {(currentUser?.permissions.vendors || currentUser?.permissions.loans || currentUser?.permissions.settings) && (
-                <MoreMenu
-                  showVendors={!!currentUser?.permissions.vendors}
-                  showLoans={!!currentUser?.permissions.loans}
-                  showSettings={!!currentUser?.permissions.settings}
-                  showActivityLog={!!currentUser?.permissions.settings}
-                  active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings' || currentPage === 'activityLog'}
-                  onSelect={setCurrentPage}
-                />
-              )}
+              <MoreMenu
+                showVendors={!!currentUser?.permissions.vendors}
+                showLoans={!!currentUser?.permissions.loans}
+                showSettings={!!currentUser?.permissions.settings}
+                showActivityLog={!!currentUser?.permissions.settings}
+                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'settings' || currentPage === 'activityLog'}
+                onSelect={setCurrentPage}
+                onLogout={handleLogout}
+              />
             </div>
           </div>
         </div>
@@ -747,6 +737,7 @@ function MoreMenu({
   showActivityLog,
   active,
   onSelect,
+  onLogout,
 }: {
   showVendors: boolean;
   showLoans: boolean;
@@ -754,6 +745,7 @@ function MoreMenu({
   showActivityLog: boolean;
   active: boolean;
   onSelect: (page: 'vendors' | 'loans' | 'settings' | 'activityLog') => void;
+  onLogout: () => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -817,6 +809,14 @@ function MoreMenu({
               {t('nav.activityLog')}
             </button>
           )}
+          <div className="my-1 border-t border-gray-100" />
+          <button
+            onClick={() => { onLogout(); setOpen(false); }}
+            className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+          >
+            <LogOut size={16} />
+            {t('header.logout')}
+          </button>
         </div>
       )}
     </div>
