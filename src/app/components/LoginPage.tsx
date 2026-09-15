@@ -42,11 +42,11 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <div className="text-center mb-6">
           <div className="inline-block relative mb-4">
             {/* Main logo circle with border */}
-            <div className="w-56 h-56 mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center border-8 border-orange-600 relative overflow-hidden">
+            <div className="w-40 h-40 sm:w-56 sm:h-56 mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
               {/* Inner circle for logo */}
-              <div className="w-52 h-52 bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
+              <div className="w-36 h-36 sm:w-52 sm:h-52 bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
                 {isEmoji ? (
-                  <div className="text-9xl">{logo}</div>
+                  <div className="text-6xl sm:text-9xl">{logo}</div>
                 ) : logo ? (
                   <img
                     src={logo}
@@ -54,7 +54,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                     className="w-full h-full object-contain rounded-full"
                   />
                 ) : (
-                  <div className="text-9xl">🕉️</div>
+                  <div className="text-6xl sm:text-9xl">🕉️</div>
                 )}
               </div>
             </div>
