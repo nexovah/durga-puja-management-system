@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Wallet, Download, Gift, Landmark } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -9,14 +9,16 @@ interface TreasuryProps {
   donationAdsList: DonationAd[];
   expenses: Expense[];
   loansList: Loan[];
+  members: Member[];
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses, loansList }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList, members }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
-  const totalCredit = totalChanda + totalDonationAds + totalLoansNet;
+  const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
+  const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembership;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const balance = totalCredit - totalExpenses;
 

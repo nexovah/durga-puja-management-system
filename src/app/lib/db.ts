@@ -33,6 +33,13 @@ function fromMemberRow(row: any): Member {
     address: row.address || '',
     role: row.role || '',
     joinDate: row.join_date,
+    membershipAmount: row.membership_amount === null || row.membership_amount === undefined ? undefined : Number(row.membership_amount),
+    membershipPaidMethod: row.membership_paid_method || undefined,
+    membershipPaymentStatus: row.membership_payment_status || undefined,
+    membershipPartialAmount: row.membership_partial_amount === null || row.membership_partial_amount === undefined ? undefined : Number(row.membership_partial_amount),
+    membershipDate: row.membership_date || undefined,
+    membershipBillNumber: row.membership_bill_number || '',
+    membershipRemarks: row.membership_remarks || '',
   };
 }
 function toMemberRow(m: Member) {
@@ -43,6 +50,13 @@ function toMemberRow(m: Member) {
     address: m.address,
     role: m.role,
     join_date: m.joinDate,
+    membership_amount: m.membershipAmount ?? null,
+    membership_paid_method: m.membershipPaidMethod ?? null,
+    membership_payment_status: m.membershipPaymentStatus ?? null,
+    membership_partial_amount: m.membershipPartialAmount ?? null,
+    membership_date: m.membershipDate || null,
+    membership_bill_number: m.membershipBillNumber || null,
+    membership_remarks: m.membershipRemarks || null,
   };
 }
 

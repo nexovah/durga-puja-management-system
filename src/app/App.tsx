@@ -73,6 +73,10 @@ export interface CommitteeInfo {
   year: string; // Year (kept for backward compatibility)
 }
 
+export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
+
+export type PaidMethod = 'notSelected' | 'cash' | 'qrScan' | 'onlineBanking' | 'check';
+
 export interface Member {
   id: string;
   name: string;
@@ -80,11 +84,35 @@ export interface Member {
   address: string;
   role: string;
   joinDate: string;
+  // Optional membership payment — a member's own donation/contribution to
+  // the committee, recorded via the collapsible "Membership Payment"
+  // section on the Add/Edit Member form. Same shape as Chanda so it can
+  // reuse the same paid-method/status vocabulary and credit logic.
+  membershipAmount?: number;
+  membershipPaidMethod?: PaidMethod;
+  membershipPaymentStatus?: PaymentStatus;
+  membershipPartialAmount?: number; // Only meaningful when membershipPaymentStatus === 'partial'
+  membershipDate?: string;
+  membershipBillNumber?: string;
+  membershipRemarks?: string;
 }
 
-export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
-
-export type PaidMethod = 'notSelected' | 'cash' | 'qrScan' | 'onlineBanking' | 'check';
+// The amount actually credited toward total collection from a member's own
+// membership payment, based on its payment status: paid -> full amount,
+// partial -> the partial amount entered, pending/rejected/unset -> 0.
+export function getMemberCreditAmount(member: Member): number {
+  if (!member.membershipAmount) return 0;
+  switch (member.membershipPaymentStatus) {
+    case 'paid':
+      return member.membershipAmount;
+    case 'partial':
+      return member.membershipPartialAmount || 0;
+    case 'pending':
+    case 'rejected':
+    default:
+      return 0;
+  }
+}
 
 export interface Chanda {
   id: string;
@@ -690,7 +718,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} />
+          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} />
         )}
         {currentPage === 'settings' && (
           <Settings

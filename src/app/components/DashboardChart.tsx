@@ -8,7 +8,7 @@ import {
   eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format,
 } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
@@ -17,6 +17,7 @@ interface DashboardChartProps {
   donationAdsList: DonationAd[];
   expenses: Expense[];
   loansList: Loan[];
+  members: Member[];
 }
 
 type RangeKey = '7d' | 'thisWeek' | 'lastWeek' | '30d' | '3m' | '6m';
@@ -61,7 +62,7 @@ function sumInRange(records: Record_[], start: Date, end: Date): number {
   }, 0);
 }
 
-export function DashboardChart({ chandaList, donationAdsList, expenses, loansList }: DashboardChartProps) {
+export function DashboardChart({ chandaList, donationAdsList, expenses, loansList, members }: DashboardChartProps) {
   const { t } = useLanguage();
   const [range, setRange] = useState<RangeKey>('30d');
 
@@ -69,7 +70,8 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
     ...chandaList.map(c => ({ date: c.date, amount: getChandaCreditAmount(c) })),
     ...donationAdsList.map(d => ({ date: d.date, amount: d.amount })),
     ...loansList.map(l => ({ date: l.date, amount: getLoanNetAmount(l) })),
-  ], [chandaList, donationAdsList, loansList]);
+    ...members.filter(m => m.membershipDate).map(m => ({ date: m.membershipDate as string, amount: getMemberCreditAmount(m) })),
+  ], [chandaList, donationAdsList, loansList, members]);
 
   const expenseRecords: Record_[] = useMemo(() => (
     expenses.map(e => ({ date: e.date, amount: getExpenseCreditAmount(e) }))

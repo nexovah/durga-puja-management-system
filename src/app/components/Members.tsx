@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
-import { Member } from '../App';
+import { Plus, Edit2, Trash2, X, ChevronDown } from 'lucide-react';
+import { Member, PaymentStatus, PaidMethod, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -25,25 +25,81 @@ const ROLES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'volunteer', labelKey: 'members.role.volunteer' },
 ];
 
+const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
+  { value: 'paid', labelKey: 'chanda.status.paid' },
+  { value: 'pending', labelKey: 'chanda.status.pending' },
+  { value: 'partial', labelKey: 'chanda.status.partial' },
+  { value: 'rejected', labelKey: 'chanda.status.rejected' },
+];
+
+const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
+  { value: 'notSelected', labelKey: 'common.paidMethod.notSelected' },
+  { value: 'cash', labelKey: 'common.paidMethod.cash' },
+  { value: 'qrScan', labelKey: 'common.paidMethod.qrScan' },
+  { value: 'onlineBanking', labelKey: 'common.paidMethod.onlineBanking' },
+  { value: 'check', labelKey: 'common.paidMethod.check' },
+];
+
+const emptyForm = {
+  name: '',
+  phone: '',
+  address: '',
+  role: '',
+  membershipAmount: '',
+  membershipPaidMethod: 'notSelected' as PaidMethod,
+  membershipPaymentStatus: 'paid' as PaymentStatus,
+  membershipPartialAmount: '',
+  membershipDate: new Date().toISOString().split('T')[0],
+  membershipBillNumber: '',
+  membershipRemarks: '',
+};
+
 export function Members({ members, setMembers, canEdit, canDelete, onLog }: MembersProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    role: '',
-  });
+  const [formData, setFormData] = useState(emptyForm);
+  const [showMembershipPayment, setShowMembershipPayment] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const hasMembershipAmount = formData.membershipAmount.trim() !== '';
+    const membershipPayload = hasMembershipAmount
+      ? {
+          membershipAmount: parseFloat(formData.membershipAmount) || 0,
+          membershipPaidMethod: formData.membershipPaidMethod,
+          membershipPaymentStatus: formData.membershipPaymentStatus,
+          membershipPartialAmount: formData.membershipPaymentStatus === 'partial'
+            ? parseFloat(formData.membershipPartialAmount || '0')
+            : undefined,
+          membershipDate: formData.membershipDate,
+          membershipBillNumber: formData.membershipBillNumber,
+          membershipRemarks: formData.membershipRemarks,
+        }
+      : {
+          membershipAmount: undefined,
+          membershipPaidMethod: undefined,
+          membershipPaymentStatus: undefined,
+          membershipPartialAmount: undefined,
+          membershipDate: undefined,
+          membershipBillNumber: undefined,
+          membershipRemarks: undefined,
+        };
+
+    const payload = {
+      name: formData.name,
+      phone: formData.phone,
+      address: formData.address,
+      role: formData.role,
+      ...membershipPayload,
+    };
 
     if (editingId) {
       // Edit existing member
       setMembers(members.map(m =>
         m.id === editingId
-          ? { ...m, ...formData }
+          ? { ...m, ...payload }
           : m
       ));
       onLog('update', 'members', formData.name);
@@ -51,14 +107,15 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
       // Add new member
       const newMember: Member = {
         id: crypto.randomUUID(),
-        ...formData,
+        ...payload,
         joinDate: new Date().toISOString().split('T')[0],
       };
       setMembers([...members, newMember]);
       onLog('create', 'members', formData.name);
     }
 
-    setFormData({ name: '', phone: '', address: '', role: '' });
+    setFormData(emptyForm);
+    setShowMembershipPayment(false);
     setShowForm(false);
     setEditingId(null);
   };
@@ -69,7 +126,15 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
       phone: member.phone,
       address: member.address,
       role: member.role,
+      membershipAmount: member.membershipAmount !== undefined ? member.membershipAmount.toString() : '',
+      membershipPaidMethod: member.membershipPaidMethod || 'notSelected',
+      membershipPaymentStatus: member.membershipPaymentStatus || 'paid',
+      membershipPartialAmount: member.membershipPartialAmount !== undefined ? member.membershipPartialAmount.toString() : '',
+      membershipDate: member.membershipDate || new Date().toISOString().split('T')[0],
+      membershipBillNumber: member.membershipBillNumber || '',
+      membershipRemarks: member.membershipRemarks || '',
     });
+    setShowMembershipPayment(!!member.membershipAmount);
     setEditingId(member.id);
     setShowForm(true);
   };
@@ -88,12 +153,15 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', phone: '', address: '', role: '' });
+    setFormData(emptyForm);
+    setShowMembershipPayment(false);
     setShowForm(false);
     setEditingId(null);
   };
 
   const pagination = usePagination(members);
+  const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
+  const isPartial = formData.membershipPaymentStatus === 'partial';
 
   return (
     <div className="space-y-6">
@@ -109,6 +177,7 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
             </button>
           )
         }
+        total={`${t('members.widget.totalPayments')}: ₹${totalMembershipPayments.toLocaleString()}`}
       >
         {t('members.pageTitle')}
       </PageHeading>
@@ -124,55 +193,154 @@ export function Members({ members, setMembers, canEdit, canDelete, onLog }: Memb
               <X size={24} />
             </button>
           </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('members.namePlaceholder')}
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('members.namePlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')} *</label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('members.phonePlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.address')} *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('members.addressPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')} *</label>
+                <select
+                  required
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('members.selectRole')}</option>
+                  {ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{t(r.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')} *</label>
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('members.phonePlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.address')} *</label>
-              <input
-                type="text"
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('members.addressPlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')} *</label>
-              <select
-                required
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+
+            {/* Membership Payment — collapsible section */}
+            <div className="border-t border-gray-200 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowMembershipPayment(o => !o)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-orange-300 rounded-lg text-orange-600 font-semibold hover:bg-orange-50 transition-colors"
               >
-                <option value="">{t('members.selectRole')}</option>
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>{t(r.labelKey)}</option>
-                ))}
-              </select>
+                {showMembershipPayment ? <ChevronDown size={18} /> : <Plus size={18} />}
+                {t('members.membershipPayment')}
+              </button>
+
+              {showMembershipPayment && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.membershipAmount')}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.membershipAmount}
+                      onChange={(e) => setFormData({ ...formData, membershipAmount: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      placeholder={t('chanda.amountPlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+                    <select
+                      value={formData.membershipPaidMethod}
+                      onChange={(e) => setFormData({ ...formData, membershipPaidMethod: e.target.value as PaidMethod })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    >
+                      {PAID_METHODS.map((m) => (
+                        <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.paymentStatus')}</label>
+                    <select
+                      value={formData.membershipPaymentStatus}
+                      onChange={(e) => setFormData({ ...formData, membershipPaymentStatus: e.target.value as PaymentStatus })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    >
+                      {PAYMENT_STATUSES.map((s) => (
+                        <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {isPartial && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.partialAmountLabel')}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        max={formData.membershipAmount || undefined}
+                        value={formData.membershipPartialAmount}
+                        onChange={(e) => setFormData({ ...formData, membershipPartialAmount: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        placeholder={t('chanda.partialAmountPlaceholder')}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')}</label>
+                    <input
+                      type="date"
+                      value={formData.membershipDate}
+                      onChange={(e) => setFormData({ ...formData, membershipDate: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.billNumber')}</label>
+                    <input
+                      type="text"
+                      value={formData.membershipBillNumber}
+                      onChange={(e) => setFormData({ ...formData, membershipBillNumber: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      placeholder={t('chanda.billNumberPlaceholder')}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+                    <textarea
+                      value={formData.membershipRemarks}
+                      onChange={(e) => setFormData({ ...formData, membershipRemarks: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="md:col-span-2 flex gap-3">
+
+            <div className="flex gap-3">
               <button
                 type="submit"
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
