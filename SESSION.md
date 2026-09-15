@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (15)
+- **Add/Edit forms are now modals everywhere** (Members, Chanda, Donation/Ads, Expenses, Loans, Tasks, Settings → User Management): centered dialog on desktop, full-screen on mobile with Save/Cancel pinned to a sticky bottom bar. New `FormModal.tsx`, `Toast.tsx` (auto-dismissing success banner after save), `DeleteConfirmModal.tsx` (replaces every native `confirm()` on delete — shows a fresh random 4-digit PIN each time, user must retype it to enable the delete button). Purely front-end, no DB changes.
+
 ## 2026-09-15 (14)
 - **CSV import now upserts by Bill/Voucher Number** instead of rejecting every match as a duplicate: a matching number updates that existing record's other fields (name, amount, date, status, ...) from the file; a new/blank number inserts. Import Preview modal redesigned to show "N new record(s)" + "M existing record(s) will be updated" instead of an error list. `prepareImportUpsert()` replaces the old `splitByDuplicateKey()`. Applied to Chanda/Donation-Ads/Expenses/Loans. No DB migration needed (015 from earlier today still applies as the uniqueness backstop).
 
