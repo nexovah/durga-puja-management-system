@@ -18,36 +18,13 @@ The app is a static Vite/React build (`npm run build` → a `dist/` folder of pl
 6. Repeat steps 1 and 4 whenever you ship a change.
 
 ### Option B — Auto-deploy from GitHub (recommended once it's working)
-Hostinger's shared hosting doesn't run your build step itself, so let GitHub Actions build it and FTP the result over on every push:
+Hostinger's shared hosting doesn't run your build step itself, so GitHub Actions builds it and FTPs the result over on every push. The workflow already lives in this repo at `.github/workflows/deploy.yml` — it just needs its secrets set once:
 
-1. hPanel → **Files → FTP Accounts** — note the FTP host, username, password (or create a dedicated FTP account scoped to the subdomain's folder).
+1. hPanel → **Files → FTP Accounts** — note the FTP host, username, password (or create a dedicated FTP account scoped to `durgacrm.nexovah.in`'s document root).
 2. In your GitHub repo → **Settings → Secrets and variables → Actions**, add:
    - `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD`
-3. Add `.github/workflows/deploy.yml`:
-   ```yaml
-   name: Deploy to Hostinger
-   on:
-     push:
-       branches: [main]
-   jobs:
-     deploy:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
-         - uses: actions/setup-node@v4
-           with:
-             node-version: 20
-         - run: npm ci
-         - run: npm run build
-         - uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-           with:
-             server: ${{ secrets.FTP_HOST }}
-             username: ${{ secrets.FTP_USERNAME }}
-             password: ${{ secrets.FTP_PASSWORD }}
-             local-dir: dist/
-             server-dir: /              # the subdomain's document root on that FTP account
-   ```
-4. Push to `main` → Actions tab shows the build+upload running → site updates automatically a couple minutes later.
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (same values as your local `.env` — the build step needs these too)
+3. That's it — every push to `main` now triggers the workflow: Actions tab shows the build+upload running, site updates automatically a couple minutes later. Until these secrets are added, the workflow runs and fails at the FTP step (harmless — nothing gets uploaded, no partial/broken deploy).
 
 ### Required environment variables
 The app needs two Supabase values present when you run `npm run build` (Vite bakes them into the static output — nothing to configure on the Hostinger side itself):
@@ -65,6 +42,6 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
   ```
 
 ### Notes
-- No `.htaccess` rewrite rules are needed — this app doesn't use client-side routing (no react-router), it's one `index.html` with in-page navigation, so there's no "refresh on a sub-page 404s" issue to solve.
+- The app uses client-side path routing (e.g. `/chanda-collection`) — see the routing note above and `public/.htaccess`, which handles the "refresh on a sub-page 404s" issue.
 - HTTPS: Hostinger issues a free SSL certificate per subdomain automatically (hPanel → SSL) — enable it once the subdomain is live.
 - Mobile responsiveness: the UI already uses responsive Tailwind classes throughout (nav, dashboard tiles, forms, tables scroll horizontally on narrow screens). If you spot a specific screen/element that doesn't look right on a phone once it's live, flag it and I'll fix that spot directly.
