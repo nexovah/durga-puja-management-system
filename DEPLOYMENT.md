@@ -7,6 +7,8 @@ See [supabase/README.md](supabase/README.md) — create the project, run `schema
 
 The app is a static Vite/React build (`npm run build` → a `dist/` folder of plain HTML/CSS/JS). Any Hostinger plan that serves static files works — no Node.js server needed to run it.
 
+**Client-side routing note**: the app uses clean URLs per page (e.g. `/chanda-collection`, `/settings` — no `#`). A hard refresh or direct link to one of these asks the server for that exact path, which doesn't exist as a real file — `public/.htaccess` handles this by rewriting any unknown path back to `index.html` so React can take over. It's part of the repo and gets copied into `dist/` automatically by `npm run build`; just make sure it's included when you upload (Option A) or that your FTP step doesn't skip dotfiles (Option B — most FTP actions include them by default, but double-check after the first deploy that `.htaccess` actually landed in the document root).
+
 ### Option A — Manual build & upload (simplest, works on every plan)
 1. On your machine: `npm i && npm run build` → creates `dist/`.
 2. Hostinger **hPanel** → your domain → **Websites** → pick the subdomain (or create one: **Domains → Subdomains**, e.g. `puja.yourdomain.com`).

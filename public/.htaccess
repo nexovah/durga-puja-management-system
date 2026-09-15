@@ -1,0 +1,17 @@
+# SPA fallback for path-based client-side routing (App.tsx's PAGE_SLUGS).
+# Any request that isn't an existing file or directory (e.g. /chanda-collection
+# on a hard refresh) is served index.html instead of a 404, so React can read
+# the URL and show the right page. Vite copies this file into dist/ as-is.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Let real files/directories (assets, images, etc.) be served normally.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else falls back to index.html.
+  RewriteRule ^ index.html [L]
+</IfModule>
