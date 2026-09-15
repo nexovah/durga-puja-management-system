@@ -4,6 +4,14 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-15 (21)
+- Expenses: added Voucher Number, Vendor/Supplier Name, Contact fields after Category on the add/edit form (not shown in the table itself — avoids horizontal scroll).
+- New "Vendor" page: read-only report auto-collecting every expense with a Vendor/Supplier Name filled in. No own data, no CRUD — just a filtered view of Expenses, with CSV export.
+- New "Loans" page: full CRUD (add/edit/delete/import/export) like Chanda Collection. Fields: donor's name, amount, phone, Payment Method, date, Return Date, remarks. Payment status always "paid" (fixed, not user-editable).
+- Both new pages tucked behind a "⋮" (more) dropdown after Settings in the nav (per follow-up request, not top-level nav buttons). Vendor gated by the existing `expenses` permission; Loans by a new `loans` permission (auto-appears as a checkbox in Settings → User Management).
+- New `supabase/005_vendor_loans.sql`: adds the 3 expense columns, creates the `loans` table + RLS, and merges `loans: true` into every existing user's permissions so nobody loses access after the upgrade.
+- Threaded `Loan` type, `loansList` state, and `syncLoans` through `App.tsx`/`db.ts`. Translated all new strings EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
+
 ## 2026-09-14 (20)
 - Added enable/disable login toggle per user in Settings → User Management (Ban/CheckCircle icon button, "Disabled" badge, admin accounts can't be disabled). New `supabase/004_user_enable_disable.sql`: `app_users.is_active` column + `login()` recreated to require it + `set_app_user_active` RPC. A disabled account gets the same generic "Invalid username or password" message on login. Threaded `isActive` through User type/db.ts/App.tsx/Settings.tsx. Translated EN/BN/HI. Verified `npm run build` passes. Pushed to `main`.
 
