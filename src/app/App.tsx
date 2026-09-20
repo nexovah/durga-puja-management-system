@@ -181,6 +181,7 @@ export interface Expense {
   // Up to 5 partial payment installments; only meaningful when paymentStatus === 'partial'.
   // The first entry is required when partial, the rest are optional.
   partialAmounts?: (number | undefined)[];
+  partialDates?: (string | undefined)[]; // parallel to partialAmounts — the date each installment was actually paid
   paidThrough: PaidThrough;
   date: string;
   category: string;

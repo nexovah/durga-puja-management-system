@@ -64,6 +64,7 @@ const emptyForm = {
   amount: '',
   paymentStatus: 'paid' as ExpensePaymentStatus,
   partialAmounts: ['', '', '', '', ''],
+  partialDates: ['', '', '', '', ''],
   paidThrough: 'notSelected' as PaidThrough,
   date: new Date().toISOString().split('T')[0],
   category: '',
@@ -138,6 +139,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
     const amount = parseFloat(formData.amount) || 0;
     const partialAmounts = formData.partialAmounts.map(v => (v.trim() === '' ? undefined : parseFloat(v) || 0));
+    const partialDates = formData.partialDates.map(v => (v.trim() === '' ? undefined : v));
     const partialSum = partialAmounts.reduce((sum: number, v) => sum + (v || 0), 0);
 
     if (formData.paymentStatus === 'partial' && partialSum > amount) {
@@ -163,6 +165,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       amount,
       paymentStatus: formData.paymentStatus,
       partialAmounts: formData.paymentStatus === 'partial' ? partialAmounts : undefined,
+      partialDates: formData.paymentStatus === 'partial' ? partialDates : undefined,
       paidThrough: formData.paidThrough,
       date: formData.date,
       category: formData.category,
@@ -200,11 +203,13 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
   const handleEdit = (expense: Expense) => {
     const partials = expense.partialAmounts || [];
+    const partialDates = expense.partialDates || [];
     setFormData({
       title: expense.title,
       amount: expense.amount.toString(),
       paymentStatus: expense.paymentStatus || 'paid',
       partialAmounts: [0, 1, 2, 3, 4].map(i => (partials[i] !== undefined ? String(partials[i]) : '')),
+      partialDates: [0, 1, 2, 3, 4].map(i => partialDates[i] || ''),
       paidThrough: expense.paidThrough || 'notSelected',
       date: expense.date,
       category: expense.category,
@@ -504,6 +509,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         }}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         placeholder="0"
+                      />
+                      <input
+                        type="date"
+                        value={formData.partialDates[index]}
+                        onChange={(e) => {
+                          const next = [...formData.partialDates];
+                          next[index] = e.target.value;
+                          setFormData({ ...formData, partialDates: next });
+                        }}
+                        className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
                       />
                     </div>
                   ))}
