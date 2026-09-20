@@ -12,6 +12,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
+import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface ExpensesProps {
@@ -85,6 +86,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [importPreview, setImportPreview] = useState<{ toInsert: Expense[]; toUpdate: Expense[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [viewTarget, setViewTarget] = useState<Expense | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Expense, 'id'>; saveAndAddNew: boolean } | null>(null);
 
   const categoryLabel = (value: string) => {
@@ -714,7 +716,15 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
                 return (
                   <tr key={expense.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">{expense.title}</td>
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(expense)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {expense.title}
+                      </button>
+                    </td>
                     <td className={`px-6 py-4 text-sm font-bold ${
                       status === 'cancelled'
                         ? 'text-red-600 line-through'
@@ -799,6 +809,24 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <ViewModal
+        open={!!viewTarget}
+        title={viewTarget?.title || ''}
+        onClose={() => setViewTarget(null)}
+        onEdit={canEdit && viewTarget ? () => { const exp = viewTarget; setViewTarget(null); handleEdit(exp); } : undefined}
+        fields={viewTarget ? [
+          { label: t('expenses.title'), value: viewTarget.title },
+          { label: t('common.amount'), value: `₹${viewTarget.amount.toLocaleString()}` },
+          { label: t('expenses.paymentStatus'), value: statusLabel(viewTarget.paymentStatus || 'paid') },
+          { label: t('expenses.paidThrough'), value: paidThroughLabel(viewTarget.paidThrough || 'notSelected') },
+          { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
+          { label: t('expenses.category'), value: categoryLabel(viewTarget.category) },
+          { label: t('expenses.voucherNumber'), value: viewTarget.voucherNumber || '-' },
+          { label: t('expenses.vendorName'), value: viewTarget.vendorName || '-' },
+          { label: t('expenses.vendorContact'), value: viewTarget.vendorContact || '-' },
+          { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
+        ] : []}
+      />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.title}

@@ -11,6 +11,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface DonationAdsCollectionProps {
@@ -62,6 +63,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DonationAd | null>(null);
+  const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
 
   const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
@@ -631,7 +633,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             <tbody className="divide-y divide-gray-200">
               {pagination.pageItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{item.donorName || '-'}</td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setViewTarget(item)}
+                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                    >
+                      {item.donorName || item.companyName || '-'}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
@@ -704,6 +714,25 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <ViewModal
+        open={!!viewTarget}
+        title={viewTarget?.donorName || viewTarget?.companyName || ''}
+        onClose={() => setViewTarget(null)}
+        onEdit={canEdit && viewTarget ? () => { const item = viewTarget; setViewTarget(null); handleEdit(item); } : undefined}
+        fields={viewTarget ? [
+          { label: t('donationAds.donorName'), value: viewTarget.donorName || '-' },
+          { label: t('donationAds.companyName'), value: viewTarget.companyName || '-' },
+          { label: t('donationAds.amountLabel'), value: `₹${viewTarget.amount.toLocaleString()}` },
+          { label: t('common.paidMethod'), value: paidMethodLabel(viewTarget.paidMethod || 'notSelected') },
+          { label: t('donationAds.category'), value: categoryLabel(viewTarget.category) },
+          { label: t('donationAds.inKind'), value: inKindDisplay(viewTarget) || '-' },
+          { label: t('common.date'), value: viewTarget.date ? new Date(viewTarget.date).toLocaleDateString(locale) : '-' },
+          { label: t('donationAds.voucherNumber'), value: viewTarget.voucherNumber || '-' },
+          { label: t('common.phone1'), value: viewTarget.phone || '-' },
+          { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
+          { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
+        ] : []}
+      />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.donorName || deleteTarget?.companyName}

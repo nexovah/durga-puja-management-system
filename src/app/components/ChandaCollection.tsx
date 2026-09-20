@@ -12,6 +12,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
+import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface ChandaCollectionProps {
@@ -74,6 +75,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Chanda | null>(null);
+  const [viewTarget, setViewTarget] = useState<Chanda | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Chanda, 'id'>; saveAndAddNew: boolean } | null>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
@@ -683,7 +685,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 const status = chanda.paymentStatus || 'paid';
                 return (
                   <tr key={chanda.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">{chanda.donorName}</td>
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(chanda)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {chanda.donorName}
+                      </button>
+                    </td>
                     <td className={`px-6 py-4 text-sm font-bold ${
                       status === 'rejected'
                         ? 'text-red-600 line-through'
@@ -766,6 +776,23 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <ViewModal
+        open={!!viewTarget}
+        title={viewTarget?.donorName || ''}
+        onClose={() => setViewTarget(null)}
+        onEdit={canEdit && viewTarget ? () => { const c = viewTarget; setViewTarget(null); handleEdit(c); } : undefined}
+        fields={viewTarget ? [
+          { label: t('chanda.donorName'), value: viewTarget.donorName },
+          { label: t('chanda.amountLabel'), value: `₹${viewTarget.amount.toLocaleString()}` },
+          { label: t('common.paidMethod'), value: paidMethodLabel(viewTarget.paidMethod || 'notSelected') },
+          { label: t('chanda.paymentStatus'), value: statusLabel(viewTarget.paymentStatus || 'paid') },
+          { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
+          { label: t('chanda.billNumber'), value: viewTarget.billNumber || '-' },
+          { label: t('common.phone1'), value: viewTarget.phone || '-' },
+          { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
+          { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
+        ] : []}
+      />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.donorName}

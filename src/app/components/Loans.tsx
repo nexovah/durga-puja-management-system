@@ -10,6 +10,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface LoansProps {
@@ -49,6 +50,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
   const [importPreview, setImportPreview] = useState<{ toInsert: Loan[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
+  const [viewTarget, setViewTarget] = useState<Loan | null>(null);
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
 
@@ -438,7 +440,15 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             <tbody className="divide-y divide-gray-200">
               {pagination.pageItems.map((loan) => (
                 <tr key={loan.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{loan.donorName}</td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setViewTarget(loan)}
+                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                    >
+                      {loan.donorName}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
@@ -505,6 +515,22 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <ViewModal
+        open={!!viewTarget}
+        title={viewTarget?.donorName || ''}
+        onClose={() => setViewTarget(null)}
+        onEdit={canEdit && viewTarget ? () => { const loan = viewTarget; setViewTarget(null); handleEdit(loan); } : undefined}
+        fields={viewTarget ? [
+          { label: t('loans.donorName'), value: viewTarget.donorName },
+          { label: t('loans.amountReceivedLabel'), value: `₹${viewTarget.amountReceived.toLocaleString()}` },
+          { label: t('loans.amountPaidLabel'), value: `₹${(viewTarget.amountPaid || 0).toLocaleString()}` },
+          { label: t('loans.paymentMethod'), value: paidMethodLabel(viewTarget.paymentMethod || 'notSelected') },
+          { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
+          { label: t('loans.returnDate'), value: viewTarget.returnDate ? new Date(viewTarget.returnDate).toLocaleDateString(locale) : '-' },
+          { label: t('common.phone'), value: viewTarget.phone || '-' },
+          { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
+        ] : []}
+      />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.donorName}

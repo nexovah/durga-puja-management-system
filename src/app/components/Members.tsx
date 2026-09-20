@@ -9,6 +9,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
+import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface MembersProps {
@@ -89,6 +90,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [showMembershipPayment, setShowMembershipPayment] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
+  const [viewTarget, setViewTarget] = useState<Member | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: MemberFormPayload; saveAndAddNew: boolean } | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -519,7 +521,15 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 const assignedTasks = tasksList.filter(task => task.assignedMemberIds?.includes(member.id));
                 return (
                 <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800">{member.name}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setViewTarget(member)}
+                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                    >
+                      {member.name}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
@@ -597,6 +607,24 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       </div>
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <ViewModal
+        open={!!viewTarget}
+        title={viewTarget?.name || ''}
+        onClose={() => setViewTarget(null)}
+        onEdit={canEdit && viewTarget ? () => { const m = viewTarget; setViewTarget(null); handleEdit(m); } : undefined}
+        fields={viewTarget ? [
+          { label: t('common.name'), value: viewTarget.name },
+          { label: t('members.role'), value: roleLabel(viewTarget.role) },
+          { label: t('common.phone'), value: viewTarget.phone },
+          { label: t('members.joinDate'), value: new Date(viewTarget.joinDate).toLocaleDateString(locale) },
+          { label: t('common.address'), value: viewTarget.address, fullWidth: true },
+          { label: t('members.membershipAmount'), value: viewTarget.membershipAmount !== undefined ? `₹${viewTarget.membershipAmount.toLocaleString()}` : '-' },
+          { label: t('chanda.paymentStatus'), value: viewTarget.membershipPaymentStatus ? statusLabel(viewTarget.membershipPaymentStatus) : '-' },
+          { label: t('common.paidMethod'), value: viewTarget.membershipPaidMethod ? t(PAID_METHODS.find(m => m.value === viewTarget.membershipPaidMethod)?.labelKey || 'common.paidMethod.notSelected') : '-' },
+          { label: t('chanda.billNumber'), value: viewTarget.membershipBillNumber || '-' },
+          { label: t('common.remarks'), value: viewTarget.membershipRemarks || '-', fullWidth: true },
+        ] : []}
+      />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.name}
