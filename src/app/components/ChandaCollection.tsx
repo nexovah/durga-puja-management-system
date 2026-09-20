@@ -167,12 +167,14 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       remarks: formData.remarks,
     };
 
-    // Editing a record that's already Paid, changing it away from Paid —
-    // that means money already recorded as received would stop being
-    // recorded as such, so require the same PIN confirmation as a delete.
+    // Editing a record that's already Paid — whether changing its status
+    // away from Paid, or changing any other field (amount, date, donor
+    // name, ...) on a record already recorded as paid — requires the same
+    // PIN confirmation as a delete, since Paid means money already
+    // changed hands.
     if (editingId) {
       const original = chandaList.find(c => c.id === editingId);
-      if (original?.paymentStatus === 'paid' && payload.paymentStatus !== 'paid') {
+      if (original?.paymentStatus === 'paid') {
         setPendingSave({ payload, saveAndAddNew });
         return;
       }
@@ -836,6 +838,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         itemLabel={pendingSave?.payload.donorName}
         fromStatusLabel={statusLabel('paid')}
         toStatusLabel={pendingSave ? statusLabel(pendingSave.payload.paymentStatus) : ''}
+        messageOverride={pendingSave && pendingSave.payload.paymentStatus === 'paid' ? t('statusChange.confirmMessageEditPaid') : undefined}
         onCancel={() => setPendingSave(null)}
         onConfirm={confirmStatusChange}
       />

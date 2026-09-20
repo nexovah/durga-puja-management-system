@@ -9,6 +9,7 @@ interface StatusChangeConfirmModalProps {
   toStatusLabel: string;
   onCancel: () => void;
   onConfirm: () => void;
+  messageOverride?: string; // used instead of the from/to template, e.g. editing a field on an already-Paid record without changing its status
 }
 
 const generatePin = () => String(Math.floor(1000 + Math.random() * 9000));
@@ -18,7 +19,7 @@ const generatePin = () => String(Math.floor(1000 + Math.random() * 9000));
 // that needs the same deliberate confirmation as a delete: a fresh random
 // 4-digit PIN the user must type back to proceed.
 export function StatusChangeConfirmModal({
-  open, itemLabel, fromStatusLabel, toStatusLabel, onCancel, onConfirm,
+  open, itemLabel, fromStatusLabel, toStatusLabel, onCancel, onConfirm, messageOverride,
 }: StatusChangeConfirmModalProps) {
   const { t } = useLanguage();
   const [pin, setPin] = useState('');
@@ -58,7 +59,7 @@ export function StatusChangeConfirmModal({
 
         <div className="p-6 space-y-4">
           <p className="text-sm text-gray-600">
-            {(itemLabel ? t('statusChange.confirmMessageWithItem').replace('{item}', itemLabel) : t('statusChange.confirmMessage'))
+            {messageOverride || (itemLabel ? t('statusChange.confirmMessageWithItem').replace('{item}', itemLabel) : t('statusChange.confirmMessage'))
               .replace('{from}', fromStatusLabel)
               .replace('{to}', toStatusLabel)}
           </p>
