@@ -550,6 +550,8 @@ export const translations = {
     'search.searchButton': 'Search',
     'search.clearButton': 'Clear Search',
     'search.advancedHint': 'Filters apply across Members, Chanda, Donation/Ads and Expenses — only fields that exist on a page are used for it (e.g. Payment Method is skipped for Donation/Ads category rows).',
+    'search.showingResults': 'Showing {count} search result(s).',
+    'search.clearFilter': 'Clear Filter',
   },
 
   bn: {
@@ -1077,6 +1079,8 @@ export const translations = {
     'search.searchButton': 'অনুসন্ধান করুন',
     'search.clearButton': 'অনুসন্ধান সাফ করুন',
     'search.advancedHint': 'ফিল্টার সদস্য, চাঁদা, দান/বিজ্ঞাপন এবং খরচ জুড়ে প্রযোজ্য — শুধুমাত্র সেই পৃষ্ঠায় বিদ্যমান ফিল্ডগুলোই ব্যবহৃত হয় (যেমন দান/বিজ্ঞাপনের জন্য পেমেন্ট পদ্ধতি এড়িয়ে যাওয়া হয়)।',
+    'search.showingResults': '{count}টি অনুসন্ধান ফলাফল দেখানো হচ্ছে।',
+    'search.clearFilter': 'ফিল্টার সাফ করুন',
   },
 
   hi: {
@@ -1604,6 +1608,8 @@ export const translations = {
     'search.searchButton': 'खोजें',
     'search.clearButton': 'खोज साफ़ करें',
     'search.advancedHint': 'फ़िल्टर सदस्य, चंदा, दान/विज्ञापन और खर्च में लागू होते हैं — केवल उस पेज पर मौजूद फ़ील्ड ही उपयोग होते हैं (जैसे दान/विज्ञापन के लिए भुगतान विधि छोड़ दी जाती है)।',
+    'search.showingResults': '{count} खोज परिणाम दिखाए जा रहे हैं।',
+    'search.clearFilter': 'फ़िल्टर हटाएं',
   },
 } as const satisfies Record<Language, Record<string, string>>;
 

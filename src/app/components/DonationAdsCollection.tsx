@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Filter } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -11,6 +11,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -306,7 +307,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const isDonation = formData.category === 'donation';
 
-  const sortedDonationAds = [...donationAdsList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('donationAds'));
+  const clearSearchFilter = () => { clearSearchResultIds('donationAds'); setSearchFilterIds(null); };
+
+  const sortedDonationAds = [...donationAdsList]
+    .filter(d => !searchFilterIds || searchFilterIds.includes(d.id))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedDonationAds);
 
   return (
@@ -354,6 +360,18 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       >
         {t('donationAds.pageTitle')}
       </PageHeading>
+
+      {searchFilterIds && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+          <span className="flex items-center gap-2 text-orange-800 font-medium">
+            <Filter size={15} />
+            {t('search.showingResults').replace('{count}', String(sortedDonationAds.length))}
+          </span>
+          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
+            {t('search.clearFilter')}
+          </button>
+        </div>
+      )}
 
       {/* Form */}
       <FormModal

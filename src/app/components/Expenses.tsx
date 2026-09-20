@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Filter } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, PaidThrough, getExpenseCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -12,6 +12,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
+import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -372,7 +373,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
   })).filter(ct => ct.total > 0);
 
-  const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('expenses'));
+  const clearSearchFilter = () => { clearSearchResultIds('expenses'); setSearchFilterIds(null); };
+
+  const sortedExpenses = [...expenses]
+    .filter(exp => !searchFilterIds || searchFilterIds.includes(exp.id))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedExpenses);
 
   return (
@@ -420,6 +426,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       >
         {t('expenses.pageTitle')}
       </PageHeading>
+
+      {searchFilterIds && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+          <span className="flex items-center gap-2 text-orange-800 font-medium">
+            <Filter size={15} />
+            {t('search.showingResults').replace('{count}', String(sortedExpenses.length))}
+          </span>
+          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
+            {t('search.clearFilter')}
+          </button>
+        </div>
+      )}
 
       {/* Form */}
       <FormModal

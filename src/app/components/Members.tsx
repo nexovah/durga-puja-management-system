@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, Filter } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -9,6 +9,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
+import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
 
 interface MembersProps {
   members: Member[];
@@ -227,7 +228,11 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     setEditingId(null);
   };
 
-  const pagination = usePagination(members);
+  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('members'));
+  const clearSearchFilter = () => { clearSearchResultIds('members'); setSearchFilterIds(null); };
+  const filteredMembers = members.filter(m => !searchFilterIds || searchFilterIds.includes(m.id));
+
+  const pagination = usePagination(filteredMembers);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const isPartial = formData.membershipPaymentStatus === 'partial';
 
@@ -248,6 +253,18 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       >
         {t('members.pageTitle')}
       </PageHeading>
+
+      {searchFilterIds && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+          <span className="flex items-center gap-2 text-orange-800 font-medium">
+            <Filter size={15} />
+            {t('search.showingResults').replace('{count}', String(filteredMembers.length))}
+          </span>
+          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
+            {t('search.clearFilter')}
+          </button>
+        </div>
+      )}
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -533,7 +550,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
               })}
             </tbody>
           </table>
-          {members.length === 0 && (
+          {filteredMembers.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               {t('members.empty')}
             </div>
