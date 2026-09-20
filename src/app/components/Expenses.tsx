@@ -778,6 +778,17 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 );
               })}
             </tbody>
+            {filteredExpenses.length > 0 && (
+              <tfoot>
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                    ₹{filteredExpenses.reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+              </tfoot>
+            )}
           </table>
           {expenses.length === 0 && (
             <div className="text-center py-12 text-gray-500">

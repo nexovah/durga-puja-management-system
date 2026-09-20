@@ -686,6 +686,17 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 </tr>
               ))}
             </tbody>
+            {filteredDonationAds.length > 0 && (
+              <tfoot>
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                    ₹{filteredDonationAds.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+              </tfoot>
+            )}
           </table>
           {donationAdsList.length === 0 && (
             <div className="text-center py-12 text-gray-500">

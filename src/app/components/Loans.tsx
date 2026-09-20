@@ -484,6 +484,20 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 </tr>
               ))}
             </tbody>
+            {filteredLoans.length > 0 && (
+              <tfoot>
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                    ₹{filteredLoans.reduce((sum, l) => sum + l.amountReceived, 0).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                    ₹{filteredLoans.reduce((sum, l) => sum + (l.amountPaid || 0), 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+              </tfoot>
+            )}
           </table>
           {loansList.length === 0 && (
             <div className="text-center py-12 text-gray-500">
