@@ -326,6 +326,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     if (f.amountMax && d.amount > parseFloat(f.amountMax)) return false;
     if (f.billVoucher && !(d.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
     if (f.paidMethod && d.paidMethod !== f.paidMethod) return false;
+    if (f.inKind && d.inKind !== f.inKind) return false;
     if (f.phone && !(d.phone || '').includes(f.phone.trim()) && !(d.phone2 || '').includes(f.phone.trim())) return false;
     if (f.dateFrom && new Date(d.date).getTime() < new Date(f.dateFrom).getTime()) return false;
     if (f.dateTo && new Date(d.date).getTime() > new Date(f.dateTo).getTime()) return false;
@@ -398,6 +399,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
         showDateRange
         showPhone
+        inKindOptions={ADS_CATEGORIES.map(c => ({ value: c.value, label: t(c.labelKey) }))}
+        inKindLabel={t('donationAds.inKindOrAdsCategory')}
       />
 
       {/* Form */}

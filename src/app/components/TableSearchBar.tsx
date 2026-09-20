@@ -11,10 +11,11 @@ export interface TableSearchFilters {
   dateTo: string;
   paidMethod: string;
   phone: string;
+  inKind: string;
 }
 
 export const emptyTableSearchFilters: TableSearchFilters = {
-  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '',
+  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '', inKind: '',
 };
 
 export const hasActiveTableFilters = (f: TableSearchFilters) => Object.values(f).some(v => v.trim() !== '');
@@ -39,6 +40,8 @@ interface TableSearchBarProps {
   paidMethodOptions?: Option[];
   showDateRange?: boolean;
   showPhone?: boolean;
+  inKindOptions?: Option[];
+  inKindLabel?: string;
 }
 
 // Per-page search + advanced filter bar — lives in the page body, directly
@@ -50,10 +53,11 @@ export function TableSearchBar({
   query, onQueryChange, placeholder, filters, onFiltersChange, onSearch, onClear, filtersActive,
   resultCount, totalCount,
   showAmount, showBillVoucher, billVoucherLabel, statusOptions, paidMethodOptions, showDateRange, showPhone,
+  inKindOptions, inKindLabel,
 }: TableSearchBarProps) {
   const { t } = useLanguage();
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone;
+  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone || inKindOptions;
 
   const handleSearch = () => {
     onSearch();
@@ -160,6 +164,21 @@ export function TableSearchBar({
                 >
                   <option value="">{t('search.any')}</option>
                   {statusOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {inKindOptions && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{inKindLabel || t('search.inKind')}</label>
+                <select
+                  value={filters.inKind}
+                  onChange={(e) => onFiltersChange({ ...filters, inKind: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('search.any')}</option>
+                  {inKindOptions.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
