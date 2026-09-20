@@ -4,8 +4,11 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21 (4)
+- **Search moved from nav bar into each page body** (supersedes (3) below, which the sessionStorage-stash approach turned out not to work — results weren't clickable/editable and "See all" didn't land anywhere): new reusable `TableSearchBar.tsx` sits directly above the table on Members, Chanda, Donation/Ads, Expenses, Loans — quick text box (live) + collapsible Advanced Filters (Amount, Bill/Voucher, Payment Status, Payment Method, Date range, Phone), each page showing only the fields it has. Filters that page's own live data in place with a plain `.filter()` — no navigation, no sessionStorage, rows stay fully editable. `GlobalSearch.tsx` (nav icon) reverted to a simple quick-jump tool — text search with a "See all" that just navigates to the right page. Deleted the now-unused `src/app/lib/searchHandoff.ts`. Tasks.tsx kept its existing in-body filter bar as-is (already page-body/live-table). Front-end only, no DB changes.
+
 ## 2026-09-21 (3)
-- **Advanced Search now filters the real table**, not a dropdown preview: clicking Search stashes matching record IDs (per module) in `sessionStorage` and navigates to the table, which narrows to just those rows — fully editable via the page's own Edit/Delete buttons — with a "Showing N result(s)" banner + Clear Filter. Applied to Members, Chanda, Donation/Ads, Expenses. Quick text search unaffected.
+- ~~Advanced Search now filters the real table~~ (superseded by (4) above): clicking Search stashed matching record IDs (per module) in `sessionStorage` and navigated to the table. Replaced same day after user feedback that results weren't usable from the nav-bar dropdown.
 
 ## 2026-09-21 (2)
 - **PIN-confirm on undoing a Paid status**: Chanda Collection, Expenses, Members — editing a record already marked "Paid" to any other status now requires the same random-4-digit-PIN confirmation as delete (`StatusChangeConfirmModal.tsx`), instead of saving instantly. Other status changes unaffected.

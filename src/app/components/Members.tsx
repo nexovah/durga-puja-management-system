@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -9,7 +9,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
-import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface MembersProps {
   members: Member[];
@@ -228,9 +228,29 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     setEditingId(null);
   };
 
-  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('members'));
-  const clearSearchFilter = () => { clearSearchResultIds('members'); setSearchFilterIds(null); };
-  const filteredMembers = members.filter(m => !searchFilterIds || searchFilterIds.includes(m.id));
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+
+  const filteredMembers = members.filter(m => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [m.name, m.phone, m.address, roleLabel(m.role)]
+        .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+
+    const f = appliedFilters;
+    if (f.amountMin && (m.membershipAmount ?? -1) < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && (m.membershipAmount ?? Infinity) > parseFloat(f.amountMax)) return false;
+    if (f.billVoucher && !(m.membershipBillNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.status && m.membershipPaymentStatus !== f.status) return false;
+    if (f.paidMethod && m.membershipPaidMethod !== f.paidMethod) return false;
+    if (f.phone && !(m.phone || '').includes(f.phone.trim())) return false;
+    if (f.dateFrom && (!m.membershipDate || new Date(m.membershipDate).getTime() < new Date(f.dateFrom).getTime())) return false;
+    if (f.dateTo && (!m.membershipDate || new Date(m.membershipDate).getTime() > new Date(f.dateTo).getTime())) return false;
+    return true;
+  });
 
   const pagination = usePagination(filteredMembers);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
@@ -254,17 +274,25 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         {t('members.pageTitle')}
       </PageHeading>
 
-      {searchFilterIds && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-          <span className="flex items-center gap-2 text-orange-800 font-medium">
-            <Filter size={15} />
-            {t('search.showingResults').replace('{count}', String(filteredMembers.length))}
-          </span>
-          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
-            {t('search.clearFilter')}
-          </button>
-        </div>
-      )}
+      <TableSearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        placeholder={t('members.searchPlaceholder')}
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSearch={() => setAppliedFilters(draftFilters)}
+        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+        filtersActive={hasActiveTableFilters(appliedFilters)}
+        resultCount={filteredMembers.length}
+        totalCount={members.length}
+        showAmount
+        showBillVoucher
+        billVoucherLabel={t('chanda.billNumber')}
+        statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
+        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+        showDateRange
+        showPhone
+      />
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

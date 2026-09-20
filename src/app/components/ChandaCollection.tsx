@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
 import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -12,7 +12,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
-import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -44,6 +44,11 @@ const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
   partial: 'bg-blue-100 text-blue-700',
   rejected: 'bg-red-100 text-red-700',
 };
+
+// Simple case-insensitive "does any of these fields contain q" check, used
+// by the page's own search bar.
+const matches = (parts: (string | number | undefined | null)[], q: string) =>
+  parts.some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
 
 const emptyForm = {
   donorName: '',
@@ -350,12 +355,27 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const isPartial = formData.paymentStatus === 'partial';
 
-  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('chanda'));
-  const clearSearchFilter = () => { clearSearchResultIds('chanda'); setSearchFilterIds(null); };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
-  const sortedChanda = [...chandaList]
-    .filter(c => !searchFilterIds || searchFilterIds.includes(c.id))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredChanda = chandaList.filter(c => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q && !matches([c.donorName, c.phone, c.phone2, c.remarks, c.billNumber, c.amount], q)) return false;
+
+    const f = appliedFilters;
+    if (f.amountMin && c.amount < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && c.amount > parseFloat(f.amountMax)) return false;
+    if (f.billVoucher && !normalizeKey(c.billNumber).includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.status && c.paymentStatus !== f.status) return false;
+    if (f.paidMethod && c.paidMethod !== f.paidMethod) return false;
+    if (f.phone && !(c.phone || '').includes(f.phone.trim()) && !(c.phone2 || '').includes(f.phone.trim())) return false;
+    if (f.dateFrom && new Date(c.date).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(c.date).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
+  const sortedChanda = [...filteredChanda].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedChanda);
 
   return (
@@ -404,17 +424,25 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         {t('chanda.pageTitle')}
       </PageHeading>
 
-      {searchFilterIds && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-          <span className="flex items-center gap-2 text-orange-800 font-medium">
-            <Filter size={15} />
-            {t('search.showingResults').replace('{count}', String(sortedChanda.length))}
-          </span>
-          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
-            {t('search.clearFilter')}
-          </button>
-        </div>
-      )}
+      <TableSearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        placeholder={t('chanda.searchPlaceholder')}
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSearch={() => setAppliedFilters(draftFilters)}
+        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+        filtersActive={hasActiveTableFilters(appliedFilters)}
+        resultCount={filteredChanda.length}
+        totalCount={chandaList.length}
+        showAmount
+        showBillVoucher
+        billVoucherLabel={t('chanda.billNumber')}
+        statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
+        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+        showDateRange
+        showPhone
+      />
 
       {/* Form */}
       <FormModal

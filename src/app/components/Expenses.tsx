@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, PaidThrough, getExpenseCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -12,7 +12,7 @@ import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
-import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -373,12 +373,31 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
   })).filter(ct => ct.total > 0);
 
-  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('expenses'));
-  const clearSearchFilter = () => { clearSearchResultIds('expenses'); setSearchFilterIds(null); };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
-  const sortedExpenses = [...expenses]
-    .filter(exp => !searchFilterIds || searchFilterIds.includes(exp.id))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredExpenses = expenses.filter(exp => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [exp.title, exp.remarks, exp.voucherNumber, exp.vendorName, exp.vendorContact]
+        .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+
+    const f = appliedFilters;
+    if (f.amountMin && exp.amount < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && exp.amount > parseFloat(f.amountMax)) return false;
+    if (f.billVoucher && !(exp.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.status && exp.paymentStatus !== f.status) return false;
+    if (f.paidMethod && exp.paidThrough !== f.paidMethod) return false;
+    if (f.phone && !(exp.vendorContact || '').includes(f.phone.trim())) return false;
+    if (f.dateFrom && new Date(exp.date).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(exp.date).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedExpenses);
 
   return (
@@ -427,17 +446,25 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         {t('expenses.pageTitle')}
       </PageHeading>
 
-      {searchFilterIds && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-          <span className="flex items-center gap-2 text-orange-800 font-medium">
-            <Filter size={15} />
-            {t('search.showingResults').replace('{count}', String(sortedExpenses.length))}
-          </span>
-          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
-            {t('search.clearFilter')}
-          </button>
-        </div>
-      )}
+      <TableSearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        placeholder={t('expenses.searchPlaceholder')}
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSearch={() => setAppliedFilters(draftFilters)}
+        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+        filtersActive={hasActiveTableFilters(appliedFilters)}
+        resultCount={filteredExpenses.length}
+        totalCount={expenses.length}
+        showAmount
+        showBillVoucher
+        billVoucherLabel={t('expenses.voucherNumber')}
+        statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
+        paidMethodOptions={PAID_THROUGH_OPTIONS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+        showDateRange
+        showPhone
+      />
 
       {/* Form */}
       <FormModal

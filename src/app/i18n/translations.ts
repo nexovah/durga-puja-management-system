@@ -149,6 +149,7 @@ export const translations = {
     'members.membershipAmount': 'Amount',
     'members.widget.totalPayments': 'Total Membership Payments',
     'members.widget.totalMembers': 'Total Members',
+    'members.searchPlaceholder': 'Search name, phone, address, designation…',
     'members.assignedTasks': 'Assigned Tasks',
     'members.addNew': 'Add New Member',
     'members.editMember': 'Edit Member',
@@ -173,6 +174,7 @@ export const translations = {
     // Chanda
     'chanda.pageTitle': 'Chanda Collection',
     'chanda.widget.total': 'Total Collection',
+    'chanda.searchPlaceholder': 'Search donor name, phone, bill number, remarks…',
     'chanda.widget.pending': 'Pending Collection',
     'chanda.widget.amount1': 'Amount 01 (Durga Puja)',
     'chanda.widget.amount2': 'Amount 02 (Kali Puja)',
@@ -221,6 +223,7 @@ export const translations = {
     'donationAds.widget.total': 'Total Collection',
     'donationAds.widget.donation': 'Donation Collection',
     'donationAds.widget.ads': 'Ads Collection',
+    'donationAds.searchPlaceholder': 'Search donor/company name, phone, voucher number…',
     'donationAds.addNew': 'Add New Entry',
     'donationAds.editEntry': 'Edit Entry',
     'donationAds.category': 'Category',
@@ -261,6 +264,7 @@ export const translations = {
     // Expenses
     'expenses.pageTitle': 'Expenses',
     'expenses.widget.total': 'Total Expenses',
+    'expenses.searchPlaceholder': 'Search title, remarks, voucher number, vendor…',
     'expenses.addNew': 'Add New Expense',
     'expenses.editExpense': 'Edit Expense',
     'expenses.byCategory': 'Expenses by Category',
@@ -325,6 +329,7 @@ export const translations = {
 
     // Loans
     'loans.pageTitle': 'Loans',
+    'loans.searchPlaceholder': 'Search donor name, phone, remarks…',
     'loans.addNew': 'Add New Loan',
     'loans.editLoan': 'Edit Loan',
     'loans.donorName': "Donor's Name",
@@ -533,6 +538,7 @@ export const translations = {
     // Global Search
     'search.placeholder': 'Search members, chanda, donation/ads, expenses…',
     'search.typeToSearch': 'Type to search across Members, Chanda Collection, Donation/Ads Collection and Expenses — names, amounts, phone numbers, paid/pending status, and more.',
+    'search.jumpHint': 'Jumps you to the right menu — to filter that menu\'s table directly, use the search bar on the page itself.',
     'search.noResults': 'No results found.',
     'search.seeAll': 'See all →',
     'search.advancedFilters': 'Advanced Filters',
@@ -551,6 +557,7 @@ export const translations = {
     'search.clearButton': 'Clear Search',
     'search.advancedHint': 'Filters apply across Members, Chanda, Donation/Ads and Expenses — only fields that exist on a page are used for it (e.g. Payment Method is skipped for Donation/Ads category rows).',
     'search.showingResults': 'Showing {count} search result(s).',
+    'search.resultCount': 'Showing {shown} of {total} record(s).',
     'search.clearFilter': 'Clear Filter',
   },
 
@@ -684,6 +691,7 @@ export const translations = {
     'members.membershipAmount': 'পরিমাণ',
     'members.widget.totalPayments': 'মোট সদস্যপদ পেমেন্ট',
     'members.widget.totalMembers': 'মোট সদস্য',
+    'members.searchPlaceholder': 'নাম, ফোন, ঠিকানা, পদবি খুঁজুন…',
     'members.assignedTasks': 'নির্ধারিত টাস্ক',
     'members.addNew': 'নতুন সদস্য যোগ করুন',
     'members.editMember': 'সদস্য সম্পাদনা করুন',
@@ -707,6 +715,7 @@ export const translations = {
 
     'chanda.pageTitle': 'চাঁদা সংগ্রহ',
     'chanda.widget.total': 'মোট সংগ্রহ',
+    'chanda.searchPlaceholder': 'দাতার নাম, ফোন, বিল নম্বর, মন্তব্য খুঁজুন…',
     'chanda.widget.pending': 'বাকি সংগ্রহ',
     'chanda.widget.amount1': 'পরিমাণ ০১ (দুর্গাপূজা)',
     'chanda.widget.amount2': 'পরিমাণ ০২ (কালীপূজা)',
@@ -755,6 +764,7 @@ export const translations = {
     'donationAds.widget.total': 'মোট সংগ্রহ',
     'donationAds.widget.donation': 'দান সংগ্রহ',
     'donationAds.widget.ads': 'বিজ্ঞাপন সংগ্রহ',
+    'donationAds.searchPlaceholder': 'দাতা/কোম্পানির নাম, ফোন, ভাউচার নম্বর খুঁজুন…',
     'donationAds.addNew': 'নতুন এন্ট্রি যোগ করুন',
     'donationAds.editEntry': 'এন্ট্রি সম্পাদনা করুন',
     'donationAds.category': 'বিভাগ',
@@ -794,6 +804,7 @@ export const translations = {
 
     'expenses.pageTitle': 'খরচ',
     'expenses.widget.total': 'মোট খরচ',
+    'expenses.searchPlaceholder': 'শিরোনাম, মন্তব্য, ভাউচার নম্বর, বিক্রেতা খুঁজুন…',
     'expenses.addNew': 'নতুন খরচ যোগ করুন',
     'expenses.editExpense': 'খরচ সম্পাদনা করুন',
     'expenses.byCategory': 'বিভাগ অনুযায়ী খরচ',
@@ -858,6 +869,7 @@ export const translations = {
 
     // Loans
     'loans.pageTitle': 'ঋণ',
+    'loans.searchPlaceholder': 'দাতার নাম, ফোন, মন্তব্য খুঁজুন…',
     'loans.addNew': 'নতুন ঋণ যোগ করুন',
     'loans.editLoan': 'ঋণ সম্পাদনা করুন',
     'loans.donorName': 'দাতার নাম',
@@ -1062,6 +1074,7 @@ export const translations = {
     // Global Search
     'search.placeholder': 'সদস্য, চাঁদা, দান/বিজ্ঞাপন, খরচ খুঁজুন…',
     'search.typeToSearch': 'সদস্য, চাঁদা সংগ্রহ, দান/বিজ্ঞাপন সংগ্রহ এবং খরচের মধ্যে খুঁজতে টাইপ করুন — নাম, পরিমাণ, ফোন নম্বর, পরিশোধিত/বিচারাধীন অবস্থা ইত্যাদি।',
+    'search.jumpHint': 'আপনাকে সঠিক মেনুতে নিয়ে যায় — সেই মেনুর টেবিল সরাসরি ফিল্টার করতে, পৃষ্ঠায় থাকা সার্চ বার ব্যবহার করুন।',
     'search.noResults': 'কোনো ফলাফল পাওয়া যায়নি।',
     'search.seeAll': 'সব দেখুন →',
     'search.advancedFilters': 'উন্নত ফিল্টার',
@@ -1080,6 +1093,7 @@ export const translations = {
     'search.clearButton': 'অনুসন্ধান সাফ করুন',
     'search.advancedHint': 'ফিল্টার সদস্য, চাঁদা, দান/বিজ্ঞাপন এবং খরচ জুড়ে প্রযোজ্য — শুধুমাত্র সেই পৃষ্ঠায় বিদ্যমান ফিল্ডগুলোই ব্যবহৃত হয় (যেমন দান/বিজ্ঞাপনের জন্য পেমেন্ট পদ্ধতি এড়িয়ে যাওয়া হয়)।',
     'search.showingResults': '{count}টি অনুসন্ধান ফলাফল দেখানো হচ্ছে।',
+    'search.resultCount': '{total}টির মধ্যে {shown}টি রেকর্ড দেখানো হচ্ছে।',
     'search.clearFilter': 'ফিল্টার সাফ করুন',
   },
 
@@ -1213,6 +1227,7 @@ export const translations = {
     'members.membershipAmount': 'राशि',
     'members.widget.totalPayments': 'कुल सदस्यता भुगतान',
     'members.widget.totalMembers': 'कुल सदस्य',
+    'members.searchPlaceholder': 'नाम, फ़ोन, पता, पदनाम खोजें…',
     'members.assignedTasks': 'सौंपे गए कार्य',
     'members.addNew': 'नया सदस्य जोड़ें',
     'members.editMember': 'सदस्य संपादित करें',
@@ -1236,6 +1251,7 @@ export const translations = {
 
     'chanda.pageTitle': 'चंदा संग्रह',
     'chanda.widget.total': 'कुल संग्रह',
+    'chanda.searchPlaceholder': 'दाता का नाम, फ़ोन, बिल नंबर, टिप्पणी खोजें…',
     'chanda.widget.pending': 'लंबित संग्रह',
     'chanda.widget.amount1': 'राशि 01 (दुर्गा पूजा)',
     'chanda.widget.amount2': 'राशि 02 (काली पूजा)',
@@ -1284,6 +1300,7 @@ export const translations = {
     'donationAds.widget.total': 'कुल संग्रह',
     'donationAds.widget.donation': 'दान संग्रह',
     'donationAds.widget.ads': 'विज्ञापन संग्रह',
+    'donationAds.searchPlaceholder': 'दाता/कंपनी का नाम, फ़ोन, वाउचर नंबर खोजें…',
     'donationAds.addNew': 'नई प्रविष्टि जोड़ें',
     'donationAds.editEntry': 'प्रविष्टि संपादित करें',
     'donationAds.category': 'श्रेणी',
@@ -1323,6 +1340,7 @@ export const translations = {
 
     'expenses.pageTitle': 'खर्च',
     'expenses.widget.total': 'कुल खर्च',
+    'expenses.searchPlaceholder': 'शीर्षक, टिप्पणी, वाउचर नंबर, विक्रेता खोजें…',
     'expenses.addNew': 'नया खर्च जोड़ें',
     'expenses.editExpense': 'खर्च संपादित करें',
     'expenses.byCategory': 'श्रेणी अनुसार खर्च',
@@ -1387,6 +1405,7 @@ export const translations = {
 
     // Loans
     'loans.pageTitle': 'ऋण',
+    'loans.searchPlaceholder': 'दाता का नाम, फ़ोन, टिप्पणी खोजें…',
     'loans.addNew': 'नया ऋण जोड़ें',
     'loans.editLoan': 'ऋण संपादित करें',
     'loans.donorName': 'दानकर्ता का नाम',
@@ -1591,6 +1610,7 @@ export const translations = {
     // Global Search
     'search.placeholder': 'सदस्य, चंदा, दान/विज्ञापन, खर्च खोजें…',
     'search.typeToSearch': 'सदस्य, चंदा संग्रह, दान/विज्ञापन संग्रह और खर्च में खोजने के लिए टाइप करें — नाम, राशि, फ़ोन नंबर, भुगतान/लंबित स्थिति आदि।',
+    'search.jumpHint': 'आपको सही मेनू पर ले जाता है — उस मेनू की तालिका को सीधे फ़िल्टर करने के लिए, पेज पर मौजूद सर्च बार का उपयोग करें।',
     'search.noResults': 'कोई परिणाम नहीं मिला।',
     'search.seeAll': 'सभी देखें →',
     'search.advancedFilters': 'उन्नत फ़िल्टर',
@@ -1609,6 +1629,7 @@ export const translations = {
     'search.clearButton': 'खोज साफ़ करें',
     'search.advancedHint': 'फ़िल्टर सदस्य, चंदा, दान/विज्ञापन और खर्च में लागू होते हैं — केवल उस पेज पर मौजूद फ़ील्ड ही उपयोग होते हैं (जैसे दान/विज्ञापन के लिए भुगतान विधि छोड़ दी जाती है)।',
     'search.showingResults': '{count} खोज परिणाम दिखाए जा रहे हैं।',
+    'search.resultCount': '{total} में से {shown} रिकॉर्ड दिखाए जा रहे हैं।',
     'search.clearFilter': 'फ़िल्टर हटाएं',
   },
 } as const satisfies Record<Language, Record<string, string>>;

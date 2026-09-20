@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -11,7 +11,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
-import { readSearchResultIds, clearSearchResultIds } from '../lib/searchHandoff';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -307,12 +307,30 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const isDonation = formData.category === 'donation';
 
-  const [searchFilterIds, setSearchFilterIds] = useState<string[] | null>(() => readSearchResultIds('donationAds'));
-  const clearSearchFilter = () => { clearSearchResultIds('donationAds'); setSearchFilterIds(null); };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
-  const sortedDonationAds = [...donationAdsList]
-    .filter(d => !searchFilterIds || searchFilterIds.includes(d.id))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredDonationAds = donationAdsList.filter(d => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.voucherNumber, d.inKind]
+        .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+
+    const f = appliedFilters;
+    if (f.amountMin && d.amount < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && d.amount > parseFloat(f.amountMax)) return false;
+    if (f.billVoucher && !(d.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.paidMethod && d.paidMethod !== f.paidMethod) return false;
+    if (f.phone && !(d.phone || '').includes(f.phone.trim()) && !(d.phone2 || '').includes(f.phone.trim())) return false;
+    if (f.dateFrom && new Date(d.date).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(d.date).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
+  const sortedDonationAds = [...filteredDonationAds].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedDonationAds);
 
   return (
@@ -361,17 +379,24 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         {t('donationAds.pageTitle')}
       </PageHeading>
 
-      {searchFilterIds && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-          <span className="flex items-center gap-2 text-orange-800 font-medium">
-            <Filter size={15} />
-            {t('search.showingResults').replace('{count}', String(sortedDonationAds.length))}
-          </span>
-          <button onClick={clearSearchFilter} className="text-orange-700 hover:text-orange-900 font-semibold underline">
-            {t('search.clearFilter')}
-          </button>
-        </div>
-      )}
+      <TableSearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        placeholder={t('donationAds.searchPlaceholder')}
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSearch={() => setAppliedFilters(draftFilters)}
+        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+        filtersActive={hasActiveTableFilters(appliedFilters)}
+        resultCount={filteredDonationAds.length}
+        totalCount={donationAdsList.length}
+        showAmount
+        showBillVoucher
+        billVoucherLabel={t('donationAds.voucherNumber')}
+        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+        showDateRange
+        showPhone
+      />
 
       {/* Form */}
       <FormModal

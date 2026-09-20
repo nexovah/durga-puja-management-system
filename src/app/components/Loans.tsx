@@ -10,6 +10,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 interface LoansProps {
   loansList: Loan[];
@@ -216,7 +217,29 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     setImportPreview(null);
   };
 
-  const sortedLoans = [...loansList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+
+  const filteredLoans = loansList.filter(l => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [l.donorName, l.phone, l.remarks]
+        .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+
+    const f = appliedFilters;
+    if (f.amountMin && l.amountReceived < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && l.amountReceived > parseFloat(f.amountMax)) return false;
+    if (f.paidMethod && l.paymentMethod !== f.paidMethod) return false;
+    if (f.phone && !(l.phone || '').includes(f.phone.trim())) return false;
+    if (f.dateFrom && new Date(l.date).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(l.date).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
+  const sortedLoans = [...filteredLoans].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const pagination = usePagination(sortedLoans);
 
   return (
@@ -265,6 +288,23 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       >
         {t('loans.pageTitle')}
       </PageHeading>
+
+      <TableSearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        placeholder={t('loans.searchPlaceholder')}
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSearch={() => setAppliedFilters(draftFilters)}
+        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+        filtersActive={hasActiveTableFilters(appliedFilters)}
+        resultCount={filteredLoans.length}
+        totalCount={loansList.length}
+        showAmount
+        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+        showDateRange
+        showPhone
+      />
 
       <FormModal
         open={canEdit && showForm}
