@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21
+- Expenses: each of the 5 Partial Amount fields now has its own date picker (`Expense.partialDates`, parallel to `partialAmounts`) — each installment is usually paid on a different date. New migration `supabase/016_expenses_partial_dates.sql` — **run in Supabase SQL Editor**.
+
 ## 2026-09-15 (16)
 - **Save & Add New**: Members, Chanda Collection, Donation/Ads Collection, Expenses, Tasks (highest-volume forms) get a second submit button in the Add-new modal — saves and keeps the modal open with a blank form for the next entry, instead of closing. Detected via `SubmitEvent.submitter`, only shown when adding (not editing).
 - **Activity Log**: new "All Users" filter dropdown, built from distinct users already in the loaded log — filter to one user's activity history. Front-end only, no DB changes.
