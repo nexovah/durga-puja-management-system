@@ -814,18 +814,50 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         title={viewTarget?.title || ''}
         onClose={() => setViewTarget(null)}
         onEdit={canEdit && viewTarget ? () => { const exp = viewTarget; setViewTarget(null); handleEdit(exp); } : undefined}
-        fields={viewTarget ? [
+        fields={viewTarget ? (() => {
+          const status = viewTarget.paymentStatus || 'paid';
+          const partials = viewTarget.partialAmounts || [];
+          const partialDates = viewTarget.partialDates || [];
+          const partialSum = partials.reduce((sum, v) => sum + (v || 0), 0);
+          const isFullyPaidPartial = status === 'partial' && partialSum >= viewTarget.amount && viewTarget.amount > 0;
+          return [
           { label: t('expenses.title'), value: viewTarget.title },
-          { label: t('common.amount'), value: `₹${viewTarget.amount.toLocaleString()}` },
-          { label: t('expenses.paymentStatus'), value: statusLabel(viewTarget.paymentStatus || 'paid') },
+          {
+            label: t('common.amount'),
+            value: `₹${viewTarget.amount.toLocaleString()}`,
+            valueClassName: `font-bold ${
+              status === 'cancelled'
+                ? 'text-red-600 line-through'
+                : status === 'partial'
+                ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
+                : 'text-red-600'
+            }`,
+          },
+          {
+            label: t('expenses.paymentStatus'),
+            value: (
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                {statusLabel(status)}
+              </span>
+            ),
+          },
           { label: t('expenses.paidThrough'), value: paidThroughLabel(viewTarget.paidThrough || 'notSelected') },
+          ...(status === 'partial' ? [
+            { label: t('expenses.partialAmount1'), value: `₹${(partials[0] ?? 0).toLocaleString()}${partialDates[0] ? ` (${new Date(partialDates[0]).toLocaleDateString(locale)})` : ''}` },
+            { label: t('expenses.partialAmount2'), value: `₹${(partials[1] ?? 0).toLocaleString()}${partialDates[1] ? ` (${new Date(partialDates[1]).toLocaleDateString(locale)})` : ''}` },
+            { label: t('expenses.partialAmount3'), value: `₹${(partials[2] ?? 0).toLocaleString()}${partialDates[2] ? ` (${new Date(partialDates[2]).toLocaleDateString(locale)})` : ''}` },
+            { label: t('expenses.partialAmount4'), value: `₹${(partials[3] ?? 0).toLocaleString()}${partialDates[3] ? ` (${new Date(partialDates[3]).toLocaleDateString(locale)})` : ''}` },
+            { label: t('expenses.partialAmount5'), value: `₹${(partials[4] ?? 0).toLocaleString()}${partialDates[4] ? ` (${new Date(partialDates[4]).toLocaleDateString(locale)})` : ''}` },
+            { label: t('chanda.partialAmountLabel'), value: `₹${partialSum.toLocaleString()} / ₹${viewTarget.amount.toLocaleString()}` },
+          ] : []),
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
           { label: t('expenses.category'), value: categoryLabel(viewTarget.category) },
           { label: t('expenses.voucherNumber'), value: viewTarget.voucherNumber || '-' },
           { label: t('expenses.vendorName'), value: viewTarget.vendorName || '-' },
           { label: t('expenses.vendorContact'), value: viewTarget.vendorContact || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
-        ] : []}
+          ];
+        })() : []}
       />
       <DeleteConfirmModal
         open={!!deleteTarget}

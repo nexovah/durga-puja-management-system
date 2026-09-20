@@ -6,6 +6,7 @@ export interface ViewField {
   label: string;
   value: ReactNode;
   fullWidth?: boolean;
+  valueClassName?: string; // overrides the default text color/weight, e.g. to match the table row's status color
 }
 
 interface ViewModalProps {
@@ -53,7 +54,7 @@ export function ViewModal({ open, title, fields, onClose, onEdit }: ViewModalPro
         {fields.map((f, i) => (
           <div key={i} className={f.fullWidth ? 'sm:col-span-2' : ''}>
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{f.label}</div>
-            <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">{f.value ?? '—'}</div>
+            <div className={`text-sm whitespace-pre-wrap break-words ${f.valueClassName || 'text-gray-800'}`}>{f.value ?? '—'}</div>
           </div>
         ))}
       </div>

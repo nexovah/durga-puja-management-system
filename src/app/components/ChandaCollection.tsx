@@ -783,9 +783,30 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onEdit={canEdit && viewTarget ? () => { const c = viewTarget; setViewTarget(null); handleEdit(c); } : undefined}
         fields={viewTarget ? [
           { label: t('chanda.donorName'), value: viewTarget.donorName },
-          { label: t('chanda.amountLabel'), value: `₹${viewTarget.amount.toLocaleString()}` },
+          {
+            label: t('chanda.amountLabel'),
+            value: `₹${viewTarget.amount.toLocaleString()}`,
+            valueClassName: `font-bold ${
+              (viewTarget.paymentStatus || 'paid') === 'rejected'
+                ? 'text-red-600 line-through'
+                : (viewTarget.paymentStatus || 'paid') === 'partial'
+                ? 'text-yellow-600'
+                : 'text-green-600'
+            }`,
+          },
           { label: t('common.paidMethod'), value: paidMethodLabel(viewTarget.paidMethod || 'notSelected') },
-          { label: t('chanda.paymentStatus'), value: statusLabel(viewTarget.paymentStatus || 'paid') },
+          {
+            label: t('chanda.paymentStatus'),
+            value: (
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[viewTarget.paymentStatus || 'paid']}`}>
+                {statusLabel(viewTarget.paymentStatus || 'paid')}
+              </span>
+            ),
+          },
+          ...(viewTarget.paymentStatus === 'partial' ? [{
+            label: t('chanda.partialAmountLabel'),
+            value: `₹${(viewTarget.partialAmount || 0).toLocaleString()} / ₹${viewTarget.amount.toLocaleString()}`,
+          }] : []),
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
           { label: t('chanda.billNumber'), value: viewTarget.billNumber || '-' },
           { label: t('common.phone1'), value: viewTarget.phone || '-' },

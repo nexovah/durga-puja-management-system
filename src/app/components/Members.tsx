@@ -619,7 +619,18 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           { label: t('members.joinDate'), value: new Date(viewTarget.joinDate).toLocaleDateString(locale) },
           { label: t('common.address'), value: viewTarget.address, fullWidth: true },
           { label: t('members.membershipAmount'), value: viewTarget.membershipAmount !== undefined ? `₹${viewTarget.membershipAmount.toLocaleString()}` : '-' },
-          { label: t('chanda.paymentStatus'), value: viewTarget.membershipPaymentStatus ? statusLabel(viewTarget.membershipPaymentStatus) : '-' },
+          {
+            label: t('chanda.paymentStatus'),
+            value: viewTarget.membershipPaymentStatus ? (
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[viewTarget.membershipPaymentStatus]}`}>
+                {statusLabel(viewTarget.membershipPaymentStatus)}
+              </span>
+            ) : '-',
+          },
+          ...(viewTarget.membershipPaymentStatus === 'partial' ? [{
+            label: t('chanda.partialAmountLabel'),
+            value: `₹${(viewTarget.membershipPartialAmount || 0).toLocaleString()} / ₹${(viewTarget.membershipAmount || 0).toLocaleString()}`,
+          }] : []),
           { label: t('common.paidMethod'), value: viewTarget.membershipPaidMethod ? t(PAID_METHODS.find(m => m.value === viewTarget.membershipPaidMethod)?.labelKey || 'common.paidMethod.notSelected') : '-' },
           { label: t('chanda.billNumber'), value: viewTarget.membershipBillNumber || '-' },
           { label: t('common.remarks'), value: viewTarget.membershipRemarks || '-', fullWidth: true },
