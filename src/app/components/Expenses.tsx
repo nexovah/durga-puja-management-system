@@ -377,6 +377,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
+  const knownVendorNames = Array.from(new Set(expenses.map(exp => exp.vendorName?.trim()).filter((n): n is string => !!n))).sort((a, b) => a.localeCompare(b));
+
   const filteredExpenses = expenses.filter(exp => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -640,7 +642,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.vendorNamePlaceholder')}
+                list="vendor-name-suggestions"
+                autoComplete="off"
               />
+              <datalist id="vendor-name-suggestions">
+                {knownVendorNames.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.vendorContact')}</label>
