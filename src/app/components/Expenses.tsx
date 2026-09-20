@@ -11,6 +11,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -83,6 +84,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [importPreview, setImportPreview] = useState<{ toInsert: Expense[]; toUpdate: Expense[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [pendingSave, setPendingSave] = useState<{ payload: Omit<Expense, 'id'>; saveAndAddNew: boolean } | null>(null);
 
   const categoryLabel = (value: string) => {
     const found = categories.find(c => c.value === value);
@@ -176,6 +178,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     };
 
     if (editingId) {
+      const original = expenses.find(exp => exp.id === editingId);
+      if (original?.paymentStatus === 'paid' && payload.paymentStatus !== 'paid') {
+        setPendingSave({ payload, saveAndAddNew });
+        return;
+      }
+    }
+
+    commitSave(payload, saveAndAddNew);
+  };
+
+  const commitSave = (payload: Omit<Expense, 'id'>, saveAndAddNew: boolean) => {
+    if (editingId) {
       // Edit existing expense
       setExpenses(expenses.map(exp =>
         exp.id === editingId
@@ -199,6 +213,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setFormData(emptyForm);
     setEditingId(null);
     setShowForm(saveAndAddNew && !wasEditing);
+  };
+
+  const confirmStatusChange = () => {
+    if (!pendingSave) return;
+    commitSave(pendingSave.payload, pendingSave.saveAndAddNew);
+    setPendingSave(null);
   };
 
   const handleEdit = (expense: Expense) => {
@@ -730,6 +750,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         itemLabel={deleteTarget?.title}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+      <StatusChangeConfirmModal
+        open={!!pendingSave}
+        itemLabel={pendingSave?.payload.title}
+        fromStatusLabel={statusLabel('paid')}
+        toStatusLabel={pendingSave ? statusLabel(pendingSave.payload.paymentStatus) : ''}
+        onCancel={() => setPendingSave(null)}
+        onConfirm={confirmStatusChange}
       />
     </div>
   );

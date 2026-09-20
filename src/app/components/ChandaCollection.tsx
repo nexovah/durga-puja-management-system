@@ -11,6 +11,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -67,6 +68,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Chanda | null>(null);
+  const [pendingSave, setPendingSave] = useState<{ payload: Omit<Chanda, 'id'>; saveAndAddNew: boolean } | null>(null);
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
 
@@ -157,6 +159,21 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       remarks: formData.remarks,
     };
 
+    // Editing a record that's already Paid, changing it away from Paid —
+    // that means money already recorded as received would stop being
+    // recorded as such, so require the same PIN confirmation as a delete.
+    if (editingId) {
+      const original = chandaList.find(c => c.id === editingId);
+      if (original?.paymentStatus === 'paid' && payload.paymentStatus !== 'paid') {
+        setPendingSave({ payload, saveAndAddNew });
+        return;
+      }
+    }
+
+    commitSave(payload, saveAndAddNew);
+  };
+
+  const commitSave = (payload: Omit<Chanda, 'id'>, saveAndAddNew: boolean) => {
     if (editingId) {
       // Edit existing chanda
       setChandaList(chandaList.map(c =>
@@ -181,6 +198,12 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setFormData(emptyForm);
     setEditingId(null);
     setShowForm(saveAndAddNew && !wasEditing);
+  };
+
+  const confirmStatusChange = () => {
+    if (!pendingSave) return;
+    commitSave(pendingSave.payload, pendingSave.saveAndAddNew);
+    setPendingSave(null);
   };
 
   const handleEdit = (chanda: Chanda) => {
@@ -702,6 +725,14 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         itemLabel={deleteTarget?.donorName}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+      <StatusChangeConfirmModal
+        open={!!pendingSave}
+        itemLabel={pendingSave?.payload.donorName}
+        fromStatusLabel={statusLabel('paid')}
+        toStatusLabel={pendingSave ? statusLabel(pendingSave.payload.paymentStatus) : ''}
+        onCancel={() => setPendingSave(null)}
+        onConfirm={confirmStatusChange}
       />
     </div>
   );

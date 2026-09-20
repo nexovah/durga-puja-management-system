@@ -8,6 +8,7 @@ import { Pagination, usePagination } from './Pagination';
 import { FormModal } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 
 interface MembersProps {
   members: Member[];
@@ -16,6 +17,20 @@ interface MembersProps {
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number) => void;
+}
+
+interface MemberFormPayload {
+  name: string;
+  phone: string;
+  address: string;
+  role: string;
+  membershipAmount?: number;
+  membershipPaidMethod?: PaidMethod;
+  membershipPaymentStatus?: PaymentStatus;
+  membershipPartialAmount?: number;
+  membershipDate?: string;
+  membershipBillNumber?: string;
+  membershipRemarks?: string;
 }
 
 const TASK_PRIORITY_DOT: Record<TaskPriority, string> = {
@@ -73,6 +88,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [showMembershipPayment, setShowMembershipPayment] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
+  const [pendingSave, setPendingSave] = useState<{ payload: MemberFormPayload; saveAndAddNew: boolean } | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -110,13 +126,25 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     };
 
     if (editingId) {
+      const original = members.find(m => m.id === editingId);
+      if (original?.membershipPaymentStatus === 'paid' && payload.membershipPaymentStatus !== 'paid') {
+        setPendingSave({ payload, saveAndAddNew });
+        return;
+      }
+    }
+
+    commitSave(payload, saveAndAddNew);
+  };
+
+  const commitSave = (payload: MemberFormPayload, saveAndAddNew: boolean) => {
+    if (editingId) {
       // Edit existing member
       setMembers(members.map(m =>
         m.id === editingId
           ? { ...m, ...payload }
           : m
       ));
-      onLog('update', 'members', formData.name);
+      onLog('update', 'members', payload.name);
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new member
@@ -126,18 +154,21 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         joinDate: new Date().toISOString().split('T')[0],
       };
       setMembers([...members, newMember]);
-      onLog('create', 'members', formData.name);
+      onLog('create', 'members', payload.name);
       setToastMessage(t('common.savedSuccess'));
     }
 
+    const wasEditing = editingId;
     setFormData(emptyForm);
     setShowMembershipPayment(false);
     setEditingId(null);
-    if (saveAndAddNew && !editingId) {
-      setShowForm(true); // keep the modal open for the next entry
-    } else {
-      setShowForm(false);
-    }
+    setShowForm(saveAndAddNew && !wasEditing);
+  };
+
+  const confirmStatusChange = () => {
+    if (!pendingSave) return;
+    commitSave(pendingSave.payload, pendingSave.saveAndAddNew);
+    setPendingSave(null);
   };
 
   const handleEdit = (member: Member) => {
@@ -526,6 +557,14 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         itemLabel={deleteTarget?.name}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+      <StatusChangeConfirmModal
+        open={!!pendingSave}
+        itemLabel={pendingSave?.payload.name}
+        fromStatusLabel={statusLabel('paid')}
+        toStatusLabel={pendingSave?.payload.membershipPaymentStatus ? statusLabel(pendingSave.payload.membershipPaymentStatus) : ''}
+        onCancel={() => setPendingSave(null)}
+        onConfirm={confirmStatusChange}
       />
     </div>
   );
