@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21 (3)
+- **Advanced Search now filters the real table**, not a dropdown preview: clicking Search stashes matching record IDs (per module) in `sessionStorage` and navigates to the table, which narrows to just those rows — fully editable via the page's own Edit/Delete buttons — with a "Showing N result(s)" banner + Clear Filter. Applied to Members, Chanda, Donation/Ads, Expenses. Quick text search unaffected.
+
 ## 2026-09-21 (2)
 - **PIN-confirm on undoing a Paid status**: Chanda Collection, Expenses, Members — editing a record already marked "Paid" to any other status now requires the same random-4-digit-PIN confirmation as delete (`StatusChangeConfirmModal.tsx`), instead of saving instantly. Other status changes unaffected.
 - **Advanced GlobalSearch**: collapsible filter panel (Amount range, Bill/Voucher Number, Payment Status, Payment Method, Date range, Phone Number) with explicit Search/Clear buttons — applies only to the modules with each field, result cap raised to 50 once filters are active. Front-end only, no DB changes.
