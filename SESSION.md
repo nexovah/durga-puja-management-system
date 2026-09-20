@@ -4,6 +4,10 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21 (2)
+- **PIN-confirm on undoing a Paid status**: Chanda Collection, Expenses, Members — editing a record already marked "Paid" to any other status now requires the same random-4-digit-PIN confirmation as delete (`StatusChangeConfirmModal.tsx`), instead of saving instantly. Other status changes unaffected.
+- **Advanced GlobalSearch**: collapsible filter panel (Amount range, Bill/Voucher Number, Payment Status, Payment Method, Date range, Phone Number) with explicit Search/Clear buttons — applies only to the modules with each field, result cap raised to 50 once filters are active. Front-end only, no DB changes.
+
 ## 2026-09-21
 - Expenses: each of the 5 Partial Amount fields now has its own date picker (`Expense.partialDates`, parallel to `partialAmounts`) — each installment is usually paid on a different date. New migration `supabase/016_expenses_partial_dates.sql` — **run in Supabase SQL Editor**.
 
