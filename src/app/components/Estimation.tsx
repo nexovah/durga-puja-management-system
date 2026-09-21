@@ -55,6 +55,7 @@ export function EstimationPage({
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [rowSearchQuery, setRowSearchQuery] = useState('');
 
   const filteredEstimations = estimationsList.filter(est =>
     !searchQuery.trim() || est.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
@@ -75,6 +76,7 @@ export function EstimationPage({
       createdByName: currentUserName,
     });
     setIsNew(true);
+    setRowSearchQuery('');
     setView('detail');
   };
 
@@ -85,6 +87,7 @@ export function EstimationPage({
       columnLabels: est.columnLabels || defaultColumnLabels(t),
     });
     setIsNew(false);
+    setRowSearchQuery('');
     setView('detail');
   };
 
@@ -157,6 +160,13 @@ export function EstimationPage({
 
   if (view === 'detail' && draft) {
     const draftTotal = totalAmount(draft);
+    const rowQuery = rowSearchQuery.trim().toLowerCase();
+    const visibleRows = draft.lineItems
+      .map((item, trueIndex) => ({ item, trueIndex }))
+      .filter(({ item }) => !rowQuery
+        || item.title.toLowerCase().includes(rowQuery)
+        || item.customField.toLowerCase().includes(rowQuery)
+        || item.customField2.toLowerCase().includes(rowQuery));
     return (
       <div className="space-y-6">
         <PageHeading
@@ -194,6 +204,16 @@ export function EstimationPage({
               disabled={!canEdit}
               placeholder={t('estimation.titlePlaceholder')}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+            />
+          </div>
+
+          <div>
+            <input
+              type="text"
+              value={rowSearchQuery}
+              onChange={(e) => setRowSearchQuery(e.target.value)}
+              placeholder={t('estimation.rowSearchPlaceholder')}
+              className="w-full sm:w-80 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
 
@@ -241,7 +261,7 @@ export function EstimationPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {draft.lineItems.map((item, index) => (
+                {visibleRows.map(({ item, trueIndex: index }) => (
                   <tr
                     key={item.id}
                     draggable={canEdit}
