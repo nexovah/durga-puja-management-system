@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical } from 'lucide-react';
 import { Estimation, EstimationLineItem } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -44,6 +44,8 @@ export function EstimationPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const filteredEstimations = estimationsList.filter(est =>
     !searchQuery.trim() || est.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
@@ -93,6 +95,23 @@ export function EstimationPage({
   const removeRow = (itemId: string) => {
     if (!draft) return;
     setDraft({ ...draft, lineItems: draft.lineItems.filter(item => item.id !== itemId) });
+  };
+
+  // Drag-and-drop row reordering — serial numbers are just each row's
+  // position in the array (index + 1), so moving an item automatically
+  // renumbers everything, no separate "order" field to keep in sync.
+  const moveRow = (from: number, to: number) => {
+    if (!draft || from === to) return;
+    const items = [...draft.lineItems];
+    const [moved] = items.splice(from, 1);
+    items.splice(to, 0, moved);
+    setDraft({ ...draft, lineItems: items });
+  };
+
+  const handleRowDrop = (index: number) => {
+    if (dragIndex !== null) moveRow(dragIndex, index);
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleSave = () => {
@@ -168,6 +187,7 @@ export function EstimationPage({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
+                  {canEdit && <th className="w-8" />}
                   <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-14">{t('estimation.serialNo')}</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{t('estimation.itemTitle')}</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-44">{t('estimation.date')}</th>
@@ -177,7 +197,21 @@ export function EstimationPage({
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {draft.lineItems.map((item, index) => (
-                  <tr key={item.id}>
+                  <tr
+                    key={item.id}
+                    draggable={canEdit}
+                    onDragStart={() => setDragIndex(index)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverIndex(index); }}
+                    onDragLeave={() => setDragOverIndex(prev => (prev === index ? null : prev))}
+                    onDrop={() => handleRowDrop(index)}
+                    onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                    className={`${dragIndex === index ? 'opacity-40' : ''} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? 'border-t-2 border-orange-400' : ''}`}
+                  >
+                    {canEdit && (
+                      <td className="px-1 py-2 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing">
+                        <GripVertical size={16} />
+                      </td>
+                    )}
                     <td className="px-2 py-2 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
                     <td className="px-2 py-2">
                       <input
@@ -225,7 +259,7 @@ export function EstimationPage({
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td colSpan={3} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
+                  <td colSpan={canEdit ? 4 : 3} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
                     {t('estimation.totalItems')}: {draft.lineItems.filter(i => i.title.trim() !== '' || i.amount).length}
                     {'   '}·{'   '}
                     {t('estimation.totalAmount')}
