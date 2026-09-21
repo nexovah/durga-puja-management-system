@@ -661,7 +661,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       <Sidebar
         logo={committeeInfo.logo}
         association={committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
@@ -675,9 +675,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Top bar */}
-        <div className="bg-white border-b shadow-sm sticky top-0 z-20">
-          <div className="px-3 sm:px-4 py-2.5 flex items-center gap-2 sm:gap-4">
+        {/* Top bar — flat, blends into the page background (no border/shadow) */}
+        <div className="sticky top-0 z-20">
+          <div className="px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setMobileNavOpen(true)}
               className="lg:hidden text-gray-500 hover:text-gray-700 p-1.5 shrink-0"
@@ -713,8 +713,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           </div>
         </div>
 
-        {/* Main Content */}
-        <main className="flex-1 px-4 py-6">
+        {/* Main Content — a white rounded card inset from the edges, its
+            own content centered/max-width so it doesn't stretch edge to
+            edge on very wide screens */}
+        <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+        <div className="container mx-auto">
         {currentPage === 'dashboard' && (
           <Dashboard
             members={members}
@@ -813,6 +817,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
+        </div>
+        </div>
         </main>
       </div>
     </div>
@@ -854,7 +860,7 @@ function ProfileMenu({
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-white transition-colors"
       >
         <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
           {(currentUser?.name || '?').charAt(0).toUpperCase()}

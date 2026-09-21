@@ -59,8 +59,8 @@ export function Sidebar({
   };
 
   const content = (
-    <div className="h-full flex flex-col bg-white">
-      <div className={`flex items-start gap-2.5 border-b border-gray-100 shrink-0 ${collapsed ? 'justify-center px-2 py-4' : 'px-4 py-4'}`}>
+    <div className="h-full flex flex-col">
+      <div className={`flex items-start gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-lg overflow-hidden shrink-0">
           {logo && (logo.startsWith('data:') || logo.startsWith('http')) ? (
             <img src={logo} alt="Logo" className="w-7 h-7 object-cover rounded" />
@@ -83,7 +83,7 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-1">
         {items.filter(i => i.show).map((item) => {
           const Icon = item.icon;
           const active = currentPage === item.key;
@@ -111,16 +111,17 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop rail */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen border-r border-gray-200 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      {/* Desktop rail — same flat gray as the page background, blending into
+          the browser edge (no border/shadow) per the reference design */}
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
-      {/* Mobile overlay drawer */}
+      {/* Mobile overlay drawer — solid white so it reads clearly over the dimmed backdrop */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/40" onClick={onCloseMobile} />
-          <aside className="relative w-64 h-full border-r border-gray-200 shadow-xl">
+          <aside className="relative w-64 h-full bg-white shadow-xl">
             {content}
           </aside>
         </div>
