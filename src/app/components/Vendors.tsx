@@ -128,7 +128,7 @@ export function Vendors({ expenses }: VendorsProps) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalAmount')}</p>
               <p className="text-2xl font-bold text-green-600">₹{viewingVendor.totalAmount.toLocaleString()}</p>
             </div>
@@ -204,7 +204,7 @@ export function Vendors({ expenses }: VendorsProps) {
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center gap-1"
+                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors inline-flex items-center gap-1"
                       title={t('vendors.view')}
                     >
                       <Eye size={18} />

@@ -732,7 +732,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                           {canEdit && (
                             <button
                               onClick={() => handleEdit(chanda)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                             >
                               <Edit2 size={18} />
                             </button>
@@ -740,7 +740,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                           {canDelete && (
                             <button
                               onClick={() => handleDelete(chanda.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                             >
                               <Trash2 size={18} />
                             </button>

@@ -50,13 +50,13 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   ];
 
   const ACCENT_CLASSES: Record<string, { border: string; icon: string; iconBg: string }> = {
-    blue: { border: 'border-blue-500', icon: 'text-blue-600', iconBg: 'bg-blue-50' },
-    green: { border: 'border-green-500', icon: 'text-green-600', iconBg: 'bg-green-50' },
-    emerald: { border: 'border-emerald-500', icon: 'text-emerald-600', iconBg: 'bg-emerald-50' },
-    sky: { border: 'border-sky-500', icon: 'text-sky-600', iconBg: 'bg-sky-50' },
-    purple: { border: 'border-purple-500', icon: 'text-purple-600', iconBg: 'bg-purple-50' },
-    amber: { border: 'border-amber-500', icon: 'text-amber-600', iconBg: 'bg-amber-50' },
-    red: { border: 'border-red-500', icon: 'text-red-600', iconBg: 'bg-red-50' },
+    blue: { border: 'border-blue-500', icon: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-500/10' },
+    green: { border: 'border-green-500', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10' },
+    emerald: { border: 'border-emerald-500', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+    sky: { border: 'border-sky-500', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10' },
+    purple: { border: 'border-purple-500', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10' },
+    amber: { border: 'border-amber-500', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10' },
+    red: { border: 'border-red-500', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10' },
     orange: { border: 'border-orange-500', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
   };
 

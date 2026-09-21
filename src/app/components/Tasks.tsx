@@ -453,7 +453,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                           <button
                             onClick={() => handleMarkComplete(task)}
                             title={t('tasks.markComplete')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors"
                           >
                             <CheckCircle2 size={18} />
                           </button>
@@ -461,7 +461,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                         {editable && (
                           <button
                             onClick={() => handleEdit(task)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                           >
                             <Edit2 size={18} />
                           </button>
@@ -469,7 +469,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                         {deletable && (
                           <button
                             onClick={() => handleDelete(task.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                           >
                             <Trash2 size={18} />
                           </button>

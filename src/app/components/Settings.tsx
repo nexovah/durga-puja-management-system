@@ -245,7 +245,7 @@ export function Settings({
       <PageHeading>{t('settings.pageTitle')}</PageHeading>
 
       {message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 px-4 py-3 rounded-lg">
           {message}
         </div>
       )}
@@ -777,7 +777,7 @@ export function Settings({
                                   title={user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
                                   className={`p-2 rounded-lg transition-colors ${
                                     user.isActive === false
-                                      ? 'text-green-600 hover:bg-green-50'
+                                      ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'
                                       : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                                   }`}
                                 >
@@ -785,13 +785,13 @@ export function Settings({
                                 </button>
                                 <button
                                   onClick={() => handleEditUser(user)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                                 >
                                   <Edit2 size={18} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteUser(user.id)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                                 >
                                   <Trash2 size={18} />
                                 </button>

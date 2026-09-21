@@ -51,7 +51,7 @@ export function ImportPreviewModal({
             {t('import.rowsFound').replace('{count}', String(totalRows))}
           </p>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-2.5">
+          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4 flex items-start gap-2.5">
             <PlusCircle className="text-blue-600 shrink-0 mt-0.5" size={20} />
             <p className="text-sm text-blue-800 font-medium">
               {t('import.willAdd').replace('{count}', String(insertCount))}
@@ -59,7 +59,7 @@ export function ImportPreviewModal({
           </div>
 
           {updateCount > 0 && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-start gap-2.5">
+            <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 rounded-lg p-4 flex items-start gap-2.5">
               <RefreshCcw className="text-purple-600 shrink-0 mt-0.5" size={20} />
               <div>
                 <p className="text-sm text-purple-800 font-medium">
@@ -71,7 +71,7 @@ export function ImportPreviewModal({
           )}
 
           {hasErrors ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-4">
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={20} />
                 <div>
@@ -90,7 +90,7 @@ export function ImportPreviewModal({
               </div>
             </div>
           ) : totalChanges > 0 ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2.5">
+            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4 flex items-start gap-2.5">
               <CheckCircle2 className="text-green-600 shrink-0 mt-0.5" size={20} />
               <p className="text-sm text-green-800 font-medium">{t('import.noErrors')}</p>
             </div>

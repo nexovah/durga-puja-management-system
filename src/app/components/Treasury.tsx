@@ -250,7 +250,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">{t('treasury.topDonors')}</h3>
           <div className="space-y-3">
             {topDonors.map((donor, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-500/10 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
                     {index + 1}

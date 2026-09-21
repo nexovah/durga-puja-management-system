@@ -64,7 +64,7 @@ export function StatusChangeConfirmModal({
               .replace('{to}', toStatusLabel)}
           </p>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-4 text-center">
             <p className="text-xs text-red-700 font-medium mb-1">{t('delete.typeThisPin')}</p>
             <p className="text-3xl font-bold tracking-[0.3em] text-red-700 select-none">{pin}</p>
           </div>
