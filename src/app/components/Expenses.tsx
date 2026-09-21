@@ -14,6 +14,8 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -375,6 +377,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
   })).filter(ct => ct.total > 0);
 
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -409,6 +412,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && canBulkImport && (
               <>
                 <input
@@ -450,25 +454,27 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         {t('expenses.pageTitle')}
       </PageHeading>
 
-      <TableSearchBar
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        placeholder={t('expenses.searchPlaceholder')}
-        filters={draftFilters}
-        onFiltersChange={setDraftFilters}
-        onSearch={() => setAppliedFilters(draftFilters)}
-        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
-        filtersActive={hasActiveTableFilters(appliedFilters)}
-        resultCount={filteredExpenses.length}
-        totalCount={expenses.length}
-        showAmount
-        showBillVoucher
-        billVoucherLabel={t('expenses.voucherNumber')}
-        statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
-        paidMethodOptions={PAID_THROUGH_OPTIONS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
-        showDateRange
-        showPhone
-      />
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder={t('expenses.searchPlaceholder')}
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredExpenses.length}
+          totalCount={expenses.length}
+          showAmount
+          showBillVoucher
+          billVoucherLabel={t('expenses.voucherNumber')}
+          statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
+          paidMethodOptions={PAID_THROUGH_OPTIONS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+          showDateRange
+          showPhone
+        />
+      </CollapsibleSearchPanel>
 
       {/* Form */}
       <FormModal

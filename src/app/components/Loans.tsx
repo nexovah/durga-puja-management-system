@@ -12,6 +12,8 @@ import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface LoansProps {
   loansList: Loan[];
@@ -219,6 +221,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     setImportPreview(null);
   };
 
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -249,6 +252,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && canBulkImport && (
               <>
                 <input
@@ -291,22 +295,24 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         {t('loans.pageTitle')}
       </PageHeading>
 
-      <TableSearchBar
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        placeholder={t('loans.searchPlaceholder')}
-        filters={draftFilters}
-        onFiltersChange={setDraftFilters}
-        onSearch={() => setAppliedFilters(draftFilters)}
-        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
-        filtersActive={hasActiveTableFilters(appliedFilters)}
-        resultCount={filteredLoans.length}
-        totalCount={loansList.length}
-        showAmount
-        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
-        showDateRange
-        showPhone
-      />
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder={t('loans.searchPlaceholder')}
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredLoans.length}
+          totalCount={loansList.length}
+          showAmount
+          paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+          showDateRange
+          showPhone
+        />
+      </CollapsibleSearchPanel>
 
       <FormModal
         open={canEdit && showForm}

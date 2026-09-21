@@ -11,6 +11,8 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface MembersProps {
   members: Member[];
@@ -230,6 +232,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     setEditingId(null);
   };
 
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -262,20 +265,24 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     <div className="space-y-6">
       <PageHeading
         action={
-          canEdit && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
-            >
-              <Plus size={20} />
-              {t('members.addNew')}
-            </button>
-          )
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {canEdit && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+              >
+                <Plus size={20} />
+                {t('members.addNew')}
+              </button>
+            )}
+          </div>
         }
       >
         {t('members.pageTitle')}
       </PageHeading>
 
+      <CollapsibleSearchPanel open={showSearch}>
       <TableSearchBar
         query={searchQuery}
         onQueryChange={setSearchQuery}
@@ -295,6 +302,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         showDateRange
         showPhone
       />
+      </CollapsibleSearchPanel>
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

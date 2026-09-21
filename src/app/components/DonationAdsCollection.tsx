@@ -13,6 +13,8 @@ import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -309,6 +311,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const isDonation = formData.category === 'donation';
 
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -341,6 +344,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && canBulkImport && (
               <>
                 <input
@@ -382,6 +386,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         {t('donationAds.pageTitle')}
       </PageHeading>
 
+      <CollapsibleSearchPanel open={showSearch}>
       <TableSearchBar
         query={searchQuery}
         onQueryChange={setSearchQuery}
@@ -402,6 +407,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         inKindOptions={ADS_CATEGORIES.map(c => ({ value: c.value, label: t(c.labelKey) }))}
         inKindLabel={t('donationAds.inKindOrAdsCategory')}
       />
+      </CollapsibleSearchPanel>
 
       {/* Form */}
       <FormModal

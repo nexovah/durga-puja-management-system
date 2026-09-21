@@ -14,6 +14,8 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -359,6 +361,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const isPartial = formData.paymentStatus === 'partial';
 
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -387,6 +390,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       <PageHeading
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && canBulkImport && (
               <>
                 <input
@@ -428,25 +432,27 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         {t('chanda.pageTitle')}
       </PageHeading>
 
-      <TableSearchBar
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        placeholder={t('chanda.searchPlaceholder')}
-        filters={draftFilters}
-        onFiltersChange={setDraftFilters}
-        onSearch={() => setAppliedFilters(draftFilters)}
-        onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
-        filtersActive={hasActiveTableFilters(appliedFilters)}
-        resultCount={filteredChanda.length}
-        totalCount={chandaList.length}
-        showAmount
-        showBillVoucher
-        billVoucherLabel={t('chanda.billNumber')}
-        statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
-        paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
-        showDateRange
-        showPhone
-      />
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder={t('chanda.searchPlaceholder')}
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredChanda.length}
+          totalCount={chandaList.length}
+          showAmount
+          showBillVoucher
+          billVoucherLabel={t('chanda.billNumber')}
+          statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
+          paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+          showDateRange
+          showPhone
+        />
+      </CollapsibleSearchPanel>
 
       {/* Form */}
       <FormModal
