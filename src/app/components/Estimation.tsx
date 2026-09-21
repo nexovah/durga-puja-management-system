@@ -57,6 +57,7 @@ export function EstimationPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
+  const [rowDeleteTarget, setRowDeleteTarget] = useState<EstimationLineItem | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [rowSearchQuery, setRowSearchQuery] = useState('');
@@ -145,9 +146,12 @@ export function EstimationPage({
     setDraft({ ...draft, lineItems: [...draft.lineItems, emptyLineItem()] });
   };
 
-  const removeRow = (itemId: string) => {
-    if (!draft) return;
-    setDraft({ ...draft, lineItems: draft.lineItems.filter(item => item.id !== itemId) });
+  const requestRemoveRow = (item: EstimationLineItem) => setRowDeleteTarget(item);
+
+  const confirmRemoveRow = () => {
+    if (!draft || !rowDeleteTarget) return;
+    setDraft({ ...draft, lineItems: draft.lineItems.filter(item => item.id !== rowDeleteTarget.id) });
+    setRowDeleteTarget(null);
   };
 
   // Drag-and-drop row reordering — serial numbers are just each row's
@@ -181,7 +185,15 @@ export function EstimationPage({
       onLog('update', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`);
       setToastMessage(t('common.updatedSuccess'));
     }
-    backToList();
+    // Stay on the detail page after saving (don't drop back to the list) —
+    // just refresh local state so it now reads as an existing saved record.
+    setDraft(cleanedDraft);
+    setIsNew(false);
+    try {
+      sessionStorage.setItem(OPEN_ESTIMATION_KEY, cleanedDraft.id);
+    } catch {
+      // ignore
+    }
   };
 
   const handleDelete = (est: Estimation) => setDeleteTarget(est);
@@ -370,7 +382,7 @@ export function EstimationPage({
                     {canEdit && (
                       <td className="px-2 py-2 text-right">
                         <button
-                          onClick={() => removeRow(item.id)}
+                          onClick={() => requestRemoveRow(item)}
                           className="text-red-500 hover:text-red-700 p-1"
                         >
                           <Trash2 size={16} />
@@ -455,6 +467,12 @@ export function EstimationPage({
         )}
 
         <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+        <DeleteConfirmModal
+          open={!!rowDeleteTarget}
+          itemLabel={rowDeleteTarget?.title}
+          onCancel={() => setRowDeleteTarget(null)}
+          onConfirm={confirmRemoveRow}
+        />
       </div>
     );
   }
