@@ -1,11 +1,11 @@
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
-  Store, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  X,
+  Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
+  FileBarChart, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog' | 'tasks';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks';
 
 interface SidebarProps {
   logo?: string;
@@ -28,6 +28,8 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; className?: string }>; label: string; show: boolean };
+
 // Left-hand navigation replacing the old top nav bar — same page set, same
 // orange branding, just laid out vertically so every menu item (including
 // what used to live behind the "More" dropdown) is visible at once.
@@ -38,18 +40,34 @@ export function Sidebar({
 }: SidebarProps) {
   const { t } = useLanguage();
 
-  const items: { key: PageKey; icon: React.ComponentType<{ size?: number; className?: string }>; label: string; show: boolean }[] = [
-    { key: 'dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), show: true },
-    { key: 'members', icon: Users, label: t('nav.members'), show: !!permissions?.members },
-    { key: 'chanda', icon: HandCoins, label: t('nav.chanda'), show: !!permissions?.chanda },
-    { key: 'donationAds', icon: Gift, label: t('nav.donationAds'), show: !!permissions?.donationAds },
-    { key: 'expenses', icon: TrendingDown, label: t('nav.expenses'), show: !!permissions?.expenses },
-    { key: 'treasury', icon: Wallet, label: t('nav.treasury'), show: !!permissions?.treasury },
-    { key: 'vendors', icon: Store, label: t('nav.vendors'), show: !!permissions?.vendors },
-    { key: 'loans', icon: Landmark, label: t('nav.loans'), show: !!permissions?.loans },
-    { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
-    { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
-    { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
+  const groups: { label: string; items: NavItem[] }[] = [
+    {
+      label: t('sidebar.groupMain'),
+      items: [
+        { key: 'dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), show: true },
+        { key: 'chanda', icon: HandCoins, label: t('nav.chanda'), show: !!permissions?.chanda },
+        { key: 'donationAds', icon: Gift, label: t('nav.donationAds'), show: !!permissions?.donationAds },
+        { key: 'expenses', icon: TrendingDown, label: t('nav.expenses'), show: !!permissions?.expenses },
+        { key: 'vendors', icon: Truck, label: t('nav.vendors'), show: !!permissions?.vendors },
+        { key: 'members', icon: Users, label: t('nav.members'), show: !!permissions?.members },
+      ],
+    },
+    {
+      label: t('sidebar.groupAccounts'),
+      items: [
+        { key: 'treasury', icon: Wallet, label: t('nav.treasury'), show: !!permissions?.treasury },
+        { key: 'report', icon: FileBarChart, label: t('nav.report'), show: !!permissions?.treasury },
+        { key: 'loans', icon: Landmark, label: t('nav.loans'), show: !!permissions?.loans },
+      ],
+    },
+    {
+      label: t('sidebar.groupEssential'),
+      items: [
+        { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
+        { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
+        { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
+      ],
+    },
   ];
 
   const handleSelect = (page: PageKey) => {
@@ -81,26 +99,39 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-1">
-        {items.filter(i => i.show).map((item) => {
-          const Icon = item.icon;
-          const active = currentPage === item.key;
+      <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-5">
+        {groups.map((group) => {
+          const visibleItems = group.items.filter(i => i.show);
+          if (visibleItems.length === 0) return null;
           return (
-            <button
-              key={item.key}
-              onClick={() => handleSelect(item.key)}
-              title={collapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
-                collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
-              } ${
-                active
-                  ? 'bg-orange-50 text-orange-600'
-                  : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
-              }`}
-            >
-              <Icon size={19} className="shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </button>
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="px-3 mb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{group.label}</p>
+              )}
+              <div className="space-y-1">
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = currentPage === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => handleSelect(item.key)}
+                      title={collapsed ? item.label : undefined}
+                      className={`w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                        collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
+                      } ${
+                        active
+                          ? 'bg-orange-50 text-orange-600'
+                          : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+                      }`}
+                    >
+                      <Icon size={19} className="shrink-0" />
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>

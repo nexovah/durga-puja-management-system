@@ -10,6 +10,7 @@ import { Expenses } from './components/Expenses';
 import { Vendors } from './components/Vendors';
 import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
+import { Report } from './components/Report';
 import { Settings, SettingsTab } from './components/Settings';
 import { ActivityLog } from './components/ActivityLog';
 import { Tasks } from './components/Tasks';
@@ -305,7 +306,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'settings' | 'activityLog' | 'tasks';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/',
@@ -316,6 +317,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   vendors: '/vendors',
   loans: '/loans',
   treasury: '/treasury',
+  report: '/report',
   settings: '/settings',
   activityLog: '/activity-log',
   tasks: '/tasks',
@@ -784,6 +786,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'treasury' && (
           <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} />
+        )}
+        {currentPage === 'report' && (
+          <Report />
         )}
         {currentPage === 'settings' && (
           <Settings
