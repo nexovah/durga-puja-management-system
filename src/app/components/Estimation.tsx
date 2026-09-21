@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { PageHeading } from './PageHeading';
@@ -36,6 +36,8 @@ const defaultColumnLabels = (t: (key: any) => string): EstimationColumnLabels =>
 });
 
 const totalAmount = (est: Estimation) => est.lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+const OPEN_ESTIMATION_KEY = 'puja-open-estimation-id';
 
 // Budgeting/projection tool, separate from the actual Expenses module.
 // List view (like Tasks) of named estimations; clicking one opens a
@@ -90,12 +92,43 @@ export function EstimationPage({
     setIsNew(false);
     setRowSearchQuery('');
     setView('detail');
+    try {
+      sessionStorage.setItem(OPEN_ESTIMATION_KEY, est.id);
+    } catch {
+      // sessionStorage unavailable — just means a refresh won't restore the open page
+    }
   };
 
   const backToList = () => {
     setDraft(null);
     setView('list');
+    try {
+      sessionStorage.removeItem(OPEN_ESTIMATION_KEY);
+    } catch {
+      // ignore
+    }
   };
+
+  // Restore the open detail page across a refresh — the list<->detail
+  // switch is local component state, not part of the URL, so without this
+  // reloading the page always dropped back to the list. Only restores
+  // *existing, saved* estimations (never an unsaved "new" draft), and only
+  // once estimationsList has actually loaded from Supabase.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || view !== 'list' || estimationsList.length === 0) return;
+    restoredRef.current = true;
+    let openId: string | null = null;
+    try {
+      openId = sessionStorage.getItem(OPEN_ESTIMATION_KEY);
+    } catch {
+      openId = null;
+    }
+    if (!openId) return;
+    const match = estimationsList.find(est => est.id === openId);
+    if (match) openExisting(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estimationsList]);
 
   const updateDraftItem = (itemId: string, patch: Partial<EstimationLineItem>) => {
     if (!draft) return;
