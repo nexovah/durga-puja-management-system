@@ -50,14 +50,14 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   ];
 
   const ACCENT_CLASSES: Record<string, { border: string; icon: string; iconBg: string }> = {
-    blue: { border: 'border-blue-500', icon: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-500/10' },
-    green: { border: 'border-green-500', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10' },
-    emerald: { border: 'border-emerald-500', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-    sky: { border: 'border-sky-500', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10' },
-    purple: { border: 'border-purple-500', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10' },
-    amber: { border: 'border-amber-500', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10' },
-    red: { border: 'border-red-500', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10' },
-    orange: { border: 'border-orange-500', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
+    blue: { border: 'border-blue-500 dark:border-blue-500/60', icon: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-500/10' },
+    green: { border: 'border-green-500 dark:border-green-500/60', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10' },
+    emerald: { border: 'border-emerald-500 dark:border-emerald-500/60', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+    sky: { border: 'border-sky-500 dark:border-sky-500/60', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10' },
+    purple: { border: 'border-purple-500 dark:border-purple-500/60', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10' },
+    amber: { border: 'border-amber-500 dark:border-amber-500/60', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10' },
+    red: { border: 'border-red-500 dark:border-red-500/60', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10' },
+    orange: { border: 'border-orange-500 dark:border-orange-500/60', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
   };
 
   return (
@@ -82,7 +82,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
           return (
             <div
               key={index}
-              className={`bg-white dark:bg-gray-900 rounded-xl p-3.5 sm:p-5 border border-gray-200 dark:border-gray-700 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
+              className={`bg-white dark:bg-gray-900 rounded-xl p-3.5 sm:p-5 border ${accent.border} flex items-center gap-3 sm:gap-4`}
             >
               <div className={`${accent.iconBg} p-2.5 sm:p-3 rounded-xl shrink-0`}>
                 <tile.icon className={accent.icon} size={22} />
