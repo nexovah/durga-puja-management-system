@@ -1,4 +1,4 @@
-import { Users, IndianRupee, TrendingDown, Wallet, ShoppingCart, BarChart3, Shield, MessageSquare, Calendar, FileText, UserCheck, PieChart, Database, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
+import { Users, IndianRupee, TrendingDown, Wallet, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
@@ -35,31 +35,30 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     return sum;
   }, 0);
 
-  // Key figures: compact, data-dense cards
+  // Key figures: same calm white-card/colored-left-border style used on
+  // every other page's widgets (Treasury, Chanda, etc.) — one muted accent
+  // color per card instead of a full gradient background.
   const statTiles = [
-    { title: t('dashboard.totalMembers'), value: members.length.toString(), subLabel: t('dashboard.totalMembersPaid'), subValue: `₹${totalMembershipPayments.toLocaleString()}`, icon: Users, color: 'from-blue-500 to-blue-600' },
-    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, color: 'from-green-500 to-green-600' },
-    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, color: 'from-emerald-500 to-emerald-600' },
-    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, color: 'from-sky-500 to-sky-600' },
-    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, color: 'from-purple-500 to-purple-600' },
-    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, color: 'from-amber-500 to-amber-600' },
-    { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, color: 'from-red-500 to-red-600' },
-    { title: t('dashboard.expenses'), value: expenses.length.toString(), icon: ClipboardList, color: 'from-orange-500 to-orange-600' },
+    { title: t('dashboard.totalMembers'), value: members.length.toString(), subLabel: t('dashboard.totalMembersPaid'), subValue: `₹${totalMembershipPayments.toLocaleString()}`, icon: Users, accent: 'blue' },
+    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, accent: 'green' },
+    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, accent: 'emerald' },
+    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, accent: 'sky' },
+    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, accent: 'purple' },
+    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, accent: 'amber' },
+    { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, accent: 'red' },
+    { title: t('dashboard.expenses'), value: expenses.length.toString(), icon: ClipboardList, accent: 'orange' },
   ];
 
-  // Quick-access shortcuts: no live number yet, so a smaller icon+label tile
-  const actionTiles = [
-    { title: t('dashboard.sales'), icon: ShoppingCart, color: 'from-purple-600 to-purple-700' },
-    { title: t('dashboard.treasuryManagement'), icon: Wallet, color: 'from-cyan-500 to-cyan-600' },
-    { title: t('dashboard.arbitration'), icon: FileText, color: 'from-pink-500 to-pink-600' },
-    { title: t('dashboard.budget'), icon: BarChart3, color: 'from-indigo-500 to-indigo-600' },
-    { title: t('dashboard.daily'), icon: Calendar, color: 'from-teal-600 to-teal-700' },
-    { title: t('dashboard.messages'), icon: MessageSquare, color: 'from-blue-600 to-blue-700' },
-    { title: t('dashboard.securityAudit'), icon: Shield, color: 'from-red-600 to-red-700' },
-    { title: t('dashboard.subscriptions'), icon: UserCheck, color: 'from-purple-600 to-purple-700' },
-    { title: t('dashboard.review'), icon: PieChart, color: 'from-fuchsia-500 to-fuchsia-600' },
-    { title: t('dashboard.backup'), icon: Database, color: 'from-gray-600 to-gray-700' },
-  ];
+  const ACCENT_CLASSES: Record<string, { border: string; icon: string; iconBg: string }> = {
+    blue: { border: 'border-blue-500', icon: 'text-blue-600', iconBg: 'bg-blue-50' },
+    green: { border: 'border-green-500', icon: 'text-green-600', iconBg: 'bg-green-50' },
+    emerald: { border: 'border-emerald-500', icon: 'text-emerald-600', iconBg: 'bg-emerald-50' },
+    sky: { border: 'border-sky-500', icon: 'text-sky-600', iconBg: 'bg-sky-50' },
+    purple: { border: 'border-purple-500', icon: 'text-purple-600', iconBg: 'bg-purple-50' },
+    amber: { border: 'border-amber-500', icon: 'text-amber-600', iconBg: 'bg-amber-50' },
+    red: { border: 'border-red-500', icon: 'text-red-600', iconBg: 'bg-red-50' },
+    orange: { border: 'border-orange-500', icon: 'text-orange-600', iconBg: 'bg-orange-50' },
+  };
 
   return (
     <div className="space-y-4">
@@ -78,39 +77,26 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
       {/* Key figures — one per row on mobile (amounts up to ₹9,99,999 need
           room), 2 per row on tablets, capped at 4 per row on desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {statTiles.map((tile, index) => (
-          <div
-            key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3.5 sm:p-5 transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
-          >
-            <div className="bg-white/20 p-2.5 sm:p-3 rounded-xl shrink-0">
-              <tile.icon className="text-white" size={22} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
-              <p className="text-white text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
-            </div>
-            {'subValue' in tile && (
-              <div className="bg-white/15 rounded-lg px-2.5 py-1.5 sm:px-4 sm:py-2 min-w-0 shrink-0">
-                <p className="text-white/90 text-xs sm:text-sm font-medium leading-tight truncate">{tile.subLabel}</p>
-                <p className="text-white text-lg sm:text-2xl font-bold leading-tight truncate">{tile.subValue}</p>
+        {statTiles.map((tile, index) => {
+          const accent = ACCENT_CLASSES[tile.accent];
+          return (
+            <div
+              key={index}
+              className={`bg-white rounded-xl p-3.5 sm:p-5 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
+            >
+              <div className={`${accent.iconBg} p-2.5 sm:p-3 rounded-xl shrink-0`}>
+                <tile.icon className={accent.icon} size={22} />
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Quick access — small icon tiles */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-2.5 sm:gap-3">
-        {actionTiles.map((tile, index) => (
-          <div
-            key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 aspect-square sm:aspect-auto sm:h-[4.5rem] p-2`}
-          >
-            <tile.icon className="text-white" size={18} />
-            <p className="text-white text-[11px] sm:text-xs font-bold leading-tight">{tile.title}</p>
-          </div>
-        ))}
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-500 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
+                <p className="text-gray-900 text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
+                {'subValue' in tile && (
+                  <p className="text-gray-400 text-xs mt-0.5 truncate">{tile.subLabel}: <span className="text-gray-600 font-semibold">{tile.subValue}</span></p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Year Selector and Download */}
