@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -16,6 +16,7 @@ interface EstimationPageProps {
   canDelete: boolean;
   currentUserId: string;
   currentUserName: string;
+  committeeAssociation: string;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'estimation', summary: string, count?: number) => void;
 }
 
@@ -45,7 +46,7 @@ const OPEN_ESTIMATION_KEY = 'puja-open-estimation-id';
 // needs more room than FormModal gives) with an editable line-item table
 // and a live-computed total.
 export function EstimationPage({
-  estimationsList, setEstimationsList, canEdit, canDelete, currentUserId, currentUserName, onLog,
+  estimationsList, setEstimationsList, canEdit, canDelete, currentUserId, currentUserName, committeeAssociation, onLog,
 }: EstimationPageProps) {
   const { t, locale } = useLanguage();
   const [view, setView] = useState<'list' | 'detail'>('list');
@@ -213,6 +214,13 @@ export function EstimationPage({
               >
                 <ArrowLeft size={18} />
                 {t('estimation.backToList')}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Printer size={18} />
+                {t('estimation.print')}
               </button>
               {canEdit && (
                 <button
@@ -394,6 +402,47 @@ export function EstimationPage({
               {t('estimation.addRow')}
             </button>
           )}
+        </div>
+
+        {/* A4 print/PDF layout — hidden on screen, shown only by the print
+            stylesheet (globals.css) when the Print button below triggers
+            window.print(). Uses the estimation's own column labels and
+            skips blank rows, same "has a title or an amount" rule as Save. */}
+        <div id="estimation-print-area" className="hidden print:block bg-white text-gray-900 p-0">
+          <h1 className="text-2xl font-bold mb-1">
+            {t('estimation.printHeading').replace('{name}', committeeAssociation || '')}
+          </h1>
+          <h2 className="text-xl font-bold text-orange-600 mb-6">{draft.title || t('estimation.pageTitle')}</h2>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b-2 border-gray-800">
+                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.serialNo}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.title}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField2}</th>
+                <th className="text-right py-2 text-sm font-bold">{draft.columnLabels.amount}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {draft.lineItems
+                .filter(item => item.title.trim() !== '' || item.amount)
+                .map((item, index) => (
+                  <tr key={item.id} className="border-b border-gray-300">
+                    <td className="py-2 pr-2 text-sm">{index + 1}</td>
+                    <td className="py-2 pr-2 text-sm">{item.title}</td>
+                    <td className="py-2 pr-2 text-sm">{item.customField}</td>
+                    <td className="py-2 pr-2 text-sm">{item.customField2}</td>
+                    <td className="py-2 text-sm text-right">₹{(item.amount || 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          <div className="flex justify-end mt-6 pt-4 border-t-2 border-gray-800">
+            <div className="text-right">
+              <p className="text-sm font-bold uppercase tracking-wide">{t('estimation.totalAmount')}</p>
+              <p className="text-2xl font-bold">₹{draftTotal.toLocaleString()}</p>
+            </div>
+          </div>
         </div>
 
         <Toast message={toastMessage} onDone={() => setToastMessage(null)} />

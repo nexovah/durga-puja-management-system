@@ -885,6 +885,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={currentUser?.canDelete !== false}
             currentUserId={currentUser?.id || ''}
             currentUserName={currentUser?.name || ''}
+            committeeAssociation={committeeInfo.association}
             onLog={handleLog}
           />
         )}

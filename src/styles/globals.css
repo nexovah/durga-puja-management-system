@@ -183,3 +183,26 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Estimation detail page print/PDF layout — A4, only the printable
+   summary is shown, everything else (sidebar, top bar, the editable
+   table UI) is hidden. See src/app/components/Estimation.tsx. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #estimation-print-area,
+  #estimation-print-area * {
+    visibility: visible;
+  }
+  #estimation-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+}
