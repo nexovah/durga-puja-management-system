@@ -3,6 +3,7 @@ import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getEx
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
 import { DashboardCategoryBars } from './DashboardCategoryBars';
+import { PageHeading } from './PageHeading';
 
 interface DashboardProps {
   members: Member[];
@@ -62,6 +63,8 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
 
   return (
     <div className="space-y-4">
+      <PageHeading>{t('nav.dashboard')}</PageHeading>
+
       {/* Collections vs Expenses chart (3) + category totals bar chart (1) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="lg:col-span-3">
