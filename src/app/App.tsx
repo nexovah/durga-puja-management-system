@@ -713,11 +713,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           </div>
         </div>
 
-        {/* Main Content — sits directly on the gray page background (no
-            intermediate white panel) so the white widget/table cards
-            underneath actually stand out, like the reference design;
-            content itself stays centered/max-width on very wide screens */}
+        {/* Main Content — a white rounded card inset from the edges, its
+            own content centered/max-width so it doesn't stretch edge to
+            edge on very wide screens */}
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
         <div className="container mx-auto">
         {currentPage === 'dashboard' && (
           <Dashboard
@@ -817,6 +817,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
+        </div>
         </div>
         </main>
       </div>
