@@ -95,7 +95,7 @@ export function Vendors({ expenses }: VendorsProps) {
         action={
           <button
             onClick={handleExport}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold"
           >
             <Download size={20} />
             {t('common.export')}

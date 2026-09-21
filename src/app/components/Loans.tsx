@@ -264,8 +264,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 />
                 <button
                   onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 text-white rounded-lg transition-opacity hover:opacity-90 font-bold text-sm sm:text-base whitespace-nowrap"
-                  style={{ backgroundColor: '#383737' }}
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
                 >
                   <Upload size={20} />
                   {t('common.import')}
@@ -274,7 +273,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             )}
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
