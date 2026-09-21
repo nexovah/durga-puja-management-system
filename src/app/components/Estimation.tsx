@@ -167,7 +167,8 @@ export function EstimationPage({
       .filter(({ item }) => !rowQuery
         || item.title.toLowerCase().includes(rowQuery)
         || item.customField.toLowerCase().includes(rowQuery)
-        || item.customField2.toLowerCase().includes(rowQuery));
+        || item.customField2.toLowerCase().includes(rowQuery)
+        || String(item.amount ?? '').toLowerCase().includes(rowQuery));
     return (
       <div className="space-y-6">
         <PageHeading
