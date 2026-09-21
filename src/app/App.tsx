@@ -699,7 +699,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   return (
-    <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
+    <div className="min-h-screen bg-[#eceef1] dark:bg-[#12151a] flex">
       <Sidebar
         logo={committeeInfo.logo}
         association={committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
@@ -713,7 +713,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar — flat, blends into the page background (no border/shadow) */}
-        <div className="sticky top-0 z-20 bg-[#eceef1] dark:bg-gray-950">
+        <div className="sticky top-0 z-20 bg-[#eceef1] dark:bg-[#12151a]">
           <div className="px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setMobileNavOpen(true)}
