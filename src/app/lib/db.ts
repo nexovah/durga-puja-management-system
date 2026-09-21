@@ -13,6 +13,7 @@ import {
   Expense,
   Loan,
   Task,
+  Estimation,
 } from '../App';
 
 export interface DeveloperInfo {
@@ -226,6 +227,27 @@ function toTaskRow(task: Task) {
   };
 }
 
+function fromEstimationRow(row: any): Estimation {
+  return {
+    id: row.id,
+    title: row.title || '',
+    lineItems: row.line_items || [],
+    createdAt: row.created_at,
+    createdBy: row.created_by || '',
+    createdByName: row.created_by_name || '',
+  };
+}
+function toEstimationRow(estimation: Estimation) {
+  return {
+    id: estimation.id,
+    title: estimation.title || '',
+    line_items: estimation.lineItems || [],
+    created_at: estimation.createdAt,
+    created_by: estimation.createdBy || null,
+    created_by_name: estimation.createdByName || null,
+  };
+}
+
 function fromCommitteeRow(row: any): CommitteeInfo {
   return {
     name: row.name || '',
@@ -290,7 +312,7 @@ function fromUserRow(row: any): User {
 // ---------------------------------------------------------------------------
 
 export async function fetchAllData() {
-  const [membersRes, chandaRes, donationAdsRes, expensesRes, loansRes, tasksRes, committeeRes, developerRes, usersRes] =
+  const [membersRes, chandaRes, donationAdsRes, expensesRes, loansRes, tasksRes, estimationsRes, committeeRes, developerRes, usersRes] =
     await Promise.all([
       supabase.from('members').select('*').order('join_date', { ascending: false }),
       supabase.from('chanda').select('*').order('date', { ascending: false }),
@@ -298,6 +320,7 @@ export async function fetchAllData() {
       supabase.from('expenses').select('*').order('date', { ascending: false }),
       supabase.from('loans').select('*').order('date', { ascending: false }),
       supabase.from('tasks').select('*').order('created_at', { ascending: false }),
+      supabase.from('estimations').select('*').order('created_at', { ascending: false }),
       supabase.from('committee_info').select('*').eq('id', 1).single(),
       supabase.from('developer_info').select('*').eq('id', 1).single(),
       supabase.from('app_users').select('*').order('created_at', { ascending: true }),
@@ -305,7 +328,7 @@ export async function fetchAllData() {
 
   const firstError =
     membersRes.error || chandaRes.error || donationAdsRes.error || expensesRes.error || loansRes.error ||
-    tasksRes.error || committeeRes.error || developerRes.error || usersRes.error;
+    tasksRes.error || estimationsRes.error || committeeRes.error || developerRes.error || usersRes.error;
   if (firstError) throw firstError;
 
   return {
@@ -315,6 +338,7 @@ export async function fetchAllData() {
     expenses: (expensesRes.data || []).map(fromExpenseRow),
     loansList: (loansRes.data || []).map(fromLoanRow),
     tasksList: (tasksRes.data || []).map(fromTaskRow),
+    estimationsList: (estimationsRes.data || []).map(fromEstimationRow),
     committeeInfo: fromCommitteeRow(committeeRes.data),
     developerInfo: fromDeveloperRow(developerRes.data),
     users: (usersRes.data || []).map(fromUserRow),
@@ -329,7 +353,7 @@ export async function fetchAllData() {
 // ---------------------------------------------------------------------------
 
 export async function syncList<T extends { id: string }>(
-  table: 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks',
+  table: 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimations',
   oldList: T[],
   newList: T[],
   toRow: (item: T) => any
@@ -372,6 +396,8 @@ export const syncLoans = (oldList: Loan[], newList: Loan[]) =>
   syncList('loans', oldList, newList, toLoanRow);
 export const syncTasks = (oldList: Task[], newList: Task[]) =>
   syncList('tasks', oldList, newList, toTaskRow);
+export const syncEstimations = (oldList: Estimation[], newList: Estimation[]) =>
+  syncList('estimations', oldList, newList, toEstimationRow);
 
 // ---------------------------------------------------------------------------
 // Singleton settings rows
@@ -489,7 +515,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'users' | 'settings';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 
 export interface ActivityLogEntry {

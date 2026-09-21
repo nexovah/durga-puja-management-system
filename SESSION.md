@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21 (5)
+- **New "Estimation" module**: budgeting/projection tool under sidebar Essential, right after Tasks. Each estimation has a title + unlimited line items (title/date/amount), stored as a `line_items jsonb` column (`supabase/017_estimations.sql` — **run in Supabase SQL Editor**). List view shows title/item count/total/date like Tasks; clicking a title opens a full-width in-page detail editor (not a modal) with add/remove rows and a live-recomputed total. Gated by a new `estimation` permission (defaults on for existing users via the migration's JSONB merge). No creator-only edit restriction — anyone with page edit/delete permission can change any estimation.
+
 ## 2026-09-21 (4)
 - **Search moved from nav bar into each page body** (supersedes (3) below, which the sessionStorage-stash approach turned out not to work — results weren't clickable/editable and "See all" didn't land anywhere): new reusable `TableSearchBar.tsx` sits directly above the table on Members, Chanda, Donation/Ads, Expenses, Loans — quick text box (live) + collapsible Advanced Filters (Amount, Bill/Voucher, Payment Status, Payment Method, Date range, Phone), each page showing only the fields it has. Filters that page's own live data in place with a plain `.filter()` — no navigation, no sessionStorage, rows stay fully editable. `GlobalSearch.tsx` (nav icon) reverted to a simple quick-jump tool — text search with a "See all" that just navigates to the right page. Deleted the now-unused `src/app/lib/searchHandoff.ts`. Tasks.tsx kept its existing in-body filter bar as-is (already page-body/live-table). Front-end only, no DB changes.
 

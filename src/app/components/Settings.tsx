@@ -36,6 +36,7 @@ const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   loans: 'permission.loans',
   vendors: 'permission.vendors',
   tasks: 'permission.tasks',
+  estimation: 'permission.estimation',
 };
 
 export function Settings({
@@ -85,6 +86,7 @@ export function Settings({
       loans: true,
       vendors: true,
       tasks: true,
+      estimation: true,
       settings: false,
     },
   });
@@ -170,6 +172,7 @@ export function Settings({
         loans: true,
         vendors: true,
         tasks: true,
+        estimation: true,
         settings: false,
       },
     });
@@ -186,7 +189,7 @@ export function Settings({
       canEdit: user.canEdit !== false,
       canDelete: user.canDelete !== false,
       canBulkImport: user.canBulkImport !== false,
-      permissions: { vendors: true, tasks: true, ...user.permissions },
+      permissions: { vendors: true, tasks: true, estimation: true, ...user.permissions },
     });
     setEditingUserId(user.id);
     setShowUserForm(true);
@@ -543,6 +546,7 @@ export function Settings({
                         loans: true,
                         vendors: true,
                         tasks: true,
+                        estimation: true,
                         settings: false,
                       },
                     });

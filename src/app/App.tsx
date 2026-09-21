@@ -14,6 +14,7 @@ import { Report } from './components/Report';
 import { Settings, SettingsTab } from './components/Settings';
 import { ActivityLog } from './components/ActivityLog';
 import { Tasks } from './components/Tasks';
+import { EstimationPage } from './components/Estimation';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useLanguage } from './i18n/LanguageContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -25,6 +26,7 @@ import {
   syncExpenses,
   syncLoans,
   syncTasks,
+  syncEstimations,
   updateCommitteeInfo,
   updateDeveloperInfo,
   loginRequest,
@@ -59,6 +61,7 @@ export interface User {
     loans: boolean;
     vendors: boolean;
     tasks: boolean;
+    estimation: boolean;
   };
 }
 
@@ -240,6 +243,22 @@ export interface Task {
   createdByName: string; // snapshot of the creator's name, so it survives their account being deleted
 }
 
+export interface EstimationLineItem {
+  id: string;
+  title: string;
+  date: string;
+  amount: number;
+}
+
+export interface Estimation {
+  id: string;
+  title: string;
+  lineItems: EstimationLineItem[];
+  createdAt: string;
+  createdBy: string;
+  createdByName: string;
+}
+
 const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
   name: '',
   logo: '🕉️',
@@ -306,7 +325,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/',
@@ -321,6 +340,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   settings: '/settings',
   activityLog: '/activity-log',
   tasks: '/tasks',
+  estimation: '/estimation',
 };
 
 const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
@@ -399,6 +419,7 @@ export default function App() {
   const [expenses, setExpensesState] = useState<Expense[]>([]);
   const [loansList, setLoansListState] = useState<Loan[]>([]);
   const [tasksList, setTasksListState] = useState<Task[]>([]);
+  const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
 
   // Load everything from Supabase on mount.
@@ -417,6 +438,7 @@ export default function App() {
         setExpensesState(data.expenses);
         setLoansListState(data.loansList);
         setTasksListState(data.tasksList);
+        setEstimationsListState(data.estimationsList);
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
@@ -501,6 +523,18 @@ export default function App() {
       console.error('Failed to save task changes', err);
       alert(t('common.saveError'));
       setTasksListState(previous);
+    }
+  };
+
+  const setEstimationsList = async (newList: Estimation[]) => {
+    const previous = estimationsList;
+    setEstimationsListState(newList);
+    try {
+      await syncEstimations(previous, newList);
+    } catch (err) {
+      console.error('Failed to save estimation changes', err);
+      alert(t('common.saveError'));
+      setEstimationsListState(previous);
     }
   };
 
@@ -820,6 +854,17 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             currentUserId={currentUser?.id || ''}
             currentUserName={currentUser?.name || ''}
             isAdmin={!!currentUser?.isAdmin}
+            onLog={handleLog}
+          />
+        )}
+        {currentPage === 'estimation' && (
+          <EstimationPage
+            estimationsList={estimationsList}
+            setEstimationsList={setEstimationsList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            currentUserId={currentUser?.id || ''}
+            currentUserName={currentUser?.name || ''}
             onLog={handleLog}
           />
         )}

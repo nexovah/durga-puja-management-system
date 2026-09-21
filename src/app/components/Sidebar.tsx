@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, MoreHorizontal, X,
+  FileBarChart, Calculator, MoreHorizontal, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
 
 interface SidebarProps {
   logo?: string;
@@ -23,6 +23,7 @@ interface SidebarProps {
     vendors?: boolean;
     loans?: boolean;
     tasks?: boolean;
+    estimation?: boolean;
     settings?: boolean;
   };
   collapsed: boolean;
@@ -67,6 +68,7 @@ export function Sidebar({
       label: t('sidebar.groupEssential'),
       items: [
         { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
+        { key: 'estimation', icon: Calculator, label: t('nav.estimation'), show: !!permissions?.estimation },
         { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
         { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
       ],
