@@ -56,6 +56,7 @@ export function EstimationPage({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [rowSearchQuery, setRowSearchQuery] = useState('');
+  const [rowShowSearch, setRowShowSearch] = useState(false);
 
   const filteredEstimations = estimationsList.filter(est =>
     !searchQuery.trim() || est.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
@@ -197,25 +198,28 @@ export function EstimationPage({
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('estimation.titleLabel')}</label>
-            <input
-              type="text"
-              value={draft.title}
-              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              disabled={!canEdit}
-              placeholder={t('estimation.titlePlaceholder')}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                disabled={!canEdit}
+                placeholder={t('estimation.titlePlaceholder')}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+              />
+              <SearchToggleButton open={rowShowSearch} onToggle={() => setRowShowSearch(o => !o)} />
+            </div>
           </div>
 
-          <div>
+          <CollapsibleSearchPanel open={rowShowSearch}>
             <input
               type="text"
               value={rowSearchQuery}
               onChange={(e) => setRowSearchQuery(e.target.value)}
               placeholder={t('estimation.rowSearchPlaceholder')}
-              className="w-full sm:w-80 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
-          </div>
+          </CollapsibleSearchPanel>
 
           <div className="overflow-x-auto">
             <table className="w-full">
