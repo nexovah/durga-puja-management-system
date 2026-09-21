@@ -108,45 +108,38 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   };
 
   return (
-    <div ref={wrapperRef}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        aria-label={t('search.placeholder')}
-        className={`p-3 rounded-lg transition-colors shrink-0 ${
-          open ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-        }`}
-      >
-        <Search size={20} />
-      </button>
+    <div ref={wrapperRef} className="relative w-full max-w-md">
+      <div className="relative">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          placeholder={t('search.placeholder')}
+          className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(''); setOpen(false); }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full bg-white border-t border-b border-gray-200 shadow-lg z-40">
-          <div className="container mx-auto px-4 py-4">
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('search.placeholder')}
-                className="w-full pl-10 pr-10 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-base"
-              />
-              <button
-                onClick={() => setOpen(false)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-2">{t('search.jumpHint')}</p>
+        <div className="absolute left-0 right-0 sm:right-auto sm:w-[28rem] top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-40 p-4">
+          <p className="text-xs text-gray-400">{t('search.jumpHint')}</p>
 
-            {query.trim() === '' ? (
-              <p className="text-sm text-gray-500 mt-3">{t('search.typeToSearch')}</p>
-            ) : totalResults === 0 ? (
-              <p className="text-sm text-gray-500 mt-3">{t('search.noResults')}</p>
-            ) : (
-              <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-4">
+          {query.trim() === '' ? (
+            <p className="text-sm text-gray-500 mt-3">{t('search.typeToSearch')}</p>
+          ) : totalResults === 0 ? (
+            <p className="text-sm text-gray-500 mt-3">{t('search.noResults')}</p>
+          ) : (
+            <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-4">
                 {results.members.length > 0 && (
                   <ResultSection icon={<Users size={16} />} title={t('nav.members')} onSeeAll={() => handleSelect('members')}>
                     {results.members.map((m) => (
@@ -202,7 +195,6 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 )}
               </div>
             )}
-          </div>
         </div>
       )}
     </div>

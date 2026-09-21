@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import {
-  MoreVertical, LogOut, LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
-  Store, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-} from 'lucide-react';
+import { Menu, LogOut, ChevronDown } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
+import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { ChandaCollection } from './components/ChandaCollection';
@@ -357,6 +355,29 @@ export default function App() {
 
   const setCurrentPage = (page: PageKey) => setCurrentPageState(page);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('puja-sidebar-collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('puja-sidebar-collapsed', next ? '1' : '0');
+      } catch {
+        // ignore — collapse preference is a nice-to-have, not critical
+      }
+      return next;
+    });
+  };
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [currentPage]);
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -632,101 +653,33 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header + User Info Bar (combined, compact) */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">
-        <div className="container mx-auto px-4 py-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="bg-white/20 p-2 rounded-lg overflow-hidden shrink-0">
-                {committeeInfo.logo && (committeeInfo.logo.startsWith('data:') || committeeInfo.logo.startsWith('http')) ? (
-                  <img
-                    src={committeeInfo.logo}
-                    alt="Logo"
-                    className="w-9 h-9 object-cover rounded"
-                  />
-                ) : (
-                  <span className="text-xl">{committeeInfo.logo || '🕉️'}</span>
-                )}
-              </div>
-              <div className="text-white min-w-0">
-                <p className="font-bold text-sm sm:text-base truncate">
-                  {committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
-                </p>
-                <p className="text-[10px] sm:text-xs opacity-90 leading-snug">
-                  {t('header.regd')}—{committeeInfo.established} · {t('header.regdNo')}:—{committeeInfo.regNumber} · {t('header.post')}:—{committeeInfo.post} · {t('header.pin')}:—{committeeInfo.pinCode} · {t('header.mobNo')}:—{committeeInfo.mobile1}{committeeInfo.mobile2 && ` / ${committeeInfo.mobile2}`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="text-white text-right hidden md:block">
-                <p className="font-bold text-sm leading-tight">{currentUser?.name}</p>
-                <p className="text-xs opacity-90 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar
+        logo={committeeInfo.logo}
+        association={committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
+        regdLine={`${t('header.regd')}—${committeeInfo.established} · ${t('header.regdNo')}:—${committeeInfo.regNumber} · ${t('header.post')}:—${committeeInfo.post} · ${t('header.pin')}:—${committeeInfo.pinCode} · ${t('header.mobNo')}:—${committeeInfo.mobile1}${committeeInfo.mobile2 ? ` / ${committeeInfo.mobile2}` : ''}`}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        permissions={currentUser?.permissions}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebarCollapsed}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+      />
 
-      {/* Navigation */}
-      <nav className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 relative">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-1 overflow-x-auto">
-              <NavButton
-                icon={LayoutDashboard}
-                active={currentPage === 'dashboard'}
-                onClick={() => setCurrentPage('dashboard')}
-              >
-                {t('nav.dashboard')}
-              </NavButton>
-              {currentUser?.permissions.members && (
-                <NavButton
-                  icon={Users}
-                  active={currentPage === 'members'}
-                  onClick={() => setCurrentPage('members')}
-                >
-                  {t('nav.members')}
-                </NavButton>
-              )}
-              {currentUser?.permissions.chanda && (
-                <NavButton
-                  icon={HandCoins}
-                  active={currentPage === 'chanda'}
-                  onClick={() => setCurrentPage('chanda')}
-                >
-                  {t('nav.chanda')}
-                </NavButton>
-              )}
-              {currentUser?.permissions.donationAds && (
-                <NavButton
-                  icon={Gift}
-                  active={currentPage === 'donationAds'}
-                  onClick={() => setCurrentPage('donationAds')}
-                >
-                  {t('nav.donationAds')}
-                </NavButton>
-              )}
-              {currentUser?.permissions.expenses && (
-                <NavButton
-                  icon={TrendingDown}
-                  active={currentPage === 'expenses'}
-                  onClick={() => setCurrentPage('expenses')}
-                >
-                  {t('nav.expenses')}
-                </NavButton>
-              )}
-              {currentUser?.permissions.treasury && (
-                <NavButton
-                  icon={Wallet}
-                  active={currentPage === 'treasury'}
-                  onClick={() => setCurrentPage('treasury')}
-                >
-                  {t('nav.treasury')}
-                </NavButton>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-8 shrink-0">
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Top bar */}
+        <div className="bg-white border-b shadow-sm sticky top-0 z-20">
+          <div className="px-3 sm:px-4 py-2.5 flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="lg:hidden text-gray-500 hover:text-gray-700 p-1.5 shrink-0"
+              aria-label={t('sidebar.openMenu')}
+            >
+              <Menu size={22} />
+            </button>
+
+            <div className="flex-1 min-w-0">
               <GlobalSearch
                 members={members}
                 chandaList={chandaList}
@@ -735,23 +688,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 currentUser={currentUser}
                 onNavigate={setCurrentPage}
               />
-              <MoreMenu
-                showVendors={!!currentUser?.permissions.vendors}
-                showLoans={!!currentUser?.permissions.loans}
-                showTasks={!!currentUser?.permissions.tasks}
-                showSettings={!!currentUser?.permissions.settings}
-                showActivityLog={!!currentUser?.permissions.settings}
-                active={currentPage === 'vendors' || currentPage === 'loans' || currentPage === 'tasks' || currentPage === 'settings' || currentPage === 'activityLog'}
-                onSelect={setCurrentPage}
-                onLogout={handleLogout}
-              />
             </div>
+
+            <ProfileMenu currentUser={currentUser} onLogout={handleLogout} />
           </div>
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+        {/* Main Content */}
+        <main className="flex-1 px-4 py-6">
         {currentPage === 'dashboard' && (
           <Dashboard
             members={members}
@@ -848,51 +792,17 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-function NavButton({
-  icon: Icon, active, onClick, children,
-}: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 sm:gap-2 px-3 py-3 sm:px-6 font-bold text-sm sm:text-base transition-colors border-b-4 whitespace-nowrap ${
-        active
-          ? 'border-orange-600 text-orange-600 bg-orange-50'
-          : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-      }`}
-    >
-      <Icon size={18} />
-      {children}
-    </button>
-  );
-}
-
-function MoreMenu({
-  showVendors,
-  showLoans,
-  showTasks,
-  showSettings,
-  showActivityLog,
-  active,
-  onSelect,
+function ProfileMenu({
+  currentUser,
   onLogout,
 }: {
-  showVendors: boolean;
-  showLoans: boolean;
-  showTasks: boolean;
-  showSettings: boolean;
-  showActivityLog: boolean;
-  active: boolean;
-  onSelect: (page: 'vendors' | 'loans' | 'tasks' | 'settings' | 'activityLog') => void;
+  currentUser: User | null;
   onLogout: () => void;
 }) {
   const { t } = useLanguage();
@@ -914,63 +824,19 @@ function MoreMenu({
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className={`px-3 py-3 font-bold transition-colors border-b-4 whitespace-nowrap ${
-          active || open
-            ? 'border-orange-600 text-orange-600 bg-orange-50'
-            : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-        }`}
-        aria-label={t('nav.more')}
+        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
       >
-        <MoreVertical size={20} />
+        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
+          {(currentUser?.name || '?').charAt(0).toUpperCase()}
+        </div>
+        <div className="text-left hidden sm:block">
+          <p className="font-bold text-sm leading-tight text-gray-800">{currentUser?.name}</p>
+          <p className="text-xs text-gray-500 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
+        </div>
+        <ChevronDown size={16} className="text-gray-400 hidden sm:block" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
-          {showVendors && (
-            <button
-              onClick={() => { onSelect('vendors'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-            >
-              <Store size={16} />
-              {t('nav.vendors')}
-            </button>
-          )}
-          {showLoans && (
-            <button
-              onClick={() => { onSelect('loans'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-            >
-              <Landmark size={16} />
-              {t('nav.loans')}
-            </button>
-          )}
-          {showTasks && (
-            <button
-              onClick={() => { onSelect('tasks'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-            >
-              <CheckSquare size={16} />
-              {t('nav.tasks')}
-            </button>
-          )}
-          {showSettings && (
-            <button
-              onClick={() => { onSelect('settings'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-            >
-              <SettingsIcon size={16} />
-              {t('nav.settings')}
-            </button>
-          )}
-          {showActivityLog && (
-            <button
-              onClick={() => { onSelect('activityLog'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-            >
-              <ScrollText size={16} />
-              {t('nav.activityLog')}
-            </button>
-          )}
-          <div className="my-1 border-t border-gray-100" />
+        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
           <button
             onClick={() => { onLogout(); setOpen(false); }}
             className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
@@ -983,3 +849,4 @@ function MoreMenu({
     </div>
   );
 }
+

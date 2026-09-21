@@ -41,6 +41,9 @@ export const translations = {
     'nav.settings': 'Settings',
     'nav.activityLog': 'Activity Log',
     'nav.tasks': 'Tasks',
+    'sidebar.expand': 'Expand sidebar',
+    'sidebar.collapse': 'Collapse sidebar',
+    'sidebar.openMenu': 'Open menu',
 
     // Common
     'common.save': 'Save',
@@ -588,6 +591,9 @@ export const translations = {
     'nav.settings': 'সেটিংস',
     'nav.activityLog': 'কার্যকলাপ লগ',
     'nav.tasks': 'টাস্ক',
+    'sidebar.expand': 'সাইডবার প্রসারিত করুন',
+    'sidebar.collapse': 'সাইডবার সংকুচিত করুন',
+    'sidebar.openMenu': 'মেনু খুলুন',
 
     'common.save': 'সংরক্ষণ করুন',
     'common.refresh': 'রিফ্রেশ',
@@ -1126,6 +1132,9 @@ export const translations = {
     'nav.settings': 'सेटिंग्स',
     'nav.activityLog': 'गतिविधि लॉग',
     'nav.tasks': 'कार्य',
+    'sidebar.expand': 'साइडबार विस्तृत करें',
+    'sidebar.collapse': 'साइडबार संक्षिप्त करें',
+    'sidebar.openMenu': 'मेनू खोलें',
 
     'common.save': 'सहेजें',
     'common.refresh': 'रिफ्रेश करें',
