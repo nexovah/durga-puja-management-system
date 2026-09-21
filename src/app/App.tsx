@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
+import { setTenantAccessToken } from './lib/supabaseClient';
+import { LandingPage } from './components/LandingPage';
+import { SuperAdminRoot } from './components/SuperAdminRoot';
+import { Billing } from './components/Billing';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -31,6 +35,7 @@ import {
   updateCommitteeInfo,
   updateDeveloperInfo,
   loginRequest,
+  fetchTenantSubscriptionExpiry,
   createUserRequest,
   updateUserRequest,
   deleteUserRequest,
@@ -64,9 +69,15 @@ export interface User {
     tasks: boolean;
     estimation: boolean;
   };
+  tenantId?: string; // the committee this user belongs to (multi-tenant)
+  accessToken?: string; // per-tenant JWT signed by login(); attached to every
+                         // Supabase request after login so RLS can scope by
+                         // tenant_id — see src/app/lib/supabaseClient.ts
+  subscriptionExpiresAt?: string | null; // null = never granted a subscription yet
 }
 
 export interface CommitteeInfo {
+  id?: string; // per-tenant row id (uuid) — absent only before first load
   name: string;
   logo: string; // Base64 image data, an http(s) URL (e.g. Supabase Storage), or an emoji
   established: string; // Year of establishment
@@ -336,10 +347,10 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
-  dashboard: '/',
+  dashboard: '/dashboard',
   members: '/members',
   chanda: '/chanda-collection',
   donationAds: '/donation-ads-collection',
@@ -352,6 +363,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   activityLog: '/activity-log',
   tasks: '/tasks',
   estimation: '/estimation',
+  billing: '/billing',
 };
 
 const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
@@ -365,23 +377,32 @@ function getPageFromPath(): PageKey {
 export default function App() {
   const { t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
-  const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const stored = loadStoredSession();
+    if (stored) setTenantAccessToken(stored.accessToken || null);
+    return stored;
+  });
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(() => getPageFromPath());
+  // Tracks the raw pathname while logged out (landing vs. login), since
+  // those two routes aren't part of the authed PageKey system above.
+  const [loggedOutPath, setLoggedOutPath] = useState(() => window.location.pathname);
 
   // Keep the URL path in sync whenever the page changes from within the app.
   useEffect(() => {
+    if (!isLoggedIn) return;
     const newPath = PAGE_SLUGS[currentPage];
     if (window.location.pathname !== newPath) {
       window.history.pushState(null, '', newPath);
     }
-  }, [currentPage]);
+  }, [currentPage, isLoggedIn]);
 
   // Back/forward navigation should update the app too.
   useEffect(() => {
     const onPopState = () => {
       const page = getPageFromPath();
       setCurrentPageState(prev => (prev === page ? prev : page));
+      setLoggedOutPath(window.location.pathname);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -434,13 +455,21 @@ export default function App() {
   const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
 
-  // Load everything from Supabase on mount.
+  // Load everything from Supabase once the user is logged in. Pre-login,
+  // RLS has no tenant token to scope by (see supabase/020_multi_tenant.sql)
+  // and returns nothing for every tenant-scoped table, so there's nothing
+  // to fetch until then — the landing/login screens don't need this data.
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setDataLoading(false);
       setLoadError('not-configured');
       return;
     }
+    if (!isLoggedIn) {
+      setDataLoading(false);
+      return;
+    }
+    setDataLoading(true);
     (async () => {
       try {
         const data = await fetchAllData();
@@ -461,7 +490,7 @@ export default function App() {
         setDataLoading(false);
       }
     })();
-  }, []);
+  }, [isLoggedIn]);
 
   // --- List setters: keep the exact `setX(wholeNewArray)` signature every
   // page already uses, but sync the diff to Supabase behind the scenes. ---
@@ -656,12 +685,32 @@ export default function App() {
     }
   };
 
+  const handleSubscriptionExtended = async () => {
+    if (!currentUser?.tenantId) return;
+    try {
+      const expiresAt = await fetchTenantSubscriptionExpiry(currentUser.tenantId);
+      const updated = { ...currentUser, subscriptionExpiresAt: expiresAt };
+      setCurrentUser(updated);
+      saveSession(updated);
+    } catch (err) {
+      console.error('Failed to refresh subscription status', err);
+    }
+  };
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setCurrentPage('dashboard');
     clearStoredSession();
+    setTenantAccessToken(null);
   };
+
+  // Platform-admin route — entirely separate app/session, mounted before
+  // any of the committee-app gates below (not-configured/loadError/
+  // dataLoading/isLoggedIn all belong to the committee flow only).
+  if (window.location.pathname.startsWith('/super-admin')) {
+    return <SuperAdminRoot />;
+  }
 
   if (loadError === 'not-configured') {
     return (
@@ -705,7 +754,41 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   if (!isLoggedIn) {
+    if (loggedOutPath === '/') {
+      return (
+        <LandingPage
+          onGoToLogin={() => {
+            window.history.pushState(null, '', '/login');
+            setLoggedOutPath('/login');
+          }}
+        />
+      );
+    }
     return <LoginPage logo={committeeInfo.logo} onLogin={handleLogin} />;
+  }
+
+  const subscriptionExpired =
+    currentUser?.subscriptionExpiresAt != null &&
+    new Date(currentUser.subscriptionExpiresAt).getTime() < Date.now();
+
+  if (subscriptionExpired) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-md text-center bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-orange-200 dark:border-orange-500/30">
+          <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">⏳</div>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">You are out of subscription</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Your committee's subscription has expired. Renew to continue using Durga CRM.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -763,6 +846,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               currentUser={currentUser}
               onLogout={handleLogout}
               onGoToSettingsTab={goToSettingsTab}
+              onGoToBilling={() => setCurrentPage('billing')}
               showSettings={!!currentUser?.permissions.settings}
             />
           </div>
@@ -889,6 +973,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
+        {currentPage === 'billing' && (
+          <Billing
+            currentUser={currentUser}
+            committeeName={committeeInfo.association || committeeInfo.name}
+            onSubscriptionExtended={handleSubscriptionExtended}
+          />
+        )}
         </div>
         </div>
         </main>
@@ -901,11 +992,13 @@ function ProfileMenu({
   currentUser,
   onLogout,
   onGoToSettingsTab,
+  onGoToBilling,
   showSettings,
 }: {
   currentUser: User | null;
   onLogout: () => void;
   onGoToSettingsTab: (tab: SettingsTab) => void;
+  onGoToBilling: () => void;
   showSettings: boolean;
 }) {
   const { t } = useLanguage();
@@ -982,6 +1075,15 @@ function ProfileMenu({
                   >
                     <UsersIcon size={18} />
                     {t('settings.tab.users')}
+                  </button>
+                )}
+                {currentUser?.isAdmin && (
+                  <button
+                    onClick={() => { onGoToBilling(); setOpen(false); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                  >
+                    <CreditCardIcon size={18} />
+                    Billing
                   </button>
                 )}
                 <button

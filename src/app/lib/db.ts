@@ -3,7 +3,7 @@
 // database's snake_case columns here, so the rest of the app never has to
 // think about it (see supabase/README.md for the full mapping table).
 
-import { supabase } from './supabaseClient';
+import { supabase, setTenantAccessToken } from './supabaseClient';
 import {
   User,
   CommitteeInfo,
@@ -21,6 +21,7 @@ export interface DeveloperInfo {
   email: string;
   phone: string;
   version: string;
+  changelog?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +261,7 @@ function toEstimationRow(estimation: Estimation) {
 
 function fromCommitteeRow(row: any): CommitteeInfo {
   return {
+    id: row.id,
     name: row.name || '',
     logo: row.logo_url || '',
     established: row.established || '',
@@ -299,6 +301,7 @@ function fromDeveloperRow(row: any): DeveloperInfo {
     email: row.email || '',
     phone: row.phone || '',
     version: row.version || '',
+    changelog: row.changelog || '',
   };
 }
 
@@ -314,6 +317,9 @@ function fromUserRow(row: any): User {
     canBulkImport: row.can_bulk_import !== false, // defaults true for older rows before this column existed
     isActive: row.is_active !== false, // defaults true for older rows before this column existed
     permissions: row.permissions,
+    tenantId: row.tenant_id,
+    accessToken: row.access_token,
+    subscriptionExpiresAt: row.subscription_expires_at,
   };
 }
 
@@ -331,7 +337,11 @@ export async function fetchAllData() {
       supabase.from('loans').select('*').order('date', { ascending: false }),
       supabase.from('tasks').select('*').order('created_at', { ascending: false }),
       supabase.from('estimations').select('*').order('created_at', { ascending: false }),
-      supabase.from('committee_info').select('*').eq('id', 1).single(),
+      // No .eq('id', ...) here anymore — committee_info is now one row per
+      // tenant (see supabase/020_multi_tenant.sql), and RLS already scopes
+      // every request to exactly the caller's tenant, so this always
+      // returns that tenant's single row.
+      supabase.from('committee_info').select('*').limit(1).maybeSingle(),
       supabase.from('developer_info').select('*').eq('id', 1).single(),
       supabase.from('app_users').select('*').order('created_at', { ascending: true }),
     ]);
@@ -414,7 +424,11 @@ export const syncEstimations = (oldList: Estimation[], newList: Estimation[]) =>
 // ---------------------------------------------------------------------------
 
 export async function updateCommitteeInfo(info: CommitteeInfo): Promise<void> {
-  const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', 1);
+  // No id/tenant filter needed — RLS already scopes this update to exactly
+  // the caller's tenant's single committee_info row (see
+  // supabase/020_multi_tenant.sql). PostgREST requires *some* filter to
+  // avoid a full-table update, so match on the primary key it just read.
+  const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', info.id);
   if (error) throw error;
 }
 
@@ -444,11 +458,25 @@ export async function uploadLogo(file: File): Promise<string> {
 // (see supabase/schema.sql and supabase/002_user_management.sql)
 // ---------------------------------------------------------------------------
 
+// Called after a successful payment (Billing.tsx) to pick up the new expiry
+// the serverless verify-payment/webhook route just wrote, without a full
+// re-login. RLS scopes this to the caller's own tenant.
+export async function fetchTenantSubscriptionExpiry(tenantId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('tenants').select('subscription_expires_at').eq('id', tenantId).single();
+  if (error) throw error;
+  return data?.subscription_expires_at ?? null;
+}
+
 export async function loginRequest(username: string, password: string): Promise<User | null> {
   const { data, error } = await supabase.rpc('login', { p_username: username, p_password: password });
   if (error) throw error;
   if (!data || data.length === 0) return null;
-  return fromUserRow(data[0]);
+  const row = data[0];
+  // Every request after this must carry the per-tenant token RLS relies on
+  // (see supabase/020_multi_tenant.sql) — set it before returning so the
+  // very next fetch (e.g. fetchAllData on login) is already tenant-scoped.
+  setTenantAccessToken(row.access_token || null);
+  return fromUserRow(row);
 }
 
 export async function createUserRequest(

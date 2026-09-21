@@ -90,7 +90,6 @@ export function Settings({
       settings: false,
     },
   });
-  const [devForm, setDevForm] = useState(developerInfo);
   const [message, setMessage] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
 
@@ -224,13 +223,6 @@ export function Settings({
       console.error('Failed to change user active state', err);
       setMessage(t('common.saveError'));
     }
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const handleDeveloperSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDeveloperInfo(devForm);
-    setMessage(t('settings.msg.developerUpdated'));
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -852,69 +844,27 @@ export function Settings({
             </div>
           )}
 
-          {/* Developer Info Tab */}
+          {/* Developer Info Tab — read-only; only the platform Super Admin
+              can edit this (it's vendor/software info, not committee data) */}
           {activeTab === 'developer' && (
-            <form onSubmit={handleDeveloperSubmit} className="space-y-4 max-w-md">
-            <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.developerName')}</label>
-                <input
-                  type="text"
-                  required
-                  value={devForm.name}
-                  onChange={(e) => setDevForm({ ...devForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.email')}</label>
-                <input
-                  type="email"
-                  required
-                  value={devForm.email}
-                  onChange={(e) => setDevForm({ ...devForm, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.phoneNumber')}</label>
-                <input
-                  type="tel"
-                  required
-                  value={devForm.phone}
-                  onChange={(e) => setDevForm({ ...devForm, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.appVersion')}</label>
-                <input
-                  type="text"
-                  required
-                  value={devForm.version}
-                  onChange={(e) => setDevForm({ ...devForm, version: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                <Save size={20} />
-                {t('common.save')}
-              </button>
-            </fieldset>
-
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">{t('settings.currentInfo')}</h4>
+            <div className="max-w-md">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Managed by the platform administrator.
+              </p>
+              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                   <p><strong>{t('settings.label.name')}</strong> {developerInfo.name}</p>
                   <p><strong>{t('settings.label.email')}</strong> {developerInfo.email}</p>
                   <p><strong>{t('settings.label.phone')}</strong> {developerInfo.phone}</p>
                   <p><strong>{t('settings.label.version')}</strong> {developerInfo.version}</p>
+                  {developerInfo.changelog && (
+                    <ul className="list-disc pl-5 pt-1 space-y-0.5">
+                      {developerInfo.changelog.split('\n').filter(Boolean).map((line, i) => <li key={i}>{line}</li>)}
+                    </ul>
+                  )}
                 </div>
               </div>
-            </form>
+            </div>
           )}
         </div>
       </div>
