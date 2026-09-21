@@ -186,19 +186,20 @@ html {
 
 /* Estimation detail page print/PDF layout — A4, only the printable
    summary is shown, everything else (sidebar, top bar, the editable
-   table UI) is hidden. See src/app/components/Estimation.tsx. */
+   table UI) is hidden. See src/app/components/Estimation.tsx.
+
+   #estimation-print-area is portaled straight onto <body> (a sibling
+   of #root, not a descendant) specifically so #root can be given
+   display:none here — visibility:hidden alone still reserves layout
+   height for the whole hidden app, which was pushing an extra blank
+   page onto the end of every printout. */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #estimation-print-area,
-  #estimation-print-area * {
-    visibility: visible;
+  #root {
+    display: none !important;
   }
   #estimation-print-area {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: block !important;
+    position: static;
     width: 100%;
   }
   @page {

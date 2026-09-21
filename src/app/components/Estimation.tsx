@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { PageHeading } from './PageHeading';
@@ -404,46 +405,54 @@ export function EstimationPage({
           )}
         </div>
 
-        {/* A4 print/PDF layout — hidden on screen, shown only by the print
-            stylesheet (globals.css) when the Print button below triggers
-            window.print(). Uses the estimation's own column labels and
-            skips blank rows, same "has a title or an amount" rule as Save. */}
-        <div id="estimation-print-area" className="hidden print:block bg-white text-gray-900 p-0">
-          <h1 className="text-lg font-normal text-gray-900 mb-1">
-            {t('estimation.printHeading').replace('{name}', committeeAssociation || '')}
-          </h1>
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">{draft.title || t('estimation.pageTitle')}</h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b-2 border-gray-800">
-                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.serialNo}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.title}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField2}</th>
-                <th className="text-right py-2 text-sm font-bold">{draft.columnLabels.amount}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {draft.lineItems
-                .filter(item => item.title.trim() !== '' || item.amount)
-                .map((item, index) => (
-                  <tr key={item.id} className="border-b border-gray-300">
-                    <td className="py-2 pr-2 text-sm">{index + 1}</td>
-                    <td className="py-2 pr-2 text-sm">{item.title}</td>
-                    <td className="py-2 pr-2 text-sm">{item.customField}</td>
-                    <td className="py-2 pr-2 text-sm">{item.customField2}</td>
-                    <td className="py-2 text-sm text-right">₹{(item.amount || 0).toLocaleString()}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-          <div className="flex justify-end mt-6 pt-4 border-t-2 border-gray-800">
-            <div className="text-right">
-              <p className="text-sm font-bold uppercase tracking-wide">{t('estimation.totalAmount')}</p>
-              <p className="text-2xl font-bold">₹{draftTotal.toLocaleString()}</p>
+        {/* A4 print/PDF layout — portaled straight onto <body> (a sibling of
+            #root, not nested inside it) so the print stylesheet can hide
+            #root with display:none and this reflows as the only content on
+            the page. Nesting it inside #root and hiding everything else via
+            visibility:hidden left the whole app's layout height reserved,
+            which pushed an extra blank page onto the end of every printout.
+            Hidden on screen, shown only when the Print button below
+            triggers window.print(). Uses the estimation's own column labels
+            and skips blank rows, same "has a title or an amount" rule as Save. */}
+        {createPortal(
+          <div id="estimation-print-area" className="hidden print:block bg-white text-gray-900 p-0">
+            <h1 className="text-lg font-normal text-gray-900 mb-1">
+              {t('estimation.printHeading').replace('{name}', committeeAssociation || '')}
+            </h1>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">{draft.title || t('estimation.pageTitle')}</h2>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-800">
+                  <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.serialNo}</th>
+                  <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.title}</th>
+                  <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField}</th>
+                  <th className="text-left py-2 pr-2 text-sm font-bold">{draft.columnLabels.customField2}</th>
+                  <th className="text-right py-2 text-sm font-bold">{draft.columnLabels.amount}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draft.lineItems
+                  .filter(item => item.title.trim() !== '' || item.amount)
+                  .map((item, index) => (
+                    <tr key={item.id} className="border-b border-gray-300">
+                      <td className="py-2 pr-2 text-sm">{index + 1}</td>
+                      <td className="py-2 pr-2 text-sm">{item.title}</td>
+                      <td className="py-2 pr-2 text-sm">{item.customField}</td>
+                      <td className="py-2 pr-2 text-sm">{item.customField2}</td>
+                      <td className="py-2 text-sm text-right">₹{(item.amount || 0).toLocaleString()}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+            <div className="flex justify-end mt-6 pt-4 border-t-2 border-gray-800">
+              <div className="text-right">
+                <p className="text-sm font-bold uppercase tracking-wide">{t('estimation.totalAmount')}</p>
+                <p className="text-2xl font-bold">₹{draftTotal.toLocaleString()}</p>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>,
+          document.body
+        )}
 
         <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
       </div>
