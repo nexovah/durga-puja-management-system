@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, X,
+  FileBarChart, MoreVertical, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -103,13 +103,18 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto pt-9 pb-2 px-3 space-y-5">
-        {groups.map((group) => {
+        {groups.map((group, groupIndex) => {
           const visibleItems = group.items.filter(i => i.show);
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>
               {!collapsed && (
                 <p className="px-3 mb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{group.label}</p>
+              )}
+              {collapsed && groupIndex > 0 && (
+                <div className="flex justify-center mb-4" aria-hidden="true">
+                  <MoreVertical size={16} className="text-gray-400" />
+                </div>
               )}
               <div className="space-y-1">
                 {visibleItems.map((item) => {
