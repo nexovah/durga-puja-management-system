@@ -178,6 +178,32 @@ function fromTenantAdminRow(row: any): TenantAdmin {
   return { id: row.id, name: row.name, username: row.username };
 }
 
+export interface TenantUser {
+  id: string;
+  name: string;
+  username: string;
+  isAdmin: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+function fromTenantUserRow(row: any): TenantUser {
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    isAdmin: row.is_admin,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listTenantUsersRequest(tenantId: string): Promise<TenantUser[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_tenant_users', { p_tenant_id: tenantId });
+  if (error) throw error;
+  return (data || []).map(fromTenantUserRow);
+}
+
 export async function getTenantAdminRequest(tenantId: string): Promise<TenantAdmin | null> {
   const { data, error } = await supabase.rpc('super_admin_get_tenant_admin', { p_tenant_id: tenantId });
   if (error) throw error;

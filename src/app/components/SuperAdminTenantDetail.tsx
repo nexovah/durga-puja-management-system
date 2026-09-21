@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CreditCard, UserCog, Eye, EyeOff, RefreshCw, Power, Trash2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, UserCog, Users, Eye, EyeOff, RefreshCw, Power, Trash2 } from 'lucide-react';
 import {
   Tenant,
   SubscriptionCredit,
   TenantAdmin,
+  TenantUser,
   updateTenantRequest,
   setTenantStatusRequest,
   deleteTenantRequest,
@@ -12,6 +13,7 @@ import {
   getTenantAdminRequest,
   updateTenantAdminRequest,
   createAdminForTenantRequest,
+  listTenantUsersRequest,
   generatePassword,
 } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
@@ -62,8 +64,12 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const [showNewAdminPassword, setShowNewAdminPassword] = useState(false);
   const [creatingAdmin, setCreatingAdmin] = useState(false);
 
+  const [users, setUsers] = useState<TenantUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
   useEffect(() => {
     listSubscriptionCreditsRequest(tenant.id).then(setCredits).catch(() => {});
+    listTenantUsersRequest(tenant.id).then(setUsers).catch(() => {}).finally(() => setUsersLoading(false));
     getTenantAdminRequest(tenant.id).then(a => {
       setAdmin(a);
       if (a) {
@@ -84,6 +90,7 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
       setAdmin(updated);
       setAdminPassword('');
       setAdminMessage(adminPassword ? 'Login updated — password reset.' : 'Login updated.');
+      listTenantUsersRequest(tenant.id).then(setUsers).catch(() => {});
     } catch (err: any) {
       setError(err?.message || 'Failed to update admin login');
     } finally {
@@ -118,6 +125,7 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
       setAdmin(created);
       setAdminName(created.name);
       setAdminUsername(created.username);
+      listTenantUsersRequest(tenant.id).then(setUsers).catch(() => {});
     } catch (err: any) {
       setError(err?.message || 'Failed to create admin login');
     } finally {
@@ -410,6 +418,50 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
               {savingAdmin ? 'Saving…' : 'Save login'}
             </button>
           </form>
+        )}
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-6">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-1.5">
+          <Users className="w-4 h-4" /> Committee users ({users.length}{currentTenant.maxUsers !== null ? ` / ${currentTenant.maxUsers}` : ''})
+        </h4>
+        {usersLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : users.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">No users yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 dark:text-gray-400">
+                <tr>
+                  <th className="text-left font-medium pb-2">Name</th>
+                  <th className="text-left font-medium pb-2">Username</th>
+                  <th className="text-left font-medium pb-2">Role</th>
+                  <th className="text-left font-medium pb-2">Status</th>
+                  <th className="text-left font-medium pb-2">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td className={`py-2 font-medium ${u.isActive ? 'text-gray-900 dark:text-gray-100' : 'text-red-600 dark:text-red-400'}`}>{u.name}</td>
+                    <td className="py-2 text-gray-500 dark:text-gray-400">{u.username}</td>
+                    <td className="py-2 text-gray-600 dark:text-gray-400">{u.isAdmin ? 'Admin' : 'User'}</td>
+                    <td className="py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.isActive
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {u.isActive ? 'active' : 'disabled'}
+                      </span>
+                    </td>
+                    <td className="py-2 text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
