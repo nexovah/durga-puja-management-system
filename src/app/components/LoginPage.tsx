@@ -36,7 +36,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const isEmoji = logo && logo.length <= 10 && !logo.startsWith('data:') && !logo.startsWith('http');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Badge */}
         <div className="text-center mb-6">
