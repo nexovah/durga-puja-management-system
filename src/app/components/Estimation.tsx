@@ -6,6 +6,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { Pagination, usePagination } from './Pagination';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface EstimationPageProps {
   estimationsList: Estimation[];
@@ -38,6 +40,7 @@ export function EstimationPage({
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [draft, setDraft] = useState<Estimation | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
@@ -254,29 +257,34 @@ export function EstimationPage({
     <div className="space-y-6">
       <PageHeading
         action={
-          canEdit && (
-            <button
-              onClick={openNew}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
-            >
-              <Plus size={20} />
-              {t('estimation.addNew')}
-            </button>
-          )
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {canEdit && (
+              <button
+                onClick={openNew}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+              >
+                <Plus size={20} />
+                {t('estimation.addNew')}
+              </button>
+            )}
+          </div>
         }
       >
         {t('estimation.pageTitle')}
       </PageHeading>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={t('estimation.searchPlaceholder')}
-          className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-        />
-      </div>
+      <CollapsibleSearchPanel open={showSearch}>
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('estimation.searchPlaceholder')}
+            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+          />
+        </div>
+      </CollapsibleSearchPanel>
 
       <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
