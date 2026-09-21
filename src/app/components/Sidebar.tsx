@@ -166,7 +166,7 @@ export function Sidebar({
           style={{ top: hoveredTooltip.top, left: hoveredTooltip.left + 12 }}
         >
           <div className="relative bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 px-3.5 py-2 whitespace-nowrap">
-            <div className="absolute right-full top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-100 rotate-45" />
+            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[7px] border-r-white" />
             {hoveredTooltip.label}
           </div>
         </div>,
