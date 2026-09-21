@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
@@ -40,6 +40,17 @@ const defaultColumnLabels = (t: (key: any) => string): EstimationColumnLabels =>
 const totalAmount = (est: Estimation) => est.lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
 
 const OPEN_ESTIMATION_KEY = 'puja-open-estimation-id';
+
+// Module-scope (not component/React state), so it only resets on a real
+// browser refresh (fresh JS module load) — NOT on a React remount, which
+// is what happens every time the sidebar switches away from Estimation
+// and back (App.tsx only renders <EstimationPage> while currentPage ===
+// 'estimation', so it fully unmounts/remounts on every menu switch). This
+// flag makes sure sessionStorage-based restore only fires once per actual
+// page load, so navigating Estimation -> another menu -> Estimation always
+// lands back on the list, while an actual browser refresh mid-detail-view
+// still restores that same detail page.
+let hasRestoredOpenEstimationThisPageLoad = false;
 
 // Budgeting/projection tool, separate from the actual Expenses module.
 // List view (like Tasks) of named estimations; clicking one opens a
@@ -112,15 +123,18 @@ export function EstimationPage({
     }
   };
 
-  // Restore the open detail page across a refresh — the list<->detail
-  // switch is local component state, not part of the URL, so without this
-  // reloading the page always dropped back to the list. Only restores
-  // *existing, saved* estimations (never an unsaved "new" draft), and only
-  // once estimationsList has actually loaded from Supabase.
-  const restoredRef = useRef(false);
+  // Restore the open detail page across a real browser refresh — the
+  // list<->detail switch is local component state, not part of the URL,
+  // so without this reloading the page always dropped back to the list.
+  // Gated on the module-scope flag (not just this component's own ref) so
+  // it fires at most once per actual page load, not every time you switch
+  // menus away from Estimation and back — that should always land on the
+  // list, same as Tasks' modal already does. Only restores *existing,
+  // saved* estimations (never an unsaved "new" draft), and only once
+  // estimationsList has actually loaded from Supabase.
   useEffect(() => {
-    if (restoredRef.current || view !== 'list' || estimationsList.length === 0) return;
-    restoredRef.current = true;
+    if (hasRestoredOpenEstimationThisPageLoad || view !== 'list' || estimationsList.length === 0) return;
+    hasRestoredOpenEstimationThisPageLoad = true;
     let openId: string | null = null;
     try {
       openId = sessionStorage.getItem(OPEN_ESTIMATION_KEY);
