@@ -251,7 +251,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     const f = appliedFilters;
     if (f.amountMin && (m.membershipAmount ?? -1) < parseFloat(f.amountMin)) return false;
     if (f.amountMax && (m.membershipAmount ?? Infinity) > parseFloat(f.amountMax)) return false;
-    if (f.billVoucher && !(m.membershipBillNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.designation && m.role !== f.designation) return false;
     if (f.status && m.membershipPaymentStatus !== f.status) return false;
     if (f.paidMethod && m.membershipPaidMethod !== f.paidMethod) return false;
     if (f.phone && !(m.phone || '').includes(f.phone.trim())) return false;
@@ -298,8 +298,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         resultCount={filteredMembers.length}
         totalCount={members.length}
         showAmount
-        showBillVoucher
-        billVoucherLabel={t('chanda.billNumber')}
+        designationOptions={ROLES.map(r => ({ value: r.value, label: t(r.labelKey) }))}
         statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
         paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
         showDateRange

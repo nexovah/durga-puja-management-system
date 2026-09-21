@@ -12,10 +12,11 @@ export interface TableSearchFilters {
   paidMethod: string;
   phone: string;
   inKind: string;
+  designation: string;
 }
 
 export const emptyTableSearchFilters: TableSearchFilters = {
-  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '', inKind: '',
+  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '', inKind: '', designation: '',
 };
 
 export const hasActiveTableFilters = (f: TableSearchFilters) => Object.values(f).some(v => v.trim() !== '');
@@ -42,6 +43,8 @@ interface TableSearchBarProps {
   showPhone?: boolean;
   inKindOptions?: Option[];
   inKindLabel?: string;
+  designationOptions?: Option[]; // Members-only: filters by Member.role
+  designationLabel?: string;
 }
 
 // Per-page search + advanced filter bar — lives in the page body, directly
@@ -53,11 +56,11 @@ export function TableSearchBar({
   query, onQueryChange, placeholder, filters, onFiltersChange, onSearch, onClear, filtersActive,
   resultCount, totalCount,
   showAmount, showBillVoucher, billVoucherLabel, statusOptions, paidMethodOptions, showDateRange, showPhone,
-  inKindOptions, inKindLabel,
+  inKindOptions, inKindLabel, designationOptions, designationLabel,
 }: TableSearchBarProps) {
   const { t } = useLanguage();
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone || inKindOptions;
+  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone || inKindOptions || designationOptions;
 
   const handleSearch = () => {
     onSearch();
@@ -179,6 +182,21 @@ export function TableSearchBar({
                 >
                   <option value="">{t('search.any')}</option>
                   {inKindOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {designationOptions && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{designationLabel || t('search.designation')}</label>
+                <select
+                  value={filters.designation}
+                  onChange={(e) => onFiltersChange({ ...filters, designation: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('search.any')}</option>
+                  {designationOptions.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
