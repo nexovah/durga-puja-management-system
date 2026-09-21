@@ -42,11 +42,11 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <div className="text-center mb-6">
           <div className="inline-block relative mb-4">
             {/* Main logo circle with border */}
-            <div className="w-40 h-40 sm:w-56 sm:h-56 mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
+            <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
               {/* Inner circle for logo */}
-              <div className="w-36 h-36 sm:w-52 sm:h-52 bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
+              <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
                 {isEmoji ? (
-                  <div className="text-6xl sm:text-9xl">{logo}</div>
+                  <div className="text-5xl sm:text-7xl">{logo}</div>
                 ) : logo ? (
                   <img
                     src={logo}
@@ -54,17 +54,15 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                     className="w-full h-full object-contain rounded-full"
                   />
                 ) : (
-                  <div className="text-6xl sm:text-9xl">🕉️</div>
+                  <div className="text-5xl sm:text-7xl">🕉️</div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="bg-white px-6 py-3 rounded-full inline-block shadow-lg">
-            <h1 className="text-xl font-bold text-orange-600">
-              {t('login.systemTitle')}
-            </h1>
-          </div>
+          <h1 className="text-[15px] font-bold text-orange-600">
+            {t('login.systemTitle')}
+          </h1>
         </div>
 
         {/* Login Form */}
@@ -122,8 +120,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-700 leading-relaxed">
-              {t('login.tagline1')}<br />
-              {t('login.tagline2')}
+              {t('login.tagline1')} {t('login.tagline2')}
             </p>
           </div>
         </div>
