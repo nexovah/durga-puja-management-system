@@ -50,9 +50,12 @@ const ROLES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'secretary', labelKey: 'members.role.secretary' },
   { value: 'assistantSecretary', labelKey: 'members.role.assistantSecretary' },
   { value: 'treasurer', labelKey: 'members.role.treasurer' },
+  { value: 'accountant', labelKey: 'members.role.accountant' },
   { value: 'executiveMember', labelKey: 'members.role.executiveMember' },
   { value: 'advisoryPatron', labelKey: 'members.role.advisoryPatron' },
   { value: 'volunteer', labelKey: 'members.role.volunteer' },
+  { value: 'chiefAdviser', labelKey: 'members.role.chiefAdviser' },
+  { value: 'adviser', labelKey: 'members.role.adviser' },
 ];
 
 const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
