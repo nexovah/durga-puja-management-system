@@ -10,7 +10,6 @@ type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' |
 interface SidebarProps {
   logo?: string;
   association: string;
-  regdLine?: string;
   currentPage: PageKey;
   onNavigate: (page: PageKey) => void;
   permissions?: {
@@ -35,7 +34,7 @@ interface SidebarProps {
 // Foldable to an icon-only rail on desktop (`collapsed`); becomes a
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
-  logo, association, regdLine, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
+  logo, association, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
 }: SidebarProps) {
   const { t } = useLanguage();
 
@@ -70,8 +69,7 @@ export function Sidebar({
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="font-bold text-sm text-gray-800 leading-snug line-clamp-2">{association}</p>
-            {regdLine && <p className="text-[10px] text-gray-400 leading-snug mt-0.5">{regdLine}</p>}
+            <p className="font-bold text-sm text-gray-900 leading-snug line-clamp-2">{association}</p>
           </div>
         )}
         <button
@@ -97,7 +95,7 @@ export function Sidebar({
               } ${
                 active
                   ? 'bg-orange-50 text-orange-600'
-                  : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+                  : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
               }`}
             >
               <Icon size={19} className="shrink-0" />
@@ -111,9 +109,9 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop rail — same flat gray as the page background, blending into
-          the browser edge (no border/shadow) per the reference design */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      {/* Desktop rail — flat gray (slightly darker than the page background),
+          blending into the browser edge (no border/shadow) per the reference design */}
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
