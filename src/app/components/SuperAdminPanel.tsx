@@ -195,7 +195,9 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
                 <th className="text-left px-4 py-2.5 font-medium">Slug</th>
                 <th className="text-left px-4 py-2.5 font-medium">Status</th>
                 <th className="text-left px-4 py-2.5 font-medium">Subscription</th>
+                <th className="text-left px-4 py-2.5 font-medium">Expires</th>
                 <th className="text-left px-4 py-2.5 font-medium">Users</th>
+                <th className="text-left px-4 py-2.5 font-medium">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -221,8 +223,14 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
                     </span>
                   </td>
                   <td className="px-4 py-3">{subscriptionBadge(tenant)}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    {tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt).toLocaleDateString() : '—'}
+                  </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                     {tenant.userCount}{tenant.maxUsers !== null ? ` / ${tenant.maxUsers}` : ''}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    {new Date(tenant.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
