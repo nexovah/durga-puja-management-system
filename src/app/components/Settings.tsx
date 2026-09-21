@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2 } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
@@ -20,7 +20,11 @@ interface SettingsProps {
   onDeleteUser: (userId: string) => Promise<boolean>;
   onSetUserActive: (userId: string, isActive: boolean) => Promise<User>;
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
+  initialTab?: SettingsTab;
+  tabRequestId?: number; // bumped by the caller each time it wants to force-select initialTab, even if it's the same tab as before
 }
+
+export type SettingsTab = 'committee' | 'password' | 'users' | 'developer' | 'language';
 
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   members: 'permission.members',
@@ -46,9 +50,16 @@ export function Settings({
   onDeleteUser,
   onSetUserActive,
   onChangeOwnPassword,
+  initialTab,
+  tabRequestId,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'committee' | 'password' | 'users' | 'developer' | 'language'>('committee');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'committee');
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabRequestId]);
   const [committeeForm, setCommitteeForm] = useState(committeeInfo);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',

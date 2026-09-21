@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -10,7 +10,7 @@ import { Expenses } from './components/Expenses';
 import { Vendors } from './components/Vendors';
 import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
-import { Settings } from './components/Settings';
+import { Settings, SettingsTab } from './components/Settings';
 import { ActivityLog } from './components/ActivityLog';
 import { Tasks } from './components/Tasks';
 import { GlobalSearch } from './components/GlobalSearch';
@@ -378,6 +378,14 @@ export default function App() {
     setMobileNavOpen(false);
   }, [currentPage]);
 
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('committee');
+  const [settingsTabRequestId, setSettingsTabRequestId] = useState(0);
+  const goToSettingsTab = (tab: SettingsTab) => {
+    setSettingsTab(tab);
+    setSettingsTabRequestId(id => id + 1);
+    setCurrentPage('settings');
+  };
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -690,7 +698,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               />
             </div>
 
-            <ProfileMenu currentUser={currentUser} onLogout={handleLogout} />
+            <ProfileMenu
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onGoToSettingsTab={goToSettingsTab}
+              showSettings={!!currentUser?.permissions.settings}
+            />
           </div>
         </div>
 
@@ -774,6 +787,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onDeleteUser={handleDeleteUser}
             onSetUserActive={handleSetUserActive}
             onChangeOwnPassword={handleChangeOwnPassword}
+            initialTab={settingsTab}
+            tabRequestId={settingsTabRequestId}
           />
         )}
         {currentPage === 'activityLog' && (
@@ -801,9 +816,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 function ProfileMenu({
   currentUser,
   onLogout,
+  onGoToSettingsTab,
+  showSettings,
 }: {
   currentUser: User | null;
   onLogout: () => void;
+  onGoToSettingsTab: (tab: SettingsTab) => void;
+  showSettings: boolean;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -819,6 +838,11 @@ function ProfileMenu({
     return () => document.removeEventListener('mousedown', handleClickOutside);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const goTo = (tab: SettingsTab) => {
+    onGoToSettingsTab(tab);
+    setOpen(false);
+  };
 
   return (
     <div ref={containerRef} className="relative shrink-0">
@@ -836,12 +860,72 @@ function ProfileMenu({
         <ChevronDown size={16} className="text-gray-400 hidden sm:block" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-30">
+          <div className="flex items-center gap-3 px-4 py-4">
+            <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-base shrink-0">
+              {(currentUser?.name || '?').charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-gray-800 truncate">{currentUser?.name}</p>
+              <p className="text-xs text-gray-500 truncate">
+                {currentUser?.username ? `@${currentUser.username} · ` : ''}{currentUser?.isAdmin ? t('header.admin') : t('header.user')}
+              </p>
+            </div>
+          </div>
+
+          {showSettings && (
+            <>
+              <div className="border-t border-gray-100" />
+              <div className="py-1">
+                <button
+                  onClick={() => goTo('committee')}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                >
+                  <Building2 size={18} />
+                  {t('settings.tab.committee')}
+                </button>
+                <button
+                  onClick={() => goTo('password')}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                >
+                  <Lock size={18} />
+                  {t('settings.tab.password')}
+                </button>
+                {currentUser?.isAdmin && (
+                  <button
+                    onClick={() => goTo('users')}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                  >
+                    <UsersIcon size={18} />
+                    {t('settings.tab.users')}
+                  </button>
+                )}
+                <button
+                  onClick={() => goTo('language')}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                >
+                  <Languages size={18} />
+                  {t('settings.tab.language')}
+                </button>
+                {currentUser?.isAdmin && (
+                  <button
+                    onClick={() => goTo('developer')}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                  >
+                    <Code size={18} />
+                    {t('settings.tab.developer')}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="border-t border-gray-100" />
           <button
             onClick={() => { onLogout(); setOpen(false); }}
-            className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+            className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
           >
-            <LogOut size={16} />
+            <LogOut size={18} />
             {t('header.logout')}
           </button>
         </div>
