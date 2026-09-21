@@ -14,7 +14,7 @@ export function CollapsibleSearchPanel({ open, children }: CollapsibleSearchPane
         open ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'
       }`}
     >
-      <div className="overflow-hidden min-h-0">
+      <div className="overflow-hidden min-h-0 p-0.5 -m-0.5">
         {children}
       </div>
     </div>
