@@ -134,7 +134,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+        <div className="bg-white rounded-xl p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalChanda')}</h3>
             <TrendingUp className="text-green-500" size={24} />
@@ -143,7 +143,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500">
+        <div className="bg-white rounded-xl p-6 border-l-4 border-emerald-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalDonationAds')}</h3>
             <Gift className="text-emerald-500" size={24} />
@@ -152,7 +152,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-violet-500">
+        <div className="bg-white rounded-xl p-6 border-l-4 border-violet-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalMembership')}</h3>
             <Users className="text-violet-500" size={24} />
@@ -161,7 +161,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 mt-1">{membersPaidCount} {t('treasury.membersPaid')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-sky-500">
+        <div className="bg-white rounded-xl p-6 border-l-4 border-sky-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.loansOutstanding')}</h3>
             <Landmark className="text-sky-500" size={24} />
@@ -170,7 +170,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 mt-1">{loansList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
+        <div className="bg-white rounded-xl p-6 border-l-4 border-red-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalExpenses')}</h3>
             <TrendingDown className="text-red-500" size={24} />
@@ -179,7 +179,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 mt-1">{expenses.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className={`bg-white rounded-xl shadow-md p-6 border-l-4 ${balance >= 0 ? 'border-purple-500' : 'border-orange-500'}`}>
+        <div className={`bg-white rounded-xl p-6 border-l-4 ${balance >= 0 ? 'border-purple-500' : 'border-orange-500'}`}>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('treasury.currentBalance')}</h3>
             <Wallet className={balance >= 0 ? 'text-purple-500' : 'text-orange-500'} size={24} />
@@ -194,7 +194,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       </div>
 
       {/* Monthly Report */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
         <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.monthlyReport')}</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -246,7 +246,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Donors */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.topDonors')}</h3>
           <div className="space-y-3">
             {topDonors.map((donor, index) => (
@@ -267,7 +267,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
         </div>
 
         {/* Expense Categories */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.expenseCategories')}</h3>
           <div className="space-y-3">
             {expenseCategories.map((cat, index) => {

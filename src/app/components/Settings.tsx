@@ -248,7 +248,7 @@ export function Settings({
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200 overflow-x-auto">
           <button
             onClick={() => setActiveTab('committee')}

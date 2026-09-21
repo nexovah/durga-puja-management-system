@@ -124,7 +124,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
   const netBalance = totalIncome - totalExpense;
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-4 sm:p-5 border border-gray-200">
+    <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">

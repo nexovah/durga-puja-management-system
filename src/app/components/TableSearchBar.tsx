@@ -67,7 +67,7 @@ export function TableSearchBar({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

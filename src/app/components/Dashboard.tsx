@@ -81,7 +81,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
         {statTiles.map((tile, index) => (
           <div
             key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl p-3.5 sm:p-5 transition-all cursor-pointer flex items-center gap-3 sm:gap-4`}
           >
             <div className="bg-white/20 p-2.5 sm:p-3 rounded-xl shrink-0">
               <tile.icon className="text-white" size={22} />
@@ -105,7 +105,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
         {actionTiles.map((tile, index) => (
           <div
             key={index}
-            className={`bg-gradient-to-br ${tile.color} rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 aspect-square sm:aspect-auto sm:h-[4.5rem] p-2`}
+            className={`bg-gradient-to-br ${tile.color} rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 aspect-square sm:aspect-auto sm:h-[4.5rem] p-2`}
           >
             <tile.icon className="text-white" size={18} />
             <p className="text-white text-[11px] sm:text-xs font-bold leading-tight">{tile.title}</p>
@@ -114,7 +114,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
       </div>
 
       {/* Year Selector and Download */}
-      <div className="flex gap-3 items-center bg-white rounded-xl p-3 sm:p-4 shadow-md flex-wrap">
+      <div className="flex gap-3 items-center bg-white rounded-xl p-3 sm:p-4 border border-gray-200 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <div className="bg-orange-500 p-2 rounded-lg shrink-0">
             <Calendar className="text-white" size={20} />

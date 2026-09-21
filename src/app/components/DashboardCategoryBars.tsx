@@ -43,7 +43,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-4 sm:p-5 border border-gray-200 h-full flex flex-col">
+    <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 h-full flex flex-col">
       <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2 mb-3">
         <BarChart3 size={20} className="text-orange-600" />
         {t('dashboard.chart.pillars.title')}

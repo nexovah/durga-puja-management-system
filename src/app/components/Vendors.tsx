@@ -109,7 +109,7 @@ export function Vendors({ expenses }: VendorsProps) {
 
       {/* Vendor detail panel */}
       {viewingVendor && (
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-gray-800">{viewingVendor.name}</h3>
@@ -172,7 +172,7 @@ export function Vendors({ expenses }: VendorsProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">

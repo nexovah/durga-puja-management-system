@@ -640,28 +640,28 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-green-500">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.total')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-amber-500">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-amber-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
             <HandCoins className="text-amber-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-orange-500">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount1')}</h3>
             <Sparkles className="text-orange-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-red-500">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-red-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount2')}</h3>
             <Flame className="text-red-500" size={24} />
@@ -671,7 +671,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       </div>
 
       {/* Chanda List */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">

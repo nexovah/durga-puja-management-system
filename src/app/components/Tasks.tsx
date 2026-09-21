@@ -387,7 +387,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       </div>
 
       {/* Task List */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
