@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
@@ -39,6 +41,7 @@ export function Sidebar({
   logo, association, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
 }: SidebarProps) {
   const { t } = useLanguage();
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
 
   const groups: { label: string; items: NavItem[] }[] = [
     {
@@ -113,30 +116,18 @@ export function Sidebar({
                   const Icon = item.icon;
                   const active = currentPage === item.key;
                   return (
-                    <div key={item.key} className={collapsed ? 'relative group/tooltip' : undefined}>
-                      <button
-                        onClick={() => handleSelect(item.key)}
-                        className={`w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
-                          collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
-                        } ${
-                          active
-                            ? 'bg-orange-50 text-orange-600'
-                            : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
-                        }`}
-                      >
-                        <Icon size={19} className="shrink-0" />
-                        {!collapsed && <span className="truncate">{item.label}</span>}
-                      </button>
-
-                      {collapsed && (
-                        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 opacity-0 scale-95 group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100 transition-all duration-150 origin-left">
-                          <div className="relative bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 px-3.5 py-2 whitespace-nowrap">
-                            <div className="absolute right-full top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-100 rotate-45" />
-                            {item.label}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <SidebarNavButton
+                      key={item.key}
+                      Icon={Icon}
+                      label={item.label}
+                      active={active}
+                      collapsed={collapsed}
+                      onClick={() => handleSelect(item.key)}
+                      onHoverChange={(rect) => {
+                        if (!collapsed) return;
+                        setHoveredTooltip(rect ? { label: item.label, top: rect.top + rect.height / 2, left: rect.right } : null);
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -164,6 +155,60 @@ export function Sidebar({
           </aside>
         </div>
       )}
+
+      {/* Collapsed-icon tooltip — portaled to <body> so it's never clipped by
+          the nav list's own overflow-y:auto (which forces overflow-x to
+          clip too, per the CSS overflow spec), fixed-positioned from the
+          hovered button's live bounding rect. */}
+      {hoveredTooltip && createPortal(
+        <div
+          className="pointer-events-none fixed z-[100] -translate-y-1/2"
+          style={{ top: hoveredTooltip.top, left: hoveredTooltip.left + 12 }}
+        >
+          <div className="relative bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 px-3.5 py-2 whitespace-nowrap">
+            <div className="absolute right-full top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white border-l border-b border-gray-100 rotate-45" />
+            {hoveredTooltip.label}
+          </div>
+        </div>,
+        document.body
+      )}
     </>
+  );
+}
+
+function SidebarNavButton({
+  Icon,
+  label,
+  active,
+  collapsed,
+  onClick,
+  onHoverChange,
+}: {
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+  onHoverChange: (rect: DOMRect | null) => void;
+}) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <button
+      ref={buttonRef}
+      onClick={onClick}
+      onMouseEnter={() => onHoverChange(buttonRef.current?.getBoundingClientRect() || null)}
+      onMouseLeave={() => onHoverChange(null)}
+      className={`w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+        collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
+      } ${
+        active
+          ? 'bg-orange-50 text-orange-600'
+          : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+      }`}
+    >
+      <Icon size={19} className="shrink-0" />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </button>
   );
 }
