@@ -58,6 +58,8 @@ const PAID_THROUGH_OPTIONS: { value: PaidThrough; labelKey: TranslationKey }[] =
   { value: 'notSelected', labelKey: 'expenses.paidThrough.notSelected' },
   { value: 'cash', labelKey: 'expenses.paidThrough.cash' },
   { value: 'check', labelKey: 'expenses.paidThrough.check' },
+  { value: 'qrPayment', labelKey: 'expenses.paidThrough.qrPayment' },
+  { value: 'onlineBanking', labelKey: 'expenses.paidThrough.onlineBanking' },
 ];
 
 const PARTIAL_LABEL_KEYS: TranslationKey[] = [

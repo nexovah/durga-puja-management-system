@@ -170,7 +170,7 @@ export interface DonationAd {
 }
 
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
-export type PaidThrough = 'notSelected' | 'cash' | 'check';
+export type PaidThrough = 'notSelected' | 'cash' | 'check' | 'qrPayment' | 'onlineBanking';
 
 export interface Expense {
   id: string;
