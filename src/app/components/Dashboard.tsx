@@ -82,7 +82,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
           return (
             <div
               key={index}
-              className={`bg-white dark:bg-gray-900 rounded-xl p-3.5 sm:p-5 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
+              className={`bg-white dark:bg-gray-900 rounded-xl p-3.5 sm:p-5 border border-gray-200 dark:border-gray-700 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
             >
               <div className={`${accent.iconBg} p-2.5 sm:p-3 rounded-xl shrink-0`}>
                 <tile.icon className={accent.icon} size={22} />

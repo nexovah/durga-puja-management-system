@@ -306,14 +306,14 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('members.widget.totalPayments')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalMembershipPayments.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-blue-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 border-l-4 border-blue-500">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('members.widget.totalMembers')}</h3>
             <Users className="text-blue-500" size={24} />
