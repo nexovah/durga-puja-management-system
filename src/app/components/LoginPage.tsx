@@ -66,7 +66,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl p-8 border-2 border-orange-200">
+        <div className="bg-white dark:bg-gray-950 rounded-3xl shadow-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
