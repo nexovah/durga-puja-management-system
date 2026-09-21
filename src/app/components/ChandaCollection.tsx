@@ -402,7 +402,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 />
                 <button
                   onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
                 >
                   <Upload size={20} />
                   {t('common.import')}
@@ -411,7 +411,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
@@ -480,7 +480,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
             >
               {t('common.cancel')}
             </button>
@@ -489,18 +489,18 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       >
           <form id="chanda-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.donorName')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')} *</label>
               <input
                 type="text"
                 required
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.donorNamePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amountLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amountLabel')} *</label>
               <input
                 type="number"
                 required
@@ -508,44 +508,44 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.amountPlaceholder')}
               />
             </div>
 
             <div className="md:col-span-2 grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amount1Label')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amount1Label')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.amount1}
                   onChange={(e) => handleSubAmountChange('amount1', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('chanda.amountPlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.amount2Label')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amount2Label')}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.amount2}
                   onChange={(e) => handleSubAmountChange('amount2', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('chanda.amountPlaceholder')}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
               <select
                 value={formData.paidMethod}
                 onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAID_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
@@ -554,12 +554,12 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.paymentStatus')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
               <select
                 required
                 value={formData.paymentStatus}
                 onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAYMENT_STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
@@ -569,7 +569,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
             {isPartial && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.partialAmountLabel')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.partialAmountLabel')} *</label>
                 <input
                   type="number"
                   required
@@ -578,58 +578,58 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                   max={formData.amount || undefined}
                   value={formData.partialAmount}
                   onChange={(e) => setFormData({ ...formData, partialAmount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('chanda.partialAmountPlaceholder')}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
               <input
                 type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.billNumber')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.billNumber')}</label>
               <input
                 type="text"
                 value={formData.billNumber}
                 onChange={(e) => setFormData({ ...formData, billNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.billNumberPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone1')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone1')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone2')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone2')}</label>
               <input
                 type="tel"
                 value={formData.phone2}
                 onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.remarksPlaceholder')}
                 rows={2}
               />
@@ -639,30 +639,30 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.total')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.total')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-amber-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-amber-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.pending')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.pending')}</h3>
             <HandCoins className="text-amber-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-orange-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount1')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount1')}</h3>
             <Sparkles className="text-orange-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-red-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-red-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('chanda.widget.amount2')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount2')}</h3>
             <Flame className="text-red-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalAmount2.toLocaleString()}</p>
@@ -670,28 +670,28 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       </div>
 
       {/* Chanda List */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.paidMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.billNumber')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone2')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.donorName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.billNumber')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone1')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone2')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((chanda) => {
                 const status = chanda.paymentStatus || 'paid';
                 return (
-                  <tr key={chanda.id} className="hover:bg-gray-50">
+                  <tr key={chanda.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-6 py-4 text-sm font-medium">
                       <button
                         type="button"
@@ -708,24 +708,24 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                         ? 'text-yellow-600'
                         : 'text-green-600'
                     }`}>₹{chanda.amount.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
                         {statusLabel(status)}
                       </span>
                       {status === 'partial' && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           ₹{(chanda.partialAmount || 0).toLocaleString()} / ₹{chanda.amount.toLocaleString()}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                       {new Date(chanda.date).toLocaleDateString(locale)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.billNumber || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.phone2 || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{chanda.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.billNumber || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone2 || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.remarks || '-'}</td>
                     {(canEdit || canDelete) && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -754,9 +754,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </tbody>
             {filteredChanda.length > 0 && (
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredChanda.reduce((sum, c) => sum + getChandaCreditAmount(c), 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
@@ -765,7 +765,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
           </table>
           {chandaList.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('chanda.empty')}
             </div>
           )}

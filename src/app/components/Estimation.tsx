@@ -131,7 +131,7 @@ export function EstimationPage({
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <button
                 onClick={backToList}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <ArrowLeft size={18} />
                 {t('estimation.backToList')}
@@ -151,34 +151,34 @@ export function EstimationPage({
           {t('estimation.pageTitle')}
         </PageHeading>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('estimation.titleLabel')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('estimation.titleLabel')}</label>
             <input
               type="text"
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               disabled={!canEdit}
               placeholder={t('estimation.titlePlaceholder')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
             />
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-14">{t('estimation.serialNo')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{t('estimation.itemTitle')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-44">{t('estimation.date')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase w-40">{t('estimation.amount')}</th>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-14">{t('estimation.serialNo')}</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{t('estimation.itemTitle')}</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-44">{t('estimation.date')}</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-40">{t('estimation.amount')}</th>
                   {canEdit && <th className="px-2 py-2 w-10" />}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {draft.lineItems.map((item, index) => (
                   <tr key={item.id}>
-                    <td className="px-2 py-2 text-sm text-gray-500">{index + 1}</td>
+                    <td className="px-2 py-2 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
                     <td className="px-2 py-2">
                       <input
                         type="text"
@@ -186,7 +186,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { title: e.target.value })}
                         disabled={!canEdit}
                         placeholder={t('estimation.itemTitlePlaceholder')}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50"
+                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -195,7 +195,7 @@ export function EstimationPage({
                         value={item.date}
                         onChange={(e) => updateDraftItem(item.id, { date: e.target.value })}
                         disabled={!canEdit}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50"
+                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -207,7 +207,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
                         disabled={!canEdit}
                         placeholder="0"
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50"
+                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     {canEdit && (
@@ -224,13 +224,13 @@ export function EstimationPage({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td colSpan={3} className="px-2 py-3 text-sm font-semibold text-gray-700 text-right">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td colSpan={3} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
                     {t('estimation.totalItems')}: {draft.lineItems.filter(i => i.title.trim() !== '' || i.amount).length}
                     {'   '}·{'   '}
                     {t('estimation.totalAmount')}
                   </td>
-                  <td className="px-2 py-3 text-sm font-bold text-gray-900">₹{draftTotal.toLocaleString()}</td>
+                  <td className="px-2 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">₹{draftTotal.toLocaleString()}</td>
                   {canEdit && <td />}
                 </tr>
               </tfoot>
@@ -240,7 +240,7 @@ export function EstimationPage({
           {canEdit && (
             <button
               onClick={addRow}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
             >
               <Plus size={16} />
               {t('estimation.addRow')}
@@ -275,32 +275,32 @@ export function EstimationPage({
       </PageHeading>
 
       <CollapsibleSearchPanel open={showSearch}>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('estimation.searchPlaceholder')}
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
           />
         </div>
       </CollapsibleSearchPanel>
 
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('estimation.titleLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('estimation.totalItems')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('estimation.totalAmount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+              <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.titleLabel')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.totalItems')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.totalAmount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((est) => (
-                <tr key={est.id} className="hover:bg-gray-50">
+                <tr key={est.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 text-sm font-medium">
                     <button
                       type="button"
@@ -310,9 +310,9 @@ export function EstimationPage({
                       {est.title || '-'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{est.lineItems.length}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">₹{totalAmount(est).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{est.lineItems.length}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100">₹{totalAmount(est).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {new Date(est.createdAt).toLocaleDateString(locale)}
                   </td>
                   {(canEdit || canDelete) && (
@@ -343,7 +343,7 @@ export function EstimationPage({
           </table>
         </div>
         {estimationsList.length === 0 && (
-          <div className="text-center py-12 text-gray-500 flex flex-col items-center gap-2">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400 flex flex-col items-center gap-2">
             <Calculator size={28} className="text-gray-300" />
             {t('estimation.empty')}
           </div>

@@ -95,7 +95,7 @@ export function Vendors({ expenses }: VendorsProps) {
         action={
           <button
             onClick={handleExport}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
           >
             <Download size={20} />
             {t('common.export')}
@@ -105,15 +105,15 @@ export function Vendors({ expenses }: VendorsProps) {
         {t('vendors.pageTitle')}
       </PageHeading>
 
-      <p className="text-sm text-gray-500 -mt-4">{t('vendors.hint')}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 -mt-4">{t('vendors.hint')}</p>
 
       {/* Vendor detail panel */}
       {viewingVendor && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-xl font-bold text-gray-800">{viewingVendor.name}</h3>
-              <p className="text-sm text-gray-500 mt-0.5">{viewingVendor.contact || '-'}</p>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">{viewingVendor.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{viewingVendor.contact || '-'}</p>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {viewingVendor.categories.map(cat => (
                   <span key={cat} className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
@@ -122,48 +122,48 @@ export function Vendors({ expenses }: VendorsProps) {
                 ))}
               </div>
             </div>
-            <button onClick={() => setViewingKey(null)} className="text-gray-500 hover:text-gray-700 shrink-0">
+            <button onClick={() => setViewingKey(null)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 shrink-0">
               <X size={24} />
             </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-xs text-gray-600">{t('vendors.totalAmount')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalAmount')}</p>
               <p className="text-2xl font-bold text-green-600">₹{viewingVendor.totalAmount.toLocaleString()}</p>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-xs text-gray-600">{t('vendors.transactions')}</p>
-              <p className="text-2xl font-bold text-gray-800">{viewingVendor.entries.length}</p>
+            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.transactions')}</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{viewingVendor.entries.length}</p>
             </div>
           </div>
 
-          <h4 className="font-bold text-gray-800 mb-2">{t('vendors.paymentHistory')}</h4>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">{t('vendors.paymentHistory')}</h4>
+          <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('common.date')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('expenses.title')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('expenses.category')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('expenses.voucherNumber')}</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">{t('common.amount')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('common.remarks')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.title')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.voucherNumber')}</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {viewingVendor.entries.map((exp) => (
                   <tr key={exp.id}>
-                    <td className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {new Date(exp.date).toLocaleDateString(locale)}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-800">{exp.title}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600">{categoryLabel(exp.category)}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600">{exp.voucherNumber || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{exp.title}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{categoryLabel(exp.category)}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{exp.voucherNumber || '-'}</td>
                     <td className="px-4 py-2 text-sm text-green-600 font-bold text-right">
                       ₹{getExpenseCreditAmount(exp).toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">{exp.remarks || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{exp.remarks || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -172,24 +172,24 @@ export function Vendors({ expenses }: VendorsProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('vendors.name')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('vendors.contact')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('vendors.transactions')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('vendors.totalAmount')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.name')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.contact')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.transactions')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.totalAmount')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((g) => (
-                <tr key={g.key} className={`hover:bg-gray-50 ${viewingKey === g.key ? 'bg-orange-50' : ''}`}>
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{g.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{g.contact || '-'}</td>
+                <tr key={g.key} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${viewingKey === g.key ? 'bg-orange-50 dark:bg-orange-500/10' : ''}`}>
+                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{g.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{g.contact || '-'}</td>
                   <td className="px-6 py-4 text-sm">
                     <div className="flex flex-wrap gap-1">
                       {g.categories.map(cat => (
@@ -199,7 +199,7 @@ export function Vendors({ expenses }: VendorsProps) {
                       ))}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 text-right">{g.entries.length}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 text-right">{g.entries.length}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <button
@@ -215,7 +215,7 @@ export function Vendors({ expenses }: VendorsProps) {
             </tbody>
           </table>
           {vendorGroups.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('vendors.empty')}
             </div>
           )}

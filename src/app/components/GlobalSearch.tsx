@@ -110,7 +110,7 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   return (
     <div ref={wrapperRef} className="relative w-full max-w-md">
       <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -118,12 +118,12 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
           onFocus={() => setOpen(true)}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           placeholder={t('search.placeholder')}
-          className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+          className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
         />
         {query && (
           <button
             onClick={() => { setQuery(''); setOpen(false); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X size={15} />
           </button>
@@ -131,21 +131,21 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
       </div>
 
       {open && (
-        <div className="absolute left-0 right-0 sm:right-auto sm:w-[28rem] top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-40 p-4">
-          <p className="text-xs text-gray-400">{t('search.jumpHint')}</p>
+        <div className="absolute left-0 right-0 sm:right-auto sm:w-[28rem] top-full mt-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-40 p-4">
+          <p className="text-xs text-gray-400 dark:text-gray-500">{t('search.jumpHint')}</p>
 
           {query.trim() === '' ? (
-            <p className="text-sm text-gray-500 mt-3">{t('search.typeToSearch')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">{t('search.typeToSearch')}</p>
           ) : totalResults === 0 ? (
-            <p className="text-sm text-gray-500 mt-3">{t('search.noResults')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">{t('search.noResults')}</p>
           ) : (
             <div className="mt-3 max-h-[60vh] overflow-y-auto space-y-4">
                 {results.members.length > 0 && (
                   <ResultSection icon={<Users size={16} />} title={t('nav.members')} onSeeAll={() => handleSelect('members')}>
                     {results.members.map((m) => (
-                      <button key={m.id} onClick={() => handleSelect('members')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors">
-                        <p className="text-sm font-medium text-gray-800">{m.name}</p>
-                        <p className="text-xs text-gray-500">{label(`members.role.${m.role}`, m.role)}{m.phone ? ` · ${m.phone}` : ''}</p>
+                      <button key={m.id} onClick={() => handleSelect('members')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{m.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{label(`members.role.${m.role}`, m.role)}{m.phone ? ` · ${m.phone}` : ''}</p>
                       </button>
                     ))}
                   </ResultSection>
@@ -154,11 +154,11 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 {results.chanda.length > 0 && (
                   <ResultSection icon={<DollarSign size={16} />} title={t('nav.chanda')} onSeeAll={() => handleSelect('chanda')}>
                     {results.chanda.map((c) => (
-                      <button key={c.id} onClick={() => handleSelect('chanda')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors">
-                        <p className="text-sm font-medium text-gray-800">
+                      <button key={c.id} onClick={() => handleSelect('chanda')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {c.donorName} <span className="text-green-600 font-bold">₹{c.amount.toLocaleString()}</span>
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {label(`chanda.status.${c.paymentStatus}`, c.paymentStatus)}{c.phone ? ` · ${c.phone}` : ''}{c.billNumber ? ` · #${c.billNumber}` : ''}
                         </p>
                       </button>
@@ -169,11 +169,11 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 {results.donationAds.length > 0 && (
                   <ResultSection icon={<Gift size={16} />} title={t('nav.donationAds')} onSeeAll={() => handleSelect('donationAds')}>
                     {results.donationAds.map((d) => (
-                      <button key={d.id} onClick={() => handleSelect('donationAds')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors">
-                        <p className="text-sm font-medium text-gray-800">
+                      <button key={d.id} onClick={() => handleSelect('donationAds')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {d.donorName || d.companyName || '-'} <span className="text-green-600 font-bold">₹{d.amount.toLocaleString()}</span>
                         </p>
-                        <p className="text-xs text-gray-500">{label(`donationAds.category.${d.category}`, d.category)}{d.phone ? ` · ${d.phone}` : ''}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{label(`donationAds.category.${d.category}`, d.category)}{d.phone ? ` · ${d.phone}` : ''}</p>
                       </button>
                     ))}
                   </ResultSection>
@@ -182,11 +182,11 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 {results.expenses.length > 0 && (
                   <ResultSection icon={<TrendingDown size={16} />} title={t('nav.expenses')} onSeeAll={() => handleSelect('expenses')}>
                     {results.expenses.map((exp) => (
-                      <button key={exp.id} onClick={() => handleSelect('expenses')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors">
-                        <p className="text-sm font-medium text-gray-800">
+                      <button key={exp.id} onClick={() => handleSelect('expenses')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {exp.title} <span className="text-red-600 font-bold">₹{exp.amount.toLocaleString()}</span>
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {label(`expenses.status.${exp.paymentStatus}`, exp.paymentStatus)} · {label(`expenses.category.${exp.category}`, exp.category)}{exp.voucherNumber ? ` · #${exp.voucherNumber}` : ''}
                         </p>
                       </button>
@@ -224,7 +224,7 @@ function ResultSection({
           {t('search.seeAll')}
         </button>
       </div>
-      <div className="divide-y divide-gray-100">{children}</div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-800">{children}</div>
     </div>
   );
 }

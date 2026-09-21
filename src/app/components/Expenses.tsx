@@ -436,7 +436,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 />
                 <button
                   onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
                 >
                   <Upload size={20} />
                   {t('common.import')}
@@ -445,7 +445,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
@@ -514,7 +514,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
             >
               {t('common.cancel')}
             </button>
@@ -523,18 +523,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       >
           <form id="expenses-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.title')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.title')} *</label>
               <input
                 type="text"
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.titlePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.amountLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.amountLabel')} *</label>
               <input
                 type="number"
                 required
@@ -542,18 +542,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.amountPlaceholder')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.paymentStatus')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paymentStatus')} *</label>
               <select
                 required
                 value={formData.paymentStatus}
                 onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as ExpensePaymentStatus })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAYMENT_STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
@@ -562,11 +562,11 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.paidThrough')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paidThrough')}</label>
               <select
                 value={formData.paidThrough}
                 onChange={(e) => setFormData({ ...formData, paidThrough: e.target.value as PaidThrough })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAID_THROUGH_OPTIONS.map((m) => (
                   <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
@@ -579,7 +579,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                   {PARTIAL_LABEL_KEYS.map((labelKey, index) => (
                     <div key={labelKey}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {t(labelKey)} {index === 0 ? '*' : ''}
                       </label>
                       <input
@@ -593,7 +593,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                           next[index] = e.target.value;
                           setFormData({ ...formData, partialAmounts: next });
                         }}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         placeholder="0"
                       />
                       <input
@@ -604,7 +604,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                           next[index] = e.target.value;
                           setFormData({ ...formData, partialDates: next });
                         }}
-                        className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                        className="w-full mt-2 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
                       />
                     </div>
                   ))}
@@ -620,22 +620,22 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
               <input
                 type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.category')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')} *</label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 <option value="">{t('expenses.selectCategory')}</option>
                 {categories.map((cat) => (
@@ -644,22 +644,22 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.voucherNumber')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.voucherNumber')}</label>
               <input
                 type="text"
                 value={formData.voucherNumber}
                 onChange={(e) => setFormData({ ...formData, voucherNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.voucherNumberPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.vendorName')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorName')}</label>
               <input
                 type="text"
                 value={formData.vendorName}
                 onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.vendorNamePlaceholder')}
                 list="vendor-name-suggestions"
                 autoComplete="off"
@@ -671,21 +671,21 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               </datalist>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('expenses.vendorContact')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorContact')}</label>
               <input
                 type="tel"
                 value={formData.vendorContact}
                 onChange={(e) => setFormData({ ...formData, vendorContact: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.vendorContactPlaceholder')}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.remarksPlaceholder')}
                 rows={2}
               />
@@ -695,44 +695,44 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
       {/* Category Summary — Treasury-style widgets, kept to one row */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
-        <div className="bg-white rounded-xl p-3 sm:p-4 border-l-4 border-green-500 shrink-0 min-w-[140px] sm:min-w-[160px]">
-          <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{t('expenses.widget.total')}</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border-l-4 border-green-500 shrink-0 min-w-[140px] sm:min-w-[160px]">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('expenses.widget.total')}</h3>
           <p className="text-lg sm:text-xl font-bold text-green-600">₹{totalExpenses.toLocaleString()}</p>
         </div>
         {categoryTotals.map((ct) => (
           <div
             key={ct.category}
-            className="bg-white rounded-xl p-3 sm:p-4 border-l-4 border-red-500 shrink-0 min-w-[140px] sm:min-w-[160px]"
+            className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border-l-4 border-red-500 shrink-0 min-w-[140px] sm:min-w-[160px]"
           >
-            <h3 className="text-xs sm:text-sm font-medium text-gray-600 truncate">{ct.label}</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{ct.label}</h3>
             <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
           </div>
         ))}
       </div>
 
       {/* Expenses List */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.title')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.paidThrough')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('expenses.category')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.title')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.paidThrough')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((expense) => {
                 const status = expense.paymentStatus || 'paid';
                 const partialSum = (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
                 return (
-                  <tr key={expense.id} className="hover:bg-gray-50">
+                  <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-6 py-4 text-sm font-medium">
                       <button
                         type="button"
@@ -754,13 +754,13 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         {statusLabel(status)}
                       </span>
                       {status === 'partial' && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           ₹{partialSum.toLocaleString()} / ₹{expense.amount.toLocaleString()}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{paidThroughLabel(expense.paidThrough || 'notSelected')}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidThroughLabel(expense.paidThrough || 'notSelected')}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                       {new Date(expense.date).toLocaleDateString(locale)}
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -768,7 +768,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         {categoryLabel(expense.category)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{expense.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expense.remarks || '-'}</td>
                     {(canEdit || canDelete) && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -797,9 +797,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </tbody>
             {filteredExpenses.length > 0 && (
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredExpenses.reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
@@ -808,7 +808,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
           </table>
           {expenses.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('expenses.empty')}
             </div>
           )}

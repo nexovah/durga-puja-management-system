@@ -356,7 +356,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 />
                 <button
                   onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
                 >
                   <Upload size={20} />
                   {t('common.import')}
@@ -365,7 +365,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             )}
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
@@ -435,7 +435,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
             >
               {t('common.cancel')}
             </button>
@@ -444,12 +444,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       >
           <form id="donation-ads-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.category')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')} *</label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory, inKind: '', voucherNumber: '' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 <option value="ads">{t('donationAds.category.ads')}</option>
                 <option value="donation">{t('donationAds.category.donation')}</option>
@@ -457,7 +457,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('donationAds.donorName')} {isDonation ? '*' : ''}
               </label>
               <input
@@ -465,43 +465,43 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 required={isDonation}
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.donorNamePlaceholder')}
               />
             </div>
 
             {!isDonation && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.companyName')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.companyName')}</label>
                 <input
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('donationAds.companyNamePlaceholder')}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.amountLabel')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.amountLabel')}</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.amountPlaceholder')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
               <select
                 value={formData.paidMethod}
                 onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAID_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
@@ -511,22 +511,22 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
             {isDonation ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.inKind')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.inKind')}</label>
                 <input
                   type="text"
                   value={formData.inKind}
                   onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('donationAds.inKindPlaceholder')}
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.adsCategory')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.adsCategory')}</label>
                 <select
                   value={formData.inKind}
                   onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 >
                   <option value="">{t('donationAds.selectAdsCategory')}</option>
                   {ADS_CATEGORIES.map((cat) => (
@@ -537,56 +537,56 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}</label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
 
             {isDonation && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('donationAds.voucherNumber')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.voucherNumber')}</label>
                 <input
                   type="text"
                   value={formData.voucherNumber}
                   onChange={(e) => setFormData({ ...formData, voucherNumber: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('donationAds.voucherNumberPlaceholder')}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone1')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone1')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.phonePlaceholder')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone2')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone2')}</label>
               <input
                 type="tel"
                 value={formData.phone2}
                 onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.phonePlaceholder')}
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.remarksPlaceholder')}
                 rows={2}
               />
@@ -597,23 +597,23 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-purple-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-purple-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.total')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.total')}</h3>
             <Wallet className="text-purple-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-emerald-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-emerald-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.donation')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
             <Gift className="text-emerald-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-emerald-600">₹{totalDonation.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-blue-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('donationAds.widget.ads')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
             <Megaphone className="text-blue-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">₹{totalAds.toLocaleString()}</p>
@@ -621,26 +621,26 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       </div>
 
       {/* List */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.companyName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.paidMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.category')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('donationAds.inKindOrAdsCategory')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.donorName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.companyName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.category')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.inKindOrAdsCategory')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone1')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 text-sm font-medium">
                     <button
                       type="button"
@@ -650,9 +650,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                       {item.donorName || item.companyName || '-'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.companyName || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.companyName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -660,12 +660,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                       {categoryLabel(item.category)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{inKindDisplay(item) || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{inKindDisplay(item) || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.phone || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{item.remarks || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.phone || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.remarks || '-'}</td>
                   {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -693,9 +693,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             </tbody>
             {filteredDonationAds.length > 0 && (
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredDonationAds.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
@@ -704,7 +704,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             )}
           </table>
           {donationAdsList.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('donationAds.empty')}
             </div>
           )}

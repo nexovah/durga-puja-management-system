@@ -43,7 +43,7 @@ export function ViewModal({ open, title, fields, onClose, onEdit }: ViewModalPro
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 sm:flex-none px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            className="flex-1 sm:flex-none px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             {t('common.close')}
           </button>
@@ -53,8 +53,8 @@ export function ViewModal({ open, title, fields, onClose, onEdit }: ViewModalPro
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {fields.map((f, i) => (
           <div key={i} className={f.fullWidth ? 'sm:col-span-2' : ''}>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{f.label}</div>
-            <div className={`text-sm whitespace-pre-wrap break-words ${f.valueClassName || 'text-gray-800'}`}>{f.value ?? '—'}</div>
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{f.label}</div>
+            <div className={`text-sm whitespace-pre-wrap break-words ${f.valueClassName || 'text-gray-800 dark:text-gray-200'}`}>{f.value ?? '—'}</div>
           </div>
         ))}
       </div>

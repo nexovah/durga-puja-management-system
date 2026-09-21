@@ -42,7 +42,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <div className="text-center mb-6">
           <div className="inline-block relative mb-4">
             {/* Main logo circle with border */}
-            <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
+            <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
               {/* Inner circle for logo */}
               <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
                 {isEmoji ? (
@@ -66,10 +66,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-orange-200">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl p-8 border-2 border-orange-200">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-base font-semibold text-gray-800 mb-3">
+              <label className="block text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
                 {t('login.userId')}
               </label>
               <input
@@ -82,7 +82,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-gray-800 mb-3">
+              <label className="block text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
                 {t('login.password')}
               </label>
               <div className="relative">
@@ -96,7 +96,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -119,7 +119,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-700 leading-relaxed">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
               {t('login.tagline1')} {t('login.tagline2')}
             </p>
           </div>

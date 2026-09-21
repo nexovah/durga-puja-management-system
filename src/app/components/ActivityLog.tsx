@@ -69,7 +69,7 @@ export function ActivityLog() {
         action={
           <button
             onClick={load}
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             {t('common.refresh')}
@@ -83,7 +83,7 @@ export function ActivityLog() {
         <select
           value={moduleFilter}
           onChange={e => setModuleFilter(e.target.value as any)}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
         >
           <option value="all">{t('activityLog.allModules')}</option>
           {modules.map(m => (
@@ -93,7 +93,7 @@ export function ActivityLog() {
         <select
           value={actionFilter}
           onChange={e => setActionFilter(e.target.value as any)}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
         >
           <option value="all">{t('activityLog.allActions')}</option>
           {actions.map(a => (
@@ -103,7 +103,7 @@ export function ActivityLog() {
         <select
           value={userFilter}
           onChange={e => setUserFilter(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white"
+          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
         >
           <option value="all">{t('activityLog.allUsers')}</option>
           {userOptions.map(([userId, userName]) => (
@@ -112,33 +112,33 @@ export function ActivityLog() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">{t('activityLog.col.time')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">{t('activityLog.col.user')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">{t('activityLog.col.action')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">{t('activityLog.col.module')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">{t('activityLog.col.details')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.time')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.user')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.action')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.module')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.details')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                     {t('activityLog.empty')}
                   </td>
                 </tr>
               )}
               {pagination.pageItems.map(entry => (
-                <tr key={entry.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-500">
+                <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
                     {new Date(entry.createdAt).toLocaleString(locale)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800">
-                    {entry.userName} <span className="text-gray-400 font-normal">({entry.username})</span>
+                  <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
+                    {entry.userName} <span className="text-gray-400 dark:text-gray-500 font-normal">({entry.username})</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${actionBadge[entry.action]}`}>
@@ -146,8 +146,8 @@ export function ActivityLog() {
                       {entry.recordCount > 1 ? ` (${entry.recordCount})` : ''}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-600">{moduleLabel(entry.module)}</td>
-                  <td className="px-4 py-3 text-gray-700">{entry.summary}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{moduleLabel(entry.module)}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{entry.summary}</td>
                 </tr>
               ))}
             </tbody>

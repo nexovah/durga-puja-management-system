@@ -4,6 +4,9 @@ Running log of updates made to this project. Newest entries on top.
 
 ---
 
+## 2026-09-21 (6)
+- **Dark mode**: new toggle (Sun/Moon icon, top bar) switches the whole CRM between light and dark, persisted in `localStorage`, defaults to OS preference. Implemented via a `ThemeContext.tsx` + Tailwind's `dark:` variant (already scaffolded in `globals.css` but unused until now) — every recurring neutral color token (white cards, gray text/borders/backgrounds, the sidebar/top bar's `#eceef1`) got a `dark:` companion class across all pages in one scripted pass, so it applies uniformly everywhere (tables, modals, tabs, search bars, widgets). Dashboard's charts (recharts) read the theme directly since their colors are inline SVG props, not Tailwind classes. Front-end only, no DB changes.
+
 ## 2026-09-21 (5)
 - **New "Estimation" module**: budgeting/projection tool under sidebar Essential, right after Tasks. Each estimation has a title + unlimited line items (title/date/amount), stored as a `line_items jsonb` column (`supabase/017_estimations.sql` — **run in Supabase SQL Editor**). List view shows title/item count/total/date like Tasks; clicking a title opens a full-width in-page detail editor (not a modal) with add/remove rows and a live-recomputed total. Gated by a new `estimation` permission (defaults on for existing users via the migration's JSONB merge). No creator-only edit restriction — anyone with page edit/delete permission can change any estimation.
 

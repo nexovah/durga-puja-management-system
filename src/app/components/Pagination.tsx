@@ -68,11 +68,11 @@ export function Pagination({
   const { nums, showLastSeparately } = getPageWindow(page, totalPages);
 
   const btnBase = 'min-w-[36px] h-9 px-2.5 flex items-center justify-center rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
-  const btnIdle = 'bg-white text-gray-600 border-gray-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200';
+  const btnIdle = 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 hover:border-orange-200';
   const btnActive = 'bg-orange-600 text-white border-orange-600';
 
   return (
-    <div className="px-4 sm:px-6 py-4 border-t border-gray-100 space-y-3">
+    <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           <button
@@ -106,7 +106,7 @@ export function Pagination({
 
           {showLastSeparately && (
             <>
-              <span className="px-1 text-gray-400 select-none">···</span>
+              <span className="px-1 text-gray-400 dark:text-gray-500 select-none">···</span>
               <button
                 onClick={() => onPageChange(totalPages)}
                 className={`${btnBase} ${totalPages === page ? btnActive : btnIdle}`}
@@ -137,13 +137,13 @@ export function Pagination({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-2">
           <span>{t('pagination.resultsPerPage')}</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            className="px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
           >
             {PAGE_SIZE_OPTIONS.map(size => (
               <option key={size} value={size}>{size}</option>

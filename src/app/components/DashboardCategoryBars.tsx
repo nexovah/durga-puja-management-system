@@ -4,6 +4,7 @@ import {
 import { BarChart3 } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTheme } from '../i18n/ThemeContext';
 
 interface DashboardCategoryBarsProps {
   chandaList: Chanda[];
@@ -21,6 +22,13 @@ interface DashboardCategoryBarsProps {
 // the other pages, no new query/DB change needed.
 export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, loansList, members }: DashboardCategoryBarsProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const axisStroke = theme === 'dark' ? '#3d434b' : '#e5e7eb';
+  const axisTick = theme === 'dark' ? '#9aa1ae' : '#6b7280';
+  const labelFill = theme === 'dark' ? '#e5e7eb' : '#374151';
+  const tooltipStyle = theme === 'dark'
+    ? { borderRadius: 8, border: '1px solid #3d434b', fontSize: 13, background: '#1c1f24', color: '#e5e7eb' }
+    : { borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 };
 
   const totalChanda = chandaList.reduce((sum, c) => sum + getChandaCreditAmount(c), 0);
   const totalDonation = donationAdsList
@@ -43,8 +51,8 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
   ];
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 h-full flex flex-col">
-      <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2 mb-3">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+      <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 mb-3">
         <BarChart3 size={20} className="text-orange-600" />
         {t('dashboard.chart.pillars.title')}
       </h3>
@@ -53,13 +61,13 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
           <BarChart data={data} margin={{ top: 24, right: 8, left: -12, bottom: 0 }}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10, fill: '#6b7280' }}
+              tick={{ fontSize: 10, fill: axisTick }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
+              axisLine={{ stroke: axisStroke }}
               interval={0}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: axisTick }}
               tickFormatter={(v) => `₹${Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(0)}k` : v}`}
               tickLine={false}
               axisLine={false}
@@ -67,7 +75,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
             />
             <Tooltip
               formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
-              contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+              contentStyle={tooltipStyle}
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]}>
               {data.map((entry) => (
@@ -77,7 +85,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
                 dataKey="value"
                 position="top"
                 formatter={(v: number) => `₹${v.toLocaleString()}`}
-                style={{ fontSize: 11, fontWeight: 600, fill: '#374151' }}
+                style={{ fontSize: 11, fontWeight: 600, fill: labelFill }}
               />
             </Bar>
           </BarChart>

@@ -122,7 +122,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
         action={
           <button
             onClick={handlePrintReport}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
           >
             <Download size={20} />
             {t('treasury.printReport')}
@@ -134,54 +134,54 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        <div className="bg-white rounded-xl p-6 border-l-4 border-green-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalChanda')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalChanda')}</h3>
             <TrendingUp className="text-green-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border-l-4 border-emerald-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 border-emerald-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalDonationAds')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalDonationAds')}</h3>
             <Gift className="text-emerald-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-emerald-600">₹{totalDonationAds.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border-l-4 border-violet-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 border-violet-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalMembership')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalMembership')}</h3>
             <Users className="text-violet-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-violet-600">₹{totalMembership.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 mt-1">{membersPaidCount} {t('treasury.membersPaid')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{membersPaidCount} {t('treasury.membersPaid')}</p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border-l-4 border-sky-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 border-sky-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.loansOutstanding')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.loansOutstanding')}</h3>
             <Landmark className="text-sky-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-sky-600">₹{totalLoansNet.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 mt-1">{loansList.length} {t('treasury.transactions')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{loansList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border-l-4 border-red-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 border-red-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.totalExpenses')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalExpenses')}</h3>
             <TrendingDown className="text-red-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-red-600">₹{totalExpenses.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 mt-1">{expenses.length} {t('treasury.transactions')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{expenses.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className={`bg-white rounded-xl p-6 border-l-4 ${balance >= 0 ? 'border-purple-500' : 'border-orange-500'}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-xl p-6 border-l-4 ${balance >= 0 ? 'border-purple-500' : 'border-orange-500'}`}>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('treasury.currentBalance')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.currentBalance')}</h3>
             <Wallet className={balance >= 0 ? 'text-purple-500' : 'text-orange-500'} size={24} />
           </div>
           <p className={`text-3xl font-bold ${balance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
@@ -194,25 +194,25 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       </div>
 
       {/* Monthly Report */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.monthlyReport')}</h3>
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">{t('treasury.monthlyReport')}</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('treasury.month')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.chanda')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.donationAds')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.totalMembership')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.loansOutstanding')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.expenses')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('treasury.balance')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.month')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.chanda')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.donationAds')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.totalMembership')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.loansOutstanding')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.expenses')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.balance')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {monthlyData.map((data, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">{data.month}</td>
+                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{data.month}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">
                     ₹{data.chanda.toLocaleString()}
                   </td>
@@ -236,7 +236,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
             </tbody>
           </table>
           {monthlyData.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('treasury.noMonthlyData')}
             </div>
           )}
@@ -246,8 +246,8 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Donors */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.topDonors')}</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">{t('treasury.topDonors')}</h3>
           <div className="space-y-3">
             {topDonors.map((donor, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -255,42 +255,42 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                   <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
                     {index + 1}
                   </div>
-                  <p className="font-medium text-gray-800">{donor.name}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{donor.name}</p>
                 </div>
                 <p className="text-green-600 font-bold">₹{donor.amount.toLocaleString()}</p>
               </div>
             ))}
           </div>
           {topDonors.length === 0 && (
-            <p className="text-gray-500 text-center py-8">{t('treasury.noDonors')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('treasury.noDonors')}</p>
           )}
         </div>
 
         {/* Expense Categories */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">{t('treasury.expenseCategories')}</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">{t('treasury.expenseCategories')}</h3>
           <div className="space-y-3">
             {expenseCategories.map((cat, index) => {
               const percentage = totalExpenses > 0 ? (cat.amount / totalExpenses) * 100 : 0;
               return (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{categoryLabel(cat.category)}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{categoryLabel(cat.category)}</span>
                     <span className="text-sm font-bold text-red-600">₹{cat.amount.toLocaleString()}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
                       className="bg-red-500 h-2 rounded-full transition-all"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{percentage.toFixed(1)}% {t('treasury.ofTotalExpenses')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{percentage.toFixed(1)}% {t('treasury.ofTotalExpenses')}</p>
                 </div>
               );
             })}
           </div>
           {expenseCategories.length === 0 && (
-            <p className="text-gray-500 text-center py-8">{t('treasury.noExpenses')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('treasury.noExpenses')}</p>
           )}
         </div>
       </div>

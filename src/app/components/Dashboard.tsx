@@ -57,7 +57,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     purple: { border: 'border-purple-500', icon: 'text-purple-600', iconBg: 'bg-purple-50' },
     amber: { border: 'border-amber-500', icon: 'text-amber-600', iconBg: 'bg-amber-50' },
     red: { border: 'border-red-500', icon: 'text-red-600', iconBg: 'bg-red-50' },
-    orange: { border: 'border-orange-500', icon: 'text-orange-600', iconBg: 'bg-orange-50' },
+    orange: { border: 'border-orange-500', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
   };
 
   return (
@@ -82,16 +82,16 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
           return (
             <div
               key={index}
-              className={`bg-white rounded-xl p-3.5 sm:p-5 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
+              className={`bg-white dark:bg-gray-900 rounded-xl p-3.5 sm:p-5 border-l-4 ${accent.border} flex items-center gap-3 sm:gap-4`}
             >
               <div className={`${accent.iconBg} p-2.5 sm:p-3 rounded-xl shrink-0`}>
                 <tile.icon className={accent.icon} size={22} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-gray-500 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
-                <p className="text-gray-900 text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
+                <p className="text-gray-900 dark:text-gray-100 text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
                 {'subValue' in tile && (
-                  <p className="text-gray-400 text-xs mt-0.5 truncate">{tile.subLabel}: <span className="text-gray-600 font-semibold">{tile.subValue}</span></p>
+                  <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5 truncate">{tile.subLabel}: <span className="text-gray-600 dark:text-gray-400 font-semibold">{tile.subValue}</span></p>
                 )}
               </div>
             </div>
@@ -100,12 +100,12 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
       </div>
 
       {/* Year Selector and Download */}
-      <div className="flex gap-3 items-center bg-white rounded-xl p-3 sm:p-4 border border-gray-200 flex-wrap">
+      <div className="flex gap-3 items-center bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <div className="bg-orange-500 p-2 rounded-lg shrink-0">
             <Calendar className="text-white" size={20} />
           </div>
-          <select className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm">
+          <select className="flex-1 px-3 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm">
             <option value="2026">{t('dashboard.selectYear')}: 2026</option>
             <option value="2025">2025</option>
             <option value="2024">2024</option>

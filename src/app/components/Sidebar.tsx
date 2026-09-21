@@ -92,12 +92,12 @@ export function Sidebar({
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="font-bold text-sm text-gray-900 leading-snug line-clamp-2">{association}</p>
+            <p className="font-bold text-sm text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">{association}</p>
           </div>
         )}
         <button
           onClick={onCloseMobile}
-          className="ml-auto lg:hidden text-gray-400 hover:text-gray-600 p-1 shrink-0"
+          className="ml-auto lg:hidden text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1 shrink-0"
           aria-label={t('common.close')}
         >
           <X size={20} />
@@ -111,11 +111,11 @@ export function Sidebar({
           return (
             <div key={group.label}>
               {!collapsed && (
-                <p className="px-3 mb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{group.label}</p>
+                <p className="px-3 mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{group.label}</p>
               )}
               {collapsed && groupIndex > 0 && (
                 <div className="flex justify-center mb-4" aria-hidden="true">
-                  <MoreHorizontal size={19} className="text-gray-400" />
+                  <MoreHorizontal size={19} className="text-gray-400 dark:text-gray-500" />
                 </div>
               )}
               <div className="space-y-1">
@@ -149,7 +149,7 @@ export function Sidebar({
     <>
       {/* Desktop rail — flat gray (slightly darker than the page background),
           blending into the browser edge (no border/shadow) per the reference design */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
@@ -157,7 +157,7 @@ export function Sidebar({
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/40" onClick={onCloseMobile} />
-          <aside className="relative w-64 h-full bg-white shadow-xl">
+          <aside className="relative w-64 h-full bg-white dark:bg-gray-900 shadow-xl">
             {content}
           </aside>
         </div>
@@ -172,7 +172,7 @@ export function Sidebar({
           className="pointer-events-none fixed z-[100] -translate-y-1/2"
           style={{ top: hoveredTooltip.top, left: hoveredTooltip.left + 12 }}
         >
-          <div className="relative bg-white text-gray-800 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 px-3.5 py-2 whitespace-nowrap">
+          <div className="relative bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 dark:border-gray-800 px-3.5 py-2 whitespace-nowrap">
             <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[7px] border-r-white" />
             {hoveredTooltip.label}
           </div>
@@ -210,8 +210,8 @@ function SidebarNavButton({
         collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
       } ${
         active
-          ? 'bg-orange-50 text-orange-600'
-          : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+          ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+          : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
       }`}
     >
       <Icon size={19} className="shrink-0" />

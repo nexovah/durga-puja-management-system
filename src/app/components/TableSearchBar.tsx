@@ -67,22 +67,22 @@ export function TableSearchBar({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
           />
           {query && (
             <button
               onClick={() => onQueryChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X size={15} />
             </button>
@@ -94,8 +94,8 @@ export function TableSearchBar({
             onClick={() => setShowAdvanced(o => !o)}
             className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap ${
               filtersActive
-                ? 'border-orange-400 bg-orange-50 text-orange-700'
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                ? 'border-orange-400 bg-orange-50 dark:bg-orange-500/10 text-orange-700'
+                : 'border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             <SlidersHorizontal size={14} />
@@ -106,27 +106,27 @@ export function TableSearchBar({
       </div>
 
       {showAdvanced && hasAdvancedFields && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {showAmount && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.amountMin')}</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.amountMin')}</label>
                   <input
                     type="number"
                     value={filters.amountMin}
                     onChange={(e) => onFiltersChange({ ...filters, amountMin: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.amountMax')}</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.amountMax')}</label>
                   <input
                     type="number"
                     value={filters.amountMax}
                     onChange={(e) => onFiltersChange({ ...filters, amountMax: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={t('search.anyAmount')}
                   />
                 </div>
@@ -134,33 +134,33 @@ export function TableSearchBar({
             )}
             {showBillVoucher && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{billVoucherLabel || t('search.billVoucher')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{billVoucherLabel || t('search.billVoucher')}</label>
                 <input
                   type="text"
                   value={filters.billVoucher}
                   onChange={(e) => onFiltersChange({ ...filters, billVoucher: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
             )}
             {showPhone && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.phone')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.phone')}</label>
                 <input
                   type="text"
                   value={filters.phone}
                   onChange={(e) => onFiltersChange({ ...filters, phone: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
             )}
             {statusOptions && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.paymentStatus')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.paymentStatus')}</label>
                 <select
                   value={filters.status}
                   onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 >
                   <option value="">{t('search.any')}</option>
                   {statusOptions.map(o => (
@@ -171,11 +171,11 @@ export function TableSearchBar({
             )}
             {inKindOptions && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{inKindLabel || t('search.inKind')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{inKindLabel || t('search.inKind')}</label>
                 <select
                   value={filters.inKind}
                   onChange={(e) => onFiltersChange({ ...filters, inKind: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 >
                   <option value="">{t('search.any')}</option>
                   {inKindOptions.map(o => (
@@ -186,11 +186,11 @@ export function TableSearchBar({
             )}
             {paidMethodOptions && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.paymentMethod')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.paymentMethod')}</label>
                 <select
                   value={filters.paidMethod}
                   onChange={(e) => onFiltersChange({ ...filters, paidMethod: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 >
                   <option value="">{t('search.any')}</option>
                   {paidMethodOptions.map(o => (
@@ -202,21 +202,21 @@ export function TableSearchBar({
             {showDateRange && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.dateFrom')}</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.dateFrom')}</label>
                   <input
                     type="date"
                     value={filters.dateFrom}
                     onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{t('search.dateTo')}</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.dateTo')}</label>
                   <input
                     type="date"
                     value={filters.dateTo}
                     onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   />
                 </div>
               </>
@@ -233,7 +233,7 @@ export function TableSearchBar({
             </button>
             <button
               onClick={onClear}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-sm"
             >
               {t('search.clearButton')}
             </button>
@@ -242,7 +242,7 @@ export function TableSearchBar({
       )}
 
       {(filtersActive || query.trim() !== '') && resultCount !== undefined && totalCount !== undefined && (
-        <p className="text-xs text-gray-500 mt-2.5">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2.5">
           {t('search.resultCount').replace('{shown}', String(resultCount)).replace('{total}', String(totalCount))}
         </p>
       )}

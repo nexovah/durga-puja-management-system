@@ -264,7 +264,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 />
                 <button
                   onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
                 >
                   <Upload size={20} />
                   {t('common.import')}
@@ -273,7 +273,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             )}
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Download size={20} />
               {t('common.export')}
@@ -329,7 +329,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
             >
               {t('common.cancel')}
             </button>
@@ -338,18 +338,18 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       >
           <form id="loans-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.donorName')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')} *</label>
               <input
                 type="text"
                 required
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.donorNamePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.amountReceivedLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountReceivedLabel')} *</label>
               <input
                 type="number"
                 required
@@ -357,38 +357,38 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 step="0.01"
                 value={formData.amountReceived}
                 onChange={(e) => setFormData({ ...formData, amountReceived: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.amountPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.amountPaidLabel')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountPaidLabel')}</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={formData.amountPaid}
                 onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.amountPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.phonePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.paymentMethod')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}</label>
               <select
                 value={formData.paymentMethod}
                 onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 {PAID_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
@@ -396,30 +396,30 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
               <input
                 type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('loans.returnDate')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnDate')}</label>
               <input
                 type="date"
                 value={formData.returnDate}
                 onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
                 value={formData.remarks}
                 onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.remarksPlaceholder')}
                 rows={2}
               />
@@ -427,24 +427,24 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
           </form>
       </FormModal>
 
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.amountReceivedLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.amountPaidLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.paymentMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('loans.returnDate')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.donorName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.amountReceivedLabel')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.amountPaidLabel')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.paymentMethod')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.returnDate')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((loan) => (
-                <tr key={loan.id} className="hover:bg-gray-50">
+                <tr key={loan.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 text-sm font-medium">
                     <button
                       type="button"
@@ -456,14 +456,14 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                   </td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {new Date(loan.date).toLocaleDateString(locale)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString(locale) : '-'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{loan.remarks || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{loan.remarks || '-'}</td>
                   {(canEdit || canDelete) && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -491,12 +491,12 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             </tbody>
             {filteredLoans.length > 0 && (
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredLoans.reduce((sum, l) => sum + l.amountReceived, 0).toLocaleString()}
                   </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredLoans.reduce((sum, l) => sum + (l.amountPaid || 0), 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
@@ -505,7 +505,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             )}
           </table>
           {loansList.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('loans.empty')}
             </div>
           )}

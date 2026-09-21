@@ -10,6 +10,7 @@ import {
 import { TrendingUp } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTheme } from '../i18n/ThemeContext';
 import { TranslationKey } from '../i18n/translations';
 
 interface DashboardChartProps {
@@ -64,6 +65,13 @@ function sumInRange(records: Record_[], start: Date, end: Date): number {
 
 export function DashboardChart({ chandaList, donationAdsList, expenses, loansList, members }: DashboardChartProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const gridStroke = theme === 'dark' ? '#2d3138' : '#f0f0f0';
+  const axisStroke = theme === 'dark' ? '#3d434b' : '#e5e7eb';
+  const axisTick = theme === 'dark' ? '#9aa1ae' : '#6b7280';
+  const tooltipStyle = theme === 'dark'
+    ? { borderRadius: 8, border: '1px solid #3d434b', fontSize: 13, background: '#1c1f24', color: '#e5e7eb' }
+    : { borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 };
   const [range, setRange] = useState<RangeKey>('30d');
 
   const incomeRecords: Record_[] = useMemo(() => [
@@ -124,10 +132,10 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
   const netBalance = totalIncome - totalExpense;
 
   return (
-    <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
             <TrendingUp size={20} className="text-orange-600" />
             {t('dashboard.chart.title')}
           </h3>
@@ -148,7 +156,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 range === r.key
                   ? 'bg-orange-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400'
               }`}
             >
               {t(r.labelKey)}
@@ -170,16 +178,16 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
                 <stop offset="95%" stopColor="#dc2626" stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: axisTick }}
               interval="preserveStartEnd"
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
+              axisLine={{ stroke: axisStroke }}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tick={{ fontSize: 11, fill: axisTick }}
               tickFormatter={(v) => `₹${Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(0)}k` : v}`}
               tickLine={false}
               axisLine={false}
@@ -190,7 +198,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
                 `₹${value.toLocaleString()}`,
                 name === 'income' ? t('dashboard.chart.income') : t('dashboard.chart.expenses'),
               ]}
-              contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+              contentStyle={tooltipStyle}
             />
             <Legend
               formatter={(value) => (value === 'income' ? t('dashboard.chart.income') : t('dashboard.chart.expenses'))}

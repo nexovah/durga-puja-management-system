@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -17,6 +17,7 @@ import { Tasks } from './components/Tasks';
 import { EstimationPage } from './components/Estimation';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useLanguage } from './i18n/LanguageContext';
+import { useTheme } from './i18n/ThemeContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import {
   fetchAllData,
@@ -353,6 +354,7 @@ function getPageFromPath(): PageKey {
 
 export default function App() {
   const { t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState<User | null>(() => loadStoredSession());
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(() => getPageFromPath());
@@ -653,15 +655,15 @@ export default function App() {
 
   if (loadError === 'not-configured') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-lg bg-white rounded-xl shadow-md p-8 border border-red-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+        <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200">
           <h1 className="text-xl font-bold text-red-700 mb-3">Supabase is not configured</h1>
-          <p className="text-gray-700 mb-3">
-            Create a <code className="bg-gray-100 px-1 rounded">.env</code> file in the project root (copy{' '}
-            <code className="bg-gray-100 px-1 rounded">.env.example</code>) with your Supabase project's URL and
+          <p className="text-gray-700 dark:text-gray-300 mb-3">
+            Create a <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">.env</code> file in the project root (copy{' '}
+            <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">.env.example</code>) with your Supabase project's URL and
             anon key, then restart the dev server / rebuild the app.
           </p>
-          <pre className="bg-gray-100 text-sm p-3 rounded overflow-x-auto">
+          <pre className="bg-gray-100 dark:bg-gray-800 text-sm p-3 rounded overflow-x-auto">
 {`VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key`}
           </pre>
@@ -672,10 +674,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-lg bg-white rounded-xl shadow-md p-8 border border-red-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+        <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200">
           <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't load data</h1>
-          <p className="text-gray-700">{loadError}</p>
+          <p className="text-gray-700 dark:text-gray-300">{loadError}</p>
         </div>
       </div>
     );
@@ -683,8 +685,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
   if (dataLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center text-gray-500">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">
           <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           Loading…
         </div>
@@ -697,7 +699,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   return (
-    <div className="min-h-screen bg-[#eceef1] flex">
+    <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
       <Sidebar
         logo={committeeInfo.logo}
         association={committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
@@ -711,18 +713,18 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar — flat, blends into the page background (no border/shadow) */}
-        <div className="sticky top-0 z-20 bg-[#eceef1]">
+        <div className="sticky top-0 z-20 bg-[#eceef1] dark:bg-gray-950">
           <div className="px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="lg:hidden text-gray-500 hover:text-gray-700 p-1.5 shrink-0"
+              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1.5 shrink-0"
               aria-label={t('sidebar.openMenu')}
             >
               <Menu size={22} />
             </button>
             <button
               onClick={toggleSidebarCollapsed}
-              className="hidden lg:flex text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg p-1.5 shrink-0 transition-colors"
+              className="hidden lg:flex text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
               aria-label={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
             >
               {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
@@ -739,6 +741,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               />
             </div>
 
+            <button
+              onClick={toggleTheme}
+              className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
+              aria-label={theme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             <ProfileMenu
               currentUser={currentUser}
               onLogout={handleLogout}
@@ -754,7 +764,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             stays centered/max-width so it doesn't stretch edge to edge
             on very wide screens */}
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-        <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
         <div className="container mx-auto">
         {currentPage === 'dashboard' && (
           <Dashboard
@@ -911,26 +921,26 @@ function ProfileMenu({
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-white transition-colors"
+        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
       >
         <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
           {(currentUser?.name || '?').charAt(0).toUpperCase()}
         </div>
         <div className="text-left hidden sm:block">
-          <p className="font-bold text-sm leading-tight text-gray-800">{currentUser?.name}</p>
-          <p className="text-xs text-gray-500 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
+          <p className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
         </div>
-        <ChevronDown size={16} className="text-gray-400 hidden sm:block" />
+        <ChevronDown size={16} className="text-gray-400 dark:text-gray-500 hidden sm:block" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-30">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
           <div className="flex items-center gap-3 px-4 py-4">
             <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-base shrink-0">
               {(currentUser?.name || '?').charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-sm text-gray-800 truncate">{currentUser?.name}</p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {currentUser?.username ? `@${currentUser.username} · ` : ''}{currentUser?.isAdmin ? t('header.admin') : t('header.user')}
               </p>
             </div>
@@ -938,18 +948,18 @@ function ProfileMenu({
 
           {showSettings && (
             <>
-              <div className="border-t border-gray-100" />
+              <div className="border-t border-gray-100 dark:border-gray-800" />
               <div className="py-1">
                 <button
                   onClick={() => goTo('committee')}
-                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
                   <Building2 size={18} />
                   {t('settings.tab.committee')}
                 </button>
                 <button
                   onClick={() => goTo('password')}
-                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
                   <Lock size={18} />
                   {t('settings.tab.password')}
@@ -957,7 +967,7 @@ function ProfileMenu({
                 {currentUser?.isAdmin && (
                   <button
                     onClick={() => goTo('users')}
-                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                   >
                     <UsersIcon size={18} />
                     {t('settings.tab.users')}
@@ -965,7 +975,7 @@ function ProfileMenu({
                 )}
                 <button
                   onClick={() => goTo('language')}
-                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
                   <Languages size={18} />
                   {t('settings.tab.language')}
@@ -973,7 +983,7 @@ function ProfileMenu({
                 {currentUser?.isAdmin && (
                   <button
                     onClick={() => goTo('developer')}
-                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                   >
                     <Code size={18} />
                     {t('settings.tab.developer')}
@@ -983,7 +993,7 @@ function ProfileMenu({
             </>
           )}
 
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-gray-100 dark:border-gray-800" />
           <button
             onClick={() => { onLogout(); setOpen(false); }}
             className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"

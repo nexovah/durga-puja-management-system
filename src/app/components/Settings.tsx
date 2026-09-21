@@ -251,14 +251,14 @@ export function Settings({
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200 overflow-x-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <button
             onClick={() => setActiveTab('committee')}
             className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'committee'
-                ? 'border-orange-600 text-orange-600 bg-orange-50'
-                : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             <Building2 size={20} />
@@ -268,8 +268,8 @@ export function Settings({
             onClick={() => setActiveTab('password')}
             className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'password'
-                ? 'border-orange-600 text-orange-600 bg-orange-50'
-                : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             <Lock size={20} />
@@ -280,8 +280,8 @@ export function Settings({
               onClick={() => setActiveTab('users')}
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeTab === 'users'
-                  ? 'border-orange-600 text-orange-600 bg-orange-50'
-                  : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                  ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <Users size={20} />
@@ -292,8 +292,8 @@ export function Settings({
             onClick={() => setActiveTab('language')}
             className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'language'
-                ? 'border-orange-600 text-orange-600 bg-orange-50'
-                : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             <Languages size={20} />
@@ -303,8 +303,8 @@ export function Settings({
             onClick={() => setActiveTab('developer')}
             className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'developer'
-                ? 'border-orange-600 text-orange-600 bg-orange-50'
-                : 'border-transparent text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
             <Code size={20} />
@@ -318,7 +318,7 @@ export function Settings({
             <form onSubmit={handleCommitteeSubmit} className="space-y-4">
             <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.uploadLogo')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.uploadLogo')}</label>
                 <input
                   type="file"
                   accept="image/jpeg,image/jpg,image/png"
@@ -338,12 +338,12 @@ export function Settings({
                     }
                   }}
                   disabled={logoUploading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:opacity-60"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:opacity-60"
                 />
-                {logoUploading && <p className="text-sm text-gray-500 mt-1">{t('settings.uploadingLogo')}</p>}
+                {logoUploading && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.uploadingLogo')}</p>}
                 {committeeForm.logo && (
                   <div className="mt-3 flex items-center gap-4">
-                    <div className="w-20 h-20 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <div className="w-20 h-20 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                       {committeeForm.logo.startsWith('data:') || committeeForm.logo.startsWith('http') ? (
                         <img
                           src={committeeForm.logo}
@@ -363,105 +363,105 @@ export function Settings({
                     </button>
                   </div>
                 )}
-                <p className="text-sm text-gray-500 mt-1">{t('settings.uploadLogoHint')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.uploadLogoHint')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.establishedYear')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.establishedYear')}</label>
                   <input
                     type="text"
                     required
                     value={committeeForm.established}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, established: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 2019`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.registrationNumber')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.registrationNumber')}</label>
                   <input
                     type="text"
                     required
                     value={committeeForm.regNumber}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, regNumber: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 80014864`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.associationName')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.associationName')}</label>
                 <input
                   type="text"
                   required
                   value={committeeForm.association}
                   onChange={(e) => setCommitteeForm({ ...committeeForm, association: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('settings.associationName')}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.post')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.post')}</label>
                   <input
                     type="text"
                     required
                     value={committeeForm.post}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, post: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={t('settings.post')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.pinCode')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.pinCode')}</label>
                   <input
                     type="text"
                     required
                     value={committeeForm.pinCode}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, pinCode: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 741239`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.districtPS')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.districtPS')}</label>
                 <input
                   type="text"
                   required
                   value={committeeForm.districtPS}
                   onChange={(e) => setCommitteeForm({ ...committeeForm, districtPS: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('settings.districtPS')}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.mobile1')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.mobile1')}</label>
                   <input
                     type="tel"
                     required
                     value={committeeForm.mobile1}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, mobile1: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 9775767402`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.mobile2')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.mobile2')}</label>
                   <input
                     type="tel"
                     value={committeeForm.mobile2 || ''}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, mobile2: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 9876543210`}
                   />
                 </div>
@@ -482,33 +482,33 @@ export function Settings({
           {activeTab === 'password' && (
             <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.currentPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.currentPassword')}</label>
                 <input
                   type="password"
                   required
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.newPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.newPassword')}</label>
                 <input
                   type="password"
                   required
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.confirmPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.confirmPassword')}</label>
                 <input
                   type="password"
                   required
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <button
@@ -525,7 +525,7 @@ export function Settings({
           {activeTab === 'users' && currentUser?.isAdmin && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-800">{t('settings.userManagement')}</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.userManagement')}</h3>
                 <button
                   onClick={() => {
                     setShowUserForm(true);
@@ -574,7 +574,7 @@ export function Settings({
                     <button
                       type="button"
                       onClick={() => { setShowUserForm(false); setEditingUserId(null); }}
-                      className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                      className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
                     >
                       {t('common.cancel')}
                     </button>
@@ -584,28 +584,28 @@ export function Settings({
                   <form id="user-form" onSubmit={handleUserSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')} *</label>
                         <input
                           type="text"
                           required
                           value={userForm.name}
                           onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.username')}</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.username')}</label>
                         <input
                           type="text"
                           required
                           value={userForm.username}
                           onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                           disabled={!!editingUserId}
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('settings.password')} {editingUserId ? `(${t('settings.leaveBlankToKeep')})` : ''}
                         </label>
                         <input
@@ -613,13 +613,13 @@ export function Settings({
                           required={!editingUserId}
                           value={userForm.password}
                           onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.permissions')}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('settings.permissions')}</label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {Object.entries(userForm.permissions).map(([key, value]) => (
                           <label key={key} className="flex items-center gap-2 cursor-pointer">
@@ -635,7 +635,7 @@ export function Settings({
                               })}
                               className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                             />
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
                               {t(PERMISSION_LABEL_KEYS[key])}
                             </span>
                           </label>
@@ -644,11 +644,11 @@ export function Settings({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.accessLevel')}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('settings.accessLevel')}</label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label
                           className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                            userForm.canEdit && userForm.canDelete ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                            userForm.canEdit && userForm.canDelete ? 'border-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                           }`}
                         >
                           <input
@@ -658,11 +658,11 @@ export function Settings({
                             onChange={() => setUserForm({ ...userForm, canEdit: true, canDelete: true })}
                             className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                           />
-                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.editDelete')}</span>
+                          <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{t('settings.accessLevel.editDelete')}</span>
                         </label>
                         <label
                           className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                            userForm.canEdit && !userForm.canDelete ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                            userForm.canEdit && !userForm.canDelete ? 'border-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                           }`}
                         >
                           <input
@@ -672,11 +672,11 @@ export function Settings({
                             onChange={() => setUserForm({ ...userForm, canEdit: true, canDelete: false })}
                             className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                           />
-                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.edit')}</span>
+                          <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{t('settings.accessLevel.edit')}</span>
                         </label>
                         <label
                           className={`flex items-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                            !userForm.canEdit ? 'border-orange-600 bg-orange-50' : 'border-gray-200 hover:border-orange-300'
+                            !userForm.canEdit ? 'border-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                           }`}
                         >
                           <input
@@ -686,14 +686,14 @@ export function Settings({
                             onChange={() => setUserForm({ ...userForm, canEdit: false, canDelete: false })}
                             className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                           />
-                          <span className="text-sm text-gray-800 font-medium">{t('settings.accessLevel.view')}</span>
+                          <span className="text-sm text-gray-800 dark:text-gray-200 font-medium">{t('settings.accessLevel.view')}</span>
                         </label>
                       </div>
                     </div>
 
                     {userForm.canEdit && (
                       <div>
-                        <label className="flex items-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 transition-colors">
+                        <label className="flex items-center gap-3 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-orange-300 transition-colors">
                           <input
                             type="checkbox"
                             checked={userForm.canBulkImport}
@@ -701,8 +701,8 @@ export function Settings({
                             className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                           />
                           <span>
-                            <span className="block text-sm text-gray-800 font-medium">{t('settings.bulkImport')}</span>
-                            <span className="block text-xs text-gray-500">{t('settings.bulkImport.description')}</span>
+                            <span className="block text-sm text-gray-800 dark:text-gray-200 font-medium">{t('settings.bulkImport')}</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">{t('settings.bulkImport.description')}</span>
                           </span>
                         </label>
                       </div>
@@ -712,22 +712,22 @@ export function Settings({
               </FormModal>
 
               {/* Users List */}
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('settings.table.name')}</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('settings.table.username')}</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('settings.table.type')}</th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('settings.table.permissions')}</th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('settings.table.action')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.name')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.username')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.type')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.permissions')}</th>
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.action')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-800 font-medium">{user.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{user.username}</td>
+                      <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{user.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{user.username}</td>
                         <td className="px-6 py-4 text-sm">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -738,7 +738,7 @@ export function Settings({
                             {!user.isAdmin && (
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                 user.canEdit === false
-                                  ? 'bg-gray-100 text-gray-600'
+                                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                                   : user.canDelete === false
                                   ? 'bg-blue-100 text-blue-700'
                                   : 'bg-green-100 text-green-700'
@@ -762,7 +762,7 @@ export function Settings({
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                           {Object.entries(user.permissions)
                             .filter(([_, value]) => value)
                             .map(([key]) => t(PERMISSION_LABEL_KEYS[key]))
@@ -778,7 +778,7 @@ export function Settings({
                                   className={`p-2 rounded-lg transition-colors ${
                                     user.isActive === false
                                       ? 'text-green-600 hover:bg-green-50'
-                                      : 'text-gray-500 hover:bg-gray-100'
+                                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                                   }`}
                                 >
                                   {user.isActive === false ? <CheckCircle2 size={18} /> : <Ban size={18} />}
@@ -811,8 +811,8 @@ export function Settings({
           {activeTab === 'language' && (
             <div className="space-y-4 max-w-md">
               <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">{t('settings.language.title')}</h3>
-                <p className="text-sm text-gray-500 mb-4">{t('settings.language.description')}</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-1">{t('settings.language.title')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('settings.language.description')}</p>
               </div>
               <div className="space-y-3">
                 {LANGUAGES.map((opt) => (
@@ -820,8 +820,8 @@ export function Settings({
                     key={opt.code}
                     className={`flex items-center justify-between gap-3 px-4 py-3 border-2 rounded-lg cursor-pointer transition-colors ${
                       language === opt.code
-                        ? 'border-orange-600 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300'
+                        ? 'border-orange-600 bg-orange-50 dark:bg-orange-500/10'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -832,9 +832,9 @@ export function Settings({
                         onChange={() => handleLanguageChange(opt.code)}
                         className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                       />
-                      <span className="font-medium text-gray-800">{opt.nativeLabel}</span>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">{opt.nativeLabel}</span>
                     </div>
-                    <span className="text-sm text-gray-500">{opt.label}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -846,43 +846,43 @@ export function Settings({
             <form onSubmit={handleDeveloperSubmit} className="space-y-4 max-w-md">
             <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.developerName')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.developerName')}</label>
                 <input
                   type="text"
                   required
                   value={devForm.name}
                   onChange={(e) => setDevForm({ ...devForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.email')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.email')}</label>
                 <input
                   type="email"
                   required
                   value={devForm.email}
                   onChange={(e) => setDevForm({ ...devForm, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.phoneNumber')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.phoneNumber')}</label>
                 <input
                   type="tel"
                   required
                   value={devForm.phone}
                   onChange={(e) => setDevForm({ ...devForm, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.appVersion')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.appVersion')}</label>
                 <input
                   type="text"
                   required
                   value={devForm.version}
                   onChange={(e) => setDevForm({ ...devForm, version: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 />
               </div>
               <button
@@ -894,9 +894,9 @@ export function Settings({
               </button>
             </fieldset>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h4 className="font-bold text-gray-800 mb-2">{t('settings.currentInfo')}</h4>
-                <div className="space-y-1 text-sm text-gray-600">
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">{t('settings.currentInfo')}</h4>
+                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                   <p><strong>{t('settings.label.name')}</strong> {developerInfo.name}</p>
                   <p><strong>{t('settings.label.email')}</strong> {developerInfo.email}</p>
                   <p><strong>{t('settings.label.phone')}</strong> {developerInfo.phone}</p>

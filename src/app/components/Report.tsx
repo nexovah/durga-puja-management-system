@@ -8,7 +8,7 @@ export function Report() {
   return (
     <div className="space-y-6">
       <PageHeading>{t('report.pageTitle')}</PageHeading>
-      <div className="bg-white rounded-xl p-8 text-center text-gray-500">
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-8 text-center text-gray-500 dark:text-gray-400">
         {t('report.comingSoon')}
       </div>
     </div>

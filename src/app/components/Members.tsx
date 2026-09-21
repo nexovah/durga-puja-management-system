@@ -306,16 +306,16 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('members.widget.totalPayments')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('members.widget.totalPayments')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalMembershipPayments.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 border-l-4 border-blue-500">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">{t('members.widget.totalMembers')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('members.widget.totalMembers')}</h3>
             <Users className="text-blue-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">{members.length}</p>
@@ -349,7 +349,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
             >
               {t('common.cancel')}
             </button>
@@ -359,45 +359,45 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           <form id="members-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.name')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')} *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('members.namePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.phone')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')} *</label>
                 <input
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('members.phonePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.address')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.address')} *</label>
                 <input
                   type="text"
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('members.addressPlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.role')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('members.role')} *</label>
                 <select
                   required
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 >
                   <option value="">{t('members.selectRole')}</option>
                   {ROLES.map((r) => (
@@ -408,11 +408,11 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             </div>
 
             {/* Membership Payment — collapsible section */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <button
                 type="button"
                 onClick={() => setShowMembershipPayment(o => !o)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-orange-300 rounded-lg text-orange-600 font-semibold hover:bg-orange-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-orange-300 rounded-lg text-orange-600 font-semibold hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
               >
                 {showMembershipPayment ? <ChevronDown size={18} /> : <Plus size={18} />}
                 {t('members.membershipPayment')}
@@ -421,23 +421,23 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
               {showMembershipPayment && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('members.membershipAmount')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('members.membershipAmount')}</label>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
                       value={formData.membershipAmount}
                       onChange={(e) => setFormData({ ...formData, membershipAmount: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                       placeholder={t('chanda.amountPlaceholder')}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.paidMethod')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
                     <select
                       value={formData.membershipPaidMethod}
                       onChange={(e) => setFormData({ ...formData, membershipPaidMethod: e.target.value as PaidMethod })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     >
                       {PAID_METHODS.map((m) => (
                         <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
@@ -445,11 +445,11 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.paymentStatus')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}</label>
                     <select
                       value={formData.membershipPaymentStatus}
                       onChange={(e) => setFormData({ ...formData, membershipPaymentStatus: e.target.value as PaymentStatus })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     >
                       {PAYMENT_STATUSES.map((s) => (
                         <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
@@ -458,7 +458,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                   </div>
                   {isPartial && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.partialAmountLabel')}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.partialAmountLabel')}</label>
                       <input
                         type="number"
                         min="0"
@@ -466,36 +466,36 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                         max={formData.membershipAmount || undefined}
                         value={formData.membershipPartialAmount}
                         onChange={(e) => setFormData({ ...formData, membershipPartialAmount: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         placeholder={t('chanda.partialAmountPlaceholder')}
                       />
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.date')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}</label>
                     <input
                       type="date"
                       value={formData.membershipDate}
                       onChange={(e) => setFormData({ ...formData, membershipDate: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('chanda.billNumber')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.billNumber')}</label>
                     <input
                       type="text"
                       value={formData.membershipBillNumber}
                       onChange={(e) => setFormData({ ...formData, membershipBillNumber: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                       placeholder={t('chanda.billNumberPlaceholder')}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.remarks')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
                     <textarea
                       value={formData.membershipRemarks}
                       onChange={(e) => setFormData({ ...formData, membershipRemarks: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                       rows={2}
                     />
                   </div>
@@ -507,28 +507,28 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       </FormModal>
 
       {/* Members List */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.name')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.role')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('common.phone')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.joinDate')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.membershipAmount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('chanda.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">{t('members.assignedTasks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">{t('common.action')}</th>}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.name')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.role')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.joinDate')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.membershipAmount')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.assignedTasks')}</th>
+                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((member) => {
                 const hasPayment = member.membershipAmount !== undefined && member.membershipAmount !== null;
                 const status = member.membershipPaymentStatus || 'pending';
                 const assignedTasks = tasksList.filter(task => task.assignedMemberIds?.includes(member.id));
                 return (
-                <tr key={member.id} className="hover:bg-gray-50">
+                <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 text-sm">
                     <button
                       type="button"
@@ -539,11 +539,11 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                     </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{member.phone}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {new Date(member.joinDate).toLocaleDateString(locale)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-800 font-medium">
+                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
                     {hasPayment ? `₹${(member.membershipAmount || 0).toLocaleString()}` : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -560,7 +560,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                           <span
                             key={task.id}
                             title={task.description || task.title}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-700"
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-700 dark:text-gray-300"
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${TASK_PRIORITY_DOT[task.priority]}`} />
                             {task.title}
@@ -597,9 +597,9 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             </tbody>
             {filteredMembers.length > 0 && (
               <tfoot>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900">
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredMembers.reduce((sum, m) => sum + getMemberCreditAmount(m), 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
@@ -608,7 +608,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
             )}
           </table>
           {filteredMembers.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('members.empty')}
             </div>
           )}
