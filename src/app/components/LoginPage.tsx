@@ -60,7 +60,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
             </div>
           </div>
 
-          <h1 className="text-[15px] font-bold text-orange-600">
+          <h1 className="text-xl font-bold text-orange-600">
             {t('login.systemTitle')}
           </h1>
         </div>
