@@ -371,6 +371,7 @@ export const translations = {
     // Vendors (derived from Expenses)
     'vendors.pageTitle': 'Vendors',
     'vendors.hint': 'Automatically collected from expenses that have a Vendor/Supplier Name filled in.',
+    'vendors.searchPlaceholder': 'Search vendor name, phone…',
     'vendors.name': "Vendor/Supplier's Name",
     'vendors.contact': 'Contact',
     'vendors.empty': 'No vendor records yet. Add a Vendor/Supplier Name to an expense to see it here.',
@@ -995,6 +996,7 @@ export const translations = {
     // Vendors (derived from Expenses)
     'vendors.pageTitle': 'ভেন্ডর',
     'vendors.hint': 'যেসব খরচে ভেন্ডর/সরবরাহকারীর নাম দেওয়া আছে, সেগুলো থেকে স্বয়ংক্রিয়ভাবে সংগ্রহ করা।',
+    'vendors.searchPlaceholder': 'ভেন্ডরের নাম, ফোন খুঁজুন…',
     'vendors.name': 'ভেন্ডর/সরবরাহকারীর নাম',
     'vendors.contact': 'যোগাযোগ',
     'vendors.empty': 'কোনো ভেন্ডর রেকর্ড নেই। একটি খরচে ভেন্ডর/সরবরাহকারীর নাম যোগ করলে এখানে দেখাবে।',
@@ -1615,6 +1617,7 @@ export const translations = {
     // Vendors (derived from Expenses)
     'vendors.pageTitle': 'विक्रेता',
     'vendors.hint': 'उन खर्चों से स्वतः एकत्रित, जिनमें विक्रेता/आपूर्तिकर्ता का नाम भरा गया है।',
+    'vendors.searchPlaceholder': 'विक्रेता का नाम, फ़ोन खोजें…',
     'vendors.name': 'विक्रेता/आपूर्तिकर्ता का नाम',
     'vendors.contact': 'संपर्क',
     'vendors.empty': 'अभी तक कोई विक्रेता रिकॉर्ड नहीं है। किसी खर्च में विक्रेता/आपूर्तिकर्ता का नाम जोड़ें तो यहाँ दिखेगा।',

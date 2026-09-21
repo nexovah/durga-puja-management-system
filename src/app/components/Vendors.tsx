@@ -6,6 +6,9 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface VendorsProps {
   expenses: Expense[];
@@ -27,6 +30,10 @@ interface VendorGroup {
 export function Vendors({ expenses }: VendorsProps) {
   const { t, locale } = useLanguage();
   const [viewingKey, setViewingKey] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
   const categoryLabel = (value: string) => {
     const key = `expenses.category.${value}` as TranslationKey;
@@ -62,7 +69,20 @@ export function Vendors({ expenses }: VendorsProps) {
 
   const viewingVendor = vendorGroups.find(g => g.key === viewingKey) || null;
 
-  const pagination = usePagination(vendorGroups);
+  const filteredVendorGroups = vendorGroups.filter(g => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [g.name, g.contact].some(p => p && p.toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+    const f = appliedFilters;
+    if (f.amountMin && g.totalAmount < parseFloat(f.amountMin)) return false;
+    if (f.amountMax && g.totalAmount > parseFloat(f.amountMax)) return false;
+    if (f.phone && !(g.contact || '').includes(f.phone.trim())) return false;
+    return true;
+  });
+
+  const pagination = usePagination(filteredVendorGroups);
 
   const handleExport = () => {
     const csvContent = [
@@ -93,19 +113,39 @@ export function Vendors({ expenses }: VendorsProps) {
     <div className="space-y-6">
       <PageHeading
         action={
-          <button
-            onClick={handleExport}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
-          >
-            <Download size={20} />
-            {t('common.export')}
-          </button>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            <button
+              onClick={handleExport}
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
+            >
+              <Download size={20} />
+              {t('common.export')}
+            </button>
+          </div>
         }
       >
         {t('vendors.pageTitle')}
       </PageHeading>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 -mt-4">{t('vendors.hint')}</p>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder={t('vendors.searchPlaceholder')}
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredVendorGroups.length}
+          totalCount={vendorGroups.length}
+          showAmount
+          showPhone
+        />
+      </CollapsibleSearchPanel>
 
       {/* Vendor detail panel */}
       {viewingVendor && (
