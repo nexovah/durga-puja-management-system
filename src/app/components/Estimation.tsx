@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical } from 'lucide-react';
-import { Estimation, EstimationLineItem } from '../App';
+import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Pagination, usePagination } from './Pagination';
@@ -22,8 +22,15 @@ interface EstimationPageProps {
 const emptyLineItem = (): EstimationLineItem => ({
   id: crypto.randomUUID(),
   title: '',
-  date: '',
+  customField: '',
   amount: 0,
+});
+
+const defaultColumnLabels = (t: (key: any) => string): EstimationColumnLabels => ({
+  serialNo: t('estimation.serialNo'),
+  title: t('estimation.itemTitle'),
+  customField: t('estimation.customFieldDefault'),
+  amount: t('estimation.amount'),
 });
 
 const totalAmount = (est: Estimation) => est.lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -60,6 +67,7 @@ export function EstimationPage({
       id: crypto.randomUUID(),
       title: '',
       lineItems: [emptyLineItem()],
+      columnLabels: defaultColumnLabels(t),
       createdAt: new Date().toISOString(),
       createdBy: currentUserId,
       createdByName: currentUserName,
@@ -69,7 +77,11 @@ export function EstimationPage({
   };
 
   const openExisting = (est: Estimation) => {
-    setDraft({ ...est, lineItems: est.lineItems.map(item => ({ ...item })) });
+    setDraft({
+      ...est,
+      lineItems: est.lineItems.map(item => ({ customField: '', ...item })),
+      columnLabels: est.columnLabels || defaultColumnLabels(t),
+    });
     setIsNew(false);
     setView('detail');
   };
@@ -188,10 +200,34 @@ export function EstimationPage({
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   {canEdit && <th className="w-8" />}
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-14">{t('estimation.serialNo')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{t('estimation.itemTitle')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-44">{t('estimation.date')}</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-40">{t('estimation.amount')}</th>
+                  <th className="px-2 py-2 text-left w-14">
+                    <EditableHeaderLabel
+                      value={draft.columnLabels.serialNo}
+                      onChange={(v) => setDraft({ ...draft, columnLabels: { ...draft.columnLabels, serialNo: v } })}
+                      canEdit={canEdit}
+                    />
+                  </th>
+                  <th className="px-2 py-2 text-left">
+                    <EditableHeaderLabel
+                      value={draft.columnLabels.title}
+                      onChange={(v) => setDraft({ ...draft, columnLabels: { ...draft.columnLabels, title: v } })}
+                      canEdit={canEdit}
+                    />
+                  </th>
+                  <th className="px-2 py-2 text-left w-44">
+                    <EditableHeaderLabel
+                      value={draft.columnLabels.customField}
+                      onChange={(v) => setDraft({ ...draft, columnLabels: { ...draft.columnLabels, customField: v } })}
+                      canEdit={canEdit}
+                    />
+                  </th>
+                  <th className="px-2 py-2 text-left w-40">
+                    <EditableHeaderLabel
+                      value={draft.columnLabels.amount}
+                      onChange={(v) => setDraft({ ...draft, columnLabels: { ...draft.columnLabels, amount: v } })}
+                      canEdit={canEdit}
+                    />
+                  </th>
                   {canEdit && <th className="px-2 py-2 w-10" />}
                 </tr>
               </thead>
@@ -225,10 +261,11 @@ export function EstimationPage({
                     </td>
                     <td className="px-2 py-2">
                       <input
-                        type="date"
-                        value={item.date}
-                        onChange={(e) => updateDraftItem(item.id, { date: e.target.value })}
+                        type="text"
+                        value={item.customField}
+                        onChange={(e) => updateDraftItem(item.id, { customField: e.target.value })}
                         disabled={!canEdit}
+                        placeholder={draft.columnLabels.customField}
                         className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
@@ -402,5 +439,28 @@ export function EstimationPage({
         onConfirm={confirmDelete}
       />
     </div>
+  );
+}
+
+// A table header cell that's also an inline-editable text input — lets the
+// user rename any column (S. No. / Title / the custom field / Amount) per
+// estimation. Read-only span when the page's edit permission is off.
+function EditableHeaderLabel({
+  value, onChange, canEdit,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  canEdit: boolean;
+}) {
+  if (!canEdit) {
+    return <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{value}</span>;
+  }
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-transparent border-0 border-b border-dashed border-gray-300 dark:border-gray-600 px-0 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase focus:ring-0 focus:border-orange-500 outline-none"
+    />
   );
 }

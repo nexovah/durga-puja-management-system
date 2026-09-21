@@ -247,14 +247,22 @@ export interface Task {
 export interface EstimationLineItem {
   id: string;
   title: string;
-  date: string;
+  customField: string; // free-text field, replacing the old fixed "date" column
   amount: number;
+}
+
+export interface EstimationColumnLabels {
+  serialNo: string;
+  title: string;
+  customField: string;
+  amount: string;
 }
 
 export interface Estimation {
   id: string;
   title: string;
   lineItems: EstimationLineItem[];
+  columnLabels: EstimationColumnLabels; // per-estimation editable table header text
   createdAt: string;
   createdBy: string;
   createdByName: string;

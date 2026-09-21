@@ -227,11 +227,19 @@ function toTaskRow(task: Task) {
   };
 }
 
+const DEFAULT_ESTIMATION_COLUMN_LABELS = {
+  serialNo: 'S. No.',
+  title: 'Title',
+  customField: 'Custom Field',
+  amount: 'Amount',
+};
+
 function fromEstimationRow(row: any): Estimation {
   return {
     id: row.id,
     title: row.title || '',
     lineItems: row.line_items || [],
+    columnLabels: { ...DEFAULT_ESTIMATION_COLUMN_LABELS, ...(row.column_labels || {}) },
     createdAt: row.created_at,
     createdBy: row.created_by || '',
     createdByName: row.created_by_name || '',
@@ -242,6 +250,7 @@ function toEstimationRow(estimation: Estimation) {
     id: estimation.id,
     title: estimation.title || '',
     line_items: estimation.lineItems || [],
+    column_labels: estimation.columnLabels || DEFAULT_ESTIMATION_COLUMN_LABELS,
     created_at: estimation.createdAt,
     created_by: estimation.createdBy || null,
     created_by_name: estimation.createdByName || null,
