@@ -99,7 +99,7 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-5">
+      <nav className="flex-1 overflow-y-auto pt-9 pb-2 px-3 space-y-5">
         {groups.map((group) => {
           const visibleItems = group.items.filter(i => i.show);
           if (visibleItems.length === 0) return null;
