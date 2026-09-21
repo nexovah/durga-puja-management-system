@@ -231,6 +231,7 @@ const DEFAULT_ESTIMATION_COLUMN_LABELS = {
   serialNo: 'S. No.',
   title: 'Title',
   customField: 'Custom Field',
+  customField2: 'Custom Field 02',
   amount: 'Amount',
 };
 

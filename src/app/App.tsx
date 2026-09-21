@@ -248,6 +248,7 @@ export interface EstimationLineItem {
   id: string;
   title: string;
   customField: string; // free-text field, replacing the old fixed "date" column
+  customField2: string; // second free-text field
   amount: number;
 }
 
@@ -255,6 +256,7 @@ export interface EstimationColumnLabels {
   serialNo: string;
   title: string;
   customField: string;
+  customField2: string;
   amount: string;
 }
 

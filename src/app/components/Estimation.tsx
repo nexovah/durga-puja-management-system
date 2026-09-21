@@ -23,6 +23,7 @@ const emptyLineItem = (): EstimationLineItem => ({
   id: crypto.randomUUID(),
   title: '',
   customField: '',
+  customField2: '',
   amount: 0,
 });
 
@@ -30,6 +31,7 @@ const defaultColumnLabels = (t: (key: any) => string): EstimationColumnLabels =>
   serialNo: t('estimation.serialNo'),
   title: t('estimation.itemTitle'),
   customField: t('estimation.customFieldDefault'),
+  customField2: t('estimation.customField2Default'),
   amount: t('estimation.amount'),
 });
 
@@ -79,7 +81,7 @@ export function EstimationPage({
   const openExisting = (est: Estimation) => {
     setDraft({
       ...est,
-      lineItems: est.lineItems.map(item => ({ customField: '', ...item })),
+      lineItems: est.lineItems.map(item => ({ customField: '', customField2: '', ...item })),
       columnLabels: est.columnLabels || defaultColumnLabels(t),
     });
     setIsNew(false);
@@ -221,6 +223,13 @@ export function EstimationPage({
                       canEdit={canEdit}
                     />
                   </th>
+                  <th className="px-2 py-2 text-left w-44">
+                    <EditableHeaderLabel
+                      value={draft.columnLabels.customField2}
+                      onChange={(v) => setDraft({ ...draft, columnLabels: { ...draft.columnLabels, customField2: v } })}
+                      canEdit={canEdit}
+                    />
+                  </th>
                   <th className="px-2 py-2 text-left w-40">
                     <EditableHeaderLabel
                       value={draft.columnLabels.amount}
@@ -271,6 +280,16 @@ export function EstimationPage({
                     </td>
                     <td className="px-2 py-2">
                       <input
+                        type="text"
+                        value={item.customField2}
+                        onChange={(e) => updateDraftItem(item.id, { customField2: e.target.value })}
+                        disabled={!canEdit}
+                        placeholder={draft.columnLabels.customField2}
+                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
                         type="number"
                         min="0"
                         step="0.01"
@@ -296,7 +315,7 @@ export function EstimationPage({
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td colSpan={canEdit ? 4 : 3} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
+                  <td colSpan={canEdit ? 5 : 4} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
                     {t('estimation.totalItems')}: {draft.lineItems.filter(i => i.title.trim() !== '' || i.amount).length}
                     {'   '}·{'   '}
                     {t('estimation.totalAmount')}
