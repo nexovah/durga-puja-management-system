@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
   Store, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  PanelLeftClose, PanelLeftOpen, X,
+  X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -25,7 +25,6 @@ interface SidebarProps {
     settings?: boolean;
   };
   collapsed: boolean;
-  onToggleCollapsed: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -36,7 +35,7 @@ interface SidebarProps {
 // Foldable to an icon-only rail on desktop (`collapsed`); becomes a
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
-  logo, association, regdLine, currentPage, onNavigate, permissions, collapsed, onToggleCollapsed, mobileOpen, onCloseMobile,
+  logo, association, regdLine, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
 }: SidebarProps) {
   const { t } = useLanguage();
 
@@ -107,16 +106,6 @@ export function Sidebar({
           );
         })}
       </nav>
-
-      <div className="hidden lg:flex items-center justify-center border-t border-gray-100 py-2 shrink-0">
-        <button
-          onClick={onToggleCollapsed}
-          className="text-gray-400 hover:text-orange-600 p-2 rounded-lg hover:bg-orange-50 transition-colors"
-          aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
-        >
-          {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-        </button>
-      </div>
     </div>
   );
 

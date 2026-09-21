@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -670,7 +670,6 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         onNavigate={setCurrentPage}
         permissions={currentUser?.permissions}
         collapsed={sidebarCollapsed}
-        onToggleCollapsed={toggleSidebarCollapsed}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
       />
@@ -685,6 +684,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               aria-label={t('sidebar.openMenu')}
             >
               <Menu size={22} />
+            </button>
+            <button
+              onClick={toggleSidebarCollapsed}
+              className="hidden lg:flex text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg p-1.5 shrink-0 transition-colors"
+              aria-label={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
             </button>
 
             <div className="flex-1 min-w-0">
