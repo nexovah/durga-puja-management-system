@@ -151,7 +151,7 @@ export function Sidebar({
     <>
       {/* Desktop rail — flat gray (slightly darker than the page background),
           blending into the browser edge (no border/shadow) per the reference design */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
