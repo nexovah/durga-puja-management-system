@@ -30,11 +30,21 @@ const categories: { value: string; labelKey: TranslationKey }[] = [
   { value: 'construction', labelKey: 'expenses.category.construction' },
   { value: 'decoration', labelKey: 'expenses.category.decoration' },
   { value: 'idol', labelKey: 'expenses.category.idol' },
+  { value: 'pujaRituals', labelKey: 'expenses.category.pujaRituals' },
   { value: 'lighting', labelKey: 'expenses.category.lighting' },
-  { value: 'food', labelKey: 'expenses.category.food' },
+  { value: 'electricityGenerator', labelKey: 'expenses.category.electricityGenerator' },
+  { value: 'soundAudio', labelKey: 'expenses.category.soundAudio' },
+  { value: 'food', labelKey: 'expenses.category.food' }, // label updated to "Food & Bhog" — value kept as-is so existing records still match
+  { value: 'culturalProgramme', labelKey: 'expenses.category.culturalProgramme' },
   { value: 'publicity', labelKey: 'expenses.category.publicity' },
+  { value: 'printingStationery', labelKey: 'expenses.category.printingStationery' },
   { value: 'security', labelKey: 'expenses.category.security' },
-  { value: 'transport', labelKey: 'expenses.category.transport' },
+  { value: 'volunteerStaff', labelKey: 'expenses.category.volunteerStaff' },
+  { value: 'sanitationCleaning', labelKey: 'expenses.category.sanitationCleaning' },
+  { value: 'medicalFirstAid', labelKey: 'expenses.category.medicalFirstAid' },
+  { value: 'transport', labelKey: 'expenses.category.transport' }, // label updated to "Transport & Immersion" — value kept as-is so existing records still match
+  { value: 'permissionsGovtFees', labelKey: 'expenses.category.permissionsGovtFees' },
+  { value: 'insuranceSafety', labelKey: 'expenses.category.insuranceSafety' },
   { value: 'other', labelKey: 'expenses.category.other' },
 ];
 
