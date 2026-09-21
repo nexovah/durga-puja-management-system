@@ -639,28 +639,28 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
       {/* Widgets — Treasury-style summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-green-500 dark:border-green-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.total')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-amber-500 dark:border-amber-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.pending')}</h3>
             <HandCoins className="text-amber-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-orange-500 dark:border-orange-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount1')}</h3>
             <Sparkles className="text-orange-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-red-500 dark:border-red-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-red-500 dark:border-red-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount2')}</h3>
             <Flame className="text-red-500" size={24} />

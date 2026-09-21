@@ -695,14 +695,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
       {/* Category Summary — Treasury-style widgets, kept to one row */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-green-500 dark:border-green-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-l-4 border-green-500 dark:border-green-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]">
           <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('expenses.widget.total')}</h3>
           <p className="text-lg sm:text-xl font-bold text-green-600">₹{totalExpenses.toLocaleString()}</p>
         </div>
         {categoryTotals.map((ct) => (
           <div
             key={ct.category}
-            className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-red-500 dark:border-red-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]"
+            className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-l-4 border-red-500 dark:border-red-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]"
           >
             <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{ct.label}</h3>
             <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
