@@ -19,8 +19,57 @@ interface VendorGroup {
   name: string;
   contact: string;
   entries: Expense[];
-  totalAmount: number;
+  totalAmount: number; // total actually credited/received (getExpenseCreditAmount sum)
+  totalContractAmount: number; // total agreed/billed amount (raw exp.amount sum), regardless of payment status
   categories: string[];
+}
+
+interface PaymentRow {
+  id: string;
+  date: string;
+  title: string;
+  category: string;
+  voucherNumber: string;
+  amount: number;
+  remarks: string;
+}
+
+// Partial-payment expenses store each installment's amount/date in
+// parallel arrays — split those into one row per installment instead of
+// one row per expense, so partial payments show up line by line like
+// every other payment. Non-partial expenses stay a single row.
+function paymentRowsFor(entries: Expense[]): PaymentRow[] {
+  const rows: PaymentRow[] = [];
+  for (const exp of entries) {
+    const partials = exp.partialAmounts || [];
+    const hasPartials = exp.paymentStatus === 'partial' && partials.some(v => v !== undefined && v !== null);
+    if (hasPartials) {
+      const dates = exp.partialDates || [];
+      partials.forEach((amount, i) => {
+        if (amount === undefined || amount === null) return;
+        rows.push({
+          id: `${exp.id}-${i}`,
+          date: dates[i] || exp.date,
+          title: exp.title,
+          category: exp.category,
+          voucherNumber: exp.voucherNumber || '',
+          amount,
+          remarks: exp.remarks,
+        });
+      });
+    } else {
+      rows.push({
+        id: exp.id,
+        date: exp.date,
+        title: exp.title,
+        category: exp.category,
+        voucherNumber: exp.voucherNumber || '',
+        amount: getExpenseCreditAmount(exp),
+        remarks: exp.remarks,
+      });
+    }
+  }
+  return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 // Read-only view: every expense that has a Vendor/Supplier Name attached
@@ -51,11 +100,12 @@ export function Vendors({ expenses }: VendorsProps) {
       const key = `${name.toLowerCase()}|${contact.toLowerCase()}`;
 
       if (!groups.has(key)) {
-        groups.set(key, { key, name, contact, entries: [], totalAmount: 0, categories: [] });
+        groups.set(key, { key, name, contact, entries: [], totalAmount: 0, totalContractAmount: 0, categories: [] });
       }
       const group = groups.get(key)!;
       group.entries.push(exp);
       group.totalAmount += getExpenseCreditAmount(exp);
+      group.totalContractAmount += exp.amount;
       if (!group.categories.includes(exp.category)) group.categories.push(exp.category);
     }
 
@@ -168,6 +218,10 @@ export function Vendors({ expenses }: VendorsProps) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
+            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalContractAmount')}</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">₹{viewingVendor.totalContractAmount.toLocaleString()}</p>
+            </div>
             <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalAmount')}</p>
               <p className="text-2xl font-bold text-green-600">₹{viewingVendor.totalAmount.toLocaleString()}</p>
@@ -192,18 +246,18 @@ export function Vendors({ expenses }: VendorsProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {viewingVendor.entries.map((exp) => (
-                  <tr key={exp.id}>
+                {paymentRowsFor(viewingVendor.entries).map((row) => (
+                  <tr key={row.id}>
                     <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {new Date(exp.date).toLocaleDateString(locale)}
+                      {new Date(row.date).toLocaleDateString(locale)}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{exp.title}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{categoryLabel(exp.category)}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{exp.voucherNumber || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{row.title}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{categoryLabel(row.category)}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{row.voucherNumber || '-'}</td>
                     <td className="px-4 py-2 text-sm text-green-600 font-bold text-right">
-                      ₹{getExpenseCreditAmount(exp).toLocaleString()}
+                      ₹{row.amount.toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{exp.remarks || '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{row.remarks || '-'}</td>
                   </tr>
                 ))}
               </tbody>
