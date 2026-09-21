@@ -196,7 +196,6 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             </button>
           )
         }
-        total={`${t('common.total')}: ${tasksList.length}`}
       >
         {t('tasks.pageTitle')}
       </PageHeading>
