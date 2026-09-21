@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, MoreVertical, X,
+  FileBarChart, MoreHorizontal, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -113,7 +113,7 @@ export function Sidebar({
               )}
               {collapsed && groupIndex > 0 && (
                 <div className="flex justify-center mb-4" aria-hidden="true">
-                  <MoreVertical size={16} className="text-gray-400" />
+                  <MoreHorizontal size={19} className="text-gray-400" />
                 </div>
               )}
               <div className="space-y-1">
