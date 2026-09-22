@@ -485,6 +485,31 @@ export async function updateDeveloperInfo(info: DeveloperInfo): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Password generation — mirrors superAdminDb.ts's version (and the
+// server-side is_password_strong() in supabase/037_password_strength.sql)
+// so a committee admin resetting a member's password gets the same
+// generate/strength UX Super Admin already has for tenant admin logins.
+// ---------------------------------------------------------------------------
+
+export function isPasswordStrong(password: string): boolean {
+  return password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+}
+
+export function generatePassword(): string {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%';
+  const pick = (pool: string) => pool[Math.floor(Math.random() * pool.length)];
+  const rest = Array.from({ length: 6 }, () => pick(letters + digits)).join('');
+  const chars = [pick(letters), pick(digits), pick(symbols), ...rest.split('')];
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
+// ---------------------------------------------------------------------------
 // Committee logo upload (Supabase Storage — see supabase/storage.sql)
 // ---------------------------------------------------------------------------
 

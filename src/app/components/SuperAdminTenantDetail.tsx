@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CreditCard, UserCog, Users, Eye, EyeOff, RefreshCw, Power, Trash2, RotateCcw, Flame } from 'lucide-react';
+import { ArrowLeft, CreditCard, UserCog, Users, Eye, EyeOff, RefreshCw, Power, Trash2, RotateCcw, Flame, Copy, Check } from 'lucide-react';
 import {
   Tenant,
   SubscriptionCredit,
@@ -52,6 +52,7 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState(''); // empty = keep current password
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [adminPasswordCopied, setAdminPasswordCopied] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
 
@@ -62,6 +63,7 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const [newAdminUsername, setNewAdminUsername] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState(() => generatePassword());
   const [showNewAdminPassword, setShowNewAdminPassword] = useState(false);
+  const [newAdminPasswordCopied, setNewAdminPasswordCopied] = useState(false);
   const [creatingAdmin, setCreatingAdmin] = useState(false);
 
   const [users, setUsers] = useState<TenantUser[]>([]);
@@ -408,9 +410,24 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
                   type={showNewAdminPassword ? 'text' : 'password'}
                   value={newAdminPassword}
                   onChange={e => setNewAdminPassword(e.target.value)}
-                  className="w-full pl-3 pr-16 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full pl-3 pr-20 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {newAdminPassword && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newAdminPassword).then(() => {
+                          setNewAdminPasswordCopied(true);
+                          setTimeout(() => setNewAdminPasswordCopied(false), 2000);
+                        });
+                      }}
+                      title="Copy password"
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      {newAdminPasswordCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setNewAdminPassword(generatePassword())}
@@ -468,9 +485,24 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
                   value={adminPassword}
                   onChange={e => setAdminPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-3 pr-16 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full pl-3 pr-20 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {adminPassword && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(adminPassword).then(() => {
+                          setAdminPasswordCopied(true);
+                          setTimeout(() => setAdminPasswordCopied(false), 2000);
+                        });
+                      }}
+                      title="Copy password"
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                    >
+                      {adminPasswordCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => { setAdminPassword(generatePassword()); setShowAdminPassword(true); }}

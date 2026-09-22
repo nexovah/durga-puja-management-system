@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
-import { uploadLogo, DeveloperInfo } from '../lib/db';
+import { uploadLogo, generatePassword, DeveloperInfo } from '../lib/db';
 import { FormModal } from './FormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 
@@ -70,6 +70,8 @@ export function Settings({
   const [showUserForm, setShowUserForm] = useState(false);
   const [deleteUserTarget, setDeleteUserTarget] = useState<User | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [showUserPassword, setShowUserPassword] = useState(false);
+  const [userPasswordCopied, setUserPasswordCopied] = useState(false);
   const [userForm, setUserForm] = useState({
     name: '',
     username: '',
@@ -192,6 +194,7 @@ export function Settings({
     });
     setEditingUserId(user.id);
     setShowUserForm(true);
+    setShowUserPassword(false);
   };
 
   const handleDeleteUser = (id: string) => {
@@ -554,6 +557,7 @@ export function Settings({
                   onClick={() => {
                     setShowUserForm(true);
                     setEditingUserId(null);
+                    setShowUserPassword(false);
                     setUserForm({
                       name: '',
                       username: '',
@@ -632,13 +636,48 @@ export function Settings({
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           {t('settings.password')} {editingUserId ? `(${t('settings.leaveBlankToKeep')})` : ''}
                         </label>
-                        <input
-                          type="password"
-                          required={!editingUserId}
-                          value={userForm.password}
-                          onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showUserPassword ? 'text' : 'password'}
+                            required={!editingUserId}
+                            value={userForm.password}
+                            onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                            className="w-full pl-4 pr-20 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          />
+                          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {userForm.password && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(userForm.password).then(() => {
+                                    setUserPasswordCopied(true);
+                                    setTimeout(() => setUserPasswordCopied(false), 2000);
+                                  });
+                                }}
+                                title="Copy password"
+                                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                              >
+                                {userPasswordCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => { setUserForm({ ...userForm, password: generatePassword() }); setShowUserPassword(true); }}
+                              title="Generate password"
+                              className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowUserPassword(s => !s)}
+                              title={showUserPassword ? 'Hide' : 'Show'}
+                              className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                            >
+                              {showUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

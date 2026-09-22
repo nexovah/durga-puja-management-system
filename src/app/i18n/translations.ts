@@ -620,8 +620,8 @@ export const translations = {
     'login.passwordPlaceholder': 'Enter your password',
     'login.submit': 'Log In',
     'login.submitting': 'Logging in…',
-    'login.tagline1': 'Manage all activities of the Durga Puja committee with ease.',
-    'login.tagline2': 'Members, chanda, expenses and accounts, all in one place.',
+    'login.tagline1': 'Manage all activities of any puja committee with ease.',
+    'login.tagline2': 'Members, chanda, expenses, accounts, and estimation all in one place.',
 
     // Global Search
     'search.placeholder': 'Search members, chanda, donation/ads, expenses…',
