@@ -207,3 +207,33 @@ html {
     margin: 16mm;
   }
 }
+
+/* iOS Safari's native date/time input has an intrinsic content width
+   (the picker chrome) that ignores `w-full` and pushes past its grid
+   cell — grid/flex items default to `min-width: auto`, computed from
+   their content's own min-content size, so a wide native control makes
+   the whole item (and its row) refuse to shrink below that width no
+   matter what width utility is on the input itself. That overflowed the
+   1-column mobile grid every form uses, making the entire modal
+   horizontally scrollable. Forcing min-width: 0 on these inputs (and
+   letting that propagate to their grid-item's own auto-minimum) fixes
+   it without touching every form file individually.
+   https://css-tricks.com/preventing-a-grid-blowout/ */
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
+input[type='month'] {
+  min-width: 0;
+}
+
+/* Belt-and-suspenders: the grid/flex item itself (not just the input)
+   needs min-width: 0 to actually be allowed to shrink — this project's
+   date fields are always a direct child <div> wrapping the input, so
+   :has() reaches it without touching every form file. Safari 15.4+
+   supports :has(); older browsers simply keep relying on the rule
+   above, which fixes most cases on its own. */
+div:has(> input[type='date']),
+div:has(> input[type='time']),
+div:has(> input[type='datetime-local']) {
+  min-width: 0;
+}

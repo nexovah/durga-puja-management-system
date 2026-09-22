@@ -5,7 +5,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
-import { FormModal } from './FormModal';
+import { FormModal, FormModalCancelButton } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 
@@ -210,7 +210,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             <button
               type="submit"
               form="tasks-form"
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              className="flex-1 min-w-0 px-2 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
@@ -219,18 +219,12 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                 type="submit"
                 form="tasks-form"
                 value="andNew"
-                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium"
+                className="flex-1 min-w-0 px-2 sm:px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
               >
                 {t('common.saveAndAddNew')}
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
-            >
-              {t('common.cancel')}
-            </button>
+            <FormModalCancelButton onClick={handleCancel} label={t('common.cancel')} />
           </>
         }
       >

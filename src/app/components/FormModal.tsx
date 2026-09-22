@@ -9,6 +9,26 @@ interface FormModalProps {
   footer: ReactNode; // action buttons (Save/Update + Cancel)
 }
 
+// Every footer's Cancel button, used across Members/Chanda/Donation-Ads/
+// Expenses/Loans/Tasks/Settings — icon-only on mobile (just an X, no
+// "Cancel" label) so the primary/secondary action buttons next to it get
+// enough room to stay on one line instead of the whole footer stacking
+// into 3 separate rows, which was eating too much of the modal's height
+// on a phone. Full "Cancel" label returns at sm: and up.
+export function FormModalCancelButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      className="shrink-0 flex items-center justify-center gap-2 px-3 sm:px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+    >
+      <X size={18} className="sm:hidden" />
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
+
 // Shared Add/Edit modal used by every page's form (Members, Chanda,
 // Donation/Ads, Expenses, Loans, Tasks): a centered dialog on desktop,
 // full-screen on mobile with the action buttons pinned to the bottom so
@@ -30,9 +50,12 @@ export function FormModal({ open, title, onClose, children, footer }: FormModalP
           {children}
         </div>
 
-        {/* Stack full-width on mobile so button labels ("Save & Add New")
-            never wrap — row layout returns from sm: up. */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0 [&>button]:w-full [&>button]:justify-center [&>button]:whitespace-nowrap sm:[&>button]:w-auto">
+        {/* Always one row, even on mobile — Add/Save&AddNew share the
+            remaining space equally (each has flex-1 in its own file) and
+            Cancel is icon-only below sm: (FormModalCancelButton above),
+            so the footer stays compact and the form above gets more of
+            the screen instead of three stacked full-width buttons. */}
+        <div className="flex flex-row items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0">
           {footer}
         </div>
       </div>

@@ -7,7 +7,7 @@ import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
-import { FormModal } from './FormModal';
+import { FormModal, FormModalCancelButton } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ViewModal } from './ViewModal';
@@ -322,17 +322,11 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             <button
               type="submit"
               form="loans-form"
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              className="flex-1 min-w-0 px-2 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
-            >
-              {t('common.cancel')}
-            </button>
+            <FormModalCancelButton onClick={handleCancel} label={t('common.cancel')} />
           </>
         }
       >
