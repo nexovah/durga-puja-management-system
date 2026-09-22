@@ -463,7 +463,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             <button
               type="submit"
               form="chanda-form"
-              className="flex-1 min-w-0 px-2 sm:px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+              className="flex-1 min-w-0 px-2 sm:px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis"
             >
               {editingId ? t('common.update') : t('common.add')}
             </button>
@@ -472,7 +472,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 type="submit"
                 form="chanda-form"
                 value="andNew"
-                className="flex-1 min-w-0 px-2 sm:px-6 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                className="flex-1 min-w-0 px-2 sm:px-6 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis"
               >
                 {t('common.saveAndAddNew')}
               </button>

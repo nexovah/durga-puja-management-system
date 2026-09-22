@@ -21,9 +21,9 @@ export function FormModalCancelButton({ onClick, label }: { onClick: () => void;
       type="button"
       onClick={onClick}
       title={label}
-      className="shrink-0 flex items-center justify-center gap-2 px-3 sm:px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+      className="shrink-0 flex items-center justify-center gap-2 px-3 sm:px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-sm sm:text-base"
     >
-      <X size={18} className="sm:hidden" />
+      <X size={20} className="sm:hidden" />
       <span className="hidden sm:inline">{label}</span>
     </button>
   );
