@@ -8,6 +8,7 @@ import {
   updatePlanRequest,
   archivePlanRequest,
 } from '../lib/superAdminDb';
+import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
 const EMPTY_FORM: PlanFormInput = { name: '', description: '', durationMonths: 1, amountPaise: 0, currency: 'INR', features: '', displayOrder: 0 };
 
@@ -38,6 +39,9 @@ export function SuperAdminPlans() {
   const [formActive, setFormActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const openedFromUrl = useRef(false);
+
+  const [archiveTarget, setArchiveTarget] = useState<SubscriptionPlanAdmin | null>(null);
+  const [archiving, setArchiving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -128,13 +132,18 @@ export function SuperAdminPlans() {
     }
   };
 
-  const handleArchive = async (planId: string) => {
+  const handleArchiveConfirm = async () => {
+    if (!archiveTarget) return;
+    setArchiving(true);
     setError('');
     try {
-      await archivePlanRequest(planId);
+      await archivePlanRequest(archiveTarget.id);
+      setArchiveTarget(null);
       await load();
     } catch (err: any) {
       setError(err?.message || 'Failed to archive plan');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -280,7 +289,7 @@ export function SuperAdminPlans() {
                       </button>
                       {plan.isActive && (
                         <button
-                          onClick={() => handleArchive(plan.id)}
+                          onClick={() => setArchiveTarget(plan)}
                           title="Archive"
                           className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                         >
@@ -295,6 +304,20 @@ export function SuperAdminPlans() {
           </table>
         </div>
       )}
+
+      <SuperAdminConfirmModal
+        open={!!archiveTarget}
+        danger={false}
+        title="Archive plan"
+        message={
+          archiveTarget
+            ? `"${archiveTarget.name}" will stop appearing on the landing page, tenant Billing pages, and manual-grant buttons. Existing subscriptions already using this plan are unaffected. You can re-activate it anytime by editing it.`
+            : ''
+        }
+        confirmLabel={archiving ? 'Archiving…' : 'Archive'}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={handleArchiveConfirm}
+      />
     </div>
   );
 }

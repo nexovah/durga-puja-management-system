@@ -242,69 +242,71 @@ export function Settings({
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('committee')}
-            className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'committee'
-                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Building2 size={20} />
-            {t('settings.tab.committee')}
-          </button>
-          <button
-            onClick={() => setActiveTab('password')}
-            className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'password'
-                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Lock size={20} />
-            {t('settings.tab.password')}
-          </button>
-          {currentUser?.isAdmin && (
+      {/* Left-nav settings shell — matches Super Admin's Settings layout */}
+      <div className="flex flex-col sm:flex-row gap-6">
+        <nav className="sm:w-56 shrink-0">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-2 flex sm:flex-col gap-1 overflow-x-auto">
             <button
-              onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-                activeTab === 'users'
-                  ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              onClick={() => setActiveTab('committee')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'committee'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
-              <Users size={20} />
-              {t('settings.tab.users')}
+              <Building2 size={18} />
+              {t('settings.tab.committee')}
             </button>
-          )}
-          <button
-            onClick={() => setActiveTab('language')}
-            className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'language'
-                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Languages size={20} />
-            {t('settings.tab.language')}
-          </button>
-          <button
-            onClick={() => setActiveTab('developer')}
-            className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'developer'
-                ? 'border-orange-600 text-orange-600 bg-orange-50 dark:bg-orange-500/10'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-          >
-            <Code size={20} />
-            {t('settings.tab.developer')}
-          </button>
-        </div>
+            <button
+              onClick={() => setActiveTab('password')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'password'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Lock size={18} />
+              {t('settings.tab.password')}
+            </button>
+            {currentUser?.isAdmin && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'users'
+                    ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Users size={18} />
+                {t('settings.tab.users')}
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('language')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'language'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Languages size={18} />
+              {t('settings.tab.language')}
+            </button>
+            <button
+              onClick={() => setActiveTab('developer')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'developer'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Code size={18} />
+              {t('settings.tab.developer')}
+            </button>
+          </div>
+        </nav>
 
-        <div className="p-6">
+        <div className="flex-1 min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           {/* Committee Info Tab */}
           {activeTab === 'committee' && (
             <form onSubmit={handleCommitteeSubmit} className="space-y-4">
