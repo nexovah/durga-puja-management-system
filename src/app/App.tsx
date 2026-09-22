@@ -611,7 +611,8 @@ export default function App() {
     const previous = committeeInfo;
     setCommitteeInfoState(info);
     try {
-      await updateCommitteeInfo(info);
+      const saved = await updateCommitteeInfo(info);
+      if (saved.id !== info.id) setCommitteeInfoState(saved);
     } catch (err) {
       console.error('Failed to save committee info', err);
       alert(t('common.saveError'));

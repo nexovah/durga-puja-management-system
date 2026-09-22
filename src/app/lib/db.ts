@@ -260,6 +260,27 @@ function toEstimationRow(estimation: Estimation) {
 }
 
 function fromCommitteeRow(row: any): CommitteeInfo {
+  // A brand-new tenant (e.g. created via Super Admin) has no committee_info
+  // row yet until the committee fills in Settings — fall back to empty
+  // defaults instead of crashing on a null row.
+  if (!row) {
+    return {
+      id: '',
+      name: '',
+      logo: '',
+      established: '',
+      regNumber: '',
+      association: '',
+      post: '',
+      districtPS: '',
+      pinCode: '',
+      mobile1: '',
+      mobile2: '',
+      address: '',
+      phone: '',
+      year: '',
+    };
+  }
   return {
     id: row.id,
     name: row.name || '',
@@ -423,13 +444,22 @@ export const syncEstimations = (oldList: Estimation[], newList: Estimation[]) =>
 // Singleton settings rows
 // ---------------------------------------------------------------------------
 
-export async function updateCommitteeInfo(info: CommitteeInfo): Promise<void> {
-  // No id/tenant filter needed — RLS already scopes this update to exactly
+export async function updateCommitteeInfo(info: CommitteeInfo): Promise<CommitteeInfo> {
+  // A brand-new tenant has no committee_info row yet (see fromCommitteeRow's
+  // null fallback) — insert one on first save instead of updating a
+  // nonexistent id.
+  if (!info.id) {
+    const { data, error } = await supabase.from('committee_info').insert(toCommitteeRow(info)).select().single();
+    if (error) throw error;
+    return fromCommitteeRow(data);
+  }
+  // No tenant filter needed — RLS already scopes this update to exactly
   // the caller's tenant's single committee_info row (see
   // supabase/020_multi_tenant.sql). PostgREST requires *some* filter to
   // avoid a full-table update, so match on the primary key it just read.
   const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', info.id);
   if (error) throw error;
+  return info;
 }
 
 export async function updateDeveloperInfo(info: DeveloperInfo): Promise<void> {
