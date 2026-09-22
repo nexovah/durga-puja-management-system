@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Receipt } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Receipt } from 'lucide-react';
 import {
   SubscriptionPlan,
   BillingHistoryItem,
@@ -49,6 +49,16 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
   const expiresAt = currentUser?.subscriptionExpiresAt ? new Date(currentUser.subscriptionExpiresAt) : null;
   const isExpired = !expiresAt || expiresAt.getTime() < Date.now();
 
+  // "Active" plan = the plan matching the most recent paid/manual history
+  // entry, only while the subscription hasn't lapsed (an expired sub has
+  // no currently-active plan, even though history still shows one).
+  const latestHistoryItem = history.length
+    ? [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
+  const activePlanId = !isExpired && latestHistoryItem
+    ? plans.find(p => p.durationMonths === latestHistoryItem.durationMonths)?.id ?? null
+    : null;
+
   const handlePay = async () => {
     if (!plan) return;
     setPaying(true);
@@ -93,20 +103,34 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Billing</h1>
-        <p className="text-sm mt-1">
-          {expiresAt ? (
-            <>
-              Subscription {isExpired ? 'expired' : 'active until'}{' '}
-              <span className="font-medium">{expiresAt.toLocaleDateString()}</span>{' '}
-              <span className={isExpired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}>
-                ({isExpired ? 'expired' : 'active'})
-              </span>
-            </>
-          ) : (
-            <span className="text-gray-500 dark:text-gray-400">No active subscription</span>
-          )}
-        </p>
+        {!isExpired && (
+          <p className="text-sm mt-1">
+            {expiresAt ? (
+              <>
+                Subscription active until{' '}
+                <span className="font-medium">{expiresAt.toLocaleDateString()}</span>{' '}
+                <span className="text-green-600 dark:text-green-400">(active)</span>
+              </>
+            ) : (
+              <span className="text-gray-500 dark:text-gray-400">No active subscription</span>
+            )}
+          </p>
+        )}
       </div>
+
+      {isExpired && (
+        <div className="flex items-start gap-3 px-4 py-4 rounded-xl bg-red-600 dark:bg-red-700 text-white shadow-md">
+          <AlertTriangle className="w-6 h-6 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">
+              Subscription expired{expiresAt ? ` on ${expiresAt.toLocaleDateString()}` : ''}
+            </p>
+            <p className="text-sm text-red-100 mt-0.5">
+              Your account is not operable until you renew. Pick a plan below and complete payment to restore access.
+            </p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -134,13 +158,18 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       <button
                         key={p.id}
                         onClick={() => setSelectedPlanId(p.id)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                        className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition ${
                           selectedPlanId === p.id
                             ? 'bg-orange-600 text-white'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
                         {p.name}
+                        {p.id === activePlanId && (
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500 text-white align-middle">
+                            Active
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -148,8 +177,15 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
 
                 {plan && (
                   <>
-                    <div className="text-3xl font-semibold mb-1">
-                      {formatAmount(plan.amountPaise, plan.currency)}
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="text-3xl font-semibold">
+                        {formatAmount(plan.amountPaise, plan.currency)}
+                      </div>
+                      {plan.id === activePlanId && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                          Active plan
+                        </span>
+                      )}
                     </div>
                     {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{plan.description}</p>}
                     <ul className="space-y-2 my-5">

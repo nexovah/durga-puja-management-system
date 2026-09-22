@@ -188,15 +188,21 @@ export interface DonationAd {
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
 export type PaidThrough = 'notSelected' | 'cash' | 'check' | 'qrPayment' | 'onlineBanking';
 
+export interface ExpensePartialPayment {
+  amount: number;
+  voucherNumber?: string;
+  date?: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
   amount: number; // Amount billed/agreed
   paymentStatus: ExpensePaymentStatus;
-  // Up to 5 partial payment installments; only meaningful when paymentStatus === 'partial'.
-  // The first entry is required when partial, the rest are optional.
-  partialAmounts?: (number | undefined)[];
-  partialDates?: (string | undefined)[]; // parallel to partialAmounts — the date each installment was actually paid
+  // Unlimited partial payment installments; only meaningful when
+  // paymentStatus === 'partial'. Each installment carries its own voucher
+  // number and date — see supabase/045_expenses_partial_payments_unlimited.sql.
+  partialPayments?: ExpensePartialPayment[];
   paidThrough: PaidThrough;
   date: string;
   category: string;
@@ -213,7 +219,7 @@ export function getExpenseCreditAmount(expense: Expense): number {
     case 'paid':
       return expense.amount;
     case 'partial':
-      return (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
+      return (expense.partialPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
     case 'cancelled':
       return 0;
     default:
@@ -800,13 +806,40 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     new Date(currentUser.subscriptionExpiresAt).getTime() < Date.now();
 
   if (subscriptionExpired) {
+    // Admins can still reach a standalone Billing screen to renew — they're
+    // the only ones who could pay anyway (Billing is admin-only). Everyone
+    // else just sees the block; they can't act on it, only their admin can.
+    if (currentUser?.isAdmin) {
+      return (
+        <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 p-4 sm:p-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-semibold text-gray-900 dark:text-gray-100">Durga CRM</span>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition"
+              >
+                Log out
+              </button>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 sm:p-6">
+              <Billing
+                currentUser={currentUser}
+                committeeName={committeeInfo.association || committeeInfo.name}
+                onSubscriptionExtended={handleSubscriptionExtended}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-orange-200 dark:border-orange-500/30">
           <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">⏳</div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">You are out of subscription</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Your committee's subscription has expired. Renew to continue using Durga CRM.
+            Your committee's subscription has expired. Contact your committee admin to renew.
           </p>
           <button
             onClick={handleLogout}

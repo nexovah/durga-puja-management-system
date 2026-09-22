@@ -41,19 +41,17 @@ interface PaymentRow {
 function paymentRowsFor(entries: Expense[]): PaymentRow[] {
   const rows: PaymentRow[] = [];
   for (const exp of entries) {
-    const partials = exp.partialAmounts || [];
-    const hasPartials = exp.paymentStatus === 'partial' && partials.some(v => v !== undefined && v !== null);
+    const partials = exp.partialPayments || [];
+    const hasPartials = exp.paymentStatus === 'partial' && partials.length > 0;
     if (hasPartials) {
-      const dates = exp.partialDates || [];
-      partials.forEach((amount, i) => {
-        if (amount === undefined || amount === null) return;
+      partials.forEach((payment, i) => {
         rows.push({
           id: `${exp.id}-${i}`,
-          date: dates[i] || exp.date,
+          date: payment.date || exp.date,
           title: exp.title,
           category: exp.category,
-          voucherNumber: exp.voucherNumber || '',
-          amount,
+          voucherNumber: payment.voucherNumber || exp.voucherNumber || '',
+          amount: payment.amount,
           remarks: exp.remarks,
         });
       });
@@ -118,6 +116,7 @@ export function Vendors({ expenses }: VendorsProps) {
   }, [expenses]);
 
   const viewingVendor = vendorGroups.find(g => g.key === viewingKey) || null;
+  const viewingVendorPaymentRows = viewingVendor ? paymentRowsFor(viewingVendor.entries) : [];
 
   const filteredVendorGroups = vendorGroups.filter(g => {
     const q = searchQuery.trim().toLowerCase();
@@ -217,7 +216,7 @@ export function Vendors({ expenses }: VendorsProps) {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
             <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalContractAmount')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">₹{viewingVendor.totalContractAmount.toLocaleString()}</p>
@@ -226,9 +225,15 @@ export function Vendors({ expenses }: VendorsProps) {
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalAmount')}</p>
               <p className="text-2xl font-bold text-green-600">₹{viewingVendor.totalAmount.toLocaleString()}</p>
             </div>
+            <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.pendingAmount')}</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                ₹{Math.max(0, viewingVendor.totalContractAmount - viewingVendor.totalAmount).toLocaleString()}
+              </p>
+            </div>
             <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.transactions')}</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{viewingVendor.entries.length}</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{viewingVendorPaymentRows.length}</p>
             </div>
           </div>
 
@@ -242,11 +247,10 @@ export function Vendors({ expenses }: VendorsProps) {
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.voucherNumber')}</th>
                   <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {paymentRowsFor(viewingVendor.entries).map((row) => (
+                {viewingVendorPaymentRows.map((row) => (
                   <tr key={row.id}>
                     <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {new Date(row.date).toLocaleDateString(locale)}
@@ -257,7 +261,6 @@ export function Vendors({ expenses }: VendorsProps) {
                     <td className="px-4 py-2 text-sm text-green-600 font-bold text-right">
                       ₹{row.amount.toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{row.remarks || '-'}</td>
                   </tr>
                 ))}
               </tbody>

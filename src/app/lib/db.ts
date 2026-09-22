@@ -11,6 +11,7 @@ import {
   Chanda,
   DonationAd,
   Expense,
+  ExpensePartialPayment,
   Loan,
   Task,
   Estimation,
@@ -132,19 +133,19 @@ function toDonationAdRow(d: DonationAd) {
 }
 
 function fromExpenseRow(row: any): Expense {
-  const partials = Array.isArray(row.partial_amounts)
-    ? row.partial_amounts.map((v: any) => (v === null || v === undefined ? undefined : Number(v)))
-    : undefined;
-  const partialDates = Array.isArray(row.partial_dates)
-    ? row.partial_dates.map((v: any) => (v === null || v === undefined ? undefined : v))
+  const partialPayments: ExpensePartialPayment[] | undefined = Array.isArray(row.partial_payments)
+    ? row.partial_payments.map((p: any) => ({
+        amount: Number(p.amount) || 0,
+        voucherNumber: p.voucherNumber || undefined,
+        date: p.date || undefined,
+      }))
     : undefined;
   return {
     id: row.id,
     title: row.title,
     amount: Number(row.amount) || 0,
     paymentStatus: row.payment_status,
-    partialAmounts: partials,
-    partialDates,
+    partialPayments,
     paidThrough: row.paid_through,
     date: row.date,
     category: row.category,
@@ -160,8 +161,7 @@ function toExpenseRow(e: Expense) {
     title: e.title,
     amount: e.amount,
     payment_status: e.paymentStatus,
-    partial_amounts: e.partialAmounts ? e.partialAmounts.map(v => (v === undefined ? null : v)) : null,
-    partial_dates: e.partialDates ? e.partialDates.map(v => (v === undefined || v === '' ? null : v)) : null,
+    partial_payments: e.partialPayments && e.partialPayments.length > 0 ? e.partialPayments : null,
     paid_through: e.paidThrough,
     date: e.date,
     category: e.category,

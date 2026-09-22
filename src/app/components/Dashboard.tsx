@@ -1,4 +1,4 @@
-import { Users, IndianRupee, TrendingDown, Wallet, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
+import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
@@ -17,15 +17,13 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
+  const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
+  const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembershipPayments;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const balance = totalCredit - totalExpenses;
-
-  const recentChanda = chandaList.length > 0
-    ? getChandaCreditAmount([...chandaList].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0])
-    : 0;
 
   // Amount still owed by donors: full amount for 'pending', the unpaid
   // remainder for 'partial'. 'rejected' is excluded (donor declined to pay).
@@ -41,10 +39,10 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   const statTiles = [
     { title: t('dashboard.totalMembers'), value: members.length.toString(), subLabel: t('dashboard.totalMembersPaid'), subValue: `₹${totalMembershipPayments.toLocaleString()}`, icon: Users, accent: 'blue' },
     { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, accent: 'green' },
-    { title: t('dashboard.donationAdsTotal'), value: `₹${totalDonationAds.toLocaleString()}`, icon: Gift, accent: 'emerald' },
-    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, accent: 'sky' },
-    { title: t('dashboard.recentChanda'), value: `₹${recentChanda.toLocaleString()}`, icon: Wallet, accent: 'purple' },
     { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, accent: 'amber' },
+    { title: t('dashboard.donationTotal'), value: `₹${totalDonation.toLocaleString()}`, icon: Gift, accent: 'emerald' },
+    { title: t('dashboard.adsTotal'), value: `₹${totalAds.toLocaleString()}`, icon: Gift, accent: 'emerald' },
+    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, accent: 'sky' },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, accent: 'red' },
     { title: t('dashboard.expenses'), value: expenses.length.toString(), icon: ClipboardList, accent: 'orange' },
   ];

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { Expense, ExpensePaymentStatus, PaidThrough, getExpenseCreditAmount } from '../App';
+import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -62,14 +62,6 @@ const PAID_THROUGH_OPTIONS: { value: PaidThrough; labelKey: TranslationKey }[] =
   { value: 'onlineBanking', labelKey: 'expenses.paidThrough.onlineBanking' },
 ];
 
-const PARTIAL_LABEL_KEYS: TranslationKey[] = [
-  'expenses.partialAmount1',
-  'expenses.partialAmount2',
-  'expenses.partialAmount3',
-  'expenses.partialAmount4',
-  'expenses.partialAmount5',
-];
-
 const STATUS_BADGE_CLASS: Record<ExpensePaymentStatus, string> = {
   paid: 'bg-green-100 text-green-700',
   partial: 'bg-yellow-100 text-yellow-700',
@@ -80,8 +72,7 @@ const emptyForm = {
   title: '',
   amount: '',
   paymentStatus: 'paid' as ExpensePaymentStatus,
-  partialAmounts: ['', '', '', '', ''],
-  partialDates: ['', '', '', '', ''],
+  partialPayments: [] as { amount: string; voucherNumber: string; date: string }[],
   paidThrough: 'notSelected' as PaidThrough,
   date: new Date().toISOString().split('T')[0],
   category: '',
@@ -150,16 +141,21 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const isPartial = formData.paymentStatus === 'partial';
 
   const partialSumFromForm = () =>
-    formData.partialAmounts.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+    formData.partialPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     const amount = parseFloat(formData.amount) || 0;
-    const partialAmounts = formData.partialAmounts.map(v => (v.trim() === '' ? undefined : parseFloat(v) || 0));
-    const partialDates = formData.partialDates.map(v => (v.trim() === '' ? undefined : v));
-    const partialSum = partialAmounts.reduce((sum: number, v) => sum + (v || 0), 0);
+    const partialPayments: ExpensePartialPayment[] = formData.partialPayments
+      .filter(p => p.amount.trim() !== '')
+      .map(p => ({
+        amount: parseFloat(p.amount) || 0,
+        voucherNumber: p.voucherNumber.trim() || undefined,
+        date: p.date.trim() || undefined,
+      }));
+    const partialSum = partialPayments.reduce((sum, p) => sum + p.amount, 0);
 
     if (formData.paymentStatus === 'partial' && partialSum > amount) {
       alert(
@@ -183,8 +179,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       title: formData.title,
       amount,
       paymentStatus: formData.paymentStatus,
-      partialAmounts: formData.paymentStatus === 'partial' ? partialAmounts : undefined,
-      partialDates: formData.paymentStatus === 'partial' ? partialDates : undefined,
+      partialPayments: formData.paymentStatus === 'partial' ? partialPayments : undefined,
       paidThrough: formData.paidThrough,
       date: formData.date,
       category: formData.category,
@@ -239,14 +234,15 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   };
 
   const handleEdit = (expense: Expense) => {
-    const partials = expense.partialAmounts || [];
-    const partialDates = expense.partialDates || [];
     setFormData({
       title: expense.title,
       amount: expense.amount.toString(),
       paymentStatus: expense.paymentStatus || 'paid',
-      partialAmounts: [0, 1, 2, 3, 4].map(i => (partials[i] !== undefined ? String(partials[i]) : '')),
-      partialDates: [0, 1, 2, 3, 4].map(i => partialDates[i] || ''),
+      partialPayments: (expense.partialPayments || []).map(p => ({
+        amount: String(p.amount),
+        voucherNumber: p.voucherNumber || '',
+        date: p.date || '',
+      })),
       paidThrough: expense.paidThrough || 'notSelected',
       date: expense.date,
       category: expense.category,
@@ -278,17 +274,29 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setEditingId(null);
   };
 
+  // Partial payments are unlimited now, so a fixed set of CSV columns
+  // can't represent them — packed into one column instead, each
+  // installment as "amount:voucherNumber:date", separated by ";".
+  const packPartialPayments = (payments?: ExpensePartialPayment[]) =>
+    (payments || []).map(p => `${p.amount}:${p.voucherNumber || ''}:${p.date || ''}`).join(';');
+
+  const unpackPartialPayments = (packed: string): ExpensePartialPayment[] =>
+    packed.split(';').filter(Boolean).map(chunk => {
+      const [amountRaw, voucherNumber, date] = chunk.split(':');
+      return {
+        amount: parseFloat((amountRaw || '').replace(/,/g, '')) || 0,
+        voucherNumber: voucherNumber || undefined,
+        date: date || undefined,
+      };
+    });
+
   const handleExport = () => {
     const csvContent = [
       [
         t('expenses.csv.title'),
         t('expenses.csv.amount'),
         t('expenses.csv.status'),
-        t('expenses.partialAmount1'),
-        t('expenses.partialAmount2'),
-        t('expenses.partialAmount3'),
-        t('expenses.partialAmount4'),
-        t('expenses.partialAmount5'),
+        t('expenses.partialPayments'),
         t('expenses.csv.paidThrough'),
         t('expenses.csv.date'),
         t('expenses.csv.category'),
@@ -298,11 +306,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         exp.title,
         exp.amount,
         statusLabel(exp.paymentStatus || 'paid'),
-        exp.partialAmounts?.[0] ?? '',
-        exp.partialAmounts?.[1] ?? '',
-        exp.partialAmounts?.[2] ?? '',
-        exp.partialAmounts?.[3] ?? '',
-        exp.partialAmounts?.[4] ?? '',
+        packPartialPayments(exp.partialPayments),
         paidThroughLabel(exp.paidThrough || 'notSelected'),
         exp.date,
         categoryLabel(exp.category),
@@ -338,17 +342,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       for (let i = firstDataRow; i < rows.length; i++) {
         const [
           title, amountRaw, statusRaw,
-          p1, p2, p3, p4, p5,
+          partialPaymentsRaw,
           paidThroughRaw, date, categoryRaw, remarks,
         ] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
         if (!title || isNaN(amount)) continue;
 
         const paymentStatus = parseStatusInput(statusRaw || '');
-        const parsedPartials = [p1, p2, p3, p4, p5].map(v =>
-          (v || '').trim() === '' ? undefined : parseFloat((v || '').replace(/,/g, '')) || 0
-        );
-        const hasAnyPartial = parsedPartials.some(v => v !== undefined);
+        const parsedPartials = unpackPartialPayments(partialPaymentsRaw || '');
 
         const categoryRawTrim = (categoryRaw || '').trim();
         const category = categories.find(c => c.value === categoryRawTrim)
@@ -359,7 +360,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           title: title.trim(),
           amount,
           paymentStatus,
-          partialAmounts: paymentStatus === 'partial' && hasAnyPartial ? parsedPartials : undefined,
+          partialPayments: paymentStatus === 'partial' && parsedPartials.length > 0 ? parsedPartials : undefined,
           paidThrough: parsePaidThroughInput(paidThroughRaw || ''),
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           category: category ? category.value : categoryRawTrim,
@@ -576,38 +577,63 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
             {isPartial && (
               <div className="md:col-span-2">
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                  {PARTIAL_LABEL_KEYS.map((labelKey, index) => (
-                    <div key={labelKey}>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {t(labelKey)} {index === 0 ? '*' : ''}
-                      </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('expenses.partialPayments')}
+                </label>
+                <div className="space-y-3">
+                  {formData.partialPayments.map((payment, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                       <input
                         type="number"
-                        required={index === 0}
                         min="0"
                         step="0.01"
-                        value={formData.partialAmounts[index]}
+                        value={payment.amount}
                         onChange={(e) => {
-                          const next = [...formData.partialAmounts];
-                          next[index] = e.target.value;
-                          setFormData({ ...formData, partialAmounts: next });
+                          const next = [...formData.partialPayments];
+                          next[index] = { ...next[index], amount: e.target.value };
+                          setFormData({ ...formData, partialPayments: next });
                         }}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                        placeholder="0"
+                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        placeholder={t('common.amount')}
+                      />
+                      <input
+                        type="text"
+                        value={payment.voucherNumber}
+                        onChange={(e) => {
+                          const next = [...formData.partialPayments];
+                          next[index] = { ...next[index], voucherNumber: e.target.value };
+                          setFormData({ ...formData, partialPayments: next });
+                        }}
+                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        placeholder={t('expenses.voucherNumber')}
                       />
                       <input
                         type="date"
-                        value={formData.partialDates[index]}
+                        value={payment.date}
                         onChange={(e) => {
-                          const next = [...formData.partialDates];
-                          next[index] = e.target.value;
-                          setFormData({ ...formData, partialDates: next });
+                          const next = [...formData.partialPayments];
+                          next[index] = { ...next[index], date: e.target.value };
+                          setFormData({ ...formData, partialPayments: next });
                         }}
-                        className="w-full mt-2 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, partialPayments: formData.partialPayments.filter((_, i) => i !== index) })}
+                        className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        aria-label={t('common.delete')}
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, partialPayments: [...formData.partialPayments, { amount: '', voucherNumber: '', date: '' }] })}
+                    className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                  >
+                    <Plus size={16} /> {t('expenses.addPartialPayment')}
+                  </button>
                 </div>
                 <p className={`text-sm mt-2 font-medium ${
                   partialSumFromForm() >= (parseFloat(formData.amount) || 0) && (parseFloat(formData.amount) || 0) > 0
@@ -844,9 +870,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         onEdit={canEdit && viewTarget ? () => { const exp = viewTarget; setViewTarget(null); handleEdit(exp); } : undefined}
         fields={viewTarget ? (() => {
           const status = viewTarget.paymentStatus || 'paid';
-          const partials = viewTarget.partialAmounts || [];
-          const partialDates = viewTarget.partialDates || [];
-          const partialSum = partials.reduce((sum, v) => sum + (v || 0), 0);
+          const partials = viewTarget.partialPayments || [];
+          const partialSum = partials.reduce((sum, p) => sum + (p.amount || 0), 0);
           const isFullyPaidPartial = status === 'partial' && partialSum >= viewTarget.amount && viewTarget.amount > 0;
           return [
           { label: t('expenses.title'), value: viewTarget.title },
@@ -871,11 +896,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           },
           { label: t('expenses.paidThrough'), value: paidThroughLabel(viewTarget.paidThrough || 'notSelected') },
           ...(status === 'partial' ? [
-            { label: t('expenses.partialAmount1'), value: `₹${(partials[0] ?? 0).toLocaleString()}${partialDates[0] ? ` (${new Date(partialDates[0]).toLocaleDateString(locale)})` : ''}` },
-            { label: t('expenses.partialAmount2'), value: `₹${(partials[1] ?? 0).toLocaleString()}${partialDates[1] ? ` (${new Date(partialDates[1]).toLocaleDateString(locale)})` : ''}` },
-            { label: t('expenses.partialAmount3'), value: `₹${(partials[2] ?? 0).toLocaleString()}${partialDates[2] ? ` (${new Date(partialDates[2]).toLocaleDateString(locale)})` : ''}` },
-            { label: t('expenses.partialAmount4'), value: `₹${(partials[3] ?? 0).toLocaleString()}${partialDates[3] ? ` (${new Date(partialDates[3]).toLocaleDateString(locale)})` : ''}` },
-            { label: t('expenses.partialAmount5'), value: `₹${(partials[4] ?? 0).toLocaleString()}${partialDates[4] ? ` (${new Date(partialDates[4]).toLocaleDateString(locale)})` : ''}` },
+            ...partials.map((p, i) => ({
+              label: `${t('expenses.partialPayments')} ${i + 1}`,
+              value: `₹${p.amount.toLocaleString()}${p.voucherNumber ? ` · ${p.voucherNumber}` : ''}${p.date ? ` (${new Date(p.date).toLocaleDateString(locale)})` : ''}`,
+            })),
             { label: t('chanda.partialAmountLabel'), value: `₹${partialSum.toLocaleString()} / ₹${viewTarget.amount.toLocaleString()}` },
           ] : []),
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
