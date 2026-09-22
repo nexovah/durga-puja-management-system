@@ -291,7 +291,11 @@ export function EstimationPage({
           </CollapsibleSearchPanel>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* min-w forces real horizontal scroll on mobile instead of
+                every column (and its input) squeezing down to unusable
+                widths — see docs feedback on Estimation being too cramped
+                to type into on phones. */}
+            <table className="w-full min-w-[760px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   {canEdit && <th className="w-8" />}
@@ -358,7 +362,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { title: e.target.value })}
                         disabled={!canEdit}
                         placeholder={t('estimation.itemTitlePlaceholder')}
-                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -368,7 +372,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { customField: e.target.value })}
                         disabled={!canEdit}
                         placeholder={draft.columnLabels.customField}
-                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -378,7 +382,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { customField2: e.target.value })}
                         disabled={!canEdit}
                         placeholder={draft.columnLabels.customField2}
-                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -390,7 +394,7 @@ export function EstimationPage({
                         onChange={(e) => updateDraftItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
                         disabled={!canEdit}
                         placeholder="0"
-                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:bg-gray-50 dark:disabled:bg-gray-800"
                       />
                     </td>
                     {canEdit && (

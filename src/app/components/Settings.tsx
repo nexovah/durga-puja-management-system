@@ -551,7 +551,7 @@ export function Settings({
           {/* User Management Tab */}
           {activeTab === 'users' && currentUser?.isAdmin && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.userManagement')}</h3>
                 <button
                   onClick={() => {
@@ -579,7 +579,7 @@ export function Settings({
                       },
                     });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap w-full sm:w-auto"
                 >
                   <Plus size={20} />
                   {t('settings.createNewUser')}
@@ -774,8 +774,89 @@ export function Settings({
                   </form>
               </FormModal>
 
-              {/* Users List */}
-              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              {/* Users List — cards on mobile, table on sm+ (a 5-column
+                  table with badges/actions doesn't fit a phone width). */}
+              <div className="sm:hidden space-y-3">
+                {users.map((user) => (
+                  <div key={user.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{user.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.username}</p>
+                      </div>
+                      {!user.isAdmin && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleToggleUserActive(user)}
+                            title={user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
+                            className={`p-2 rounded-lg transition-colors ${
+                              user.isActive === false
+                                ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {user.isActive === false ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+                          </button>
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        user.isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {user.isAdmin ? t('header.admin') : t('header.user')}
+                      </span>
+                      {!user.isAdmin && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          user.canEdit === false
+                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                            : user.canDelete === false
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {user.canEdit === false
+                            ? t('settings.accessLevel.view')
+                            : user.canDelete === false
+                            ? t('settings.accessLevel.edit')
+                            : t('settings.accessLevel.editDelete')}
+                        </span>
+                      )}
+                      {!user.isAdmin && user.canEdit !== false && user.canBulkImport === false && (
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                          {t('settings.bulkImport.off')}
+                        </span>
+                      )}
+                      {user.isActive === false && (
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          {t('settings.userDisabled')}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {Object.entries(user.permissions)
+                        .filter(([_, value]) => value)
+                        .map(([key]) => t(PERMISSION_LABEL_KEYS[key]))
+                        .join(', ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <tr>

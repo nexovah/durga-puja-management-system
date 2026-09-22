@@ -30,7 +30,9 @@ export function FormModal({ open, title, onClose, children, footer }: FormModalP
           {children}
         </div>
 
-        <div className="flex gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0">
+        {/* Stack full-width on mobile so button labels ("Save & Add New")
+            never wrap — row layout returns from sm: up. */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0 [&>button]:w-full [&>button]:justify-center [&>button]:whitespace-nowrap sm:[&>button]:w-auto">
           {footer}
         </div>
       </div>

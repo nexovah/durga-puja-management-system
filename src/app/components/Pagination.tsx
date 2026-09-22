@@ -31,8 +31,10 @@ export function usePagination<T>(items: T[], defaultPageSize = 20) {
   return { page, setPage, pageSize, setPageSize, pageItems, totalPages, totalItems, startIndex, endIndex };
 }
 
-// Up to 5 numbered page buttons around the current page, plus the last page
-// (with an ellipsis) when it falls outside that window.
+// Up to `size` numbered page buttons around the current page, plus the last
+// page (with an ellipsis) when it falls outside that window. 5 on desktop,
+// 3 on mobile (see the two rendered windows below) — keeps the whole
+// prev/numbers/next row on one line instead of wrapping.
 function getPageWindow(current: number, total: number, size = 5): { nums: number[]; showLastSeparately: boolean } {
   if (total <= size) return { nums: Array.from({ length: total }, (_, i) => i + 1), showLastSeparately: false };
 
@@ -65,76 +67,107 @@ export function Pagination({
 
   if (totalItems === 0) return null;
 
-  const { nums, showLastSeparately } = getPageWindow(page, totalPages);
+  const mobileWindow = getPageWindow(page, totalPages, 3);
+  const desktopWindow = getPageWindow(page, totalPages, 5);
 
-  const btnBase = 'min-w-[36px] h-9 px-2.5 flex items-center justify-center rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+  const btnBase = 'min-w-[36px] h-9 px-2.5 flex items-center justify-center rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0';
   const btnIdle = 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 hover:border-orange-200';
   const btnActive = 'bg-orange-600 text-white border-orange-600';
+
+  const pageNumberButtons = (nums: number[], showLastSeparately: boolean) => (
+    <>
+      {nums.map(n => (
+        <button
+          key={n}
+          onClick={() => onPageChange(n)}
+          className={`${btnBase} ${n === page ? btnActive : btnIdle}`}
+        >
+          {n}
+        </button>
+      ))}
+      {showLastSeparately && (
+        <>
+          <span className="px-1 text-gray-400 dark:text-gray-500 select-none">···</span>
+          <button
+            onClick={() => onPageChange(totalPages)}
+            className={`${btnBase} ${totalPages === page ? btnActive : btnIdle}`}
+          >
+            {totalPages}
+          </button>
+        </>
+      )}
+    </>
+  );
 
   return (
     <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
       {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5">
-          <button
-            onClick={() => onPageChange(1)}
-            disabled={page === 1}
-            className={`${btnBase} ${btnIdle} gap-1 px-3`}
-            aria-label={t('pagination.first')}
-          >
-            <ChevronsLeft size={15} />
-            <span className="hidden xs:inline">{t('pagination.first')}</span>
-          </button>
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 1}
-            className={`${btnBase} ${btnIdle} gap-1 px-3`}
-            aria-label={t('pagination.back')}
-          >
-            <ChevronLeft size={15} />
-            <span className="hidden xs:inline">{t('pagination.back')}</span>
-          </button>
-
-          {nums.map(n => (
+        <>
+          {/* Mobile: prev/next + up to 3 page numbers only — no First/Last,
+              stays on one line instead of wrapping to two. */}
+          <div className="flex sm:hidden items-center justify-center gap-1.5 overflow-x-auto">
             <button
-              key={n}
-              onClick={() => onPageChange(n)}
-              className={`${btnBase} ${n === page ? btnActive : btnIdle}`}
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1}
+              className={`${btnBase} ${btnIdle}`}
+              aria-label={t('pagination.back')}
             >
-              {n}
+              <ChevronLeft size={15} />
             </button>
-          ))}
+            {pageNumberButtons(mobileWindow.nums, mobileWindow.showLastSeparately)}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page === totalPages}
+              className={`${btnBase} ${btnIdle}`}
+              aria-label={t('pagination.next')}
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
 
-          {showLastSeparately && (
-            <>
-              <span className="px-1 text-gray-400 dark:text-gray-500 select-none">···</span>
-              <button
-                onClick={() => onPageChange(totalPages)}
-                className={`${btnBase} ${totalPages === page ? btnActive : btnIdle}`}
-              >
-                {totalPages}
-              </button>
-            </>
-          )}
+          {/* Desktop/tablet: full First/Prev/numbers/Next/Last row. */}
+          <div className="hidden sm:flex flex-wrap items-center justify-center gap-1.5">
+            <button
+              onClick={() => onPageChange(1)}
+              disabled={page === 1}
+              className={`${btnBase} ${btnIdle} gap-1 px-3`}
+              aria-label={t('pagination.first')}
+            >
+              <ChevronsLeft size={15} />
+              <span>{t('pagination.first')}</span>
+            </button>
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1}
+              className={`${btnBase} ${btnIdle} gap-1 px-3`}
+              aria-label={t('pagination.back')}
+            >
+              <ChevronLeft size={15} />
+              <span>{t('pagination.back')}</span>
+            </button>
 
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page === totalPages}
-            className={`${btnBase} ${btnIdle} gap-1 px-3`}
-            aria-label={t('pagination.next')}
-          >
-            <span className="hidden xs:inline">{t('pagination.next')}</span>
-            <ChevronRight size={15} />
-          </button>
-          <button
-            onClick={() => onPageChange(totalPages)}
-            disabled={page === totalPages}
-            className={`${btnBase} ${btnIdle} gap-1 px-3`}
-            aria-label={t('pagination.last')}
-          >
-            <span className="hidden xs:inline">{t('pagination.last')}</span>
-            <ChevronsRight size={15} />
-          </button>
-        </div>
+            {pageNumberButtons(desktopWindow.nums, desktopWindow.showLastSeparately)}
+
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page === totalPages}
+              className={`${btnBase} ${btnIdle} gap-1 px-3`}
+              aria-label={t('pagination.next')}
+            >
+              <span>{t('pagination.next')}</span>
+              <ChevronRight size={15} />
+            </button>
+            <button
+              onClick={() => onPageChange(totalPages)}
+              disabled={page === totalPages}
+              className={`${btnBase} ${btnIdle} gap-1 px-3`}
+              aria-label={t('pagination.last')}
+            >
+              <span>{t('pagination.last')}</span>
+              <ChevronsRight size={15} />
+            </button>
+          </div>
+        </>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">

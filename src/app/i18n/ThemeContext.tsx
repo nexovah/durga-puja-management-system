@@ -11,10 +11,14 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Always defaults to light on first visit, regardless of the device's OS
+  // dark-mode setting — many phones default to system dark mode, which
+  // made the login/landing screens open dark unexpectedly. Once someone
+  // explicitly toggles it from Settings, that choice is remembered as
+  // before.
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return saved === 'dark' ? 'dark' : 'light';
   });
 
   useEffect(() => {
