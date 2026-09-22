@@ -82,7 +82,7 @@ export function Sidebar({
 
   const content = (
     <div className="h-full flex flex-col">
-      <div className={`flex items-start gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
+      <div className={`flex items-center gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-[3px] rounded-lg overflow-hidden shrink-0">
           {logo && (logo.startsWith('data:') || logo.startsWith('http')) ? (
             <img src={logo} alt="Logo" className="w-9 h-9 object-cover rounded" />

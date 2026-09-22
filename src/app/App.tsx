@@ -84,6 +84,7 @@ export interface CommitteeInfo {
   established: string; // Year of establishment
   regNumber: string; // Registration number
   association: string; // Association/Committee name
+  email: string; // Committee contact email — seeded from Super Admin's tenant creation/edit
   post: string; // Post office
   districtPS: string; // District and Police Station
   pinCode: string; // Pin code
@@ -294,6 +295,7 @@ const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
   established: '',
   regNumber: '',
   association: '',
+  email: '',
   post: '',
   districtPS: '',
   pinCode: '',

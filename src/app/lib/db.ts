@@ -271,6 +271,7 @@ function fromCommitteeRow(row: any): CommitteeInfo {
       established: '',
       regNumber: '',
       association: '',
+      email: '',
       post: '',
       districtPS: '',
       pinCode: '',
@@ -288,6 +289,7 @@ function fromCommitteeRow(row: any): CommitteeInfo {
     established: row.established || '',
     regNumber: row.reg_number || '',
     association: row.association || '',
+    email: row.email || '',
     post: row.post || '',
     districtPS: row.district_ps || '',
     pinCode: row.pin_code || '',
@@ -305,6 +307,7 @@ function toCommitteeRow(c: CommitteeInfo) {
     established: c.established,
     reg_number: c.regNumber,
     association: c.association,
+    email: c.email,
     post: c.post,
     district_ps: c.districtPS,
     pin_code: c.pinCode,
@@ -445,21 +448,35 @@ export const syncEstimations = (oldList: Estimation[], newList: Estimation[]) =>
 // ---------------------------------------------------------------------------
 
 export async function updateCommitteeInfo(info: CommitteeInfo): Promise<CommitteeInfo> {
+  let saved: CommitteeInfo;
   // A brand-new tenant has no committee_info row yet (see fromCommitteeRow's
   // null fallback) — insert one on first save instead of updating a
   // nonexistent id.
   if (!info.id) {
     const { data, error } = await supabase.from('committee_info').insert(toCommitteeRow(info)).select().single();
     if (error) throw error;
-    return fromCommitteeRow(data);
+    saved = fromCommitteeRow(data);
+  } else {
+    // No tenant filter needed — RLS already scopes this update to exactly
+    // the caller's tenant's single committee_info row (see
+    // supabase/020_multi_tenant.sql). PostgREST requires *some* filter to
+    // avoid a full-table update, so match on the primary key it just read.
+    const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', info.id);
+    if (error) throw error;
+    saved = info;
   }
-  // No tenant filter needed — RLS already scopes this update to exactly
-  // the caller's tenant's single committee_info row (see
-  // supabase/020_multi_tenant.sql). PostgREST requires *some* filter to
-  // avoid a full-table update, so match on the primary key it just read.
-  const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', info.id);
-  if (error) throw error;
-  return info;
+  // Mirror the shared fields back into `tenants` so Super Admin's Tenant
+  // Detail page reflects the tenant's own edits too — same fields
+  // super_admin_update_tenant mirrors the other way (see
+  // supabase/051_bidirectional_committee_tenant_sync.sql).
+  const { error: syncError } = await supabase.rpc('tenant_update_own_details', {
+    p_name: saved.association,
+    p_phone: saved.mobile1,
+    p_email: saved.email,
+    p_address: saved.address,
+  });
+  if (syncError) throw syncError;
+  return saved;
 }
 
 export async function updateDeveloperInfo(info: DeveloperInfo): Promise<void> {
