@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
-import { Order, OrderDetail, listOrdersRequest, getOrderDetailRequest } from '../lib/superAdminDb';
+import { ArrowLeft, ShoppingCart, XCircle } from 'lucide-react';
+import { Order, OrderDetail, listOrdersRequest, getOrderDetailRequest, cancelManualGrantRequest } from '../lib/superAdminDb';
+import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
 const formatAmount = (paise: number, currency: string) =>
   (paise / 100).toLocaleString('en-IN', { style: 'currency', currency });
@@ -21,10 +22,11 @@ function statusBadge(status: string) {
     manual: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
     failed: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
     created: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
+    cancelled: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 line-through',
   };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.created}`}>
-      {status === 'manual' ? 'manual — no payment' : status}
+      {status === 'manual' ? 'manual — no payment' : status === 'cancelled' ? 'cancelled' : status}
     </span>
   );
 }
@@ -41,6 +43,26 @@ export function SuperAdminOrders() {
   const [selected, setSelectedState] = useState<{ id: string; source: 'razorpay' | 'manual' } | null>(() => getSelectionFromPath());
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const reload = () => listOrdersRequest().then(setOrders).catch(err => setError(err?.message || 'Failed to load orders'));
+
+  const handleCancelConfirm = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    setError('');
+    try {
+      await cancelManualGrantRequest(cancelTarget.id);
+      setCancelTarget(null);
+      await reload();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to cancel grant');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const selectOrder = (order: { id: string; source: 'razorpay' | 'manual' }) => {
     setSelectedState(order);
@@ -202,6 +224,7 @@ export function SuperAdminOrders() {
                 <th className="text-left px-4 py-2.5 font-medium">Status</th>
                 <th className="text-left px-4 py-2.5 font-medium">Source</th>
                 <th className="text-left px-4 py-2.5 font-medium">Created</th>
+                <th className="text-right px-4 py-2.5 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -217,12 +240,36 @@ export function SuperAdminOrders() {
                   <td className="px-4 py-3">{statusBadge(order.status)}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 capitalize">{order.source}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-right">
+                    {order.source === 'manual' && order.status !== 'cancelled' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setCancelTarget(order); }}
+                        title="Cancel this manual grant"
+                        className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <SuperAdminConfirmModal
+        open={!!cancelTarget}
+        title="Cancel manual grant"
+        message={
+          cancelTarget
+            ? `This reverses the "${cancelTarget.period}" grant given manually to ${cancelTarget.tenantName} — their subscription will be rolled back by that period. Real Razorpay payments can never be cancelled this way. This cannot be undone.`
+            : ''
+        }
+        confirmLabel={cancelling ? 'Cancelling…' : 'Cancel grant'}
+        onCancel={() => setCancelTarget(null)}
+        onConfirm={handleCancelConfirm}
+      />
     </div>
   );
 }

@@ -55,9 +55,11 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
   const latestHistoryItem = history.length
     ? [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
     : null;
-  const activePlanId = !isExpired && latestHistoryItem
+  const grantedPlanId = latestHistoryItem
     ? plans.find(p => p.durationMonths === latestHistoryItem.durationMonths)?.id ?? null
     : null;
+  const activePlanId = !isExpired ? grantedPlanId : null;
+  const expiredPlanId = isExpired ? grantedPlanId : null;
 
   const handlePay = async () => {
     if (!plan) return;
@@ -159,15 +161,24 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                         key={p.id}
                         onClick={() => setSelectedPlanId(p.id)}
                         className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition ${
-                          selectedPlanId === p.id
+                          p.id === activePlanId
+                            ? 'bg-green-600 text-white'
+                            : p.id === expiredPlanId
+                            ? 'bg-red-600 text-white'
+                            : selectedPlanId === p.id
                             ? 'bg-orange-600 text-white'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
                         {p.name}
                         {p.id === activePlanId && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500 text-white align-middle">
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
                             Active
+                          </span>
+                        )}
+                        {p.id === expiredPlanId && (
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
+                            Expired
                           </span>
                         )}
                       </button>
@@ -184,6 +195,11 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       {plan.id === activePlanId && (
                         <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                           Active plan
+                        </span>
+                      )}
+                      {plan.id === expiredPlanId && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                          Expired plan
                         </span>
                       )}
                     </div>

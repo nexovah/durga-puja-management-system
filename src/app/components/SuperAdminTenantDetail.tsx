@@ -219,6 +219,19 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const expiresAt = currentTenant.subscriptionExpiresAt ? new Date(currentTenant.subscriptionExpiresAt) : null;
   const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : true;
 
+  // "Active"/"Expired" plan = the plan matching the most recent manual
+  // grant (credits are already ordered newest-first by
+  // super_admin_list_subscription_credits). Credit amounts are stored as
+  // negative debits (see 023_tenant_details_and_subscriptions.sql) —
+  // compare against the absolute value.
+  const latestCredit = credits[0];
+  const grantedPlan = latestCredit
+    ? plans.find(p => p.amountPaise === Math.abs(latestCredit.amountPaise)) ?? null
+    : null;
+  const activePlan = !isExpired ? grantedPlan : null;
+  const activePlanId = activePlan?.id ?? null;
+  const expiredPlanId = isExpired ? (grantedPlan?.id ?? null) : null;
+
   return (
     <div className="max-w-2xl">
       <button
@@ -545,22 +558,58 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
             <span className="text-gray-500 dark:text-gray-400">No subscription granted yet</span>
           )}
         </p>
-        <div className="flex flex-wrap gap-2 mb-4">
+
+        {error && (
+          <div className="mb-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 mb-2">
           {plans.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">No active plans — add one in Subscription Plans first.</p>
           ) : (
-            plans.map(plan => (
-              <button
-                key={plan.id}
-                onClick={() => handleGrant(plan.id)}
-                disabled={granting}
-                className="px-4 py-2 rounded-lg border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-60 text-sm font-medium transition"
-              >
-                Grant {plan.name} ({(plan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: plan.currency })})
-              </button>
-            ))
+            plans.map(plan => {
+              const isActivePlan = plan.id === activePlanId;
+              const isExpiredPlan = plan.id === expiredPlanId;
+              // A subscription is already running (any plan) — block every
+              // Grant button until it expires, not just the matching one.
+              const blockedByActiveSub = !isExpired && !!currentTenant.subscriptionExpiresAt && !isActivePlan;
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => handleGrant(plan.id)}
+                  disabled={granting || (!isExpired && !!currentTenant.subscriptionExpiresAt)}
+                  title={blockedByActiveSub && expiresAt ? `Already active until ${expiresAt.toLocaleDateString()}` : undefined}
+                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition disabled:opacity-60 disabled:cursor-not-allowed ${
+                    isActivePlan
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : isExpiredPlan
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                      : 'border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                  }`}
+                >
+                  {isActivePlan || isExpiredPlan ? plan.name : `Grant ${plan.name}`} ({(plan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: plan.currency })})
+                  {isActivePlan && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-500 text-white align-middle">Active</span>}
+                  {isExpiredPlan && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500 text-white align-middle">Expired</span>}
+                </button>
+              );
+            })
           )}
         </div>
+
+        {activePlan && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            {activePlan.name} is active for {currentTenant.name}
+            {expiresAt && <> — membership active till <span className="font-medium">{expiresAt.toLocaleDateString()}</span></>}.
+          </p>
+        )}
+        {isExpired && grantedPlan && (
+          <p className="text-xs text-red-600 dark:text-red-400 mb-4">
+            {grantedPlan.name} expired for {currentTenant.name}
+            {expiresAt && <> on <span className="font-medium">{expiresAt.toLocaleDateString()}</span></>}.
+          </p>
+        )}
 
         {credits.length > 0 && (
           <div className="space-y-1.5">

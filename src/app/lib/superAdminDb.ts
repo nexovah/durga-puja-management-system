@@ -185,6 +185,17 @@ export async function grantSubscriptionByPlanRequest(tenantId: string, planId: s
   return fromTenantRow(data);
 }
 
+// Reverses a mistaken manual grant's effect on the tenant's expiry and
+// marks the underlying subscription_credits row cancelled (kept for
+// audit). Only ever touches subscription_credits — a real Razorpay
+// payment (billing_transactions) has a completely separate id space and
+// can never be reached through this call.
+export async function cancelManualGrantRequest(creditId: string): Promise<Tenant> {
+  const { data, error } = await supabase.rpc('super_admin_cancel_manual_grant', { p_credit_id: creditId });
+  if (error) throw error;
+  return fromTenantRow(data);
+}
+
 export async function listSubscriptionCreditsRequest(tenantId: string): Promise<SubscriptionCredit[]> {
   const { data, error } = await supabase.rpc('super_admin_list_subscription_credits', { p_tenant_id: tenantId });
   if (error) throw error;
