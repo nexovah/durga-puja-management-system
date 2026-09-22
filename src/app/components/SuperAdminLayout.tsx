@@ -69,9 +69,9 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
   const navContent = (
     <div className="h-full flex flex-col">
       <div className={`flex items-center gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-[3px] rounded-lg overflow-hidden shrink-0 w-9 h-9 flex items-center justify-center">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 border-4 border-orange-600 rounded-lg overflow-hidden shrink-0 w-9 h-9 flex items-center justify-center">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover rounded" />
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
           ) : (
             <ShieldCheck size={18} className="text-white" />
           )}

@@ -43,7 +43,7 @@ export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
         {showLogo && (
           <div className="text-center mb-6">
             <div className="inline-block relative mb-4">
-              <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
+              <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 border-orange-600 relative overflow-hidden">
                 <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 dark:from-gray-800 dark:to-gray-900 rounded-full flex items-center justify-center overflow-hidden">
                   {platform?.logoUrl ? (
                     <img src={platform.logoUrl} alt="Logo" className="w-full h-full object-cover" />

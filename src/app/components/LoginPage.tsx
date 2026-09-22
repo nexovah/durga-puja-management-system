@@ -56,16 +56,16 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <div className="text-center mb-6">
           <div className="inline-block relative mb-4">
             {/* Main logo circle with border */}
-            <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 sm:border-8 border-orange-600 relative overflow-hidden">
+            <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 border-orange-600 relative overflow-hidden">
               {/* Inner circle for logo */}
-              <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
+              <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden">
                 {isEmoji ? (
                   <div className="text-5xl sm:text-7xl">{effectiveLogo}</div>
                 ) : effectiveLogo ? (
                   <img
                     src={effectiveLogo}
                     alt="Logo"
-                    className="w-full h-full object-contain rounded-full"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <div className="text-5xl sm:text-7xl">🕉️</div>
