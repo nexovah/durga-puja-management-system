@@ -501,6 +501,38 @@ export async function uploadLogo(file: File): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+// CMS pages (public read — landing page + legal pages, no auth needed;
+// see supabase/055_cms_pages.sql). Writes are Super Admin-only, in
+// superAdminDb.ts.
+// ---------------------------------------------------------------------------
+
+export interface CmsPageContent {
+  slug: string;
+  navLabel: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImageUrl: string;
+  body: string;
+}
+
+function fromCmsPageRow(row: any): CmsPageContent {
+  return {
+    slug: row.slug,
+    navLabel: row.nav_label,
+    metaTitle: row.meta_title || '',
+    metaDescription: row.meta_description || '',
+    ogImageUrl: row.og_image_url || '',
+    body: row.body || '',
+  };
+}
+
+export async function getCmsPageRequest(slug: string): Promise<CmsPageContent | null> {
+  const { data, error } = await supabase.from('cms_pages').select('*').eq('slug', slug).eq('is_published', true).maybeSingle();
+  if (error) throw error;
+  return data ? fromCmsPageRow(data) : null;
+}
+
+// ---------------------------------------------------------------------------
 // Auth / user management — all go through Postgres RPC functions
 // (see supabase/schema.sql and supabase/002_user_management.sql)
 // ---------------------------------------------------------------------------

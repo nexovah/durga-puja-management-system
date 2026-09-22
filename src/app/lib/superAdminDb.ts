@@ -552,3 +552,49 @@ export async function superAdminChangePasswordRequest(currentPassword: string, n
   if (error) throw error;
   return Boolean(data);
 }
+
+export interface CmsPage {
+  id: string;
+  slug: string;
+  navLabel: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImageUrl: string;
+  body: string;
+  isPublished: boolean;
+  updatedAt: string;
+}
+
+function fromCmsPageRow(row: any): CmsPage {
+  return {
+    id: row.id,
+    slug: row.slug,
+    navLabel: row.nav_label,
+    metaTitle: row.meta_title || '',
+    metaDescription: row.meta_description || '',
+    ogImageUrl: row.og_image_url || '',
+    body: row.body || '',
+    isPublished: row.is_published !== false,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listCmsPagesRequest(): Promise<CmsPage[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_cms_pages');
+  if (error) throw error;
+  return (data || []).map(fromCmsPageRow);
+}
+
+export async function upsertCmsPageRequest(page: CmsPage): Promise<CmsPage> {
+  const { data, error } = await supabase.rpc('super_admin_upsert_cms_page', {
+    p_slug: page.slug,
+    p_nav_label: page.navLabel,
+    p_meta_title: page.metaTitle || null,
+    p_meta_description: page.metaDescription || null,
+    p_og_image_url: page.ogImageUrl || null,
+    p_body: page.body || null,
+    p_is_published: page.isPublished,
+  });
+  if (error) throw error;
+  return fromCmsPageRow(data);
+}

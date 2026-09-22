@@ -3,6 +3,7 @@ import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languag
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { LandingPage } from './components/LandingPage';
+import { LegalPage } from './components/LegalPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
@@ -46,6 +47,7 @@ import {
   DeveloperInfo,
   ActivityModule,
   ActivityAction,
+  getCmsPageRequest,
 } from './lib/db';
 
 export interface User {
@@ -417,6 +419,37 @@ export default function App() {
   // Tracks the raw pathname while logged out (landing vs. login), since
   // those two routes aren't part of the authed PageKey system above.
   const [loggedOutPath, setLoggedOutPath] = useState(() => window.location.pathname);
+
+  // CMS-driven SEO metadata for the public routes (see
+  // supabase/055_cms_pages.sql) — title/description/OG tags, only on
+  // '/', '/terms', '/privacy', '/refund'. Re-runs on `loggedOutPath`
+  // changes (not just mount) so navigating via the footer links, which
+  // don't remount the app, still updates the tags. Client-side only
+  // (this is a Vite SPA, no SSR), so this reliably reaches crawlers that
+  // execute JS (Google) but not ones that don't (Facebook/Twitter link
+  // previews) — a known, accepted limitation for now.
+  useEffect(() => {
+    const slug = { '/': 'home', '/terms': 'terms', '/privacy': 'privacy', '/refund': 'refund' }[loggedOutPath];
+    if (!slug) return;
+    getCmsPageRequest(slug).then(page => {
+      if (!page) return;
+      if (page.metaTitle) document.title = page.metaTitle;
+      const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
+        if (!content) return;
+        let tag = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute(attr, key);
+          document.head.appendChild(tag);
+        }
+        tag.content = content;
+      };
+      setMeta('name', 'description', page.metaDescription);
+      setMeta('property', 'og:title', page.metaTitle);
+      setMeta('property', 'og:description', page.metaDescription);
+      if (page.ogImageUrl) setMeta('property', 'og:image', page.ogImageUrl);
+    }).catch(() => {});
+  }, [loggedOutPath]);
 
   // Keep the URL path in sync whenever the page changes from within the app.
   useEffect(() => {
@@ -797,6 +830,21 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           onGoToLogin={() => {
             window.history.pushState(null, '', '/login');
             setLoggedOutPath('/login');
+          }}
+          onGoToLegal={slug => {
+            window.history.pushState(null, '', `/${slug}`);
+            setLoggedOutPath(`/${slug}`);
+          }}
+        />
+      );
+    }
+    if (loggedOutPath === '/terms' || loggedOutPath === '/privacy' || loggedOutPath === '/refund') {
+      return (
+        <LegalPage
+          slug={loggedOutPath.slice(1)}
+          onBack={() => {
+            window.history.pushState(null, '', '/');
+            setLoggedOutPath('/');
           }}
         />
       );

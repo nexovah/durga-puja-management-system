@@ -2,11 +2,12 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Building2, Settings as SettingsIcon, LogOut, Moon, Sun, ShieldCheck,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText,
 } from 'lucide-react';
 import { useTheme } from '../i18n/ThemeContext';
+import { getPlatformSettingsRequest } from '../lib/superAdminDb';
 
-export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'settings';
+export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'cms' | 'settings';
 
 interface SuperAdminLayoutProps {
   adminName: string;
@@ -20,6 +21,7 @@ const NAV_ITEMS: { key: SuperAdminPage; label: string; icon: typeof Building2 }[
   { key: 'tenants', label: 'Tenants', icon: Building2 },
   { key: 'plans', label: 'Subscription Plans', icon: CreditCard },
   { key: 'orders', label: 'Orders', icon: ShoppingCart },
+  { key: 'cms', label: 'CMS', icon: FileText },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -38,6 +40,11 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
+  const [logoUrl, setLogoUrl] = useState('');
+
+  useEffect(() => {
+    getPlatformSettingsRequest().then(p => setLogoUrl(p.logoUrl)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -63,7 +70,11 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
     <div className="h-full flex flex-col">
       <div className={`flex items-center gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-[3px] rounded-lg overflow-hidden shrink-0 w-9 h-9 flex items-center justify-center">
-          <ShieldCheck size={18} className="text-white" />
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover rounded" />
+          ) : (
+            <ShieldCheck size={18} className="text-white" />
+          )}
         </div>
         {!collapsed && (
           <div className="min-w-0">

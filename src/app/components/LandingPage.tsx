@@ -9,6 +9,7 @@ import { listSubscriptionPlansRequest, SubscriptionPlan } from '../lib/billingDb
 
 interface LandingPageProps {
   onGoToLogin: () => void;
+  onGoToLegal: (slug: 'terms' | 'privacy' | 'refund') => void;
 }
 
 const FEATURES = [
@@ -30,7 +31,7 @@ const FEATURES = [
 // here would fire regardless of this page's own toggle. A public marketing
 // page should default to light and control its own theme independently, so
 // every color below is chosen explicitly from local `dark` state instead.
-export function LandingPage({ onGoToLogin }: LandingPageProps) {
+export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
   const [dark, setDark] = useState(false);
   const [form, setForm] = useState({ committeeName: '', contactName: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -269,6 +270,13 @@ export function LandingPage({ onGoToLogin }: LandingPageProps) {
 
       {/* Footer */}
       <footer className={`border-t py-8 text-center text-sm ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-400')}`}>
+        <div className="flex items-center justify-center gap-4 mb-3">
+          <button onClick={() => onGoToLegal('terms')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Terms & Conditions</button>
+          <span aria-hidden="true">·</span>
+          <button onClick={() => onGoToLegal('privacy')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Privacy Policy</button>
+          <span aria-hidden="true">·</span>
+          <button onClick={() => onGoToLegal('refund')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Refund Policy</button>
+        </div>
         © {new Date().getFullYear()} Durga CRM. All rights reserved.
       </footer>
     </div>
