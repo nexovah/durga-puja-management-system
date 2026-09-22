@@ -21,8 +21,8 @@ const formatAmount = (paise: number, currency: string) =>
   (paise / 100).toLocaleString('en-IN', { style: 'currency', currency });
 
 export function Billing({ currentUser, committeeName, onSubscriptionExtended }: BillingProps) {
-  const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -34,6 +34,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
     try {
       const [p, h] = await Promise.all([listSubscriptionPlansRequest(), listBillingHistoryRequest()]);
       setPlans(p);
+      setSelectedPlanId(prev => prev && p.some(pl => pl.id === prev) ? prev : (p[0]?.id ?? null));
       setHistory(h);
     } catch (err: any) {
       setError(err?.message || 'Failed to load billing info');
@@ -44,7 +45,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
 
   useEffect(() => { load(); }, []);
 
-  const plan = plans.find(p => p.period === cycle);
+  const plan = plans.find(p => p.id === selectedPlanId);
   const expiresAt = currentUser?.subscriptionExpiresAt ? new Date(currentUser.subscriptionExpiresAt) : null;
   const isExpired = !expiresAt || expiresAt.getTime() < Date.now();
 
@@ -55,7 +56,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
     setSuccessMessage('');
     try {
       await loadRazorpayCheckout();
-      const order = await createOrderRequest(cycle);
+      const order = await createOrderRequest(plan.id);
 
       const razorpay = new window.Razorpay({
         key: order.keyId,
@@ -63,7 +64,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
         amount: order.amount,
         currency: order.currency,
         name: 'Durga CRM',
-        description: `${cycle === 'monthly' ? 'Monthly' : 'Yearly'} subscription — ${committeeName}`,
+        description: `${plan.name} — ${committeeName}`,
         handler: async (response: any) => {
           try {
             await verifyPaymentRequest(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
@@ -123,46 +124,52 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
       ) : (
         <>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 max-w-md">
-            <div className="inline-flex p-1 rounded-full bg-gray-100 dark:bg-gray-800 mb-5">
-              {(['monthly', 'yearly'] as const).map(c => (
-                <button
-                  key={c}
-                  onClick={() => setCycle(c)}
-                  className={`px-5 py-1.5 rounded-full text-sm font-medium transition ${
-                    cycle === c
-                      ? 'bg-white dark:bg-gray-950 shadow text-gray-900 dark:text-gray-100'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  {c === 'monthly' ? 'Monthly' : 'Yearly'}
-                </button>
-              ))}
-            </div>
-
-            {plan ? (
-              <>
-                <div className="text-3xl font-semibold mb-1">
-                  {formatAmount(plan.amountPaise, plan.currency)}
-                  <span className="text-base font-normal text-gray-500 dark:text-gray-400">/{cycle === 'monthly' ? 'mo' : 'yr'}</span>
-                </div>
-                <ul className="space-y-2 my-5">
-                  {['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Priority support'].map(item => (
-                    <li key={item} className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={handlePay}
-                  disabled={paying}
-                  className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
-                >
-                  {paying ? 'Processing…' : `Pay ${formatAmount(plan.amountPaise, plan.currency)}`}
-                </button>
-              </>
-            ) : (
+            {plans.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">Plan pricing not available right now.</p>
+            ) : (
+              <>
+                {plans.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {plans.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedPlanId(p.id)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                          selectedPlanId === p.id
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {plan && (
+                  <>
+                    <div className="text-3xl font-semibold mb-1">
+                      {formatAmount(plan.amountPaise, plan.currency)}
+                    </div>
+                    {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{plan.description}</p>}
+                    <ul className="space-y-2 my-5">
+                      {(plan.features ? plan.features.split('\n').filter(Boolean) : ['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Priority support']).map(item => (
+                        <li key={item} className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={handlePay}
+                      disabled={paying}
+                      className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
+                    >
+                      {paying ? 'Processing…' : `Pay ${formatAmount(plan.amountPaise, plan.currency)}`}
+                    </button>
+                  </>
+                )}
+              </>
             )}
           </div>
 
@@ -189,8 +196,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                     {history.map(item => {
                       const activated = new Date(item.date);
                       const expires = new Date(activated);
-                      if (item.period === 'monthly') expires.setMonth(expires.getMonth() + 1);
-                      else expires.setFullYear(expires.getFullYear() + 1);
+                      expires.setMonth(expires.getMonth() + item.durationMonths);
                       return (
                         <tr key={item.id}>
                           <td className="py-2 capitalize text-gray-700 dark:text-gray-300">{item.period}</td>

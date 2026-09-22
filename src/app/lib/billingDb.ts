@@ -10,9 +10,12 @@ import { getTenantAccessToken } from './supabaseClient';
 
 export interface SubscriptionPlan {
   id: string;
-  period: 'monthly' | 'yearly';
+  name: string;
+  description: string;
+  durationMonths: number;
   amountPaise: number;
   currency: string;
+  features: string;
 }
 
 export interface BillingTransaction {
@@ -34,6 +37,7 @@ export interface BillingHistoryItem {
   id: string;
   source: 'razorpay' | 'manual';
   period: string;
+  durationMonths: number;
   amountPaise: number;
   currency: string;
   status: 'paid' | 'created' | 'failed';
@@ -42,7 +46,15 @@ export interface BillingHistoryItem {
 }
 
 function fromPlanRow(row: any): SubscriptionPlan {
-  return { id: row.id, period: row.period, amountPaise: row.amount_paise, currency: row.currency };
+  return {
+    id: row.id,
+    name: row.name || '',
+    description: row.description || '',
+    durationMonths: row.duration_months,
+    amountPaise: row.amount_paise,
+    currency: row.currency,
+    features: row.features || '',
+  };
 }
 
 function fromTransactionRow(row: any): BillingTransaction {
@@ -58,7 +70,7 @@ function fromTransactionRow(row: any): BillingTransaction {
 }
 
 export async function listSubscriptionPlansRequest(): Promise<SubscriptionPlan[]> {
-  const { data, error } = await supabase.from('subscription_plans').select('*').eq('is_active', true);
+  const { data, error } = await supabase.from('subscription_plans').select('*').eq('is_active', true).order('display_order', { ascending: true });
   if (error) throw error;
   return (data || []).map(fromPlanRow);
 }
@@ -81,6 +93,7 @@ export async function listBillingHistoryRequest(): Promise<BillingHistoryItem[]>
     id: row.id,
     source: 'razorpay',
     period: row.period,
+    durationMonths: row.duration_months || (row.period === 'yearly' ? 12 : 1),
     amountPaise: row.amount_paise,
     currency: row.currency,
     status: row.status,
@@ -92,6 +105,7 @@ export async function listBillingHistoryRequest(): Promise<BillingHistoryItem[]>
     id: row.id,
     source: 'manual',
     period: row.period,
+    durationMonths: row.duration_months || (row.period === 'yearly' ? 12 : 1),
     amountPaise: Math.abs(row.amount_paise), // stored negative (a debit) — shown as a positive charge here
     currency: 'INR',
     status: 'paid',
@@ -122,8 +136,8 @@ async function callBillingApi<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export function createOrderRequest(period: 'monthly' | 'yearly'): Promise<CreateOrderResult> {
-  return callBillingApi<CreateOrderResult>('/api/billing/create-order', { period });
+export function createOrderRequest(planId: string): Promise<CreateOrderResult> {
+  return callBillingApi<CreateOrderResult>('/api/billing/create-order', { planId });
 }
 
 export function verifyPaymentRequest(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): Promise<{ ok: boolean }> {

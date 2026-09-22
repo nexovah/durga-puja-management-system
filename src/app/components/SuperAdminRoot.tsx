@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SuperAdminLogin } from './SuperAdminLogin';
 import { SuperAdminLayout, SuperAdminPage } from './SuperAdminLayout';
 import { SuperAdminTenants } from './SuperAdminPanel';
 import { SuperAdminTenantDetail } from './SuperAdminTenantDetail';
 import { SuperAdminSettings } from './SuperAdminSettings';
-import { superAdminLoginRequest, SuperAdmin, Tenant } from '../lib/superAdminDb';
+import { SuperAdminPlans } from './SuperAdminPlans';
+import { SuperAdminOrders } from './SuperAdminOrders';
+import { superAdminLoginRequest, listTenantsRequest, SuperAdmin, Tenant } from '../lib/superAdminDb';
 import { setTenantAccessToken } from '../lib/supabaseClient';
 
 // Entirely separate from the committee app's session/auth (App.tsx) — its
@@ -16,6 +18,22 @@ const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 1 day, matches the JWT's own
 interface StoredSuperAdminSession {
   admin: SuperAdmin;
   expiresAt: number;
+}
+
+const VALID_PAGES: SuperAdminPage[] = ['tenants', 'plans', 'orders', 'settings'];
+
+// Same path-based routing idea as the committee app's PAGE_SLUGS
+// (App.tsx) — /super-admin/<page> — so a refresh or a shared link lands
+// back on the same menu instead of always resetting to Tenants.
+function getPageFromPath(): SuperAdminPage {
+  const segment = window.location.pathname.replace(/^\/super-admin\/?/, '').split('/')[0];
+  return (VALID_PAGES as string[]).includes(segment) ? (segment as SuperAdminPage) : 'tenants';
+}
+
+// /super-admin/tenants/<id> — the id segment after the page, if any.
+function getTenantIdFromPath(): string | null {
+  const parts = window.location.pathname.replace(/^\/super-admin\/?/, '').split('/');
+  return parts[0] === 'tenants' && parts[1] ? parts[1] : null;
 }
 
 function loadStoredSession(): SuperAdmin | null {
@@ -40,9 +58,68 @@ export function SuperAdminRoot() {
     if (stored) setTenantAccessToken(stored.accessToken);
     return stored;
   });
-  const [page, setPage] = useState<SuperAdminPage>('tenants');
+  const [page, setPageState] = useState<SuperAdminPage>(() => getPageFromPath());
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [tenantDetailLoading, setTenantDetailLoading] = useState(() => getTenantIdFromPath() !== null);
   const [tenantsRefreshToken, setTenantsRefreshToken] = useState(0);
+  // Bumped on every sidebar nav click (even to the already-active page) so
+  // the rendered page component remounts and re-reads the URL from
+  // scratch — otherwise clicking "Orders" while already inside an order's
+  // detail view wouldn't reset that page's own internal selection state.
+  const [navResetKey, setNavResetKey] = useState(0);
+
+  const setPage = (p: SuperAdminPage) => {
+    setPageState(p);
+    const path = `/super-admin/${p}`;
+    if (window.location.pathname !== path) window.history.pushState(null, '', path);
+  };
+
+  const loadTenantFromUrl = async (id: string) => {
+    setTenantDetailLoading(true);
+    try {
+      const all = await listTenantsRequest();
+      setSelectedTenant(all.find(t => t.id === id) || null);
+    } catch {
+      setSelectedTenant(null);
+    } finally {
+      setTenantDetailLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const onPopState = () => {
+      setPageState(getPageFromPath());
+      const tenantId = getTenantIdFromPath();
+      if (tenantId) loadTenantFromUrl(tenantId);
+      else setSelectedTenant(null);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // On first mount: normalize an unrecognized bare path, and if the URL
+  // already points at a specific tenant (e.g. a refresh mid-detail-view),
+  // load it instead of dropping back to the list.
+  useEffect(() => {
+    const path = `/super-admin/${page}`;
+    const tenantId = getTenantIdFromPath();
+    if (tenantId) {
+      loadTenantFromUrl(tenantId);
+    } else if (window.location.pathname !== path) {
+      window.history.replaceState(null, '', path);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openTenant = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    window.history.pushState(null, '', `/super-admin/tenants/${tenant.id}`);
+  };
+
+  const closeTenant = () => {
+    setSelectedTenant(null);
+    window.history.pushState(null, '', '/super-admin/tenants');
+  };
 
   const handleLogin = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -72,21 +149,25 @@ export function SuperAdminRoot() {
     <SuperAdminLayout
       adminName={admin.name}
       page={page}
-      onNavigate={p => { setPage(p); setSelectedTenant(null); }}
+      onNavigate={p => { setPage(p); setSelectedTenant(null); setNavResetKey(k => k + 1); }}
       onLogout={handleLogout}
     >
       {page === 'tenants' && (
-        selectedTenant ? (
+        tenantDetailLoading ? (
+          <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
+        ) : selectedTenant ? (
           <SuperAdminTenantDetail
             tenant={selectedTenant}
-            onBack={() => { setSelectedTenant(null); setTenantsRefreshToken(t => t + 1); }}
+            onBack={() => { closeTenant(); setTenantsRefreshToken(t => t + 1); }}
             onSaved={updated => setSelectedTenant(updated)}
-            onDeleted={() => { setSelectedTenant(null); setTenantsRefreshToken(t => t + 1); }}
+            onDeleted={() => { closeTenant(); setTenantsRefreshToken(t => t + 1); }}
           />
         ) : (
-          <SuperAdminTenants onOpenTenant={setSelectedTenant} refreshToken={tenantsRefreshToken} />
+          <SuperAdminTenants key={navResetKey} onOpenTenant={openTenant} refreshToken={tenantsRefreshToken} />
         )
       )}
+      {page === 'plans' && <SuperAdminPlans key={navResetKey} />}
+      {page === 'orders' && <SuperAdminOrders key={navResetKey} />}
       {page === 'settings' && (
         <SuperAdminSettings
           onNameChanged={name => {

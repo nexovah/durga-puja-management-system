@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Users, Wallet, Megaphone, Receipt, HandCoins, ClipboardList,
   CalendarClock, Activity, Moon, Sun, CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { getPlatformSettingsRequest } from '../lib/superAdminDb';
+import { listSubscriptionPlansRequest, SubscriptionPlan } from '../lib/billingDb';
 
 interface LandingPageProps {
   onGoToLogin: () => void;
@@ -20,13 +22,6 @@ const FEATURES = [
   { icon: Activity, title: 'Activity Log', desc: 'Full audit trail of who changed what, for complete transparency.' },
 ];
 
-type BillingCycle = 'monthly' | 'yearly';
-
-const PRICING = {
-  monthly: { amount: '₹499', period: '/month' },
-  yearly: { amount: '₹4,999', period: '/year' },
-};
-
 // This page intentionally does NOT use Tailwind's `dark:` variant. This
 // project's dark mode is configured as `@is(.dark *)` in globals.css, which
 // matches ANY ancestor with class "dark" — not just the nearest one. Since
@@ -37,12 +32,23 @@ const PRICING = {
 // every color below is chosen explicitly from local `dark` state instead.
 export function LandingPage({ onGoToLogin }: LandingPageProps) {
   const [dark, setDark] = useState(false);
-  const [cycle, setCycle] = useState<BillingCycle>('monthly');
   const [form, setForm] = useState({ committeeName: '', contactName: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [platformLogo, setPlatformLogo] = useState('');
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
+  useEffect(() => {
+    getPlatformSettingsRequest().then(p => setPlatformLogo(p.logoUrl)).catch(() => {});
+    listSubscriptionPlansRequest().then(p => {
+      setPlans(p);
+      setSelectedPlanId(p[0]?.id ?? null);
+    }).catch(() => {});
+  }, []);
+
+  const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
   const c = (light: string, darkCls: string) => (dark ? darkCls : light);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +82,9 @@ export function LandingPage({ onGoToLogin }: LandingPageProps) {
       <header className={`sticky top-0 z-30 backdrop-blur border-b ${c('bg-white/80 border-gray-200', 'bg-gray-950/80 border-gray-800')}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-lg">🕉️</div>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-lg overflow-hidden">
+              {platformLogo ? <img src={platformLogo} alt="Logo" className="w-full h-full object-cover" /> : '🕉️'}
+            </div>
             <span className="font-semibold text-lg">Durga CRM</span>
           </div>
           <div className="flex items-center gap-3">
@@ -148,39 +156,50 @@ export function LandingPage({ onGoToLogin }: LandingPageProps) {
         <p className={`text-center mb-8 ${c('text-gray-600', 'text-gray-400')}`}>
           Everything included. No hidden tiers.
         </p>
-        <div className="flex items-center justify-center mb-10">
-          <div className={`inline-flex p-1 rounded-full ${c('bg-gray-100', 'bg-gray-800')}`}>
-            {(['monthly', 'yearly'] as BillingCycle[]).map(cy => (
-              <button
-                key={cy}
-                onClick={() => setCycle(cy)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition ${
-                  cycle === cy ? c('bg-white shadow text-gray-900', 'bg-gray-950 shadow text-gray-100') : c('text-gray-500', 'text-gray-400')
-                }`}
-              >
-                {cy === 'monthly' ? 'Monthly' : 'Yearly'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className={`max-w-sm mx-auto p-8 rounded-2xl border text-center bg-gradient-to-br ${c('border-orange-200 from-orange-50 to-amber-50', 'border-orange-900/50 from-gray-900 to-gray-900')}`}>
-          <div className="text-4xl font-semibold mb-1">
-            {PRICING[cycle].amount}
-            <span className={`text-base font-normal ${c('text-gray-500', 'text-gray-400')}`}>{PRICING[cycle].period}</span>
-          </div>
-          <p className={`text-sm mb-6 ${c('text-gray-500', 'text-gray-400')}`}>Billed {cycle}, cancel anytime</p>
-          <ul className="text-left space-y-2.5 mb-8">
-            {['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Task management', 'Full activity log', 'Priority support'].map(item => (
-              <li key={item} className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className={`w-4 h-4 shrink-0 ${c('text-orange-600', 'text-orange-400')}`} />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <a href="#lead-form" className="block w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition">
-            Get started
-          </a>
-        </div>
+        {plans.length === 0 ? (
+          <p className={`text-center ${c('text-gray-500', 'text-gray-400')}`}>Pricing coming soon.</p>
+        ) : (
+          <>
+            {plans.length > 1 && (
+              <div className="flex items-center justify-center mb-10">
+                <div className={`inline-flex p-1 rounded-full ${c('bg-gray-100', 'bg-gray-800')}`}>
+                  {plans.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedPlanId(p.id)}
+                      className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                        selectedPlanId === p.id ? c('bg-white shadow text-gray-900', 'bg-gray-950 shadow text-gray-100') : c('text-gray-500', 'text-gray-400')
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedPlan && (
+              <div className={`max-w-sm mx-auto p-8 rounded-2xl border text-center bg-gradient-to-br ${c('border-orange-200 from-orange-50 to-amber-50', 'border-orange-900/50 from-gray-900 to-gray-900')}`}>
+                <div className="text-4xl font-semibold mb-1">
+                  {(selectedPlan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: selectedPlan.currency })}
+                </div>
+                <p className={`text-sm mb-6 ${c('text-gray-500', 'text-gray-400')}`}>
+                  {selectedPlan.description || `Billed every ${selectedPlan.durationMonths === 1 ? 'month' : `${selectedPlan.durationMonths} months`}, cancel anytime`}
+                </p>
+                <ul className="text-left space-y-2.5 mb-8">
+                  {(selectedPlan.features ? selectedPlan.features.split('\n').filter(Boolean) : ['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Priority support']).map(item => (
+                    <li key={item} className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${c('text-orange-600', 'text-orange-400')}`} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <a href="#lead-form" className="block w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition">
+                  Get started
+                </a>
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       {/* Lead form */}

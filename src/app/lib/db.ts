@@ -468,6 +468,11 @@ export async function fetchTenantSubscriptionExpiry(tenantId: string): Promise<s
 }
 
 export async function loginRequest(username: string, password: string): Promise<User | null> {
+  // Matches by username alone across all tenants (see
+  // supabase/036_login_rate_limiting.sql's 2-arg login()) — password
+  // verification naturally disambiguates in every realistic case, since
+  // two different tenants would need the exact same username AND exact
+  // same password to collide. No "Committee" field needed at login.
   const { data, error } = await supabase.rpc('login', { p_username: username, p_password: password });
   if (error) throw error;
   if (!data || data.length === 0) return null;

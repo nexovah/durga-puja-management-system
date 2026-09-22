@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CreditCard, UserCog, Users, Eye, EyeOff, RefreshCw, Power, Trash2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, UserCog, Users, Eye, EyeOff, RefreshCw, Power, Trash2, RotateCcw, Flame } from 'lucide-react';
 import {
   Tenant,
   SubscriptionCredit,
@@ -8,13 +8,18 @@ import {
   updateTenantRequest,
   setTenantStatusRequest,
   deleteTenantRequest,
-  grantSubscriptionRequest,
+  restoreTenantRequest,
+  purgeTenantRequest,
+  grantSubscriptionByPlanRequest,
+  listPlansAdminRequest,
+  SubscriptionPlanAdmin,
   listSubscriptionCreditsRequest,
   getTenantAdminRequest,
   updateTenantAdminRequest,
   createAdminForTenantRequest,
   listTenantUsersRequest,
   generatePassword,
+  isPasswordStrong,
 } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
@@ -24,11 +29,6 @@ interface SuperAdminTenantDetailProps {
   onSaved: (tenant: Tenant) => void;
   onDeleted: () => void;
 }
-
-// Same plan pricing shown on the public landing page — kept in sync
-// manually for now until Phase 4 wires subscription_plans as the single
-// source of truth for both places.
-const PLAN_AMOUNT_PAISE = { monthly: 49900, yearly: 499900 };
 
 export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: SuperAdminTenantDetailProps) {
   const [name, setName] = useState(tenant.name);
@@ -67,9 +67,12 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
 
+  const [plans, setPlans] = useState<SubscriptionPlanAdmin[]>([]);
+
   useEffect(() => {
     listSubscriptionCreditsRequest(tenant.id).then(setCredits).catch(() => {});
     listTenantUsersRequest(tenant.id).then(setUsers).catch(() => {}).finally(() => setUsersLoading(false));
+    listPlansAdminRequest().then(p => setPlans(p.filter(pl => pl.isActive))).catch(() => {});
     getTenantAdminRequest(tenant.id).then(a => {
       setAdmin(a);
       if (a) {
@@ -82,9 +85,13 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const handleSaveAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!admin) return;
-    setSavingAdmin(true);
     setAdminMessage('');
     setError('');
+    if (adminPassword && !isPasswordStrong(adminPassword)) {
+      setError('Password must be at least 8 characters and include a letter and a digit.');
+      return;
+    }
+    setSavingAdmin(true);
     try {
       const updated = await updateTenantAdminRequest(admin.id, adminName.trim(), adminUsername.trim(), adminPassword || undefined);
       setAdmin(updated);
@@ -118,8 +125,12 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdminName.trim() || !newAdminUsername.trim() || !newAdminPassword) return;
-    setCreatingAdmin(true);
     setError('');
+    if (!isPasswordStrong(newAdminPassword)) {
+      setError('Password must be at least 8 characters and include a letter and a digit.');
+      return;
+    }
+    setCreatingAdmin(true);
     try {
       const created = await createAdminForTenantRequest(tenant.id, newAdminName.trim(), newAdminUsername.trim(), newAdminPassword);
       setAdmin(created);
@@ -133,11 +144,11 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
     }
   };
 
-  const handleGrant = async (period: 'monthly' | 'yearly') => {
+  const handleGrant = async (planId: string) => {
     setGranting(true);
     setError('');
     try {
-      const updated = await grantSubscriptionRequest(tenant.id, period, PLAN_AMOUNT_PAISE[period], `Manual ${period} grant`);
+      const updated = await grantSubscriptionByPlanRequest(tenant.id, planId);
       const merged = { ...currentTenant, ...updated };
       setCurrentTenant(merged);
       onSaved(merged);
@@ -168,10 +179,40 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
     try {
       await deleteTenantRequest(tenant.id);
       setDeleteOpen(false);
-      onDeleted();
+      const merged = { ...currentTenant, status: 'deleted' as const };
+      setCurrentTenant(merged);
+      onSaved(merged);
     } catch (err: any) {
       setError(err?.message || 'Failed to delete tenant');
       setDeleteOpen(false);
+    }
+  };
+
+  const [restoring, setRestoring] = useState(false);
+  const handleRestore = async () => {
+    setRestoring(true);
+    setError('');
+    try {
+      const updated = await restoreTenantRequest(tenant.id);
+      const merged = { ...currentTenant, ...updated };
+      setCurrentTenant(merged);
+      onSaved(merged);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to restore tenant');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const handlePurge = async () => {
+    try {
+      await purgeTenantRequest(tenant.id);
+      setPurgeOpen(false);
+      onDeleted();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to purge tenant');
+      setPurgeOpen(false);
     }
   };
 
@@ -193,26 +234,49 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
             currentTenant.status === 'active'
               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : currentTenant.status === 'deleted'
+              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
           }`}>
             {currentTenant.status}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => (currentTenant.status === 'active' ? setDisableConfirmOpen(true) : handleToggleStatus())}
-            disabled={togglingStatus}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 text-sm font-medium transition"
-          >
-            <Power className="w-4 h-4" />
-            {currentTenant.status === 'active' ? 'Disable' : 'Enable'}
-          </button>
-          <button
-            onClick={() => setDeleteOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition"
-          >
-            <Trash2 className="w-4 h-4" /> Delete
-          </button>
+          {currentTenant.status === 'deleted' ? (
+            <>
+              <button
+                onClick={handleRestore}
+                disabled={restoring}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 text-sm font-medium transition"
+              >
+                <RotateCcw className="w-4 h-4" />
+                {restoring ? 'Restoring…' : 'Restore'}
+              </button>
+              <button
+                onClick={() => setPurgeOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition"
+              >
+                <Flame className="w-4 h-4" /> Purge permanently
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => (currentTenant.status === 'active' ? setDisableConfirmOpen(true) : handleToggleStatus())}
+                disabled={togglingStatus}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 text-sm font-medium transition"
+              >
+                <Power className="w-4 h-4" />
+                {currentTenant.status === 'active' ? 'Disable' : 'Enable'}
+              </button>
+              <button
+                onClick={() => setDeleteOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -481,21 +545,21 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
             <span className="text-gray-500 dark:text-gray-400">No subscription granted yet</span>
           )}
         </p>
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => handleGrant('monthly')}
-            disabled={granting}
-            className="px-4 py-2 rounded-lg border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-60 text-sm font-medium transition"
-          >
-            Grant 1 month (₹499)
-          </button>
-          <button
-            onClick={() => handleGrant('yearly')}
-            disabled={granting}
-            className="px-4 py-2 rounded-lg border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-60 text-sm font-medium transition"
-          >
-            Grant 1 year (₹4,999)
-          </button>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {plans.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No active plans — add one in Subscription Plans first.</p>
+          ) : (
+            plans.map(plan => (
+              <button
+                key={plan.id}
+                onClick={() => handleGrant(plan.id)}
+                disabled={granting}
+                className="px-4 py-2 rounded-lg border border-orange-300 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-60 text-sm font-medium transition"
+              >
+                Grant {plan.name} ({(plan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: plan.currency })})
+              </button>
+            ))
+          )}
         </div>
 
         {credits.length > 0 && (
@@ -515,10 +579,20 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
         open={deleteOpen}
         danger
         title="Delete tenant"
-        message={`This permanently wipes ALL of ${currentTenant.name}'s data — members, chanda, expenses, everything. This cannot be undone.`}
-        confirmLabel="Delete permanently"
+        message={`${currentTenant.name}'s users will be locked out immediately. Their data is NOT wiped yet — you can Restore this tenant anytime, or Purge it permanently as a separate, deliberate step.`}
+        confirmLabel="Delete"
         onCancel={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
+      />
+
+      <SuperAdminConfirmModal
+        open={purgeOpen}
+        danger
+        title="Purge tenant permanently"
+        message={`This permanently wipes ALL of ${currentTenant.name}'s data — members, chanda, expenses, everything. This cannot be undone, and there is no further recovery step after this.`}
+        confirmLabel="Purge permanently"
+        onCancel={() => setPurgeOpen(false)}
+        onConfirm={handlePurge}
       />
 
       <SuperAdminConfirmModal

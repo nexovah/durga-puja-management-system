@@ -1,5 +1,5 @@
 // POST /api/billing/create-order
-// Body: { period: 'monthly' | 'yearly' }
+// Body: { planId: string }
 // Header: Authorization: Bearer <tenant access_token from login()>
 //
 // Creates a Razorpay order for the caller's own tenant (identity comes from
@@ -24,20 +24,20 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { period } = req.body || {};
-  if (period !== 'monthly' && period !== 'yearly') {
-    res.status(400).json({ error: 'period must be "monthly" or "yearly"' });
+  const { planId } = req.body || {};
+  if (!planId) {
+    res.status(400).json({ error: 'planId is required' });
     return;
   }
 
   const { data: plan, error: planError } = await supabaseAdmin
     .from('subscription_plans')
     .select('*')
-    .eq('period', period)
+    .eq('id', planId)
     .eq('is_active', true)
     .single();
   if (planError || !plan) {
-    res.status(400).json({ error: 'Plan not found' });
+    res.status(400).json({ error: 'Plan not found or no longer active' });
     return;
   }
 
@@ -61,7 +61,8 @@ export default async function handler(req, res) {
   const { error: insertError } = await supabaseAdmin.from('billing_transactions').insert({
     tenant_id: tenantId,
     plan_id: plan.id,
-    period: plan.period,
+    period: plan.name,
+    duration_months: plan.duration_months,
     amount_paise: plan.amount_paise,
     currency: plan.currency,
     status: 'created',

@@ -23,11 +23,7 @@ export async function markTransactionPaidAndExtend(txn, razorpayPaymentId) {
     : new Date();
 
   const next = new Date(base);
-  if (txn.period === 'monthly') {
-    next.setMonth(next.getMonth() + 1);
-  } else {
-    next.setFullYear(next.getFullYear() + 1);
-  }
+  next.setMonth(next.getMonth() + (txn.duration_months || 1));
 
   await supabaseAdmin
     .from('tenants')

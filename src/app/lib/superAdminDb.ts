@@ -146,6 +146,17 @@ export async function deleteTenantRequest(tenantId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function restoreTenantRequest(tenantId: string): Promise<Tenant> {
+  const { data, error } = await supabase.rpc('super_admin_restore_tenant', { p_tenant_id: tenantId });
+  if (error) throw error;
+  return fromTenantRow(data);
+}
+
+export async function purgeTenantRequest(tenantId: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_purge_tenant', { p_tenant_id: tenantId });
+  if (error) throw error;
+}
+
 export async function grantSubscriptionRequest(
   tenantId: string,
   period: 'monthly' | 'yearly',
@@ -157,6 +168,18 @@ export async function grantSubscriptionRequest(
     p_period: period,
     p_amount_paise: amountPaise,
     p_note: note || null,
+  });
+  if (error) throw error;
+  return fromTenantRow(data);
+}
+
+// Plan-based grant — added alongside grantSubscriptionRequest (above,
+// untouched) rather than replacing it, so any not-yet-redeployed frontend
+// still calling the old hardcoded-period version keeps working.
+export async function grantSubscriptionByPlanRequest(tenantId: string, planId: string): Promise<Tenant> {
+  const { data, error } = await supabase.rpc('super_admin_grant_subscription_plan', {
+    p_tenant_id: tenantId,
+    p_plan_id: planId,
   });
   if (error) throw error;
   return fromTenantRow(data);
@@ -227,16 +250,32 @@ export async function updateTenantAdminRequest(
   return fromTenantAdminRow(data[0]);
 }
 
+// Mirrors is_password_strong() in supabase/037_password_strength.sql —
+// client-side check for instant feedback; the server enforces the same
+// rule regardless, so this can never be bypassed by skipping it.
+export function isPasswordStrong(password: string): boolean {
+  return password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+}
+
 // Random 10-char password: letters, digits, one symbol — good enough to
 // hand a tenant admin as a first/reset password, they can change it later
 // from their own Settings > Change Password once logged in.
 export function generatePassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
+  const digits = '23456789';
   const symbols = '!@#$%';
-  let pw = '';
-  for (let i = 0; i < 9; i++) pw += chars[Math.floor(Math.random() * chars.length)];
-  pw += symbols[Math.floor(Math.random() * symbols.length)];
-  return pw;
+  // Guarantee at least one letter and one digit (matches
+  // is_password_strong() server-side) instead of drawing 9 random chars
+  // from a mixed pool, which could land on an all-letter password.
+  const pick = (pool: string) => pool[Math.floor(Math.random() * pool.length)];
+  const rest = Array.from({ length: 6 }, () => pick(letters + digits)).join('');
+  const chars = [pick(letters), pick(digits), pick(symbols), ...rest.split('')];
+  // Shuffle so the guaranteed chars aren't always in the same positions.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 }
 
 export interface SuperAdminProfile {
@@ -280,6 +319,180 @@ export async function updateSelfProfileRequest(profile: Omit<SuperAdminProfile, 
   });
   if (error) throw error;
   return fromSuperAdminProfileRow(data[0]);
+}
+
+export interface Order {
+  id: string;
+  source: 'razorpay' | 'manual';
+  tenantId: string;
+  tenantName: string;
+  period: string;
+  amountPaise: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface OrderDetail extends Order {
+  paidAt: string | null;
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  note: string | null;
+  grantedByName: string | null;
+}
+
+function fromOrderRow(row: any): Order {
+  return {
+    id: row.id,
+    source: row.source,
+    tenantId: row.tenant_id,
+    tenantName: row.tenant_name,
+    period: row.period,
+    amountPaise: row.amount_paise,
+    currency: row.currency,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listOrdersRequest(): Promise<Order[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_orders');
+  if (error) throw error;
+  return (data || []).map(fromOrderRow);
+}
+
+export async function getOrderDetailRequest(orderId: string, source: 'razorpay' | 'manual'): Promise<OrderDetail | null> {
+  const { data, error } = await supabase.rpc('super_admin_get_order_detail', { p_order_id: orderId, p_source: source });
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  const row = data[0];
+  return {
+    ...fromOrderRow(row),
+    paidAt: row.paid_at,
+    razorpayOrderId: row.razorpay_order_id,
+    razorpayPaymentId: row.razorpay_payment_id,
+    note: row.note,
+    grantedByName: row.granted_by_name,
+  };
+}
+
+export interface SubscriptionPlanAdmin {
+  id: string;
+  name: string;
+  description: string;
+  durationMonths: number;
+  amountPaise: number;
+  currency: string;
+  features: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+function fromPlanAdminRow(row: any): SubscriptionPlanAdmin {
+  return {
+    id: row.id,
+    name: row.name || '',
+    description: row.description || '',
+    durationMonths: row.duration_months,
+    amountPaise: row.amount_paise,
+    currency: row.currency || 'INR',
+    features: row.features || '',
+    displayOrder: row.display_order ?? 0,
+    isActive: row.is_active !== false,
+  };
+}
+
+export async function listPlansAdminRequest(): Promise<SubscriptionPlanAdmin[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_plans');
+  if (error) throw error;
+  return (data || []).map(fromPlanAdminRow);
+}
+
+export interface PlanFormInput {
+  name: string;
+  description: string;
+  durationMonths: number;
+  amountPaise: number;
+  currency: string;
+  features: string;
+  displayOrder: number;
+}
+
+export async function createPlanRequest(plan: PlanFormInput): Promise<SubscriptionPlanAdmin> {
+  const { data, error } = await supabase.rpc('super_admin_create_plan', {
+    p_name: plan.name,
+    p_description: plan.description || null,
+    p_duration_months: plan.durationMonths,
+    p_amount_paise: plan.amountPaise,
+    p_currency: plan.currency,
+    p_features: plan.features || null,
+    p_display_order: plan.displayOrder,
+  });
+  if (error) throw error;
+  return fromPlanAdminRow(data);
+}
+
+export async function updatePlanRequest(planId: string, plan: PlanFormInput, isActive: boolean): Promise<SubscriptionPlanAdmin> {
+  const { data, error } = await supabase.rpc('super_admin_update_plan', {
+    p_plan_id: planId,
+    p_name: plan.name,
+    p_description: plan.description || null,
+    p_duration_months: plan.durationMonths,
+    p_amount_paise: plan.amountPaise,
+    p_currency: plan.currency,
+    p_features: plan.features || null,
+    p_display_order: plan.displayOrder,
+    p_is_active: isActive,
+  });
+  if (error) throw error;
+  return fromPlanAdminRow(data);
+}
+
+export async function archivePlanRequest(planId: string): Promise<SubscriptionPlanAdmin> {
+  const { data, error } = await supabase.rpc('super_admin_archive_plan', { p_plan_id: planId });
+  if (error) throw error;
+  return fromPlanAdminRow(data);
+}
+
+export interface PlatformSettings {
+  logoUrl: string;
+  faviconUrl: string;
+  appTitle: string;
+  showLogoOnSignin: boolean;
+  showSigninBackground: boolean;
+  signinBackgroundUrl: string;
+}
+
+function fromPlatformSettingsRow(row: any): PlatformSettings {
+  return {
+    logoUrl: row.logo_url || '',
+    faviconUrl: row.favicon_url || '',
+    appTitle: row.app_title || 'Durga CRM',
+    showLogoOnSignin: row.show_logo_on_signin !== false,
+    showSigninBackground: row.show_signin_background === true,
+    signinBackgroundUrl: row.signin_background_url || '',
+  };
+}
+
+// Public read — no auth needed, used by the landing page and Super Admin
+// login screen before anyone is logged in.
+export async function getPlatformSettingsRequest(): Promise<PlatformSettings> {
+  const { data, error } = await supabase.from('platform_settings').select('*').eq('id', 1).single();
+  if (error) throw error;
+  return fromPlatformSettingsRow(data);
+}
+
+export async function updatePlatformSettingsRequest(settings: PlatformSettings): Promise<PlatformSettings> {
+  const { data, error } = await supabase.rpc('super_admin_update_platform_settings', {
+    p_logo_url: settings.logoUrl || null,
+    p_favicon_url: settings.faviconUrl || null,
+    p_app_title: settings.appTitle || null,
+    p_show_logo_on_signin: settings.showLogoOnSignin,
+    p_show_signin_background: settings.showSigninBackground,
+    p_signin_background_url: settings.signinBackgroundUrl || null,
+  });
+  if (error) throw error;
+  return fromPlatformSettingsRow(data);
 }
 
 export interface DeveloperInfo {

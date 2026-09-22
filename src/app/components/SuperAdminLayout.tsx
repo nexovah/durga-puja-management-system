@@ -2,11 +2,11 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Building2, Settings as SettingsIcon, LogOut, Moon, Sun, ShieldCheck,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart,
 } from 'lucide-react';
 import { useTheme } from '../i18n/ThemeContext';
 
-export type SuperAdminPage = 'tenants' | 'settings';
+export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'settings';
 
 interface SuperAdminLayoutProps {
   adminName: string;
@@ -18,6 +18,8 @@ interface SuperAdminLayoutProps {
 
 const NAV_ITEMS: { key: SuperAdminPage; label: string; icon: typeof Building2 }[] = [
   { key: 'tenants', label: 'Tenants', icon: Building2 },
+  { key: 'plans', label: 'Subscription Plans', icon: CreditCard },
+  { key: 'orders', label: 'Orders', icon: ShoppingCart },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 

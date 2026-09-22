@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { Tenant, listTenantsRequest, createTenantRequest, generatePassword } from '../lib/superAdminDb';
+import { Tenant, listTenantsRequest, createTenantRequest, generatePassword, isPasswordStrong } from '../lib/superAdminDb';
 
 const slugify = (name: string) =>
   name
@@ -59,8 +59,12 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newSlug.trim() || !adminName.trim() || !adminUsername.trim() || !adminPassword) return;
-    setCreating(true);
     setError('');
+    if (!isPasswordStrong(adminPassword)) {
+      setError('Admin password must be at least 8 characters and include a letter and a digit.');
+      return;
+    }
+    setCreating(true);
     try {
       await createTenantRequest(newName.trim(), newSlug.trim(), adminName.trim(), adminUsername.trim(), adminPassword);
       setNewName('');
@@ -217,6 +221,8 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       tenant.status === 'active'
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : tenant.status === 'deleted'
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}>
                       {tenant.status}

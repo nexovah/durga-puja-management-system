@@ -4,6 +4,7 @@ import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { LandingPage } from './components/LandingPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
+import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -384,6 +385,27 @@ export default function App() {
   });
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(() => getPageFromPath());
+
+  // App title/favicon apply site-wide (landing page, every tenant's
+  // dashboard, Super Admin) — set once here regardless of which sub-app
+  // below actually renders. The logo itself stays scoped to just the
+  // landing page + Super Admin login (wired separately in those
+  // components) — each tenant's own committee logo in the sidebar is a
+  // different, existing per-tenant setting and is untouched by this.
+  useEffect(() => {
+    getPlatformSettingsRequest().then(settings => {
+      if (settings.appTitle) document.title = settings.appTitle;
+      if (settings.faviconUrl) {
+        let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = settings.faviconUrl;
+      }
+    }).catch(() => {});
+  }, []);
   // Tracks the raw pathname while logged out (landing vs. login), since
   // those two routes aren't part of the authed PageKey system above.
   const [loggedOutPath, setLoggedOutPath] = useState(() => window.location.pathname);
@@ -703,6 +725,12 @@ export default function App() {
     setCurrentPage('dashboard');
     clearStoredSession();
     setTenantAccessToken(null);
+    // The URL sync effect only runs while isLoggedIn, so it won't clean up
+    // whatever authed page's URL was showing (e.g. /chanda-collection) —
+    // reset it to /login explicitly so the address bar matches the login
+    // screen that's about to render.
+    window.history.pushState(null, '', '/login');
+    setLoggedOutPath('/login');
   };
 
   // Platform-admin route — entirely separate app/session, mounted before
