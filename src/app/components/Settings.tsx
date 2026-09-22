@@ -309,8 +309,10 @@ export function Settings({
         <div className="flex-1 min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           {/* Committee Info Tab */}
           {activeTab === 'committee' && (
-            <form onSubmit={handleCommitteeSubmit} className="space-y-4">
-            <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.committee')}</h3>
+              <form onSubmit={handleCommitteeSubmit} className="space-y-4">
+              <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.uploadLogo')}</label>
                 <input
@@ -494,11 +496,14 @@ export function Settings({
               </button>
             </fieldset>
             </form>
+            </div>
           )}
 
           {/* Password Change Tab */}
           {activeTab === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.password')}</h3>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.currentPassword')}</label>
                 <input
@@ -536,7 +541,8 @@ export function Settings({
                 <Save size={20} />
                 {t('settings.changePassword')}
               </button>
-            </form>
+              </form>
+            </div>
           )}
 
           {/* User Management Tab */}
@@ -863,6 +869,7 @@ export function Settings({
               can edit this (it's vendor/software info, not committee data) */}
           {activeTab === 'developer' && (
             <div className="max-w-md">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-1">{t('settings.tab.developer')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Managed by the platform administrator.
               </p>
