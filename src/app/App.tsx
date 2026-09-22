@@ -857,7 +857,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
       <Sidebar
         logo={committeeInfo.logo}
-        association={committeeInfo.association || 'বেনজীন সর্বজনীন দুর্গোৎসব কমিটি'}
+        association={committeeInfo.association || committeeInfo.name}
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         permissions={currentUser?.permissions}
