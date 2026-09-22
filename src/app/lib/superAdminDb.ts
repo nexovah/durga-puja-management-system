@@ -35,6 +35,7 @@ export interface SubscriptionCredit {
   amountPaise: number;
   note: string | null;
   createdAt: string;
+  cancelledAt: string | null;
 }
 
 function fromTenantRow(row: any): Tenant {
@@ -61,6 +62,7 @@ function fromCreditRow(row: any): SubscriptionCredit {
     amountPaise: row.amount_paise,
     note: row.note,
     createdAt: row.created_at,
+    cancelledAt: row.cancelled_at ?? null,
   };
 }
 

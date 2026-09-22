@@ -219,12 +219,16 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
   const expiresAt = currentTenant.subscriptionExpiresAt ? new Date(currentTenant.subscriptionExpiresAt) : null;
   const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : true;
 
+  // Cancelled grants (see supabase/054_cancel_manual_grant.sql) no longer
+  // count toward the active/expired plan match or the history list below.
+  const activeCredits = credits.filter(c => !c.cancelledAt);
+
   // "Active"/"Expired" plan = the plan matching the most recent manual
   // grant (credits are already ordered newest-first by
   // super_admin_list_subscription_credits). Credit amounts are stored as
   // negative debits (see 023_tenant_details_and_subscriptions.sql) —
   // compare against the absolute value.
-  const latestCredit = credits[0];
+  const latestCredit = activeCredits[0];
   const grantedPlan = latestCredit
     ? plans.find(p => p.amountPaise === Math.abs(latestCredit.amountPaise)) ?? null
     : null;
@@ -611,9 +615,9 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
           </p>
         )}
 
-        {credits.length > 0 && (
+        {activeCredits.length > 0 && (
           <div className="space-y-1.5">
-            {credits.map(c => (
+            {activeCredits.map(c => (
               <div key={c.id} className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800 pb-1.5">
                 <span>{c.note || c.period}</span>
                 <span className="font-medium">{(c.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
