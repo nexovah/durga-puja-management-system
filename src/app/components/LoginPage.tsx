@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getPlatformSettingsRequest } from '../lib/superAdminDb';
 
 interface LoginPageProps {
   logo: string;
   onLogin: (username: string, password: string) => Promise<boolean>;
 }
 
+// Pre-login, this component doesn't yet know which tenant is signing in
+// (committeeInfo isn't fetched until after auth — see App.tsx), so `logo`
+// is always the hardcoded EMPTY_COMMITTEE_INFO default here, never a real
+// tenant's own logo. Fall back to the Super Admin-managed platform logo
+// in that case, so the generic login screen reflects platform branding
+// like every other pre-login/unauthenticated screen already does.
 export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const { t } = useLanguage();
   const [username, setUsername] = useState('');
@@ -14,6 +21,11 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [platformLogo, setPlatformLogo] = useState('');
+
+  useEffect(() => {
+    getPlatformSettingsRequest().then(p => setPlatformLogo(p.logoUrl)).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +44,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
     }
   };
 
-  // Check if logo is emoji or image
-  const isEmoji = logo && logo.length <= 10 && !logo.startsWith('data:') && !logo.startsWith('http');
+  // `logo` is always the '🕉️' default here (see note above) — prefer the
+  // platform logo over that default when one's been uploaded.
+  const effectiveLogo = logo === '🕉️' && platformLogo ? platformLogo : logo;
+  const isEmoji = effectiveLogo && effectiveLogo.length <= 10 && !effectiveLogo.startsWith('data:') && !effectiveLogo.startsWith('http');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
@@ -46,10 +60,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
               {/* Inner circle for logo */}
               <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center relative overflow-hidden p-2">
                 {isEmoji ? (
-                  <div className="text-5xl sm:text-7xl">{logo}</div>
-                ) : logo ? (
+                  <div className="text-5xl sm:text-7xl">{effectiveLogo}</div>
+                ) : effectiveLogo ? (
                   <img
-                    src={logo}
+                    src={effectiveLogo}
                     alt="Logo"
                     className="w-full h-full object-contain rounded-full"
                   />
