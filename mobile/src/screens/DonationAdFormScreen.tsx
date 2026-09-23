@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listDonationAds, createDonationAd, updateDonationAd, DonationAd, DonationAdCategory, PaidMethod } from '../lib/db';
+import { listDonationAds, createDonationAd, updateDonationAd, logActivity, diffFields, DonationAd, DonationAdCategory, PaidMethod } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
 import { SheetSelect } from '../components/SheetSelect';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
-import { todayISO } from '../lib/labels';
+import { useAuth } from '../lib/auth';
+import { todayISO, formatAmount } from '../lib/labels';
 
 const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'notSelected', label: 'Not Selected' },
@@ -43,8 +44,15 @@ const ADS_CATEGORY_OPTIONS = [
 
 const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '' };
 
+const DONATION_AD_FIELD_LABELS: Record<string, string> = {
+  donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount', paidMethod: 'Paid Method',
+  inKind: 'In Kind', date: 'Date', voucherNumber: 'Voucher Number', phone: 'Phone Number',
+  phone2: 'Phone Number 2', remarks: 'Remarks',
+};
+
 export function DonationAdFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const keyboardVisible = useKeyboardVisible();
   const category: DonationAdCategory = route.params?.category || 'donation';
   const isAds = category === 'ads';
@@ -56,6 +64,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<DonationAd | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -63,6 +72,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
       const all = await listDonationAds(category);
       const existing = all.find(d => d.id === id);
       if (existing) {
+        setOriginal(existing);
         setForm({
           donorName: existing.donorName, companyName: existing.companyName || '',
           amount: String(existing.amount), paidMethod: existing.paidMethod,
@@ -105,6 +115,18 @@ export function DonationAdFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateDonationAd(id, payload);
       else await createDonationAd(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'donation_ads',
+          summary: `${payload.companyName || payload.donorName} — ${formatAmount(payload.amount)}`,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, DONATION_AD_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

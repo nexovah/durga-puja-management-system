@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listExpenses, createExpense, updateExpense, Expense, ExpensePaymentStatus, PaidThrough } from '../lib/db';
+import { listExpenses, createExpense, updateExpense, logActivity, diffFields, Expense, ExpensePaymentStatus, PaidThrough } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
@@ -10,7 +10,8 @@ import { SheetSelect } from '../components/SheetSelect';
 import { PartialPaymentsField, PartialPaymentRow } from '../components/PartialPaymentsField';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
-import { todayISO } from '../lib/labels';
+import { useAuth } from '../lib/auth';
+import { todayISO, formatAmount } from '../lib/labels';
 
 const CATEGORY_OPTIONS = [
   { value: 'construction', label: 'Construction' },
@@ -52,8 +53,15 @@ const emptyForm = {
   vendorName: '', vendorContact: '', remarks: '',
 };
 
+const EXPENSE_FIELD_LABELS: Record<string, string> = {
+  title: 'Title', amount: 'Amount', paymentStatus: 'Payment Status', paidThrough: 'Paid Through',
+  date: 'Date', category: 'Category', voucherNumber: 'Voucher Number', vendorName: 'Vendor Name',
+  vendorContact: 'Vendor Contact', remarks: 'Remarks',
+};
+
 export function ExpenseFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
@@ -64,6 +72,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Expense | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -71,6 +80,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
       const all = await listExpenses();
       const existing = all.find(e => e.id === id);
       if (existing) {
+        setOriginal(existing);
         setForm({
           title: existing.title, amount: String(existing.amount), category: existing.category,
           paymentStatus: existing.paymentStatus, paidThrough: existing.paidThrough, date: existing.date,
@@ -128,6 +138,18 @@ export function ExpenseFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateExpense(id, payload);
       else await createExpense(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'expenses',
+          summary: `${payload.title} — ${formatAmount(payload.amount)}`,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, EXPENSE_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { listTasks, createTask, updateTask, defaultExpiryDate, Task, TaskPriority } from '../lib/tasks';
-import { listMembers, Member } from '../lib/db';
+import { listMembers, logActivity, diffFields, Member } from '../lib/db';
 import { useAuth } from '../lib/auth';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
@@ -19,6 +19,11 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: 'note', label: 'Note' },
   { value: 'completed', label: 'Completed' },
 ];
+
+const TASK_FIELD_LABELS: Record<string, string> = {
+  title: 'Title', description: 'Description', priority: 'Priority', expiryDate: 'Expiry Date',
+  assignedMemberIds: 'Assigned Members',
+};
 
 export function TaskFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -38,6 +43,7 @@ export function TaskFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Task | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +53,7 @@ export function TaskFormScreen({ route, navigation }: any) {
         const all = await listTasks();
         const existing = all.find(t => t.id === id);
         if (existing) {
+          setOriginal(existing);
           setTitle(existing.title);
           setDescription(existing.description);
           setPriority(existing.priority);
@@ -91,6 +98,18 @@ export function TaskFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateTask(id, payload);
       else await createTask(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'tasks',
+          summary: payload.title,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, TASK_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

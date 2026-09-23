@@ -3,13 +3,14 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { listLoans, createLoan, updateLoan, Loan } from '../lib/loans';
-import { PaidMethod } from '../lib/db';
+import { PaidMethod, logActivity, diffFields } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
-import { todayISO } from '../lib/labels';
+import { useAuth } from '../lib/auth';
+import { todayISO, formatAmount } from '../lib/labels';
 
 const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'notSelected', label: 'Not Selected' },
@@ -24,8 +25,15 @@ const emptyForm = {
   paymentMethod: 'notSelected' as PaidMethod, date: todayISO(), returnDate: '', remarks: '',
 };
 
+const LOAN_FIELD_LABELS: Record<string, string> = {
+  donorName: "Lender's Name", amountReceived: 'Amount Received', amountPaid: 'Amount Repaid',
+  phone: 'Phone Number', paymentMethod: 'Paid Method', date: 'Date', returnDate: 'Return Date',
+  remarks: 'Remarks',
+};
+
 export function LoanFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
@@ -35,6 +43,7 @@ export function LoanFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Loan | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -42,6 +51,7 @@ export function LoanFormScreen({ route, navigation }: any) {
       const all = await listLoans();
       const existing = all.find(l => l.id === id);
       if (existing) {
+        setOriginal(existing);
         setForm({
           donorName: existing.donorName,
           amountReceived: String(existing.amountReceived),
@@ -85,6 +95,18 @@ export function LoanFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateLoan(id, payload);
       else await createLoan(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'loans',
+          summary: `${payload.donorName} — ${formatAmount(payload.amountReceived)}`,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, LOAN_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

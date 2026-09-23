@@ -376,3 +376,66 @@ export async function getCommitteeInfo(): Promise<CommitteeInfo> {
     address: data.address || '',
   };
 }
+
+// ---------------------------------------------------------------------------
+// Activity log — mirrors web's src/app/lib/db.ts logActivity() exactly
+// (same `activity_log` table, same column names). Web writes to this table
+// client-side after every save, and mobile must do the same or the admin's
+// Activity Log page never sees anything created/updated from the app.
+// ---------------------------------------------------------------------------
+
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation';
+export type ActivityAction = 'create' | 'update';
+export type ActivityDevice = 'android' | 'ios';
+
+export interface ActivityFieldChange {
+  field: string; // human-readable label, e.g. "Amount", "Phone"
+  old: string;
+  new: string;
+}
+
+export async function logActivity(entry: {
+  userId: string;
+  username: string;
+  userName: string;
+  action: ActivityAction;
+  module: ActivityModule;
+  summary: string;
+  device: ActivityDevice;
+  changes?: ActivityFieldChange[];
+}): Promise<void> {
+  const { error } = await supabase.from('activity_log').insert({
+    user_id: entry.userId,
+    username: entry.username,
+    user_name: entry.userName,
+    action: entry.action,
+    module: entry.module,
+    summary: entry.summary,
+    record_count: 1,
+    device: entry.device,
+    changes: entry.changes && entry.changes.length > 0 ? entry.changes : null,
+  });
+  if (error) console.error('Failed to write activity log', error);
+}
+
+// Compares two flat field-maps and returns only the fields that actually
+// changed, formatted for the Activity Log's struck-through-old/plain-new
+// diff display — mirrors web's src/app/lib/db.ts diffFields() exactly.
+export function diffFields(
+  before: Record<string, unknown> | undefined | null,
+  after: Record<string, unknown>,
+  labels: Record<string, string>
+): ActivityFieldChange[] {
+  if (!before) return [];
+  const format = (v: unknown): string => {
+    if (v === null || v === undefined || v === '') return '—';
+    return String(v);
+  };
+  const changes: ActivityFieldChange[] = [];
+  for (const [key, label] of Object.entries(labels)) {
+    const oldVal = format(before[key]);
+    const newVal = format(after[key]);
+    if (oldVal !== newVal) changes.push({ field: label, old: oldVal, new: newVal });
+  }
+  return changes;
+}

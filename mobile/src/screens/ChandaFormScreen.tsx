@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listChanda, createChanda, updateChanda, Chanda, PaidMethod, PaymentStatus } from '../lib/db';
+import { listChanda, createChanda, updateChanda, logActivity, diffFields, Chanda, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
-import { todayISO, PAYMENT_STATUS_LABEL, STATUS_COLORS } from '../lib/labels';
+import { useAuth } from '../lib/auth';
+import { todayISO, formatAmount, PAYMENT_STATUS_LABEL, STATUS_COLORS } from '../lib/labels';
 
 const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'notSelected', label: 'Not Selected' },
@@ -29,8 +30,16 @@ const emptyForm = {
   partialAmount: '', date: todayISO(), remarks: '',
 };
 
+const CHANDA_FIELD_LABELS: Record<string, string> = {
+  donorName: "Donor's Name", amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  billNumber: 'Bill Number', phone: 'Phone Number', phone2: 'Phone Number 2',
+  paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
+  date: 'Date', remarks: 'Remarks',
+};
+
 export function ChandaFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
@@ -40,6 +49,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Chanda | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -47,6 +57,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
       const all = await listChanda();
       const existing = all.find(c => c.id === id);
       if (existing) {
+        setOriginal(existing);
         setForm({
           donorName: existing.donorName,
           amount: String(existing.amount),
@@ -111,6 +122,18 @@ export function ChandaFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateChanda(id, payload);
       else await createChanda(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'chanda',
+          summary: `${payload.donorName} — ${formatAmount(payload.amount)}`,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, CHANDA_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

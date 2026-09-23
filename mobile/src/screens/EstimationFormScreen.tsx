@@ -9,6 +9,7 @@ import {
   listEstimations, createEstimation, updateEstimation, DEFAULT_ESTIMATION_COLUMN_LABELS,
   Estimation, EstimationLineItem,
 } from '../lib/estimations';
+import { logActivity, diffFields } from '../lib/db';
 import { useAuth } from '../lib/auth';
 import { colors, radius } from '../theme';
 import { TextField } from '../components/FormField';
@@ -17,6 +18,12 @@ import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { genId, formatAmount } from '../lib/labels';
 
 const blankLineItem = (): EstimationLineItem => ({ id: genId(), title: '', customField: '', customField2: '', amount: 0 });
+
+// Line items are a dynamic, drag-reorderable list — too complex to diff
+// field-by-field meaningfully, so only the top-level scalar fields are diffed.
+const ESTIMATION_FIELD_LABELS: Record<string, string> = {
+  title: 'Title',
+};
 
 export function EstimationFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -32,6 +39,7 @@ export function EstimationFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Estimation | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -39,6 +47,7 @@ export function EstimationFormScreen({ route, navigation }: any) {
       const all = await listEstimations();
       const existing = all.find(e => e.id === id);
       if (existing) {
+        setOriginal(existing);
         setTitle(existing.title);
         setCreatedAt(existing.createdAt);
         setLineItems(existing.lineItems.length > 0 ? existing.lineItems : [blankLineItem()]);
@@ -82,6 +91,18 @@ export function EstimationFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateEstimation(id, payload);
       else await createEstimation(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'estimation',
+          summary: `${payload.title} — ${formatAmount(total)}`,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, ESTIMATION_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');

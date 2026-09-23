@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listMembers, createMember, updateMember, Member, PaidMethod, PaymentStatus } from '../lib/db';
+import { listMembers, createMember, updateMember, logActivity, diffFields, Member, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
 import { SheetSelect } from '../components/SheetSelect';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
+import { useAuth } from '../lib/auth';
 import { todayISO } from '../lib/labels';
 
 const ROLE_OPTIONS = [
@@ -44,8 +45,16 @@ const emptyForm = {
   membershipDate: todayISO(), membershipRemarks: '',
 };
 
+const MEMBER_FIELD_LABELS: Record<string, string> = {
+  name: 'Name', phone: 'Phone Number', address: 'Address', role: 'Role / Designation',
+  joinDate: 'Join Date', membershipAmount: 'Membership Amount', membershipPaidMethod: 'Paid Method',
+  membershipPaymentStatus: 'Payment Status', membershipPartialAmount: 'Amount Paid So Far',
+  membershipDate: 'Membership Date', membershipRemarks: 'Remarks',
+};
+
 export function MemberFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
@@ -55,6 +64,7 @@ export function MemberFormScreen({ route, navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
+  const [original, setOriginal] = useState<Member | null>(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -62,6 +72,7 @@ export function MemberFormScreen({ route, navigation }: any) {
       const all = await listMembers();
       const existing = all.find(m => m.id === id);
       if (existing) {
+        setOriginal(existing);
         setForm({
           name: existing.name, phone: existing.phone, address: existing.address, role: existing.role,
           joinDate: existing.joinDate,
@@ -108,6 +119,18 @@ export function MemberFormScreen({ route, navigation }: any) {
     try {
       if (isEdit) await updateMember(id, payload);
       else await createMember(payload);
+      if (user) {
+        logActivity({
+          userId: user.id,
+          username: user.username,
+          userName: user.name,
+          action: isEdit ? 'update' : 'create',
+          module: 'members',
+          summary: payload.name,
+          device: Platform.OS === 'ios' ? 'ios' : 'android',
+          changes: isEdit ? diffFields(original as any, payload as any, MEMBER_FIELD_LABELS) : undefined,
+        }).catch(() => {});
+      }
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');
