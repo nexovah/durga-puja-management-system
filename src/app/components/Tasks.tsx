@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -18,8 +19,13 @@ interface TasksProps {
   currentUserId: string;
   currentUserName: string;
   isAdmin: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'tasks', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'tasks', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+// assignedMemberIds is skipped — it's an array field, not a scalar to diff.
+const TASKS_FIELD_LABELS: Record<string, string> = {
+  title: 'Title', description: 'Description', priority: 'Priority', expiryDate: 'Expiry Date',
+};
 
 const PRIORITIES: { value: TaskPriority; labelKey: TranslationKey; badgeClass: string; dotClass: string }[] = [
   { value: 'high', labelKey: 'tasks.priority.high', badgeClass: 'bg-red-100 text-red-700', dotClass: 'bg-red-500' },
@@ -93,6 +99,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     if (editingId) {
+      const original = tasksList.find(task => task.id === editingId);
       setTasksList(tasksList.map(task =>
         task.id === editingId
           ? {
@@ -105,7 +112,10 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             }
           : task
       ));
-      onLog('update', 'tasks', formData.title);
+      onLog(
+        'update', 'tasks', formData.title, 1,
+        diffFields(original as any, formData as any, TASKS_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newTask: Task = {

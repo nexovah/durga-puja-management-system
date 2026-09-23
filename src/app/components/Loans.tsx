@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Loan, PaidMethod, getLoanNetAmount } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -21,8 +22,14 @@ interface LoansProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'loans', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'loans', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+const LOANS_FIELD_LABELS: Record<string, string> = {
+  donorName: "Donor's Name", amountReceived: 'Amount Received', amountPaid: 'Amount Paid',
+  phone: 'Phone', paymentMethod: 'Paid Method', paymentStatus: 'Payment Status',
+  date: 'Date', returnDate: 'Return Date', remarks: 'Remarks',
+};
 
 const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
   { value: 'notSelected', labelKey: 'common.paidMethod.notSelected' },
@@ -90,8 +97,12 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     };
 
     if (editingId) {
+      const original = loansList.find(l => l.id === editingId);
       setLoansList(loansList.map(l => (l.id === editingId ? { ...l, ...payload } : l)));
-      onLog('update', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`);
+      onLog(
+        'update', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`, 1,
+        diffFields(original as any, payload as any, LOANS_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newLoan: Loan = {

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -23,8 +24,15 @@ interface ExpensesProps {
   canBulkImport: boolean;
   expenses: Expense[];
   setExpenses: (expenses: Expense[]) => void;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+// partialPayments is skipped — it's an array of sub-records, not a scalar field to diff.
+const EXPENSES_FIELD_LABELS: Record<string, string> = {
+  title: 'Title', amount: 'Amount', paymentStatus: 'Payment Status', paidThrough: 'Paid Through',
+  date: 'Date', category: 'Category', voucherNumber: 'Voucher Number', vendorName: 'Vendor Name',
+  vendorContact: 'Vendor Contact', remarks: 'Remarks',
+};
 
 const categories: { value: string; labelKey: TranslationKey }[] = [
   { value: 'construction', labelKey: 'expenses.category.construction' },
@@ -203,12 +211,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const commitSave = (payload: Omit<Expense, 'id'>, saveAndAddNew: boolean) => {
     if (editingId) {
       // Edit existing expense
+      const original = expenses.find(exp => exp.id === editingId);
       setExpenses(expenses.map(exp =>
         exp.id === editingId
           ? { ...exp, ...payload }
           : exp
       ));
-      onLog('update', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
+      onLog(
+        'update', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`, 1,
+        diffFields(original as any, payload as any, EXPENSES_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new expense

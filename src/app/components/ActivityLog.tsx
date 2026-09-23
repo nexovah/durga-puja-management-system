@@ -1,9 +1,47 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Globe, Smartphone, Apple } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
-import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule } from '../lib/db';
+import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule, ActivityDevice } from '../lib/db';
 import { Pagination, usePagination } from './Pagination';
+
+const DEVICE_META: Record<ActivityDevice, { label: string; icon: typeof Globe; className: string }> = {
+  web: { label: 'Web', icon: Globe, className: 'bg-gray-100 text-gray-700' },
+  android: { label: 'Android', icon: Smartphone, className: 'bg-green-100 text-green-700' },
+  ios: { label: 'iOS', icon: Apple, className: 'bg-gray-800 text-gray-100' },
+};
+
+function DeviceBadge({ device }: { device: ActivityDevice | null }) {
+  const meta = DEVICE_META[device ?? 'web'];
+  const Icon = meta.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold ${meta.className}`}>
+      <Icon size={12} />
+      {meta.label}
+    </span>
+  );
+}
+
+// Renders an update's field-level diff: old value struck through, new value
+// in normal text — falls back to the plain summary when no diff was
+// captured (creates/deletes, bulk imports, or log rows from before this
+// feature existed).
+function DetailsCell({ entry }: { entry: ActivityLogEntry }) {
+  if (entry.action !== 'update' || !entry.changes || entry.changes.length === 0) {
+    return <span className="text-gray-700 dark:text-gray-300">{entry.summary}</span>;
+  }
+  return (
+    <div className="space-y-0.5">
+      {entry.changes.map((c, i) => (
+        <div key={i} className="text-gray-700 dark:text-gray-300">
+          <span className="font-medium text-gray-500 dark:text-gray-400">{c.field}:</span>{' '}
+          <span className="line-through text-gray-400 dark:text-gray-500">{c.old}</span>{' '}
+          <span>{c.new}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // Read-only audit trail: append-only `activity_log` table (RLS grants only
 // select+insert — no update/delete — so once a row lands here it can't be
@@ -17,6 +55,7 @@ export function ActivityLog() {
   const [moduleFilter, setModuleFilter] = useState<'all' | ActivityModule>('all');
   const [actionFilter, setActionFilter] = useState<'all' | ActivityAction>('all');
   const [userFilter, setUserFilter] = useState<'all' | string>('all');
+  const [deviceFilter, setDeviceFilter] = useState<'all' | ActivityDevice>('all');
 
   const load = () => {
     setLoading(true);
@@ -45,11 +84,13 @@ export function ActivityLog() {
     e =>
       (moduleFilter === 'all' || e.module === moduleFilter) &&
       (actionFilter === 'all' || e.action === actionFilter) &&
-      (userFilter === 'all' || e.userId === userFilter)
+      (userFilter === 'all' || e.userId === userFilter) &&
+      (deviceFilter === 'all' || (e.device ?? 'web') === deviceFilter)
   );
 
   const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'tasks', 'users', 'settings'];
   const actions: ActivityAction[] = ['create', 'update', 'delete', 'bulk_import'];
+  const devices: ActivityDevice[] = ['web', 'android', 'ios'];
 
   // Distinct users seen in the log so far — keyed by userId (falls back to
   // username for older rows saved before userId was tracked, if any).
@@ -110,6 +151,16 @@ export function ActivityLog() {
             <option key={userId} value={userId}>{userName}</option>
           ))}
         </select>
+        <select
+          value={deviceFilter}
+          onChange={e => setDeviceFilter(e.target.value as any)}
+          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
+        >
+          <option value="all">All Devices</option>
+          {devices.map(d => (
+            <option key={d} value={d}>{DEVICE_META[d].label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -121,13 +172,14 @@ export function ActivityLog() {
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.user')}</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.action')}</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.module')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Device</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.details')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                     {t('activityLog.empty')}
                   </td>
                 </tr>
@@ -147,7 +199,12 @@ export function ActivityLog() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{moduleLabel(entry.module)}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{entry.summary}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <DeviceBadge device={entry.device} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <DetailsCell entry={entry} />
+                  </td>
                 </tr>
               ))}
             </tbody>

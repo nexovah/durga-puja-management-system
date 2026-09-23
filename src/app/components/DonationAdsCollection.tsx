@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -22,8 +23,14 @@ interface DonationAdsCollectionProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
+  category: 'Category', donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount',
+  paidMethod: 'Paid Method', inKind: 'In-Kind / Ads Category', date: 'Date', voucherNumber: 'Voucher Number',
+  phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
+};
 
 const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'handBook', labelKey: 'donationAds.adsCategory.handBook' },
@@ -181,10 +188,14 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     };
 
     if (editingId) {
+      const original = donationAdsList.find(item => item.id === editingId);
       setDonationAdsList(donationAdsList.map(item =>
         item.id === editingId ? { ...item, ...payload } : item
       ));
-      onLog('update', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
+      onLog(
+        'update', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1,
+        diffFields(original as any, payload as any, DONATION_ADS_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newItem: DonationAd = {

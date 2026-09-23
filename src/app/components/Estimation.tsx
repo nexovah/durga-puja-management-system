@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Pagination, usePagination } from './Pagination';
@@ -18,8 +19,13 @@ interface EstimationPageProps {
   currentUserId: string;
   currentUserName: string;
   committeeAssociation: string;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'estimation', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'estimation', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+// lineItems is skipped — it's an array of sub-records, not a scalar to diff.
+const ESTIMATION_FIELD_LABELS: Record<string, string> = {
+  title: 'Title',
+};
 
 const emptyLineItem = (): EstimationLineItem => ({
   id: crypto.randomUUID(),
@@ -195,8 +201,12 @@ export function EstimationPage({
       onLog('create', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`);
       setToastMessage(t('common.savedSuccess'));
     } else {
+      const original = estimationsList.find(est => est.id === cleanedDraft.id);
       setEstimationsList(estimationsList.map(est => (est.id === cleanedDraft.id ? cleanedDraft : est)));
-      onLog('update', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`);
+      onLog(
+        'update', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`, 1,
+        diffFields(original as any, cleanedDraft as any, ESTIMATION_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     }
     // Stay on the detail page after saving (don't drop back to the list) —

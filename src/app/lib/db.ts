@@ -664,6 +664,13 @@ export async function changeOwnPasswordRequest(
 
 export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
+export type ActivityDevice = 'web' | 'android' | 'ios';
+
+export interface ActivityFieldChange {
+  field: string; // human-readable label, e.g. "Amount", "Phone"
+  old: string;
+  new: string;
+}
 
 export interface ActivityLogEntry {
   id: string;
@@ -674,6 +681,8 @@ export interface ActivityLogEntry {
   module: ActivityModule;
   summary: string;
   recordCount: number;
+  device: ActivityDevice | null;
+  changes: ActivityFieldChange[] | null;
   createdAt: string;
 }
 
@@ -685,6 +694,8 @@ export async function logActivity(entry: {
   module: ActivityModule;
   summary: string;
   count?: number;
+  device?: ActivityDevice;
+  changes?: ActivityFieldChange[];
 }): Promise<void> {
   const { error } = await supabase.from('activity_log').insert({
     user_id: entry.userId,
@@ -694,8 +705,33 @@ export async function logActivity(entry: {
     module: entry.module,
     summary: entry.summary,
     record_count: entry.count ?? 1,
+    device: entry.device ?? 'web',
+    changes: entry.changes && entry.changes.length > 0 ? entry.changes : null,
   });
   if (error) throw error;
+}
+
+// Compares two flat field-maps and returns only the fields that actually
+// changed, formatted for the Activity Log's struck-through-old/plain-new
+// diff display. Pass a `labels` map to control field order and display
+// names; fields not in `labels` are skipped.
+export function diffFields(
+  before: Record<string, unknown> | undefined | null,
+  after: Record<string, unknown>,
+  labels: Record<string, string>
+): ActivityFieldChange[] {
+  if (!before) return [];
+  const format = (v: unknown): string => {
+    if (v === null || v === undefined || v === '') return '—';
+    return String(v);
+  };
+  const changes: ActivityFieldChange[] = [];
+  for (const [key, label] of Object.entries(labels)) {
+    const oldVal = format(before[key]);
+    const newVal = format(after[key]);
+    if (oldVal !== newVal) changes.push({ field: label, old: oldVal, new: newVal });
+  }
+  return changes;
 }
 
 export async function fetchActivityLog(limit = 200): Promise<ActivityLogEntry[]> {
@@ -714,6 +750,8 @@ export async function fetchActivityLog(limit = 200): Promise<ActivityLogEntry[]>
     module: row.module,
     summary: row.summary,
     recordCount: row.record_count,
+    device: row.device ?? null,
+    changes: row.changes ?? null,
     createdAt: row.created_at,
   }));
 }

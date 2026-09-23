@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -20,8 +21,15 @@ interface MembersProps {
   tasksList: Task[];
   canEdit: boolean;
   canDelete: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+const MEMBERS_FIELD_LABELS: Record<string, string> = {
+  name: 'Name', phone: 'Phone', address: 'Address', role: 'Role',
+  membershipAmount: 'Membership Amount', membershipPaidMethod: 'Paid Method',
+  membershipPaymentStatus: 'Payment Status', membershipPartialAmount: 'Amount Paid So Far',
+  membershipDate: 'Date', membershipBillNumber: 'Bill Number', membershipRemarks: 'Remarks',
+};
 
 interface MemberFormPayload {
   name: string;
@@ -147,12 +155,16 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const commitSave = (payload: MemberFormPayload, saveAndAddNew: boolean) => {
     if (editingId) {
       // Edit existing member
+      const original = members.find(m => m.id === editingId);
       setMembers(members.map(m =>
         m.id === editingId
           ? { ...m, ...payload }
           : m
       ));
-      onLog('update', 'members', payload.name);
+      onLog(
+        'update', 'members', payload.name, 1,
+        diffFields(original as any, payload as any, MEMBERS_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new member

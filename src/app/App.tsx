@@ -47,6 +47,7 @@ import {
   DeveloperInfo,
   ActivityModule,
   ActivityAction,
+  ActivityFieldChange,
   getCmsPageRequest,
 } from './lib/db';
 
@@ -722,7 +723,13 @@ export default function App() {
   };
 
   // --- Activity log: every page's create/update/delete/bulk_import calls this ---
-  const handleLog = (action: ActivityAction, module: ActivityModule, summary: string, count = 1) => {
+  const handleLog = (
+    action: ActivityAction,
+    module: ActivityModule,
+    summary: string,
+    count = 1,
+    changes?: ActivityFieldChange[]
+  ) => {
     if (!currentUser) return;
     logActivity({
       userId: currentUser.id,
@@ -732,6 +739,8 @@ export default function App() {
       module,
       summary,
       count,
+      device: 'web',
+      changes,
     }).catch(err => console.error('Failed to write activity log', err));
   };
 

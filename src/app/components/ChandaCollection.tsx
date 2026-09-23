@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
 import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
+import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -23,8 +24,14 @@ interface ChandaCollectionProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
 }
+
+const CHANDA_FIELD_LABELS: Record<string, string> = {
+  donorName: "Donor's Name", amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
+  date: 'Date', billNumber: 'Bill Number', phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
+};
 
 const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
   { value: 'paid', labelKey: 'chanda.status.paid' },
@@ -188,12 +195,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const commitSave = (payload: Omit<Chanda, 'id'>, saveAndAddNew: boolean) => {
     if (editingId) {
       // Edit existing chanda
+      const original = chandaList.find(c => c.id === editingId);
       setChandaList(chandaList.map(c =>
         c.id === editingId
           ? { ...c, ...payload }
           : c
       ));
-      onLog('update', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
+      onLog(
+        'update', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1,
+        diffFields(original as any, payload as any, CHANDA_FIELD_LABELS)
+      );
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new chanda
