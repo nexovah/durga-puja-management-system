@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, LogOut, User as UserIcon } from 'lucide-react-native';
+import { ArrowLeft, LogOut } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
 import { getCommitteeInfo, CommitteeInfo } from '../lib/db';
 import { colors, radius } from '../theme';
@@ -33,9 +33,13 @@ export function ProfileScreen({ navigation }: any) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarWrap}>
-          <View style={styles.avatar}>
-            <UserIcon size={30} color={colors.orange} strokeWidth={2} />
-          </View>
+          {committee?.logo && /^https?:\/\//.test(committee.logo) ? (
+            <Image source={{ uri: committee.logo }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarInitial}>{(committee?.association || committee?.name || user?.name || 'C').charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
           <Text style={styles.name}>{user?.name || 'User'}</Text>
           <Text style={styles.username}>@{user?.username || ''}</Text>
         </View>
@@ -77,6 +81,8 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 12, gap: 16 },
   avatarWrap: { alignItems: 'center', gap: 4, marginTop: 8 },
   avatar: { width: 68, height: 68, borderRadius: radius.pill, backgroundColor: colors.orangeSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  avatarImage: { width: 68, height: 68, borderRadius: radius.pill, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+  avatarInitial: { fontSize: 26, fontWeight: '800', color: colors.orange },
   name: { fontSize: 18, fontWeight: '800', color: colors.ink },
   username: { fontSize: 13, color: colors.mutedLight },
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, gap: 14 },

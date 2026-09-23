@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Pressable, StyleSheet, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import {
-  Landmark, LayoutGrid, Home as HomeIcon, CreditCard, TrendingUp, User, Plus,
+  CheckSquare, LayoutGrid, Home as HomeIcon, CreditCard, TrendingUp, BarChart3, User, Plus,
   Wallet, Users, Gift, Receipt, Store, HandCoins, FileText,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -129,7 +129,7 @@ export function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 6, 20) }]}>
         <View style={{ flex: 1 }}>
-          <View style={styles.locationRow}>
+          <TouchableOpacity style={styles.locationRow} onPress={() => navigation.navigate('Profile')} activeOpacity={0.7}>
             {isLogoUrl ? (
               <Image source={{ uri: committeeLogo }} style={styles.committeeLogo} />
             ) : (
@@ -138,9 +138,8 @@ export function HomeScreen({ navigation }: any) {
               </View>
             )}
             <Text style={styles.locationText} numberOfLines={1}>{committeeName || 'Your Committee'}</Text>
-          </View>
+          </TouchableOpacity>
           <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] || 'there'}!</Text>
-          <Text style={styles.welcome}>Welcome back</Text>
         </View>
         <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Menu')}>
           <LayoutGrid size={18} color={colors.ink} />
@@ -273,13 +272,19 @@ export function HomeScreen({ navigation }: any) {
 
       <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom + 6, 18) }]}>
         <View style={styles.navRow}>
-          <HomeIcon size={22} color={colors.ink} strokeWidth={2.3} />
-          <Landmark size={22} color="#d6d3d1" strokeWidth={2} />
+          <Pressable onPress={() => navigation.navigate('Home')} hitSlop={10}>
+            {({ pressed }) => <HomeIcon size={22} color={pressed ? colors.ink : colors.ink} strokeWidth={2.3} />}
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('TaskList')} hitSlop={10}>
+            {({ pressed }) => <CheckSquare size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
+          </Pressable>
           <View style={{ width: 54 }} />
-          <TrendingUp size={22} color="#d6d3d1" strokeWidth={2} />
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')} hitSlop={10}>
-            <User size={22} color="#d6d3d1" strokeWidth={2} />
-          </TouchableOpacity>
+          <Pressable onPress={() => navigation.navigate('Reports')} hitSlop={10}>
+            {({ pressed }) => <BarChart3 size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('Profile')} hitSlop={10}>
+            {({ pressed }) => <User size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
+          </Pressable>
           <TouchableOpacity onPress={() => navigation.navigate('ChandaForm', { mode: 'add' })} style={styles.fab} activeOpacity={0.85}>
             <Plus size={22} color="#ffffff" strokeWidth={2.4} />
           </TouchableOpacity>
@@ -304,13 +309,12 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 4, flexDirection: 'row', alignItems: 'flex-start' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  committeeLogo: { width: 25, height: 25, borderRadius: 12.5, borderWidth: 1, borderColor: '#d6d3d1' },
-  committeeInitial: { width: 25, height: 25, borderRadius: 12.5, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d6d3d1' },
-  committeeInitialText: { fontSize: 12, fontWeight: '800', color: '#ffffff' },
-  locationText: { fontSize: 12, color: colors.mutedLight, fontWeight: '600', maxWidth: 220 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, alignSelf: 'stretch', paddingRight: 28 },
+  committeeLogo: { width: 33, height: 33, borderRadius: 16.5, borderWidth: 1, borderColor: '#d6d3d1' },
+  committeeInitial: { width: 33, height: 33, borderRadius: 16.5, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d6d3d1' },
+  committeeInitialText: { fontSize: 15, fontWeight: '800', color: '#ffffff' },
+  locationText: { flex: 1, fontSize: 13.5, color: colors.inkSoft, fontWeight: '800' },
   greeting: { fontSize: 22, fontWeight: '800', color: colors.ink },
-  welcome: { fontSize: 13, color: colors.mutedLight, marginTop: 2 },
   menuButton: { width: 42, height: 42, borderRadius: 13, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 120, gap: 18 },
   statsRow: { flexDirection: 'row', gap: 12 },

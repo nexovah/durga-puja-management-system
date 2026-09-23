@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
+import { SheetMultiSelect } from '../components/SheetMultiSelect';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { todayISO } from '../lib/labels';
@@ -65,10 +66,6 @@ export function TaskFormScreen({ route, navigation }: any) {
       setLoading(false);
     })();
   }, [isEdit, id]);
-
-  const toggleMember = (memberId: string) => {
-    setAssignedMemberIds(prev => prev.includes(memberId) ? prev.filter(m => m !== memberId) : [...prev, memberId]);
-  };
 
   const handleSaveButtonPress = () => {
     setError('');
@@ -136,20 +133,13 @@ export function TaskFormScreen({ route, navigation }: any) {
         <ChipSelect label="Priority" required value={priority} onChange={v => setPriority(v as TaskPriority)} options={PRIORITY_OPTIONS} />
         <DateField label="Expiry Date" required value={expiryDate} onChange={setExpiryDate} />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Assigned Members</Text>
-          <View style={styles.chipRow}>
-            {members.length === 0 && <Text style={styles.emptyMembers}>No members yet.</Text>}
-            {members.map(m => {
-              const active = assignedMemberIds.includes(m.id);
-              return (
-                <TouchableOpacity key={m.id} onPress={() => toggleMember(m.id)} style={[styles.chip, active && styles.chipActive]}>
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{m.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        <SheetMultiSelect
+          label="Assigned Members"
+          values={assignedMemberIds}
+          onChange={setAssignedMemberIds}
+          options={members.map(m => ({ value: m.id, label: m.name }))}
+          emptyOptionsText="No members yet."
+        />
 
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
@@ -179,14 +169,6 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 14 },
   title: { fontSize: 17, fontWeight: '800', color: colors.ink, flex: 1 },
   form: { padding: 20, gap: 14 },
-  field: { gap: 6 },
-  label: { fontSize: 12, fontWeight: '700', color: colors.inkSoft },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.borderStrong, backgroundColor: colors.card },
-  chipActive: { backgroundColor: colors.dark, borderColor: colors.dark },
-  chipText: { fontSize: 12.5, fontWeight: '600', color: colors.inkSoft },
-  chipTextActive: { color: '#ffffff' },
-  emptyMembers: { fontSize: 12.5, color: colors.mutedLight },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
   cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },

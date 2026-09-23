@@ -22,6 +22,8 @@ import { EstimationListScreen } from '../screens/EstimationListScreen';
 import { EstimationFormScreen } from '../screens/EstimationFormScreen';
 import { MenuScreen } from '../screens/MenuScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { ReportsScreen } from '../screens/ReportsScreen';
+import { ReportDetailScreen } from '../screens/ReportDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +59,8 @@ export function RootNavigator() {
             <Stack.Screen name="EstimationForm" component={EstimationFormScreen} />
             <Stack.Screen name="Menu" component={MenuScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Reports" component={ReportsScreen} />
+            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
           </>
         )}
       </Stack.Navigator>
