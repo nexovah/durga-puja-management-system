@@ -5,13 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#a80908"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.durgacrm.mobile"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#faf8f5"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#a80908"
       },
       "package": "com.durgacrm.mobile",
       "softwareKeyboardLayoutMode": "pan"
@@ -19,6 +26,12 @@
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6ac643de-4740-4f3e-ac93-2eaa76e9bbf6"
+      }
+    },
+    "owner": "nexovahtechnology"
   }
 }

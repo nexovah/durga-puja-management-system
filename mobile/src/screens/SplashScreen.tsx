@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Landmark } from 'lucide-react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useAuth } from '../lib/auth';
-import { colors, radius } from '../theme';
+import { colors } from '../theme';
 
 // Real auth check, not a timed splash — waits for AuthProvider to finish
 // reading the persisted session from AsyncStorage, then the navigator
@@ -17,35 +16,18 @@ export function SplashScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.ring}>
-        <View style={styles.iconTile}>
-          <Landmark size={44} color="#ffffff" strokeWidth={1.7} />
-        </View>
-      </View>
+      <Image source={require('../../assets/splash-icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Durga CRM</Text>
-      <Text style={styles.subtitle}>Committee management, simplified</Text>
+      <Text style={styles.subtitle}>One committee. One dashboard. Everything under control.</Text>
+      <Text style={styles.tagline}>Plan · Collect · Manage · Celebrate</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 18 },
-  ring: {
-    width: 190,
-    height: 190,
-    borderRadius: radius.pill,
-    backgroundColor: colors.orangeLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconTile: {
-    width: 92,
-    height: 92,
-    borderRadius: 24,
-    backgroundColor: colors.dark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 40 },
+  logo: { width: 190, height: 190, borderRadius: 95, marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.mutedLight },
+  subtitle: { fontSize: 13, color: colors.mutedLight, textAlign: 'center' },
+  tagline: { fontSize: 12, fontWeight: '700', color: colors.orange, letterSpacing: 0.3 },
 });

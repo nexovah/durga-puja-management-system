@@ -9,9 +9,10 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Landmark, User, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { User, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
 import { colors, radius } from '../theme';
 
@@ -60,15 +61,13 @@ export function LoginScreen({ navigation }: any) {
         <View style={styles.centerWrapper}>
           <View style={styles.hero}>
             <View style={styles.ring}>
-              <View style={styles.iconTile}>
-                <Landmark size={28} color="#ffffff" strokeWidth={1.8} />
-              </View>
+              <Image source={require('../../assets/splash-icon.png')} style={styles.ringLogo} resizeMode="cover" />
             </View>
           </View>
 
           <View style={styles.headerTextWrap}>
             <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Log in to your committee account</Text>
+            <Text style={styles.subtitle}>One committee. One dashboard. Everything under control.</Text>
           </View>
 
           <View style={styles.card}>
@@ -149,14 +148,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  iconTile: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: colors.dark,
-    alignItems: 'center',
-    justifyContent: 'center',
+  ringLogo: {
+    width: 104,
+    height: 104,
   },
   headerTextWrap: {
     alignItems: 'center',
