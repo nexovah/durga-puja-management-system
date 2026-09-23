@@ -10,3 +10,12 @@ dist/
 # bodies. Never committed from here on — run these locally against
 # Supabase only, never push them.
 supabase/
+
+# React Native / Expo mobile app build artifacts
+mobile/.expo/
+mobile/dist/
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision

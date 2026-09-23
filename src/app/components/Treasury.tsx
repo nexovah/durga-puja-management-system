@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, MoreVertical, Download, FileText } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { TreasuryReportModal } from './TreasuryReportModal';
+import { ReportPrintTable } from './ReportPrintTable';
 import { LedgerRow, buildLedger, ledgerTotals } from '../lib/reportExport';
 
 interface TreasuryProps {
@@ -15,9 +15,10 @@ interface TreasuryProps {
   loansList: Loan[];
   members: Member[];
   committeeAssociation: string;
+  committeeLogo: string;
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation, committeeLogo }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -365,66 +366,37 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
         onClose={() => setReportModalOpen(false)}
         sources={ledgerSources}
         labels={ledgerLabels}
+        companyName={committeeAssociation}
         onRequestPrint={handleRequestPrint}
       />
 
       {/* Print-only detailed ledger for the range picked in the modal —
-          same hidden-until-print pattern as Estimation.tsx's print area
-          (see .print-area in globals.css). Portaled to document.body so
-          it's a sibling of #root, not hidden by #root's own
-          display:none in @media print. */}
-      {printReport && createPortal(
-        <div className="print-area hidden print:block bg-white text-gray-900 p-0">
-          <h1 className="text-lg font-normal text-gray-900 mb-1">
-            {t('treasury.report.printHeading').replace('{name}', committeeAssociation || '')}
-          </h1>
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('treasury.pageTitle')}</h2>
-          <p className="text-sm text-gray-600 mb-6">{printReport.rangeLabel}</p>
-
-          <table className="w-full border-collapse mb-6">
-            <thead>
-              <tr className="border-b-2 border-gray-800">
-                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.date')}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.type')}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.name')}</th>
-                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.detail')}</th>
-                <th className="text-right py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.credit')}</th>
-                <th className="text-right py-2 text-sm font-bold">{t('treasury.report.csv.debit')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {printReport.rows.map((r, i) => (
-                <tr key={i} className="border-b border-gray-300">
-                  <td className="py-1.5 pr-2 text-xs">{r.date}</td>
-                  <td className="py-1.5 pr-2 text-xs">{r.type}</td>
-                  <td className="py-1.5 pr-2 text-xs">{r.name}</td>
-                  <td className="py-1.5 pr-2 text-xs">{r.detail}</td>
-                  <td className="py-1.5 pr-2 text-xs text-right">{r.credit ? `₹${r.credit.toLocaleString()}` : ''}</td>
-                  <td className="py-1.5 text-xs text-right">{r.debit ? `₹${r.debit.toLocaleString()}` : ''}</td>
-                </tr>
-              ))}
-              {printReport.rows.length === 0 && (
-                <tr><td colSpan={6} className="py-6 text-center text-sm text-gray-500">{t('treasury.noMonthlyData')}</td></tr>
-              )}
-            </tbody>
-          </table>
-
-          <div className="flex justify-end gap-8 pt-4 border-t-2 border-gray-800">
-            <div className="text-right">
-              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.totalCredit')}</p>
-              <p className="text-lg font-bold text-green-700">₹{printReport.totals.credit.toLocaleString()}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.totalDebit')}</p>
-              <p className="text-lg font-bold text-red-700">₹{printReport.totals.debit.toLocaleString()}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.netBalance')}</p>
-              <p className="text-lg font-bold">₹{printReport.totals.balance.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>,
-        document.body
+          shared engine now used by every Reports module too (see
+          ReportPrintTable.tsx) — summary widgets (Total Credit/Debit/
+          Net Balance) sit above the table, matching every other
+          module's export, and the committee's logo+name brand the top. */}
+      {printReport && (
+        <ReportPrintTable
+          companyName={committeeAssociation}
+          companyLogo={committeeLogo}
+          title={t('treasury.pageTitle')}
+          rangeLabel={printReport.rangeLabel}
+          summary={[
+            { label: t('treasury.report.totalCredit'), value: `₹${printReport.totals.credit.toLocaleString()}` },
+            { label: t('treasury.report.totalDebit'), value: `₹${printReport.totals.debit.toLocaleString()}` },
+            { label: t('treasury.report.netBalance'), value: `₹${printReport.totals.balance.toLocaleString()}` },
+          ]}
+          columns={[
+            { label: t('treasury.report.csv.date') },
+            { label: t('treasury.report.csv.type') },
+            { label: t('treasury.report.csv.name') },
+            { label: t('treasury.report.csv.detail') },
+            { label: t('treasury.report.csv.credit'), align: 'right' },
+            { label: t('treasury.report.csv.debit'), align: 'right' },
+          ]}
+          rows={printReport.rows.map(r => [r.date, r.type, r.name, r.detail, r.credit ? `₹${r.credit.toLocaleString()}` : '', r.debit ? `₹${r.debit.toLocaleString()}` : ''])}
+          emptyMessage={t('treasury.noMonthlyData')}
+        />
       )}
     </div>
   );

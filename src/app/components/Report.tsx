@@ -1,16 +1,332 @@
-import { PageHeading } from './PageHeading';
+import { useEffect, useMemo, useState } from 'react';
+import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList } from 'lucide-react';
+import {
+  Chanda, DonationAd, Expense, Member, Loan, Estimation,
+  getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
+} from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
+import { ReportModulePage, ReportColumn, ReportWidget } from './ReportModulePage';
+import { ReportEstimationPage } from './ReportEstimationPage';
 
-// Placeholder page — reserved for future reporting features.
-export function Report() {
-  const { t } = useLanguage();
+interface ReportProps {
+  chandaList: Chanda[];
+  donationAdsList: DonationAd[];
+  expenses: Expense[];
+  members: Member[];
+  loansList: Loan[];
+  estimationsList: Estimation[];
+  committeeAssociation: string;
+  committeeLogo: string;
+}
+
+type ModuleKey = 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendor' | 'member' | 'loan' | 'estimation';
+const VALID_MODULES: ModuleKey[] = ['chanda', 'donation', 'ads', 'expenses', 'vendor', 'member', 'loan', 'estimation'];
+
+// /report/<module> — see docs/URL_STATE_CONVENTION.md; same pattern as
+// SuperAdminCms.tsx's left-nav (URL-backed, not the tenant Settings
+// page's own non-URL-backed left-nav).
+function getModuleFromPath(): ModuleKey {
+  const segment = window.location.pathname.replace(/^\/report\/?/, '').split('/')[0];
+  return (VALID_MODULES as string[]).includes(segment) ? (segment as ModuleKey) : 'chanda';
+}
+
+interface VendorRow {
+  id: string;
+  name: string;
+  contact: string;
+  totalContractAmount: number;
+  totalPaid: number;
+  lastDate: string;
+  categories: string;
+}
+
+export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo }: ReportProps) {
+  const { t, locale } = useLanguage();
+  const [activeModule, setActiveModuleState] = useState<ModuleKey>(() => getModuleFromPath());
+
+  const setActiveModule = (m: ModuleKey) => {
+    setActiveModuleState(m);
+    window.history.pushState(null, '', `/report/${m}`);
+  };
+
+  useEffect(() => {
+    const onPopState = () => setActiveModuleState(getModuleFromPath());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    const path = `/report/${activeModule}`;
+    if (window.location.pathname !== path) window.history.replaceState(null, '', path);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const categoryLabel = (value: string) => {
+    const key = `expenses.category.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const chandaStatusLabel = (value: string) => {
+    const key = `chanda.status.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const expenseStatusLabel = (value: string) => {
+    const key = `expenses.status.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const paidMethodLabel = (value: string) => {
+    const key = `common.paidMethod.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString(locale) : '');
+  const fmtAmount = (n: number) => `₹${n.toLocaleString()}`;
+
+  const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof HandCoins }[] = [
+    { key: 'chanda', label: t('report.nav.chanda'), icon: HandCoins },
+    { key: 'donation', label: t('report.nav.donation'), icon: Gift },
+    { key: 'ads', label: t('report.nav.ads'), icon: Megaphone },
+    { key: 'expenses', label: t('report.nav.expenses'), icon: Receipt },
+    { key: 'vendor', label: t('report.nav.vendor'), icon: Wallet },
+    { key: 'member', label: t('report.nav.member'), icon: Users },
+    { key: 'loan', label: t('report.nav.loan'), icon: Landmark },
+    { key: 'estimation', label: t('report.nav.estimation'), icon: ClipboardList },
+  ];
+
+  // Vendor rows derived from Expenses — same grouping Vendors.tsx uses,
+  // simplified for reporting purposes (no per-payment breakdown here,
+  // just the vendor-level totals + latest activity date).
+  const vendorRows = useMemo((): VendorRow[] => {
+    const groups = new Map<string, VendorRow & { categorySet: Set<string> }>();
+    expenses.forEach(e => {
+      if (!e.vendorName?.trim()) return;
+      const key = `${e.vendorName.trim()}__${(e.vendorContact || '').trim()}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          id: key,
+          name: e.vendorName.trim(),
+          contact: e.vendorContact || '',
+          totalContractAmount: 0,
+          totalPaid: 0,
+          lastDate: e.date,
+          categories: '',
+          categorySet: new Set(),
+        });
+      }
+      const g = groups.get(key)!;
+      g.totalContractAmount += e.amount;
+      g.totalPaid += getExpenseCreditAmount(e);
+      if (e.date > g.lastDate) g.lastDate = e.date;
+      g.categorySet.add(categoryLabel(e.category));
+    });
+    return Array.from(groups.values()).map(g => ({ ...g, categories: Array.from(g.categorySet).join(', ') }));
+  }, [expenses, categoryLabel]);
+
+  if (activeModule === 'estimation') {
+    return (
+      <div className="flex flex-col sm:flex-row gap-6">
+        <ReportNav items={NAV_ITEMS} active={activeModule} onSelect={setActiveModule} />
+        <div className="flex-1 min-w-0">
+          <ReportEstimationPage estimationsList={estimationsList} companyName={committeeAssociation} companyLogo={committeeLogo} />
+        </div>
+      </div>
+    );
+  }
+
+  let moduleProps: {
+    pageTitle: string;
+    data: { id: string }[];
+    dateOf: (row: any) => string | undefined;
+    searchOf: (row: any) => string;
+    columns: ReportColumn<any>[];
+    chartType: 'bar' | 'area' | 'donut';
+    metricOf?: (row: any) => number;
+    breakdownOf?: (rows: any[]) => { name: string; value: number }[];
+    computeWidgets: (rows: any[]) => ReportWidget[];
+  };
+
+  if (activeModule === 'chanda') {
+    const pendingOf = (r: Chanda) => {
+      if (r.paymentStatus === 'pending') return r.amount;
+      if (r.paymentStatus === 'partial') return Math.max(0, r.amount - (r.partialAmount || 0));
+      return 0;
+    };
+    moduleProps = {
+      pageTitle: t('report.nav.chanda'),
+      data: chandaList,
+      dateOf: (r: Chanda) => r.date,
+      searchOf: (r: Chanda) => `${r.donorName} ${r.phone} ${r.billNumber || ''}`,
+      columns: [
+        { key: 'donor', label: t('report.col.donor'), render: (r: Chanda) => r.donorName },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Chanda) => fmtAmount(getChandaCreditAmount(r)) },
+        { key: 'pending', label: t('report.col.pending'), align: 'right', render: (r: Chanda) => fmtAmount(pendingOf(r)) },
+        { key: 'status', label: t('report.col.status'), render: (r: Chanda) => chandaStatusLabel(r.paymentStatus) },
+        { key: 'method', label: t('report.col.method'), render: (r: Chanda) => paidMethodLabel(r.paidMethod) },
+        { key: 'date', label: t('report.col.date'), render: (r: Chanda) => fmtDate(r.date) },
+      ],
+      chartType: 'bar',
+      metricOf: (r: Chanda) => getChandaCreditAmount(r),
+      computeWidgets: (rows: Chanda[]) => {
+        const collected = rows.reduce((s, r) => s + getChandaCreditAmount(r), 0);
+        const pending = rows.reduce((s, r) => s + pendingOf(r), 0);
+        return [
+          { label: t('report.widget.totalCollected'), value: fmtAmount(collected) },
+          { label: t('report.widget.pendingDue'), value: fmtAmount(pending) },
+        ];
+      },
+    };
+  } else if (activeModule === 'donation' || activeModule === 'ads') {
+    const category = activeModule === 'ads' ? 'ads' : 'donation';
+    const filtered = donationAdsList.filter(d => d.category === category);
+    moduleProps = {
+      pageTitle: t(activeModule === 'ads' ? 'report.nav.ads' : 'report.nav.donation'),
+      data: filtered,
+      dateOf: (r: DonationAd) => r.date,
+      searchOf: (r: DonationAd) => `${r.donorName} ${r.companyName || ''} ${r.phone}`,
+      columns: [
+        { key: 'name', label: t('report.col.company'), render: (r: DonationAd) => r.donorName || r.companyName || '-' },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: DonationAd) => fmtAmount(r.amount) },
+        { key: 'method', label: t('report.col.method'), render: (r: DonationAd) => paidMethodLabel(r.paidMethod) },
+        { key: 'date', label: t('report.col.date'), render: (r: DonationAd) => fmtDate(r.date) },
+      ],
+      chartType: 'bar',
+      metricOf: (r: DonationAd) => r.amount,
+      computeWidgets: (rows: DonationAd[]) => [
+        { label: t(activeModule === 'ads' ? 'report.widget.totalAds' : 'report.widget.totalDonations'), value: fmtAmount(rows.reduce((s, r) => s + r.amount, 0)) },
+        { label: t('report.widget.transactions'), value: String(rows.length) },
+      ],
+    };
+  } else if (activeModule === 'expenses') {
+    moduleProps = {
+      pageTitle: t('report.nav.expenses'),
+      data: expenses,
+      dateOf: (r: Expense) => r.date,
+      searchOf: (r: Expense) => `${r.title} ${r.vendorName || ''} ${r.category}`,
+      columns: [
+        { key: 'title', label: t('report.col.title'), render: (r: Expense) => r.title },
+        { key: 'category', label: t('report.col.category'), render: (r: Expense) => categoryLabel(r.category) },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Expense) => fmtAmount(getExpenseCreditAmount(r)) },
+        { key: 'status', label: t('report.col.status'), render: (r: Expense) => expenseStatusLabel(r.paymentStatus) },
+        { key: 'vendor', label: t('report.col.vendor'), render: (r: Expense) => r.vendorName || '' },
+        { key: 'date', label: t('report.col.date'), render: (r: Expense) => fmtDate(r.date) },
+      ],
+      chartType: 'donut',
+      breakdownOf: (rows: Expense[]) => {
+        const totals = new Map<string, number>();
+        rows.forEach(r => totals.set(categoryLabel(r.category), (totals.get(categoryLabel(r.category)) || 0) + getExpenseCreditAmount(r)));
+        return Array.from(totals.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+      },
+      computeWidgets: (rows: Expense[]) => [
+        { label: t('report.widget.totalSpent'), value: fmtAmount(rows.reduce((s, r) => s + getExpenseCreditAmount(r), 0)) },
+        { label: t('report.widget.pendingPartial'), value: String(rows.filter(r => r.paymentStatus === 'partial').length) },
+      ],
+    };
+  } else if (activeModule === 'vendor') {
+    moduleProps = {
+      pageTitle: t('report.nav.vendor'),
+      data: vendorRows,
+      dateOf: (r: VendorRow) => r.lastDate,
+      searchOf: (r: VendorRow) => `${r.name} ${r.contact}`,
+      columns: [
+        { key: 'vendor', label: t('report.col.vendor'), render: (r: VendorRow) => r.name },
+        { key: 'contract', label: t('report.col.contractAmount'), align: 'right', render: (r: VendorRow) => fmtAmount(r.totalContractAmount) },
+        { key: 'paid', label: t('report.col.paid'), align: 'right', render: (r: VendorRow) => fmtAmount(r.totalPaid) },
+        { key: 'pending', label: t('report.col.pending'), align: 'right', render: (r: VendorRow) => fmtAmount(Math.max(0, r.totalContractAmount - r.totalPaid)) },
+      ],
+      chartType: 'donut',
+      breakdownOf: (rows: VendorRow[]) => {
+        const paid = rows.reduce((s, r) => s + r.totalPaid, 0);
+        const pending = rows.reduce((s, r) => s + Math.max(0, r.totalContractAmount - r.totalPaid), 0);
+        return [
+          { name: t('report.col.paid'), value: paid },
+          { name: t('report.col.pending'), value: pending },
+        ];
+      },
+      computeWidgets: (rows: VendorRow[]) => [
+        { label: t('report.widget.totalVendors'), value: String(rows.length) },
+        { label: t('report.widget.totalPaid'), value: fmtAmount(rows.reduce((s, r) => s + r.totalPaid, 0)) },
+      ],
+    };
+  } else if (activeModule === 'member') {
+    moduleProps = {
+      pageTitle: t('report.nav.member'),
+      data: members,
+      dateOf: (r: Member) => r.membershipDate,
+      searchOf: (r: Member) => `${r.name} ${r.phone} ${r.role}`,
+      columns: [
+        { key: 'name', label: t('report.col.name'), render: (r: Member) => r.name },
+        { key: 'role', label: t('report.col.role'), render: (r: Member) => r.role },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Member) => fmtAmount(getMemberCreditAmount(r)) },
+        { key: 'status', label: t('report.col.status'), render: (r: Member) => (r.membershipPaymentStatus ? chandaStatusLabel(r.membershipPaymentStatus) : '') },
+        { key: 'date', label: t('report.col.date'), render: (r: Member) => fmtDate(r.membershipDate) },
+      ],
+      chartType: 'area',
+      metricOf: (r: Member) => getMemberCreditAmount(r),
+      computeWidgets: (rows: Member[]) => [
+        { label: t('report.widget.totalMembership'), value: fmtAmount(rows.reduce((s, r) => s + getMemberCreditAmount(r), 0)) },
+        { label: t('report.widget.membersPaid'), value: String(rows.filter(r => getMemberCreditAmount(r) > 0).length) },
+      ],
+    };
+  } else {
+    // loan
+    moduleProps = {
+      pageTitle: t('report.nav.loan'),
+      data: loansList,
+      dateOf: (r: Loan) => r.date,
+      searchOf: (r: Loan) => `${r.donorName} ${r.phone}`,
+      columns: [
+        { key: 'lender', label: t('report.col.lender'), render: (r: Loan) => r.donorName },
+        { key: 'received', label: t('report.col.received'), align: 'right', render: (r: Loan) => fmtAmount(r.amountReceived) },
+        { key: 'repaid', label: t('report.col.repaid'), align: 'right', render: (r: Loan) => fmtAmount(r.amountPaid) },
+        { key: 'net', label: t('report.col.net'), align: 'right', render: (r: Loan) => fmtAmount(getLoanNetAmount(r)) },
+        { key: 'date', label: t('report.col.date'), render: (r: Loan) => fmtDate(r.date) },
+      ],
+      chartType: 'bar',
+      metricOf: (r: Loan) => getLoanNetAmount(r),
+      computeWidgets: (rows: Loan[]) => [
+        { label: t('report.widget.totalOutstanding'), value: fmtAmount(rows.reduce((s, r) => s + getLoanNetAmount(r), 0)) },
+        { label: t('report.widget.loanCount'), value: String(rows.length) },
+      ],
+    };
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeading>{t('report.pageTitle')}</PageHeading>
-      <div className="bg-white dark:bg-gray-900 rounded-xl p-8 text-center text-gray-500 dark:text-gray-400">
-        {t('report.comingSoon')}
+    <div className="flex flex-col sm:flex-row gap-6">
+      <ReportNav items={NAV_ITEMS} active={activeModule} onSelect={setActiveModule} />
+      <div className="flex-1 min-w-0">
+        <ReportModulePage
+          key={activeModule}
+          {...moduleProps}
+          companyName={committeeAssociation}
+          companyLogo={committeeLogo}
+        />
       </div>
     </div>
+  );
+}
+
+function ReportNav({ items, active, onSelect }: { items: { key: ModuleKey; label: string; icon: typeof HandCoins }[]; active: ModuleKey; onSelect: (k: ModuleKey) => void }) {
+  return (
+    <nav className="sm:w-52 shrink-0">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-2 flex sm:flex-col gap-1 overflow-x-auto">
+        {items.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => onSelect(key)}
+            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              active === key
+                ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Icon size={18} />
+            {label}
+          </button>
+        ))}
+      </div>
+    </nav>
   );
 }

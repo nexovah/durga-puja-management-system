@@ -382,7 +382,12 @@ const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
 ) as Record<string, PageKey>;
 
 function getPageFromPath(): PageKey {
-  return SLUG_TO_PAGE[window.location.pathname] || 'dashboard';
+  const path = window.location.pathname;
+  if (SLUG_TO_PAGE[path]) return SLUG_TO_PAGE[path];
+  // Sub-routes (e.g. /report/chanda for Report's own left-nav module —
+  // see Report.tsx) still belong to their parent PageKey.
+  const prefixMatch = Object.entries(PAGE_SLUGS).find(([, slug]) => path.startsWith(`${slug}/`));
+  return prefixMatch ? (prefixMatch[0] as PageKey) : 'dashboard';
 }
 
 export default function App() {
@@ -1035,10 +1040,19 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} committeeAssociation={committeeInfo.association || committeeInfo.name} />
+          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} committeeAssociation={committeeInfo.association || committeeInfo.name} committeeLogo={committeeInfo.logo} />
         )}
         {currentPage === 'report' && (
-          <Report />
+          <Report
+            chandaList={chandaList}
+            donationAdsList={donationAdsList}
+            expenses={expenses}
+            members={members}
+            loansList={loansList}
+            estimationsList={estimationsList}
+            committeeAssociation={committeeInfo.association || committeeInfo.name}
+            committeeLogo={committeeInfo.logo}
+          />
         )}
         {currentPage === 'settings' && (
           <Settings

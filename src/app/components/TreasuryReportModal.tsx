@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { X, Download, FileText } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LedgerLabels, LedgerSources, buildLedger, downloadLedgerCSV } from '../lib/reportExport';
+import { LedgerLabels, LedgerSources, buildLedger, downloadLedgerCSV, ledgerTotals } from '../lib/reportExport';
 
 interface TreasuryReportModalProps {
   open: boolean;
   onClose: () => void;
   sources: LedgerSources;
   labels: LedgerLabels;
+  companyName: string;
   onRequestPrint: (rangeLabel: string, range: { start: string; end: string }) => void;
 }
 
@@ -24,7 +25,7 @@ const monthEnd = (yyyyMm: string) => {
   return new Date(y, m, 0).toISOString().split('T')[0]; // last day of that month
 };
 
-export function TreasuryReportModal({ open, onClose, sources, labels, onRequestPrint }: TreasuryReportModalProps) {
+export function TreasuryReportModal({ open, onClose, sources, labels, companyName, onRequestPrint }: TreasuryReportModalProps) {
   const { t, locale } = useLanguage();
   const [mode, setMode] = useState<'month' | 'custom'>('month');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -65,6 +66,7 @@ export function TreasuryReportModal({ open, onClose, sources, labels, onRequestP
     const range = currentRange();
     if (!range) return;
     const rows = buildLedger(range, sources, labels);
+    const totals = ledgerTotals(rows);
     downloadLedgerCSV(
       `treasury-report-${range.start}-to-${range.end}.csv`,
       rows,
@@ -75,7 +77,13 @@ export function TreasuryReportModal({ open, onClose, sources, labels, onRequestP
         detail: t('treasury.report.csv.detail'),
         credit: t('treasury.report.csv.credit'),
         debit: t('treasury.report.csv.debit'),
-      }
+      },
+      companyName,
+      [
+        { label: t('treasury.report.totalCredit'), value: `₹${totals.credit.toLocaleString()}` },
+        { label: t('treasury.report.totalDebit'), value: `₹${totals.debit.toLocaleString()}` },
+        { label: t('treasury.report.netBalance'), value: `₹${totals.balance.toLocaleString()}` },
+      ]
     );
     onClose();
   };

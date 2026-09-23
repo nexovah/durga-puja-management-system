@@ -120,16 +120,43 @@ export function ledgerTotals(rows: LedgerRow[]) {
   return { credit, debit, balance: credit - debit };
 }
 
-export function downloadLedgerCSV(filename: string, rows: LedgerRow[], headers: { date: string; type: string; name: string; detail: string; credit: string; debit: string }) {
-  const csvContent = [
-    [headers.date, headers.type, headers.name, headers.detail, headers.credit, headers.debit].map(csvField).join(','),
-    ...rows.map(r => [r.date, r.type, r.name, r.detail, r.credit || '', r.debit || ''].map(csvField).join(',')),
-  ].join('\n');
+export interface SummaryLine {
+  label: string;
+  value: string;
+}
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+// Generic CSV writer used by every Reports module (see
+// src/app/components/ReportModulePage.tsx) and Treasury's own export —
+// company name first line (a real logo can't be embedded in a CSV,
+// so the committee's identity is text-only here; see ReportPrintTable.tsx
+// for the branded PDF version), then the module's own summary widgets
+// (e.g. "Total Collected" / "Pending"), then the data table.
+export function downloadTableCSV(filename: string, opts: {
+  companyName: string;
+  summary: SummaryLine[];
+  headers: string[];
+  rows: (string | number)[][];
+}) {
+  const lines: string[] = [];
+  if (opts.companyName) lines.push(csvField(opts.companyName));
+  opts.summary.forEach(s => lines.push([s.label, s.value].map(csvField).join(',')));
+  if (opts.summary.length > 0) lines.push('');
+  lines.push(opts.headers.map(csvField).join(','));
+  opts.rows.forEach(r => lines.push(r.map(csvField).join(',')));
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+export function downloadLedgerCSV(filename: string, rows: LedgerRow[], headers: { date: string; type: string; name: string; detail: string; credit: string; debit: string }, companyName = '', summary: SummaryLine[] = []) {
+  downloadTableCSV(filename, {
+    companyName,
+    summary,
+    headers: [headers.date, headers.type, headers.name, headers.detail, headers.credit, headers.debit],
+    rows: rows.map(r => [r.date, r.type, r.name, r.detail, r.credit || '', r.debit || '']),
+  });
 }
