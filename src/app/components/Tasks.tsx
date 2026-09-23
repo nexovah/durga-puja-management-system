@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -9,6 +9,7 @@ import { Pagination, usePagination } from './Pagination';
 import { FormModal, FormModalCancelButton } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { TasksBoard } from './TasksBoard';
 
 interface TasksProps {
   tasksList: Task[];
@@ -27,7 +28,7 @@ const TASKS_FIELD_LABELS: Record<string, string> = {
   title: 'Title', description: 'Description', priority: 'Priority', expiryDate: 'Expiry Date',
 };
 
-const PRIORITIES: { value: TaskPriority; labelKey: TranslationKey; badgeClass: string; dotClass: string }[] = [
+export const PRIORITIES: { value: TaskPriority; labelKey: TranslationKey; badgeClass: string; dotClass: string }[] = [
   { value: 'high', labelKey: 'tasks.priority.high', badgeClass: 'bg-red-100 text-red-700', dotClass: 'bg-red-500' },
   { value: 'medium', labelKey: 'tasks.priority.medium', badgeClass: 'bg-amber-100 text-amber-700', dotClass: 'bg-amber-500' },
   { value: 'low', labelKey: 'tasks.priority.low', badgeClass: 'bg-blue-100 text-blue-700', dotClass: 'bg-blue-500' },
@@ -65,6 +66,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [activeTab, setActiveTab] = useState<'all' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
@@ -88,11 +90,19 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     }));
   };
 
-  const handleMarkComplete = (task: Task) => {
-    if (!canEditTask(task)) return;
-    setTasksList(tasksList.map(t2 => (t2.id === task.id ? { ...t2, priority: 'completed' } : t2)));
-    onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`, undefined, undefined, task.title);
+  const handlePriorityChange = (task: Task, newPriority: TaskPriority) => {
+    if (!canEditTask(task) || task.priority === newPriority) return;
+    setTasksList(tasksList.map(t2 => (t2.id === task.id ? { ...t2, priority: newPriority } : t2)));
+    const oldLabel = t(priorityInfo(task.priority).labelKey);
+    const newLabel = t(priorityInfo(newPriority).labelKey);
+    onLog(
+      'update', 'tasks', `${task.title} — ${newLabel}`, undefined,
+      [{ field: 'Priority', old: oldLabel, new: newLabel }],
+      task.title
+    );
   };
+
+  const handleMarkComplete = (task: Task) => handlePriorityChange(task, 'completed');
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -357,7 +367,35 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 sm:gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
+        <div className="flex items-center rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            title="List view"
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+              viewMode === 'list'
+                ? 'bg-orange-600 text-white'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            <LayoutList size={16} />
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('board')}
+            title="Board view"
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+              viewMode === 'board'
+                ? 'bg-orange-600 text-white'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            <LayoutGrid size={16} />
+            Board
+          </button>
+        </div>
         <input
           type="text"
           value={searchTerm}
@@ -391,7 +429,19 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         )}
       </div>
 
+      {/* Board View */}
+      {viewMode === 'board' && (
+        <TasksBoard
+          tasks={filteredTasks}
+          members={members}
+          canEditTask={canEditTask}
+          onPriorityChange={handlePriorityChange}
+          onCardClick={(task) => setViewingTask(task)}
+        />
+      )}
+
       {/* Task List */}
+      {viewMode === 'list' && (
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -503,6 +553,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
           endIndex={pagination.endIndex}
         />
       </div>
+      )}
 
       {/* View modal — full task details, read-only */}
       {viewingTask && (
