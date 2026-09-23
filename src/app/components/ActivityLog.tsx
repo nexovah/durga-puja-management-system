@@ -43,6 +43,17 @@ function DetailsCell({ entry }: { entry: ActivityLogEntry }) {
   );
 }
 
+// The record's identifying name/title (donor name, member name, expense
+// title, etc.) — always shown regardless of which fields actually changed,
+// so an update to e.g. only the amount still shows whose record it was.
+// Falls back to the leading part of the summary for log rows written
+// before `recordLabel` was tracked.
+function whoLabel(entry: ActivityLogEntry): string {
+  if (entry.recordLabel) return entry.recordLabel;
+  const leading = entry.summary.split(' — ')[0]?.trim();
+  return leading || '—';
+}
+
 // Read-only audit trail: append-only `activity_log` table (RLS grants only
 // select+insert — no update/delete — so once a row lands here it can't be
 // tampered with from the client). Every create/edit/delete/bulk-import across
@@ -169,17 +180,18 @@ export function ActivityLog() {
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.time')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Device</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.user')}</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.action')}</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.module')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Device</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Who</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.details')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                     {t('activityLog.empty')}
                   </td>
                 </tr>
@@ -188,6 +200,9 @@ export function ActivityLog() {
                 <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
                     {new Date(entry.createdAt).toLocaleString(locale)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <DeviceBadge device={entry.device} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
                     {entry.userName} <span className="text-gray-400 dark:text-gray-500 font-normal">({entry.username})</span>
@@ -199,9 +214,7 @@ export function ActivityLog() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{moduleLabel(entry.module)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <DeviceBadge device={entry.device} />
-                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">{whoLabel(entry)}</td>
                   <td className="px-4 py-3">
                     <DetailsCell entry={entry} />
                   </td>

@@ -24,7 +24,7 @@ interface ChandaCollectionProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -203,7 +203,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       ));
       onLog(
         'update', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1,
-        diffFields(original as any, payload as any, CHANDA_FIELD_LABELS)
+        diffFields(original as any, payload as any, CHANDA_FIELD_LABELS),
+        payload.donorName
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -213,7 +214,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         ...payload,
       };
       setChandaList([...chandaList, newChanda]);
-      onLog('create', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
+      onLog('create', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1, undefined, payload.donorName);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -256,7 +257,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setChandaList(chandaList.filter(c => c.id !== deleteTarget.id));
-    onLog('delete', 'chanda', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`);
+    onLog('delete', 'chanda', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`, 1, undefined, deleteTarget.donorName);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

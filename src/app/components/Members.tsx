@@ -21,7 +21,7 @@ interface MembersProps {
   tasksList: Task[];
   canEdit: boolean;
   canDelete: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'members', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 const MEMBERS_FIELD_LABELS: Record<string, string> = {
@@ -163,7 +163,8 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       ));
       onLog(
         'update', 'members', payload.name, 1,
-        diffFields(original as any, payload as any, MEMBERS_FIELD_LABELS)
+        diffFields(original as any, payload as any, MEMBERS_FIELD_LABELS),
+        payload.name
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -174,7 +175,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         joinDate: new Date().toISOString().split('T')[0],
       };
       setMembers([...members, newMember]);
-      onLog('create', 'members', payload.name);
+      onLog('create', 'members', payload.name, undefined, undefined, payload.name);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -235,7 +236,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setMembers(members.filter(m => m.id !== deleteTarget.id));
-    onLog('delete', 'members', deleteTarget.name);
+    onLog('delete', 'members', deleteTarget.name, undefined, undefined, deleteTarget.name);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

@@ -22,7 +22,7 @@ interface LoansProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'loans', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'loans', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 const LOANS_FIELD_LABELS: Record<string, string> = {
@@ -101,7 +101,8 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       setLoansList(loansList.map(l => (l.id === editingId ? { ...l, ...payload } : l)));
       onLog(
         'update', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`, 1,
-        diffFields(original as any, payload as any, LOANS_FIELD_LABELS)
+        diffFields(original as any, payload as any, LOANS_FIELD_LABELS),
+        payload.donorName
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -110,7 +111,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         ...payload,
       };
       setLoansList([...loansList, newLoan]);
-      onLog('create', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`);
+      onLog('create', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`, undefined, undefined, payload.donorName);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -142,7 +143,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setLoansList(loansList.filter(l => l.id !== deleteTarget.id));
-    onLog('delete', 'loans', `${deleteTarget.donorName} — ₹${deleteTarget.amountReceived.toLocaleString()}`);
+    onLog('delete', 'loans', `${deleteTarget.donorName} — ₹${deleteTarget.amountReceived.toLocaleString()}`, undefined, undefined, deleteTarget.donorName);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

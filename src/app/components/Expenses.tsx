@@ -24,7 +24,7 @@ interface ExpensesProps {
   canBulkImport: boolean;
   expenses: Expense[];
   setExpenses: (expenses: Expense[]) => void;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 // partialPayments is skipped — it's an array of sub-records, not a scalar field to diff.
@@ -219,7 +219,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       ));
       onLog(
         'update', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`, 1,
-        diffFields(original as any, payload as any, EXPENSES_FIELD_LABELS)
+        diffFields(original as any, payload as any, EXPENSES_FIELD_LABELS),
+        payload.title
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -229,7 +230,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         ...payload,
       };
       setExpenses([...expenses, newExpense]);
-      onLog('create', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`);
+      onLog('create', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`, undefined, undefined, payload.title);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -275,7 +276,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setExpenses(expenses.filter(exp => exp.id !== deleteTarget.id));
-    onLog('delete', 'expenses', `${deleteTarget.title} — ₹${deleteTarget.amount.toLocaleString()}`);
+    onLog('delete', 'expenses', `${deleteTarget.title} — ₹${deleteTarget.amount.toLocaleString()}`, undefined, undefined, deleteTarget.title);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

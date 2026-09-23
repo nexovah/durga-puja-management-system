@@ -728,7 +728,8 @@ export default function App() {
     module: ActivityModule,
     summary: string,
     count = 1,
-    changes?: ActivityFieldChange[]
+    changes?: ActivityFieldChange[],
+    recordLabel?: string
   ) => {
     if (!currentUser) return;
     logActivity({
@@ -741,6 +742,7 @@ export default function App() {
       count,
       device: 'web',
       changes,
+      recordLabel,
     }).catch(err => console.error('Failed to write activity log', err));
   };
 

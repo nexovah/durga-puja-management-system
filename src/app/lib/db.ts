@@ -683,6 +683,7 @@ export interface ActivityLogEntry {
   recordCount: number;
   device: ActivityDevice | null;
   changes: ActivityFieldChange[] | null;
+  recordLabel: string | null;
   createdAt: string;
 }
 
@@ -696,6 +697,7 @@ export async function logActivity(entry: {
   count?: number;
   device?: ActivityDevice;
   changes?: ActivityFieldChange[];
+  recordLabel?: string;
 }): Promise<void> {
   const { error } = await supabase.from('activity_log').insert({
     user_id: entry.userId,
@@ -707,6 +709,7 @@ export async function logActivity(entry: {
     record_count: entry.count ?? 1,
     device: entry.device ?? 'web',
     changes: entry.changes && entry.changes.length > 0 ? entry.changes : null,
+    record_label: entry.recordLabel ?? null,
   });
   if (error) throw error;
 }
@@ -752,6 +755,7 @@ export async function fetchActivityLog(limit = 200): Promise<ActivityLogEntry[]>
     recordCount: row.record_count,
     device: row.device ?? null,
     changes: row.changes ?? null,
+    recordLabel: row.record_label ?? null,
     createdAt: row.created_at,
   }));
 }

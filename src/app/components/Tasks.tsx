@@ -19,7 +19,7 @@ interface TasksProps {
   currentUserId: string;
   currentUserName: string;
   isAdmin: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'tasks', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'tasks', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 // assignedMemberIds is skipped — it's an array field, not a scalar to diff.
@@ -91,7 +91,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const handleMarkComplete = (task: Task) => {
     if (!canEditTask(task)) return;
     setTasksList(tasksList.map(t2 => (t2.id === task.id ? { ...t2, priority: 'completed' } : t2)));
-    onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`);
+    onLog('update', 'tasks', `${task.title} — ${t('tasks.priority.completed')}`, undefined, undefined, task.title);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,7 +114,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       ));
       onLog(
         'update', 'tasks', formData.title, 1,
-        diffFields(original as any, formData as any, TASKS_FIELD_LABELS)
+        diffFields(original as any, formData as any, TASKS_FIELD_LABELS),
+        formData.title
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -130,7 +131,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         createdByName: currentUserName,
       };
       setTasksList([...tasksList, newTask]);
-      onLog('create', 'tasks', formData.title);
+      onLog('create', 'tasks', formData.title, undefined, undefined, formData.title);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -164,7 +165,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setTasksList(tasksList.filter(task => task.id !== deleteTarget.id));
-    onLog('delete', 'tasks', deleteTarget.title);
+    onLog('delete', 'tasks', deleteTarget.title, undefined, undefined, deleteTarget.title);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

@@ -19,7 +19,7 @@ interface EstimationPageProps {
   currentUserId: string;
   currentUserName: string;
   committeeAssociation: string;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'estimation', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'estimation', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 // lineItems is skipped — it's an array of sub-records, not a scalar to diff.
@@ -198,14 +198,15 @@ export function EstimationPage({
 
     if (isNew) {
       setEstimationsList([...estimationsList, cleanedDraft]);
-      onLog('create', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`);
+      onLog('create', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`, undefined, undefined, cleanedDraft.title);
       setToastMessage(t('common.savedSuccess'));
     } else {
       const original = estimationsList.find(est => est.id === cleanedDraft.id);
       setEstimationsList(estimationsList.map(est => (est.id === cleanedDraft.id ? cleanedDraft : est)));
       onLog(
         'update', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`, 1,
-        diffFields(original as any, cleanedDraft as any, ESTIMATION_FIELD_LABELS)
+        diffFields(original as any, cleanedDraft as any, ESTIMATION_FIELD_LABELS),
+        cleanedDraft.title
       );
       setToastMessage(t('common.updatedSuccess'));
     }
@@ -225,7 +226,7 @@ export function EstimationPage({
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setEstimationsList(estimationsList.filter(est => est.id !== deleteTarget.id));
-    onLog('delete', 'estimation', deleteTarget.title);
+    onLog('delete', 'estimation', deleteTarget.title, undefined, undefined, deleteTarget.title);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };

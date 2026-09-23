@@ -23,7 +23,7 @@ interface DonationAdsCollectionProps {
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
-  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number, changes?: ActivityFieldChange[]) => void;
+  onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
@@ -194,7 +194,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       ));
       onLog(
         'update', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1,
-        diffFields(original as any, payload as any, DONATION_ADS_FIELD_LABELS)
+        diffFields(original as any, payload as any, DONATION_ADS_FIELD_LABELS),
+        payload.donorName || payload.companyName
       );
       setToastMessage(t('common.updatedSuccess'));
     } else {
@@ -203,7 +204,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         ...payload,
       };
       setDonationAdsList([...donationAdsList, newItem]);
-      onLog('create', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`);
+      onLog('create', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, undefined, undefined, payload.donorName || payload.companyName);
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -239,7 +240,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const confirmDelete = () => {
     if (!deleteTarget) return;
     setDonationAdsList(donationAdsList.filter(item => item.id !== deleteTarget.id));
-    onLog('delete', 'donation_ads', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`);
+    onLog('delete', 'donation_ads', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`, undefined, undefined, deleteTarget.donorName || deleteTarget.companyName);
     setDeleteTarget(null);
     setToastMessage(t('common.deletedSuccess'));
   };
