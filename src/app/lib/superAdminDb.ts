@@ -334,6 +334,35 @@ export async function updateSelfProfileRequest(profile: Omit<SuperAdminProfile, 
   return fromSuperAdminProfileRow(data[0]);
 }
 
+export interface Lead {
+  id: string;
+  committeeName: string;
+  contactName: string;
+  phone: string;
+  email: string | null;
+  createdAt: string;
+}
+
+function fromLeadRow(row: any): Lead {
+  return {
+    id: row.id,
+    committeeName: row.committee_name,
+    contactName: row.contact_name,
+    phone: row.phone,
+    email: row.email,
+    createdAt: row.created_at,
+  };
+}
+
+// leads has open RLS (`using (true)`, see supabase/019_leads.sql) — the
+// landing page's anonymous lead-capture form needs to insert without any
+// auth, so reading it back here is a plain table select, no RPC needed.
+export async function listLeadsRequest(): Promise<Lead[]> {
+  const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromLeadRow);
+}
+
 export interface Order {
   id: string;
   source: 'razorpay' | 'manual';

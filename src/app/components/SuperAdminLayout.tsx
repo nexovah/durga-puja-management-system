@@ -2,12 +2,12 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Building2, Settings as SettingsIcon, LogOut, Moon, Sun, ShieldCheck,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText, Inbox,
 } from 'lucide-react';
 import { useTheme } from '../i18n/ThemeContext';
 import { getPlatformSettingsRequest } from '../lib/superAdminDb';
 
-export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'cms' | 'settings';
+export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'leads' | 'cms' | 'settings';
 
 interface SuperAdminLayoutProps {
   adminName: string;
@@ -21,6 +21,7 @@ const NAV_ITEMS: { key: SuperAdminPage; label: string; icon: typeof Building2 }[
   { key: 'tenants', label: 'Tenants', icon: Building2 },
   { key: 'plans', label: 'Subscription Plans', icon: CreditCard },
   { key: 'orders', label: 'Orders', icon: ShoppingCart },
+  { key: 'leads', label: 'Leads', icon: Inbox },
   { key: 'cms', label: 'CMS', icon: FileText },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
