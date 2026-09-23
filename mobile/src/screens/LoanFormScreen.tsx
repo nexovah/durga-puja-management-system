@@ -105,6 +105,7 @@ export function LoanFormScreen({ route, navigation }: any) {
           summary: `${payload.donorName} — ${formatAmount(payload.amountReceived)}`,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, LOAN_FIELD_LABELS) : undefined,
+          recordLabel: payload.donorName,
         }).catch(() => {});
       }
       navigation.goBack();

@@ -132,6 +132,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
           summary: `${payload.donorName} — ${formatAmount(payload.amount)}`,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, CHANDA_FIELD_LABELS) : undefined,
+          recordLabel: payload.donorName,
         }).catch(() => {});
       }
       navigation.goBack();

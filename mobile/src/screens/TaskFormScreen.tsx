@@ -108,6 +108,7 @@ export function TaskFormScreen({ route, navigation }: any) {
           summary: payload.title,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, TASK_FIELD_LABELS) : undefined,
+          recordLabel: payload.title,
         }).catch(() => {});
       }
       navigation.goBack();

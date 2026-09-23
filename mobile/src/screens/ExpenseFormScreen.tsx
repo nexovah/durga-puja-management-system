@@ -148,6 +148,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
           summary: `${payload.title} — ${formatAmount(payload.amount)}`,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, EXPENSE_FIELD_LABELS) : undefined,
+          recordLabel: payload.title,
         }).catch(() => {});
       }
       navigation.goBack();

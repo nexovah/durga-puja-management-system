@@ -129,6 +129,7 @@ export function MemberFormScreen({ route, navigation }: any) {
           summary: payload.name,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, MEMBER_FIELD_LABELS) : undefined,
+          recordLabel: payload.name,
         }).catch(() => {});
       }
       navigation.goBack();

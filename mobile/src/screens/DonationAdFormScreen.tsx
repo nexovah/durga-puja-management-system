@@ -125,6 +125,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
           summary: `${payload.companyName || payload.donorName} — ${formatAmount(payload.amount)}`,
           device: Platform.OS === 'ios' ? 'ios' : 'android',
           changes: isEdit ? diffFields(original as any, payload as any, DONATION_AD_FIELD_LABELS) : undefined,
+          recordLabel: payload.companyName || payload.donorName,
         }).catch(() => {});
       }
       navigation.goBack();
