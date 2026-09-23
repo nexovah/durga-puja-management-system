@@ -397,6 +397,47 @@ function fromOrderRow(row: any): Order {
   };
 }
 
+export type TicketStatus = 'open' | 'in_progress' | 'resolved';
+
+export interface SupportTicket {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  username: string;
+  userName: string;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  status: TicketStatus;
+  createdAt: string;
+}
+
+function fromTicketRow(row: any): SupportTicket {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    tenantName: row.tenant_name,
+    username: row.username,
+    userName: row.user_name,
+    title: row.title,
+    body: row.body,
+    imageUrl: row.image_url,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listSupportTicketsRequest(): Promise<SupportTicket[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_support_tickets');
+  if (error) throw error;
+  return (data || []).map(fromTicketRow);
+}
+
+export async function setTicketStatusRequest(ticketId: string, status: TicketStatus): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_set_ticket_status', { p_ticket_id: ticketId, p_status: status });
+  if (error) throw error;
+}
+
 export async function listOrdersRequest(): Promise<Order[]> {
   const { data, error } = await supabase.rpc('super_admin_list_orders');
   if (error) throw error;

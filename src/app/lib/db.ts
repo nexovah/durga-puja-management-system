@@ -526,6 +526,76 @@ export async function uploadLogo(file: File): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+// Help & Support tickets (see supabase/059_support_tickets.sql) — a tenant
+// user only ever sees their OWN tickets (RLS: tenant_id + user_id both
+// pinned to the JWT), same idea as the mobile app's equivalent feature.
+// Immutable once created — no update/delete here, matches the mobile side.
+// ---------------------------------------------------------------------------
+
+export type TicketStatus = 'open' | 'in_progress' | 'resolved';
+
+export interface SupportTicket {
+  id: string;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  status: TicketStatus;
+  createdAt: string;
+}
+
+function fromTicketRow(row: any): SupportTicket {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    imageUrl: row.image_url,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listMyTicketsRequest(): Promise<SupportTicket[]> {
+  const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromTicketRow);
+}
+
+export async function uploadTicketImage(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'png';
+  const path = `ticket-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('support-attachments').upload(path, file, {
+    contentType: file.type,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('support-attachments').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function createTicketRequest(entry: {
+  userId: string;
+  username: string;
+  userName: string;
+  title: string;
+  body: string;
+  imageUrl?: string;
+}): Promise<SupportTicket> {
+  const { data, error } = await supabase
+    .from('support_tickets')
+    .insert({
+      user_id: entry.userId,
+      username: entry.username,
+      user_name: entry.userName,
+      title: entry.title,
+      body: entry.body,
+      image_url: entry.imageUrl || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromTicketRow(data);
+}
+
+// ---------------------------------------------------------------------------
 // CMS pages (public read — landing page + legal pages, no auth needed;
 // see supabase/055_cms_pages.sql). Writes are Super Admin-only, in
 // superAdminDb.ts.

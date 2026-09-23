@@ -7,6 +7,7 @@ import { SuperAdminSettings } from './SuperAdminSettings';
 import { SuperAdminPlans } from './SuperAdminPlans';
 import { SuperAdminOrders } from './SuperAdminOrders';
 import { SuperAdminLeads } from './SuperAdminLeads';
+import { SuperAdminHelpSupport } from './SuperAdminHelpSupport';
 import { SuperAdminCms } from './SuperAdminCms';
 import { superAdminLoginRequest, listTenantsRequest, SuperAdmin, Tenant } from '../lib/superAdminDb';
 import { setTenantAccessToken } from '../lib/supabaseClient';
@@ -22,7 +23,7 @@ interface StoredSuperAdminSession {
   expiresAt: number;
 }
 
-const VALID_PAGES: SuperAdminPage[] = ['tenants', 'plans', 'orders', 'leads', 'cms', 'settings'];
+const VALID_PAGES: SuperAdminPage[] = ['tenants', 'plans', 'orders', 'leads', 'support', 'cms', 'settings'];
 
 // Same path-based routing idea as the committee app's PAGE_SLUGS
 // (App.tsx) — /super-admin/<page> — so a refresh or a shared link lands
@@ -171,6 +172,7 @@ export function SuperAdminRoot() {
       {page === 'plans' && <SuperAdminPlans key={navResetKey} />}
       {page === 'orders' && <SuperAdminOrders key={navResetKey} />}
       {page === 'leads' && <SuperAdminLeads key={navResetKey} />}
+      {page === 'support' && <SuperAdminHelpSupport key={navResetKey} />}
       {page === 'cms' && <SuperAdminCms key={navResetKey} />}
       {page === 'settings' && (
         <SuperAdminSettings

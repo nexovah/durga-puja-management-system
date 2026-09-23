@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { LandingPage } from './components/LandingPage';
@@ -7,6 +7,7 @@ import { LegalPage } from './components/LegalPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
+import { HelpSupportModal } from './components/HelpSupportModal';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -498,6 +499,7 @@ export default function App() {
     });
   };
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [helpSupportOpen, setHelpSupportOpen] = useState(false);
   useEffect(() => {
     setMobileNavOpen(false);
   }, [currentPage]);
@@ -970,6 +972,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
+            <button
+              onClick={() => setHelpSupportOpen(true)}
+              className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
+              aria-label="Help & Support"
+              title="Help & Support"
+            >
+              <HelpCircle size={20} />
+            </button>
+
             <ProfileMenu
               currentUser={currentUser}
               onLogout={handleLogout}
@@ -1121,6 +1132,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         </div>
         </main>
       </div>
+      <HelpSupportModal open={helpSupportOpen} onClose={() => setHelpSupportOpen(false)} currentUser={currentUser} />
     </div>
   );
 }
