@@ -1,10 +1,16 @@
 import { TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
 import { colors, radius } from '../theme';
 
 export function Fab({ onPress }: { onPress: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
-    <TouchableOpacity onPress={onPress} style={styles.fab} activeOpacity={0.85}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.fab, { bottom: Math.max(insets.bottom + 16, 24) }]}
+      activeOpacity={0.85}
+    >
       <Plus size={24} color="#ffffff" strokeWidth={2.3} />
     </TouchableOpacity>
   );

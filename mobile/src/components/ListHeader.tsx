@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, BarChart3 } from 'lucide-react-native';
 import { colors } from '../theme';
 
@@ -13,8 +14,9 @@ interface ListHeaderProps {
 // optional stats-toggle button (the "widgets you can close" the user asked
 // for) — same real stroke icons as the web app (lucide), no emoji.
 export function ListHeader({ title, onBack, showStats, onToggleStats }: ListHeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { paddingTop: Math.max(insets.top + 14, 24) }]}>
       <TouchableOpacity onPress={onBack} hitSlop={10}>
         <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
       </TouchableOpacity>

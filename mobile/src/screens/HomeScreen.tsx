@@ -4,6 +4,7 @@ import {
   Landmark, LayoutGrid, MapPin, Home as HomeIcon, CreditCard, TrendingUp, User, Plus,
   Wallet, Users, Gift, Receipt,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
 import {
   listChanda, listMembers, listDonationAds, listExpenses, getCommitteeInfo,
@@ -23,6 +24,7 @@ type Totals = {
 };
 
 export function HomeScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const [committeeName, setCommitteeName] = useState('');
   const [totals, setTotals] = useState<Totals | null>(null);
@@ -72,7 +74,7 @@ export function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + 6, 20) }]}>
         <View style={{ flex: 1 }}>
           <View style={styles.locationRow}>
             <MapPin size={12} color={colors.mutedLight} strokeWidth={2.3} />
@@ -193,7 +195,7 @@ export function HomeScreen({ navigation }: any) {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom + 6, 18) }]}>
         <View style={styles.navRow}>
           <HomeIcon size={22} color={colors.ink} strokeWidth={2.3} />
           <Landmark size={22} color="#d6d3d1" strokeWidth={2} />

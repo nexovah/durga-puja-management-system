@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Landmark, User, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
 import { colors, radius } from '../theme';
@@ -7,6 +18,7 @@ import { colors, radius } from '../theme';
 // Real login — calls the same login() RPC the web app uses (see
 // mobile/src/lib/auth.tsx). A wrong password fails for real; no bypass.
 export function LoginScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,87 +34,146 @@ export function LoginScreen({ navigation }: any) {
     }
     setSubmitting(true);
     const result = await login(username.trim(), password);
-    setSubmitting(false);
     if (!result.ok) {
+      setSubmitting(false);
       setError(result.error || 'Invalid User ID or password.');
-      return;
     }
-    navigation.replace('Home');
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <View style={styles.hero}>
-        <View style={styles.ring}>
-          <View style={styles.iconTile}>
-            <Landmark size={28} color="#ffffff" strokeWidth={1.8} />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your committee account</Text>
-
-        <View style={styles.card}>
-          <View style={styles.field}>
-            <Text style={styles.label}>User ID</Text>
-            <View style={styles.inputWrap}>
-              <User size={16} color={colors.mutedLight} strokeWidth={2} style={styles.inputIcon} />
-              <TextInput
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Enter your user ID"
-                placeholderTextColor={colors.mutedLight}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.input}
-              />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 16, 32),
+            paddingBottom: Math.max(insets.bottom + 16, 32),
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.centerWrapper}>
+          <View style={styles.hero}>
+            <View style={styles.ring}>
+              <View style={styles.iconTile}>
+                <Landmark size={28} color="#ffffff" strokeWidth={1.8} />
+              </View>
             </View>
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputWrap}>
-              <Lock size={16} color={colors.mutedLight} strokeWidth={2} style={styles.inputIcon} />
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.mutedLight}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                style={[styles.input, { paddingRight: 40 }]}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(s => !s)} style={styles.eyeButton} hitSlop={8}>
-                {showPassword ? <EyeOff size={16} color={colors.mutedLight} strokeWidth={2} /> : <Eye size={16} color={colors.mutedLight} strokeWidth={2} />}
-              </TouchableOpacity>
-            </View>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>Log in to your committee account</Text>
           </View>
 
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          <View style={styles.card}>
+            <View style={styles.field}>
+              <Text style={styles.label}>User ID</Text>
+              <View style={styles.inputWrap}>
+                <User size={16} color={colors.mutedLight} strokeWidth={2} style={styles.inputIcon} />
+                <TextInput
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Enter your user ID"
+                  placeholderTextColor={colors.mutedLight}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={styles.input}
+                />
+              </View>
+            </View>
 
-          <TouchableOpacity onPress={handleSubmit} disabled={submitting} style={[styles.button, submitting && { opacity: 0.6 }]}>
-            {submitting ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Log In</Text>}
-          </TouchableOpacity>
+            <View style={styles.field}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrap}>
+                <Lock size={16} color={colors.mutedLight} strokeWidth={2} style={styles.inputIcon} />
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.mutedLight}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  style={[styles.input, { paddingRight: 40 }]}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(s => !s)} style={styles.eyeButton} hitSlop={8}>
+                  {showPassword ? <EyeOff size={16} color={colors.mutedLight} strokeWidth={2} /> : <Eye size={16} color={colors.mutedLight} strokeWidth={2} />}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {!!error && <Text style={styles.error}>{error}</Text>}
+
+            <TouchableOpacity onPress={handleSubmit} disabled={submitting} style={[styles.button, submitting && { opacity: 0.6 }]}>
+              {submitting ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Log In</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.footnote}>
+            Add and update your committee's Chanda, Members, Expenses and more — right from your phone.
+          </Text>
         </View>
-
-        <Text style={styles.footnote}>
-          Add and update your committee's Chanda, Members, Expenses and more — right from your phone.
-        </Text>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  hero: { height: 200, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
-  ring: { width: 118, height: 118, borderRadius: radius.pill, backgroundColor: colors.orangeLight, alignItems: 'center', justifyContent: 'center' },
-  iconTile: { width: 58, height: 58, borderRadius: 17, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center' },
-  body: { flex: 1, paddingHorizontal: 32, paddingBottom: 32, alignItems: 'center', gap: 22 },
-  title: { fontSize: 19, fontWeight: '800', color: colors.ink, textAlign: 'center' },
-  subtitle: { fontSize: 12.5, color: colors.mutedLight, marginTop: -14, textAlign: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  centerWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 18,
+  },
+  hero: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    width: 104,
+    height: 104,
+    borderRadius: radius.pill,
+    backgroundColor: colors.orangeLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconTile: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextWrap: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.ink,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.mutedLight,
+    textAlign: 'center',
+  },
   card: {
     width: '100%',
     backgroundColor: colors.card,
@@ -134,5 +205,5 @@ const styles = StyleSheet.create({
   error: { fontSize: 12.5, color: colors.red, textAlign: 'center' },
   button: { backgroundColor: colors.dark, paddingVertical: 14, borderRadius: radius.md, alignItems: 'center', marginTop: 4 },
   buttonText: { color: '#ffffff', fontSize: 14.5, fontWeight: '700' },
-  footnote: { fontSize: 11.5, color: colors.mutedLight, textAlign: 'center', lineHeight: 17, paddingHorizontal: 8 },
+  footnote: { fontSize: 11.5, color: colors.mutedLight, textAlign: 'center', lineHeight: 17, paddingHorizontal: 12 },
 });

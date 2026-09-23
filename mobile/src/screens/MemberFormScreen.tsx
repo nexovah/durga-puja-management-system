@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { listMembers, createMember, updateMember, Member, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
@@ -27,6 +28,7 @@ const emptyForm = {
 };
 
 export function MemberFormScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
 
@@ -91,7 +93,7 @@ export function MemberFormScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + 14, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
         </TouchableOpacity>
@@ -116,7 +118,7 @@ export function MemberFormScreen({ route, navigation }: any) {
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
