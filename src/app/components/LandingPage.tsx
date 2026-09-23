@@ -187,12 +187,12 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
             Built for Puja & Festival Committees
           </div>
           <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-5">
-            Run Your Puja. Manage Everything<br className="hidden sm:block" /> in One Place.
+            One Platform. Every Puja.<br className="hidden sm:block" /> Everything Organized.
           </h1>
           <p className={`max-w-2xl mx-auto text-base sm:text-lg mb-3 ${c('text-gray-600', 'text-gray-400')}`}>
-            From chanda collection and donations to expenses, advertisements, members,
-            subscriptions, loans, estimates and tasks — manage your entire Puja
-            committee from one simple, organized dashboard.
+            Everything your Puja committee needs, all in one place — manage chanda,
+            donations, subscriptions, sponsors, expenses, loans, budgets, estimates and
+            tasks with complete clarity and control.
           </p>
           <p className={`text-sm font-medium mb-8 ${c('text-orange-700', 'text-orange-400')}`}>
             Plan. Collect. Manage. Celebrate.
