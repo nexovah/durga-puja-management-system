@@ -44,11 +44,7 @@ export function DateField({ label, value, onChange, required }: DateFieldProps) 
           display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
           themeVariant="light"
           accentColor={colors.orange}
-          onChange={(_event, selectedDate) => {
-            if (!selectedDate) {
-              if (Platform.OS === 'android') setOpen(false);
-              return;
-            }
+          onValueChange={(_event, selectedDate) => {
             if (Platform.OS === 'android') {
               onChange(selectedDate.toISOString().split('T')[0]);
               setOpen(false);
@@ -56,6 +52,7 @@ export function DateField({ label, value, onChange, required }: DateFieldProps) 
               setTempDate(selectedDate);
             }
           }}
+          onDismiss={() => { if (Platform.OS === 'android') setOpen(false); }}
         />
         {Platform.OS === 'ios' && (
           <TouchableOpacity

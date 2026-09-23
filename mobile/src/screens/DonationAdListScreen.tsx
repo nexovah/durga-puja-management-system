@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { View, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Gift, Landmark, TrendingUp } from 'lucide-react-native';
+import { HeartHandshake, Megaphone, Landmark, TrendingUp } from 'lucide-react-native';
 import { listDonationAds, DonationAd, DonationAdCategory } from '../lib/db';
 import { colors } from '../theme';
 import { ListHeader } from '../components/ListHeader';
@@ -45,7 +45,7 @@ export function DonationAdListScreen({ route, navigation }: any) {
       {showStats && (
         <SummaryWidgets
           widgets={[
-            { label: isAds ? 'Total Ads' : 'Total Donations', value: formatAmount(total), icon: Gift, tint: 'neutral' },
+            { label: isAds ? 'Total Ads' : 'Total Donations', value: formatAmount(total), icon: isAds ? Megaphone : HeartHandshake, tint: 'neutral' },
             { label: 'Transactions', value: String(rows.length), icon: Landmark, tint: 'neutral' },
             { label: 'This month', value: formatAmount(thisMonth), icon: TrendingUp, tint: 'amber' },
           ]}

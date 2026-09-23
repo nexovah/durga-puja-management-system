@@ -2,13 +2,13 @@
 // "Quick add" tile pattern. View + export only, nothing to add/edit/delete.
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Wallet, Users, Gift, Receipt, Store, HandCoins, FileText } from 'lucide-react-native';
+import { ArrowLeft, Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, HandCoins, FileText } from 'lucide-react-native';
 import { colors, radius } from '../theme';
 
 const MODULES: { key: string; label: string; icon: any; color: string; bg: string }[] = [
   { key: 'chanda', label: 'Chanda', icon: Wallet, color: colors.orange, bg: colors.orangeSoft },
-  { key: 'donation', label: 'Donation', icon: Gift, color: colors.green, bg: colors.greenBg },
-  { key: 'ads', label: 'Ads', icon: Gift, color: colors.green, bg: colors.greenBg },
+  { key: 'donation', label: 'Donation', icon: HeartHandshake, color: colors.green, bg: colors.greenBg },
+  { key: 'ads', label: 'Ads', icon: Megaphone, color: colors.indigo, bg: colors.indigoBg },
   { key: 'expenses', label: 'Expenses', icon: Receipt, color: colors.red, bg: colors.redBg },
   { key: 'vendor', label: 'Vendor', icon: Store, color: colors.indigo, bg: colors.indigoBg },
   { key: 'member', label: 'Members', icon: Users, color: colors.indigo, bg: colors.indigoBg },

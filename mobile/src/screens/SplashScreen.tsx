@@ -18,8 +18,8 @@ export function SplashScreen({ navigation }: any) {
     <View style={styles.container}>
       <Image source={require('../../assets/splash-icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Durga CRM</Text>
-      <Text style={styles.subtitle}>One committee. One dashboard. Everything under control.</Text>
-      <Text style={styles.tagline}>Plan · Collect · Manage · Celebrate</Text>
+      <Text style={styles.tagline}>One CRM for Every Puja & Community Festival</Text>
+      <Text style={styles.subtitle}>One Committee. One Dashboard.{'\n'}Plan. Collect. Manage. Celebrate.</Text>
     </View>
   );
 }
@@ -28,6 +28,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 40 },
   logo: { width: 190, height: 190, borderRadius: 95, marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.mutedLight, textAlign: 'center' },
-  tagline: { fontSize: 12, fontWeight: '700', color: colors.orange, letterSpacing: 0.3 },
+  tagline: { fontSize: 14, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  subtitle: { fontSize: 13, color: colors.mutedLight, textAlign: 'center', lineHeight: 19 },
 });

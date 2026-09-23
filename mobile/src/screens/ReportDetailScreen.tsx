@@ -7,7 +7,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  MoreVertical, Download, FileDown, Receipt, CheckCircle2, Clock, Users, Gift,
+  MoreVertical, Download, FileDown, Receipt, CheckCircle2, Clock, Users, HeartHandshake, Megaphone,
   Store, TrendingUp, HandCoins, FileText,
 } from 'lucide-react-native';
 import {
@@ -142,7 +142,7 @@ export function ReportDetailScreen({ navigation, route }: any) {
       const total = rows.reduce((s, r) => s + r.amount, 0);
       const thisMonth = rows.filter(r => inRange(r.date, 'month')).reduce((s, r) => s + r.amount, 0);
       const widgets: Widget[] = [
-        { label: 'Total', value: formatAmount(total), icon: Gift, tint: 'green' },
+        { label: 'Total', value: formatAmount(total), icon: moduleKey === 'donation' ? HeartHandshake : Megaphone, tint: 'green' },
         { label: 'Transactions', value: String(rows.length), icon: Receipt, tint: 'neutral' },
         { label: 'This Month', value: formatAmount(thisMonth), icon: TrendingUp, tint: 'amber' },
       ];

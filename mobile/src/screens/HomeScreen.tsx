@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable, StyleSheet, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import {
   CheckSquare, LayoutGrid, Home as HomeIcon, CreditCard, TrendingUp, BarChart3, User, Plus,
-  Wallet, Users, Gift, Receipt, Store, HandCoins, FileText,
+  Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, HandCoins, FileText,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
@@ -233,8 +233,8 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.grid}>
             <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Chanda" onPress={() => navigation.navigate('ChandaList')} />
             <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />
-            <QuickTile icon={Gift} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
-            <QuickTile icon={Gift} color={colors.green} bg={colors.greenBg} label="Ads" onPress={() => navigation.navigate('AdsList')} />
+            <QuickTile icon={HeartHandshake} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
+            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Ads" onPress={() => navigation.navigate('AdsList')} />
           </View>
           <View style={[styles.grid, { marginTop: 10 }]}>
             <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />

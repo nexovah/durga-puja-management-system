@@ -1,26 +1,21 @@
 import { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, LogOut } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
 import { getCommitteeInfo, CommitteeInfo } from '../lib/db';
 import { colors, radius } from '../theme';
+import { BottomSheet } from '../components/BottomSheet';
 
 export function ProfileScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const [committee, setCommittee] = useState<CommitteeInfo | null>(null);
+  const [logoutSheetOpen, setLogoutSheetOpen] = useState(false);
 
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Log out of Durga CRM?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: logout },
-    ]);
-  };
 
   return (
     <View style={styles.container}>
@@ -56,11 +51,32 @@ export function ProfileScreen({ navigation }: any) {
       </ScrollView>
 
       <View style={[styles.logoutBar, { paddingBottom: Math.max(insets.bottom + 12, 20) }]}>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton} activeOpacity={0.8}>
+        <TouchableOpacity onPress={() => setLogoutSheetOpen(true)} style={styles.logoutButton} activeOpacity={0.8}>
           <LogOut size={18} color={colors.orange} strokeWidth={2.2} />
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
       </View>
+
+      <BottomSheet visible={logoutSheetOpen} onClose={() => setLogoutSheetOpen(false)}>
+        <Text style={styles.sheetTitle}>Are you sure you want to log out?</Text>
+        <Text style={styles.sheetMessage}>If you log out once, you'll need to log in again to access your committee's data — confirm if you want to finally log out.</Text>
+        <View style={styles.sheetButtonRow}>
+          <TouchableOpacity
+            onPress={() => { setLogoutSheetOpen(false); logout(); }}
+            style={styles.sheetLogoutButton}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.sheetLogoutText}>Log out</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setLogoutSheetOpen(false)}
+            style={styles.sheetCancelButton}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.sheetCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -93,4 +109,11 @@ const styles = StyleSheet.create({
   logoutBar: { backgroundColor: colors.card, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.orangeSoft, paddingVertical: 14, borderRadius: radius.md },
   logoutText: { fontSize: 14, fontWeight: '700', color: colors.orange },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: colors.ink, marginBottom: 6 },
+  sheetMessage: { fontSize: 13, color: colors.mutedLight, marginBottom: 20 },
+  sheetButtonRow: { flexDirection: 'row', gap: 10 },
+  sheetLogoutButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.red },
+  sheetLogoutText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  sheetCancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  sheetCancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
 });

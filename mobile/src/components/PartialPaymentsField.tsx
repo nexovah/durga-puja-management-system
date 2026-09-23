@@ -90,13 +90,9 @@ export function PartialPaymentsField({ rows, onChange, totalAmount }: PartialPay
           display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
           themeVariant="light"
           accentColor={colors.orange}
-          onChange={(_event, selectedDate) => {
-            if (!selectedDate) {
-              if (Platform.OS === 'android') setDateSheetIndex(null);
-              return;
-            }
+          onValueChange={(_event, selectedDate) => {
             if (Platform.OS === 'android') {
-              // Android's calendar display fires onChange once and dismisses itself.
+              // Android's calendar display fires once and dismisses itself.
               if (dateSheetIndex !== null) {
                 updateRow(dateSheetIndex, { date: selectedDate.toISOString().split('T')[0] });
               }
@@ -106,6 +102,7 @@ export function PartialPaymentsField({ rows, onChange, totalAmount }: PartialPay
               setTempDate(selectedDate);
             }
           }}
+          onDismiss={() => { if (Platform.OS === 'android') setDateSheetIndex(null); }}
         />
         {Platform.OS === 'ios' && (
           <TouchableOpacity

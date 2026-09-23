@@ -24,6 +24,9 @@ import { MenuScreen } from '../screens/MenuScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
 import { ReportDetailScreen } from '../screens/ReportDetailScreen';
+import { HelpSupportScreen } from '../screens/HelpSupportScreen';
+import { HelpSupportFormScreen } from '../screens/HelpSupportFormScreen';
+import { LegalContentScreen } from '../screens/LegalContentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -61,6 +64,9 @@ export function RootNavigator() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Reports" component={ReportsScreen} />
             <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+            <Stack.Screen name="HelpSupportForm" component={HelpSupportFormScreen} />
+            <Stack.Screen name="LegalContent" component={LegalContentScreen} />
           </>
         )}
       </Stack.Navigator>

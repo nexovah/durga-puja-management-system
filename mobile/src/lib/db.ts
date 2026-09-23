@@ -378,6 +378,38 @@ export async function getCommitteeInfo(): Promise<CommitteeInfo> {
 }
 
 // ---------------------------------------------------------------------------
+// CMS pages (public read — legal + about pages, no auth needed; see
+// supabase/055_cms_pages.sql). Mirrors web's src/app/lib/db.ts
+// getCmsPageRequest() exactly (same table, same query, same columns).
+// ---------------------------------------------------------------------------
+
+export interface CmsPageContent {
+  slug: string;
+  navLabel: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImageUrl: string;
+  body: string;
+}
+
+function fromCmsPageRow(row: any): CmsPageContent {
+  return {
+    slug: row.slug,
+    navLabel: row.nav_label,
+    metaTitle: row.meta_title || '',
+    metaDescription: row.meta_description || '',
+    ogImageUrl: row.og_image_url || '',
+    body: row.body || '',
+  };
+}
+
+export async function getCmsPageRequest(slug: string): Promise<CmsPageContent | null> {
+  const { data, error } = await supabase.from('cms_pages').select('*').eq('slug', slug).eq('is_published', true).maybeSingle();
+  if (error) throw error;
+  return data ? fromCmsPageRow(data) : null;
+}
+
+// ---------------------------------------------------------------------------
 // Activity log — mirrors web's src/app/lib/db.ts logActivity() exactly
 // (same `activity_log` table, same column names). Web writes to this table
 // client-side after every save, and mobile must do the same or the admin's
