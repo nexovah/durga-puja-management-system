@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import {
-  Landmark, LayoutGrid, MapPin, Home as HomeIcon, CreditCard, TrendingUp, User, Plus,
-  Wallet, Users, Gift, Receipt,
+  Landmark, LayoutGrid, Home as HomeIcon, CreditCard, TrendingUp, User, Plus,
+  Wallet, Users, Gift, Receipt, Store, HandCoins, FileText,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
 import {
   listChanda, listMembers, listDonationAds, listExpenses, getCommitteeInfo,
   getChandaCreditAmount, getMemberCreditAmount, getExpenseCreditAmount,
-  Chanda, Expense,
+  Chanda, Expense, DonationAd,
 } from '../lib/db';
 import { colors, radius } from '../theme';
 import { formatAmount, formatDate } from '../lib/labels';
+
+type WeekBucket = { label: string; income: number; expense: number };
 
 type Totals = {
   totalChanda: number;
@@ -21,12 +23,57 @@ type Totals = {
   totalCollected: number;
   totalSpent: number;
   recent: { id: string; kind: 'in' | 'out'; label: string; when: string; amount: string }[];
+  weeks: WeekBucket[];
 };
+
+function buildWeeklyActivity(chandaList: Chanda[], donationAds: DonationAd[], expenses: Expense[]): WeekBucket[] {
+  const WEEKS = 5;
+  const now = new Date();
+  const buckets: WeekBucket[] = [];
+  const weekStarts: number[] = [];
+  for (let i = WEEKS - 1; i >= 0; i--) {
+    const start = new Date(now);
+    start.setDate(start.getDate() - start.getDay() - i * 7);
+    start.setHours(0, 0, 0, 0);
+    weekStarts.push(start.getTime());
+  }
+
+  const bucketIndexFor = (dateStr?: string): number => {
+    if (!dateStr) return -1;
+    const t = new Date(dateStr).getTime();
+    if (Number.isNaN(t)) return -1;
+    for (let i = weekStarts.length - 1; i >= 0; i--) {
+      if (t >= weekStarts[i]) return i;
+    }
+    return -1;
+  };
+
+  for (let i = 0; i < WEEKS; i++) {
+    const d = new Date(weekStarts[i]);
+    buckets.push({ label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), income: 0, expense: 0 });
+  }
+
+  chandaList.forEach(c => {
+    const idx = bucketIndexFor(c.date);
+    if (idx >= 0) buckets[idx].income += getChandaCreditAmount(c);
+  });
+  donationAds.forEach(d => {
+    const idx = bucketIndexFor(d.date);
+    if (idx >= 0) buckets[idx].income += d.amount;
+  });
+  expenses.forEach(e => {
+    const idx = bucketIndexFor(e.date);
+    if (idx >= 0) buckets[idx].expense += getExpenseCreditAmount(e);
+  });
+
+  return buckets;
+}
 
 export function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [committeeName, setCommitteeName] = useState('');
+  const [committeeLogo, setCommitteeLogo] = useState('');
   const [totals, setTotals] = useState<Totals | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -35,6 +82,7 @@ export function HomeScreen({ navigation }: any) {
       listChanda(), listMembers(), listDonationAds(), listExpenses(), getCommitteeInfo(),
     ]);
     setCommitteeName(committee.association || committee.name);
+    setCommitteeLogo(committee.logo || '');
 
     const totalChanda = chandaList.reduce((s, c) => s + getChandaCreditAmount(c), 0);
     const totalDonation = donationAds.reduce((s, d) => s + d.amount, 0);
@@ -50,7 +98,9 @@ export function HomeScreen({ navigation }: any) {
     }));
     const recent = [...recentChanda, ...recentExpenses].slice(0, 4);
 
-    setTotals({ totalChanda, totalMembers: members.length, totalDonation, totalCollected, totalSpent, recent });
+    const weeks = buildWeeklyActivity(chandaList, donationAds, expenses);
+
+    setTotals({ totalChanda, totalMembers: members.length, totalDonation, totalCollected, totalSpent, recent, weeks });
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -72,24 +122,27 @@ export function HomeScreen({ navigation }: any) {
   const collectedPct = totals.totalCollected > 0 ? Math.min(100, (totals.totalCollected / (totals.totalCollected + totals.totalSpent || 1)) * 100) : 0;
   const spentPct = 100 - collectedPct;
 
+  const maxWeekValue = Math.max(1, ...totals.weeks.flatMap(w => [w.income, w.expense]));
+  const isLogoUrl = /^https?:\/\//.test(committeeLogo);
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 6, 20) }]}>
         <View style={{ flex: 1 }}>
           <View style={styles.locationRow}>
-            <MapPin size={12} color={colors.mutedLight} strokeWidth={2.3} />
+            {isLogoUrl ? (
+              <Image source={{ uri: committeeLogo }} style={styles.committeeLogo} />
+            ) : (
+              <View style={styles.committeeInitial}>
+                <Text style={styles.committeeInitialText}>{(committeeName || 'C').charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
             <Text style={styles.locationText} numberOfLines={1}>{committeeName || 'Your Committee'}</Text>
           </View>
           <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] || 'there'}!</Text>
           <Text style={styles.welcome}>Welcome back</Text>
         </View>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => Alert.alert('Log out', 'Log out of Durga CRM?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Log out', style: 'destructive', onPress: logout },
-          ])}
-        >
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Menu')}>
           <LayoutGrid size={18} color={colors.ink} />
         </TouchableOpacity>
       </View>
@@ -101,30 +154,47 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.statsRow}>
           <View style={styles.activityCard}>
             <View style={styles.barsRow}>
-              <View style={[styles.bar, { height: '34%', opacity: 0.35 }]} />
-              <View style={[styles.bar, { height: '58%', opacity: 0.5 }]} />
-              <View style={[styles.bar, { height: '100%' }]} />
-              <View style={[styles.bar, { height: '66%', opacity: 0.6 }]} />
-              <View style={[styles.bar, { height: '40%', opacity: 0.4 }]} />
+              {totals.weeks.map((w, i) => (
+                <View key={i} style={styles.barCol}>
+                  <View style={styles.barPairInner}>
+                    <View style={[styles.bar, styles.barIncomeSeg, { height: `${Math.max(6, (w.income / maxWeekValue) * 100)}%` }]} />
+                    <View style={[styles.bar, styles.barExpenseSeg, { height: `${Math.max(6, (w.expense / maxWeekValue) * 100)}%` }]} />
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View style={styles.activityLegendRow}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.green }]} />
+                <Text style={styles.legendText}>Income</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#7c2d12' }]} />
+                <Text style={styles.legendText}>Expense</Text>
+              </View>
             </View>
             <View>
               <Text style={styles.activityTitle}>Activity</Text>
-              <Text style={styles.activitySubtitle}>Chanda this week</Text>
+              <Text style={styles.activitySubtitle} numberOfLines={1}>Income vs expense · 5 weeks</Text>
             </View>
           </View>
 
           <View style={{ flex: 1, gap: 12 }}>
             <View style={[styles.miniCard, { backgroundColor: '#fdf2f8' }]}>
-              <CreditCard size={17} color="#9d174d" strokeWidth={2} />
-              <View>
-                <Text style={[styles.miniValue, { color: '#831843' }]}>{formatAmount(totals.totalChanda)}</Text>
+              <View style={[styles.miniIconWrap, { backgroundColor: '#fce7f3' }]}>
+                <CreditCard size={20} color="#9d174d" strokeWidth={2} />
+              </View>
+              <View style={{ gap: 2 }}>
+                <Text style={[styles.miniValue, { color: '#831843' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>{formatAmount(totals.totalChanda)}</Text>
                 <Text style={[styles.miniLabel, { color: '#a8477a' }]}>Total Chanda</Text>
               </View>
             </View>
             <View style={[styles.miniCard, { backgroundColor: colors.indigoBg }]}>
-              <Users size={17} color={colors.indigoText} strokeWidth={2} />
-              <View>
-                <Text style={[styles.miniValue, { color: colors.indigoText }]}>{totals.totalMembers}</Text>
+              <View style={[styles.miniIconWrap, { backgroundColor: '#e0e7ff' }]}>
+                <Users size={20} color={colors.indigoText} strokeWidth={2} />
+              </View>
+              <View style={{ gap: 2 }}>
+                <Text style={[styles.miniValue, { color: colors.indigoText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>{totals.totalMembers}</Text>
                 <Text style={[styles.miniLabel, { color: colors.indigo }]}>Members</Text>
               </View>
             </View>
@@ -145,14 +215,14 @@ export function HomeScreen({ navigation }: any) {
                 <Text style={styles.progressLabel}>Collected</Text>
                 <Text style={styles.progressValue}>{formatAmount(totals.totalCollected)}</Text>
               </View>
-              <View style={styles.track}><View style={[styles.fill, { width: `${collectedPct}%`, backgroundColor: colors.orange }]} /></View>
+              <View style={styles.track}><View style={[styles.fill, { width: `${collectedPct}%`, backgroundColor: colors.green }]} /></View>
             </View>
             <View>
               <View style={styles.progressLabelRow}>
                 <Text style={styles.progressLabel}>Spent</Text>
                 <Text style={styles.progressValue}>{formatAmount(totals.totalSpent)}</Text>
               </View>
-              <View style={styles.track}><View style={[styles.fill, { width: `${spentPct}%`, backgroundColor: '#d6d3d1' }]} /></View>
+              <View style={styles.track}><View style={[styles.fill, { width: `${spentPct}%`, backgroundColor: colors.orange }]} /></View>
             </View>
           </View>
         </View>
@@ -164,14 +234,20 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.grid}>
             <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Chanda" onPress={() => navigation.navigate('ChandaList')} />
             <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />
+            <QuickTile icon={Gift} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
             <QuickTile icon={Gift} color={colors.green} bg={colors.greenBg} label="Ads" onPress={() => navigation.navigate('AdsList')} />
+          </View>
+          <View style={[styles.grid, { marginTop: 10 }]}>
             <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />
+            <QuickTile icon={Store} color={colors.indigo} bg={colors.indigoBg} label="Vendor" onPress={() => navigation.navigate('VendorList')} />
+            <QuickTile icon={HandCoins} color={colors.amber} bg={colors.amberBg} label="Loan" onPress={() => navigation.navigate('LoanList')} />
+            <QuickTile icon={FileText} color={colors.orange} bg={colors.orangeSoft} label="Estimation" onPress={() => navigation.navigate('EstimationList')} />
           </View>
         </View>
 
         <View>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent</Text>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
           </View>
           <View style={{ gap: 8 }}>
             {totals.recent.map(r => (
@@ -201,7 +277,9 @@ export function HomeScreen({ navigation }: any) {
           <Landmark size={22} color="#d6d3d1" strokeWidth={2} />
           <View style={{ width: 54 }} />
           <TrendingUp size={22} color="#d6d3d1" strokeWidth={2} />
-          <User size={22} color="#d6d3d1" strokeWidth={2} />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')} hitSlop={10}>
+            <User size={22} color="#d6d3d1" strokeWidth={2} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('ChandaForm', { mode: 'add' })} style={styles.fab} activeOpacity={0.85}>
             <Plus size={22} color="#ffffff" strokeWidth={2.4} />
           </TouchableOpacity>
@@ -226,21 +304,33 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 4, flexDirection: 'row', alignItems: 'flex-start' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  committeeLogo: { width: 25, height: 25, borderRadius: 12.5, borderWidth: 1, borderColor: '#d6d3d1' },
+  committeeInitial: { width: 25, height: 25, borderRadius: 12.5, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d6d3d1' },
+  committeeInitialText: { fontSize: 12, fontWeight: '800', color: '#ffffff' },
   locationText: { fontSize: 12, color: colors.mutedLight, fontWeight: '600', maxWidth: 220 },
   greeting: { fontSize: 22, fontWeight: '800', color: colors.ink },
   welcome: { fontSize: 13, color: colors.mutedLight, marginTop: 2 },
   menuButton: { width: 42, height: 42, borderRadius: 13, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 120, gap: 18 },
   statsRow: { flexDirection: 'row', gap: 12 },
-  activityCard: { flex: 1.15, backgroundColor: '#fed7aa', borderRadius: radius.xl, padding: 16, justifyContent: 'space-between', gap: 20 },
-  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
-  bar: { width: 8, borderRadius: 4, backgroundColor: '#9a3412' },
+  activityCard: { flex: 1.15, backgroundColor: '#fed7aa', borderRadius: radius.xl, padding: 16, justifyContent: 'flex-end', gap: 18 },
+  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 72, marginBottom: 4 },
+  barCol: { flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' },
+  barPairInner: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: '100%' },
+  bar: { width: 8, borderRadius: 4 },
+  barIncomeSeg: { backgroundColor: colors.green },
+  barExpenseSeg: { backgroundColor: '#7c2d12' },
+  activityLegendRow: { flexDirection: 'row', gap: 14 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 7, height: 7, borderRadius: 3.5 },
+  legendText: { fontSize: 10.5, fontWeight: '700', color: '#7c2d12' },
   activityTitle: { fontSize: 15, fontWeight: '800', color: '#7c2d12' },
-  activitySubtitle: { fontSize: 11, color: '#9a5b34', marginTop: 1 },
-  miniCard: { flex: 1, borderRadius: 18, padding: 13, justifyContent: 'space-between' },
-  miniValue: { fontSize: 13, fontWeight: '800' },
-  miniLabel: { fontSize: 9.5, fontWeight: '600' },
+  activitySubtitle: { fontSize: 10.5, color: '#9a5b34', marginTop: 1 },
+  miniCard: { flex: 1, borderRadius: 18, padding: 13, justifyContent: 'center', gap: 9 },
+  miniIconWrap: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  miniValue: { fontSize: 17, fontWeight: '800' },
+  miniLabel: { fontSize: 11, fontWeight: '600' },
   summaryCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, gap: 12 },
   summaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryTitle: { fontSize: 12.5, fontWeight: '700', color: colors.inkSoft },
@@ -265,5 +355,5 @@ const styles = StyleSheet.create({
   empty: { fontSize: 13, color: colors.mutedLight, textAlign: 'center', paddingVertical: 12 },
   bottomNav: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 22 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40, position: 'relative' },
-  fab: { position: 'absolute', left: '50%', top: -34, marginLeft: -27, width: 54, height: 54, borderRadius: radius.pill, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: '#ffffff', shadowColor: colors.dark, shadowOpacity: 0.32, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  fab: { position: 'absolute', left: '50%', top: -30, marginLeft: -27, width: 54, height: 54, borderRadius: radius.pill, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center', shadowColor: colors.dark, shadowOpacity: 0.32, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
 });

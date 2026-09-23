@@ -19,6 +19,7 @@ export function DonationAdListScreen({ route, navigation }: any) {
   const [rows, setRows] = useState<DonationAd[] | null>(null);
   const [search, setSearch] = useState('');
   const [showStats, setShowStats] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
 
   const load = useCallback(async () => setRows(await listDonationAds(category)), [category]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -33,7 +34,14 @@ export function DonationAdListScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ListHeader title={title} onBack={() => navigation.goBack()} showStats={showStats} onToggleStats={() => setShowStats(s => !s)} />
+      <ListHeader
+        title={title}
+        onBack={() => navigation.goBack()}
+        showStats={showStats}
+        onToggleStats={() => setShowStats(s => !s)}
+        showSearch={showSearch}
+        onToggleSearch={() => setShowSearch(s => !s)}
+      />
       {showStats && (
         <SummaryWidgets
           widgets={[
@@ -43,7 +51,7 @@ export function DonationAdListScreen({ route, navigation }: any) {
           ]}
         />
       )}
-      <SearchBar value={search} onChangeText={setSearch} placeholder={isAds ? 'Search company name, phone…' : 'Search donor name, phone…'} />
+      {showSearch && <SearchBar value={search} onChangeText={setSearch} placeholder={isAds ? 'Search company name, phone…' : 'Search donor name, phone…'} />}
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}

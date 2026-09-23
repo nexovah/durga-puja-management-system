@@ -13,6 +13,8 @@ export interface Chanda {
   id: string;
   donorName: string;
   amount: number;
+  amount1?: number;
+  amount2?: number;
   paidMethod: PaidMethod;
   paymentStatus: PaymentStatus;
   partialAmount?: number;
@@ -110,6 +112,8 @@ function fromChandaRow(row: any): Chanda {
     id: row.id,
     donorName: row.donor_name,
     amount: Number(row.amount) || 0,
+    amount1: row.amount1 === null || row.amount1 === undefined ? undefined : Number(row.amount1),
+    amount2: row.amount2 === null || row.amount2 === undefined ? undefined : Number(row.amount2),
     paidMethod: row.paid_method,
     paymentStatus: row.payment_status,
     partialAmount: row.partial_amount ?? undefined,
@@ -124,6 +128,8 @@ function toChandaRow(c: Partial<Chanda>) {
   return {
     donor_name: c.donorName,
     amount: c.amount,
+    amount1: c.amount1 ?? null,
+    amount2: c.amount2 ?? null,
     paid_method: c.paidMethod,
     payment_status: c.paymentStatus,
     partial_amount: c.partialAmount ?? null,
@@ -314,11 +320,59 @@ export interface CommitteeInfo {
   name: string;
   association: string;
   logo: string;
+  email: string;
+  phone: string;
+  mobile1: string;
+  address: string;
+}
+
+// ---------------------------------------------------------------------------
+// Vendors — read-only, derived from Expense.vendorName/vendorContact, same
+// as the web app's Vendors.tsx (there is no separate 'vendors' table).
+// ---------------------------------------------------------------------------
+
+export interface VendorGroup {
+  key: string;
+  name: string;
+  contact: string;
+  entries: Expense[];
+  totalAmount: number; // sum of credited/received amount (getExpenseCreditAmount)
+  totalContractAmount: number; // sum of raw agreed amount, regardless of payment status
+  categories: string[];
+}
+
+export function vendorGroupsFromExpenses(expenses: Expense[]): VendorGroup[] {
+  const withVendor = expenses.filter(exp => (exp.vendorName || '').trim() !== '');
+  const groups = new Map<string, VendorGroup>();
+  for (const exp of withVendor) {
+    const name = (exp.vendorName || '').trim();
+    const contact = (exp.vendorContact || '').trim();
+    const key = `${name.toLowerCase()}|${contact.toLowerCase()}`;
+    if (!groups.has(key)) {
+      groups.set(key, { key, name, contact, entries: [], totalAmount: 0, totalContractAmount: 0, categories: [] });
+    }
+    const group = groups.get(key)!;
+    group.entries.push(exp);
+    group.totalAmount += getExpenseCreditAmount(exp);
+    group.totalContractAmount += exp.amount;
+    if (!group.categories.includes(exp.category)) group.categories.push(exp.category);
+  }
+  return [...groups.values()]
+    .map(g => ({ ...g, entries: g.entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }))
+    .sort((a, b) => b.totalAmount - a.totalAmount);
 }
 
 export async function getCommitteeInfo(): Promise<CommitteeInfo> {
   const { data, error } = await supabase.from('committee_info').select('*').limit(1).maybeSingle();
   if (error) throw error;
-  if (!data) return { name: '', association: '', logo: '' };
-  return { name: data.name || '', association: data.association || '', logo: data.logo_url || '' };
+  if (!data) return { name: '', association: '', logo: '', email: '', phone: '', mobile1: '', address: '' };
+  return {
+    name: data.name || '',
+    association: data.association || '',
+    logo: data.logo_url || '',
+    email: data.email || '',
+    phone: data.phone || '',
+    mobile1: data.mobile1 || '',
+    address: data.address || '',
+  };
 }

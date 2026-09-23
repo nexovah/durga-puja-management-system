@@ -1,12 +1,29 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { listMembers, createMember, updateMember, Member, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
+import { DateField } from '../components/DateField';
+import { SheetSelect } from '../components/SheetSelect';
+import { PinConfirmSheet } from '../components/PinConfirmSheet';
+import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { todayISO } from '../lib/labels';
 
+const ROLE_OPTIONS = [
+  { value: 'president', label: 'President' },
+  { value: 'vicePresident', label: 'Vice President' },
+  { value: 'secretary', label: 'Secretary' },
+  { value: 'assistantSecretary', label: 'Assistant Secretary' },
+  { value: 'treasurer', label: 'Treasurer' },
+  { value: 'accountant', label: 'Accountant' },
+  { value: 'executiveMember', label: 'Executive Member' },
+  { value: 'advisoryPatron', label: 'Advisory / Patron' },
+  { value: 'volunteer', label: 'Volunteer' },
+  { value: 'chiefAdviser', label: 'Chief Adviser' },
+  { value: 'adviser', label: 'Adviser' },
+];
 const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'notSelected', label: 'Not Selected' },
   { value: 'cash', label: 'Cash' },
@@ -29,6 +46,7 @@ const emptyForm = {
 
 export function MemberFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
 
@@ -36,6 +54,7 @@ export function MemberFormScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pinSheetOpen, setPinSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -58,12 +77,20 @@ export function MemberFormScreen({ route, navigation }: any) {
     })();
   }, [isEdit, id]);
 
-  const handleSave = async () => {
+  const handleSaveButtonPress = () => {
     setError('');
     if (!form.name.trim()) {
       setError('Name is required.');
       return;
     }
+    if (isEdit) {
+      setPinSheetOpen(true);
+    } else {
+      doSave();
+    }
+  };
+
+  const doSave = async () => {
     const payload: Omit<Member, 'id'> = {
       name: form.name.trim(),
       phone: form.phone.trim(),
@@ -92,7 +119,7 @@ export function MemberFormScreen({ route, navigation }: any) {
   if (loading) return <View style={styles.loading}><ActivityIndicator color={colors.orange} size="large" /></View>;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 14, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
@@ -100,12 +127,12 @@ export function MemberFormScreen({ route, navigation }: any) {
         <Text style={styles.title}>{isEdit ? 'Edit Member' : 'Add Member'}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.form}>
+      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField label="Name" required value={form.name} onChangeText={v => setForm({ ...form, name: v })} placeholder="Full name" />
         <TextField label="Phone Number" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
         <TextField label="Address" value={form.address} onChangeText={v => setForm({ ...form, address: v })} placeholder="Address" multiline />
-        <TextField label="Role / Designation" value={form.role} onChangeText={v => setForm({ ...form, role: v })} placeholder="e.g. General Member" />
-        <TextField label="Join Date" required value={form.joinDate} onChangeText={v => setForm({ ...form, joinDate: v })} placeholder="YYYY-MM-DD" />
+        <SheetSelect label="Role / Designation" value={form.role} onChange={v => setForm({ ...form, role: v })} options={ROLE_OPTIONS} />
+        <DateField label="Join Date" required value={form.joinDate} onChange={v => setForm({ ...form, joinDate: v })} />
 
         <Text style={styles.sectionLabel}>Membership Payment (optional)</Text>
         <TextField label="Membership Amount (₹)" value={form.membershipAmount} onChangeText={v => setForm({ ...form, membershipAmount: v })} placeholder="0" keyboardType="numeric" />
@@ -118,15 +145,22 @@ export function MemberFormScreen({ route, navigation }: any) {
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
+      <View style={[styles.footer, { paddingBottom: keyboardVisible ? 12 : Math.max(insets.bottom + 12, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
+        <TouchableOpacity onPress={handleSaveButtonPress} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
           {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update Member' : 'Save Member'}</Text>}
         </TouchableOpacity>
       </View>
-    </View>
+
+      <PinConfirmSheet
+        visible={pinSheetOpen}
+        itemLabel={form.name}
+        onCancel={() => setPinSheetOpen(false)}
+        onConfirm={() => { setPinSheetOpen(false); doSave(); }}
+      />
+    </KeyboardAvoidingView>
   );
 }
 

@@ -14,6 +14,7 @@ export function ExpensesListScreen({ navigation }: any) {
   const [rows, setRows] = useState<Expense[] | null>(null);
   const [search, setSearch] = useState('');
   const [showStats, setShowStats] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
 
   const load = useCallback(async () => setRows(await listExpenses()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -29,7 +30,14 @@ export function ExpensesListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ListHeader title="Expenses" onBack={() => navigation.goBack()} showStats={showStats} onToggleStats={() => setShowStats(s => !s)} />
+      <ListHeader
+        title="Expenses"
+        onBack={() => navigation.goBack()}
+        showStats={showStats}
+        onToggleStats={() => setShowStats(s => !s)}
+        showSearch={showSearch}
+        onToggleSearch={() => setShowSearch(s => !s)}
+      />
       {showStats && (
         <SummaryWidgets
           widgets={[
@@ -39,7 +47,7 @@ export function ExpensesListScreen({ navigation }: any) {
           ]}
         />
       )}
-      <SearchBar value={search} onChangeText={setSearch} placeholder="Search title, vendor, voucher…" />
+      {showSearch && <SearchBar value={search} onChangeText={setSearch} placeholder="Search title, vendor, voucher…" />}
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}

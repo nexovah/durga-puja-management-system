@@ -15,6 +15,7 @@ export function ChandaListScreen({ navigation }: any) {
   const [rows, setRows] = useState<Chanda[] | null>(null);
   const [search, setSearch] = useState('');
   const [showStats, setShowStats] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
 
   const load = useCallback(async () => {
     const data = await listChanda();
@@ -43,7 +44,14 @@ export function ChandaListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ListHeader title="Chanda Collection" onBack={() => navigation.goBack()} showStats={showStats} onToggleStats={() => setShowStats(s => !s)} />
+      <ListHeader
+        title="Chanda Collection"
+        onBack={() => navigation.goBack()}
+        showStats={showStats}
+        onToggleStats={() => setShowStats(s => !s)}
+        showSearch={showSearch}
+        onToggleSearch={() => setShowSearch(s => !s)}
+      />
       {showStats && (
         <SummaryWidgets
           widgets={[
@@ -53,14 +61,13 @@ export function ChandaListScreen({ navigation }: any) {
           ]}
         />
       )}
-      <SearchBar value={search} onChangeText={setSearch} placeholder="Search donor name, phone…" />
+      {showSearch && <SearchBar value={search} onChangeText={setSearch} placeholder="Search donor name, phone…" />}
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingTop: 6, paddingBottom: 100 }}
         renderItem={({ item }) => {
           const colorSet = STATUS_COLORS[item.paymentStatus];
-          const isPaid = item.paymentStatus === 'paid';
           return (
             <ListRow
               initial={item.donorName.charAt(0).toUpperCase()}
@@ -72,7 +79,7 @@ export function ChandaListScreen({ navigation }: any) {
               badgeLabel={PAYMENT_STATUS_LABEL[item.paymentStatus]}
               badgeBg={colorSet.bg}
               badgeColor={colorSet.text}
-              onPress={() => navigation.navigate('ChandaForm', { mode: isPaid ? 'edit' : 'add', id: isPaid ? item.id : undefined })}
+              onPress={() => navigation.navigate('ChandaForm', { mode: 'edit', id: item.id })}
             />
           );
         }}

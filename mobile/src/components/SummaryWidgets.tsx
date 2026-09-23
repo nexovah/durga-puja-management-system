@@ -29,8 +29,22 @@ export function SummaryWidgets({ widgets }: { widgets: Widget[] }) {
             <View style={[styles.iconBox, { backgroundColor: t.iconBg }]}>
               <Icon size={14} color={t.iconColor} strokeWidth={2.1} />
             </View>
-            <Text style={[styles.value, { color: t.valueColor }]} numberOfLines={1}>{w.value}</Text>
-            <Text style={[styles.label, { color: t.iconColor }]} numberOfLines={1}>{w.label}</Text>
+            <Text
+              style={[styles.value, { color: t.valueColor }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.55}
+            >
+              {w.value}
+            </Text>
+            <Text
+              style={[styles.label, { color: t.iconColor }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {w.label}
+            </Text>
           </View>
         );
       })}

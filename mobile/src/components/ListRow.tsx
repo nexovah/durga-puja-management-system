@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Phone } from 'lucide-react-native';
 import { colors, radius } from '../theme';
 
 interface ListRowProps {
@@ -8,6 +8,7 @@ interface ListRowProps {
   avatarColor: string;
   title: string;
   subtitle: string;
+  metaText?: string;
   amount: string;
   amountColor?: string;
   badgeLabel?: string;
@@ -16,7 +17,7 @@ interface ListRowProps {
   onPress: () => void;
 }
 
-export function ListRow({ initial, avatarBg, avatarColor, title, subtitle, amount, amountColor, badgeLabel, badgeBg, badgeColor, onPress }: ListRowProps) {
+export function ListRow({ initial, avatarBg, avatarColor, title, subtitle, metaText, amount, amountColor, badgeLabel, badgeBg, badgeColor, onPress }: ListRowProps) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.row} activeOpacity={0.7}>
       <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
@@ -25,6 +26,12 @@ export function ListRow({ initial, avatarBg, avatarColor, title, subtitle, amoun
       <View style={styles.middle}>
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+        {!!metaText && (
+          <View style={styles.metaRow}>
+            <Phone size={11} color={colors.mutedLight} strokeWidth={2.2} />
+            <Text style={styles.metaText} numberOfLines={1}>{metaText}</Text>
+          </View>
+        )}
       </View>
       <View style={styles.right}>
         <Text style={[styles.amount, { color: amountColor || colors.ink }]}>{amount}</Text>
@@ -57,6 +64,8 @@ const styles = StyleSheet.create({
   middle: { flex: 1, minWidth: 0 },
   title: { fontSize: 14, fontWeight: '700', color: colors.ink },
   subtitle: { fontSize: 12, color: colors.mutedLight, marginTop: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  metaText: { fontSize: 11.5, color: colors.mutedLight },
   right: { alignItems: 'flex-end', gap: 5 },
   amount: { fontSize: 14, fontWeight: '800' },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill },

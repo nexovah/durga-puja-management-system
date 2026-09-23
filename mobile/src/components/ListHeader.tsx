@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, BarChart3 } from 'lucide-react-native';
+import { ArrowLeft, BarChart3, Search } from 'lucide-react-native';
 import { colors } from '../theme';
 
 interface ListHeaderProps {
@@ -8,12 +8,15 @@ interface ListHeaderProps {
   onBack: () => void;
   showStats?: boolean;
   onToggleStats?: () => void;
+  showSearch?: boolean;
+  onToggleSearch?: () => void;
 }
 
-// Shared header for every module's list screen: back arrow, title, and an
-// optional stats-toggle button (the "widgets you can close" the user asked
-// for) — same real stroke icons as the web app (lucide), no emoji.
-export function ListHeader({ title, onBack, showStats, onToggleStats }: ListHeaderProps) {
+// Shared header for every module's list screen: back arrow, title, and
+// borderless icon toggles (stats widgets, search bar) — orange when the
+// section is showing, gray when hidden. Same real stroke icons as the web
+// app (lucide), no emoji, no background chip on the icon itself.
+export function ListHeader({ title, onBack, showStats, onToggleStats, showSearch, onToggleSearch }: ListHeaderProps) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.row, { paddingTop: Math.max(insets.top + 14, 24) }]}>
@@ -21,13 +24,14 @@ export function ListHeader({ title, onBack, showStats, onToggleStats }: ListHead
         <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
       </TouchableOpacity>
       <Text style={styles.title}>{title}</Text>
+      {onToggleSearch && (
+        <TouchableOpacity onPress={onToggleSearch} hitSlop={10}>
+          <Search size={20} color={showSearch ? colors.orange : '#d6d3d1'} strokeWidth={2.2} />
+        </TouchableOpacity>
+      )}
       {onToggleStats && (
-        <TouchableOpacity
-          onPress={onToggleStats}
-          style={[styles.toggle, { backgroundColor: showStats ? colors.orangeSoft : colors.dark }]}
-          hitSlop={8}
-        >
-          <BarChart3 size={16} color={showStats ? colors.orange : '#ffffff'} strokeWidth={2.2} />
+        <TouchableOpacity onPress={onToggleStats} hitSlop={10}>
+          <BarChart3 size={20} color={showStats ? colors.orange : '#d6d3d1'} strokeWidth={2.2} />
         </TouchableOpacity>
       )}
     </View>
@@ -44,8 +48,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   title: { fontSize: 17, fontWeight: '800', color: colors.ink, flex: 1 },
-  toggle: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

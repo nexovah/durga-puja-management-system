@@ -2,6 +2,7 @@
 // v1 — no i18n on mobile yet), just plain lookup objects instead of a
 // translation function.
 import { PaidMethod, PaymentStatus, ExpensePaymentStatus, PaidThrough } from './db';
+import { TaskPriority } from './tasks';
 
 export const PAID_METHOD_LABEL: Record<PaidMethod, string> = {
   notSelected: 'Not Selected',
@@ -38,6 +39,33 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   partial: { bg: '#dbeafe', text: '#1e40af' },
   rejected: { bg: '#fee2e2', text: '#b91c1c' },
   cancelled: { bg: '#fee2e2', text: '#b91c1c' },
+  low: { bg: '#dbeafe', text: '#1e40af' },
+  medium: { bg: '#fef3c7', text: '#92400e' },
+  high: { bg: '#fee2e2', text: '#b91c1c' },
+  note: { bg: '#f1ede7', text: '#44403c' },
+  completed: { bg: '#dcfce7', text: '#166534' },
+};
+
+export const TASK_PRIORITY_LABEL: Record<TaskPriority, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  note: 'Note',
+  completed: 'Completed',
+};
+
+export const genId = (): string => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+
+// Turns a camelCase enum value (e.g. "assistantSecretary") into a readable
+// title-cased label (e.g. "Assistant Secretary"), matching the web app's
+// hardcoded role labels without needing to duplicate every enum value.
+export const formatCamelLabel = (value?: string): string => {
+  if (!value) return '';
+  const spaced = value.replace(/([a-z0-9])([A-Z])/g, '$1 $2').trim();
+  return spaced
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 };
 
 export const formatAmount = (n: number): string => `₹${n.toLocaleString('en-IN')}`;

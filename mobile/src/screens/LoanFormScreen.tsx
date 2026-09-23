@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listDonationAds, createDonationAd, updateDonationAd, DonationAd, DonationAdCategory, PaidMethod } from '../lib/db';
+import { listLoans, createLoan, updateLoan, Loan } from '../lib/loans';
+import { PaidMethod } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
-import { SheetSelect } from '../components/SheetSelect';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { todayISO } from '../lib/labels';
@@ -18,36 +18,15 @@ const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'onlineBanking', label: 'Online Banking' },
   { value: 'check', label: 'Check' },
 ];
-const ADS_CATEGORY_OPTIONS = [
-  { value: 'handBook', label: 'Hand Book' },
-  { value: 'souvenir', label: 'Souvenir' },
-  { value: 'leaflet', label: 'Leaflet' },
-  { value: 'bill', label: 'Bill' },
-  { value: 'foodCoupon', label: 'Food Coupon' },
-  { value: 'bookmark', label: 'Bookmark' },
-  { value: 'gate', label: 'Gate' },
-  { value: 'banner', label: 'Banner' },
-  { value: 'hoarding', label: 'Hoarding' },
-  { value: 'flex', label: 'Flex' },
-  { value: 'pillar', label: 'Pillar' },
-  { value: 'roadsideBranding', label: 'Roadside Branding' },
-  { value: 'welcomeBoard', label: 'Welcome Board' },
-  { value: 'standee', label: 'Standee' },
-  { value: 'corridorBranding', label: 'Corridor Branding' },
-  { value: 'pandalBranding', label: 'Pandal Branding' },
-  { value: 'insidePremisesBranding', label: 'Inside Premises Branding' },
-  { value: 'stageBackdrop', label: 'Stage Backdrop' },
-  { value: 'stageSidePanel', label: 'Stage Side Panel' },
-  { value: 'stall', label: 'Stall' },
-];
 
-const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '' };
+const emptyForm = {
+  donorName: '', amountReceived: '', amountPaid: '', phone: '',
+  paymentMethod: 'notSelected' as PaidMethod, date: todayISO(), returnDate: '', remarks: '',
+};
 
-export function DonationAdFormScreen({ route, navigation }: any) {
+export function LoanFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
-  const category: DonationAdCategory = route.params?.category || 'donation';
-  const isAds = category === 'ads';
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
 
@@ -60,24 +39,28 @@ export function DonationAdFormScreen({ route, navigation }: any) {
   useEffect(() => {
     if (!isEdit) return;
     (async () => {
-      const all = await listDonationAds(category);
-      const existing = all.find(d => d.id === id);
+      const all = await listLoans();
+      const existing = all.find(l => l.id === id);
       if (existing) {
         setForm({
-          donorName: existing.donorName, companyName: existing.companyName || '',
-          amount: String(existing.amount), paidMethod: existing.paidMethod,
-          inKind: existing.inKind, date: existing.date, voucherNumber: existing.voucherNumber || '',
-          phone: existing.phone, phone2: existing.phone2 || '', remarks: existing.remarks,
+          donorName: existing.donorName,
+          amountReceived: String(existing.amountReceived),
+          amountPaid: String(existing.amountPaid || 0),
+          phone: existing.phone,
+          paymentMethod: existing.paymentMethod,
+          date: existing.date,
+          returnDate: existing.returnDate || '',
+          remarks: existing.remarks,
         });
       }
       setLoading(false);
     })();
-  }, [isEdit, id, category]);
+  }, [isEdit, id]);
 
   const handleSaveButtonPress = () => {
     setError('');
-    if ((isAds && !form.companyName.trim()) || (!isAds && !form.donorName.trim()) || !form.amount.trim()) {
-      setError(isAds ? 'Company name and amount are required.' : 'Donor name and amount are required.');
+    if (!form.donorName.trim() || !form.amountReceived.trim()) {
+      setError('Lender name and amount received are required.');
       return;
     }
     if (isEdit) {
@@ -88,23 +71,20 @@ export function DonationAdFormScreen({ route, navigation }: any) {
   };
 
   const doSave = async () => {
-    const payload: Omit<DonationAd, 'id'> = {
-      category,
+    const payload: Omit<Loan, 'id'> = {
       donorName: form.donorName.trim(),
-      companyName: form.companyName.trim() || undefined,
-      amount: parseFloat(form.amount) || 0,
-      paidMethod: form.paidMethod,
-      inKind: form.inKind.trim(),
-      date: form.date,
-      voucherNumber: !isAds ? (form.voucherNumber.trim() || undefined) : undefined,
+      amountReceived: parseFloat(form.amountReceived) || 0,
+      amountPaid: parseFloat(form.amountPaid) || 0,
       phone: form.phone.trim(),
-      phone2: form.phone2.trim() || undefined,
+      paymentMethod: form.paymentMethod,
+      date: form.date,
+      returnDate: form.returnDate.trim() || undefined,
       remarks: form.remarks.trim(),
     };
     setSaving(true);
     try {
-      if (isEdit) await updateDonationAd(id, payload);
-      else await createDonationAd(payload);
+      if (isEdit) await updateLoan(id, payload);
+      else await createLoan(payload);
       navigation.goBack();
     } catch (err: any) {
       setError(err?.message || 'Failed to save. Check your connection.');
@@ -121,27 +101,23 @@ export function DonationAdFormScreen({ route, navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
         </TouchableOpacity>
-        <Text style={styles.title}>{isEdit ? `Edit ${isAds ? 'Ad' : 'Donation'}` : `Add ${isAds ? 'Ad' : 'Donation'}`}</Text>
+        <Text style={styles.title}>{isEdit ? 'Edit Loan' : 'Add Loan'}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        {isAds ? (
-          <TextField label="Company Name" required value={form.companyName} onChangeText={v => setForm({ ...form, companyName: v })} placeholder="Company name" />
-        ) : (
-          <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
-        )}
-        <TextField label="Amount (₹)" required value={form.amount} onChangeText={v => setForm({ ...form, amount: v })} placeholder="0" keyboardType="numeric" />
+        <TextField label="Lender's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Lender's name" />
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <TextField label="Amount Received (₹)" required value={form.amountReceived} onChangeText={v => setForm({ ...form, amountReceived: v })} placeholder="0" keyboardType="numeric" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextField label="Amount Repaid (₹)" value={form.amountPaid} onChangeText={v => setForm({ ...form, amountPaid: v })} placeholder="0" keyboardType="numeric" />
+          </View>
+        </View>
         <TextField label="Phone Number" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
-        <ChipSelect label="Paid Method" value={form.paidMethod} onChange={v => setForm({ ...form, paidMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
-        {!isAds && (
-          <TextField label="Voucher Number" value={form.voucherNumber} onChangeText={v => setForm({ ...form, voucherNumber: v })} placeholder="Optional" />
-        )}
-        {isAds ? (
-          <SheetSelect label="Ads Category" value={form.inKind} onChange={v => setForm({ ...form, inKind: v })} options={ADS_CATEGORY_OPTIONS} />
-        ) : (
-          <TextField label="In Kind (if any)" value={form.inKind} onChangeText={v => setForm({ ...form, inKind: v })} placeholder="e.g. materials, not cash" />
-        )}
+        <ChipSelect label="Paid Method" value={form.paymentMethod} onChange={v => setForm({ ...form, paymentMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
         <DateField label="Date" required value={form.date} onChange={v => setForm({ ...form, date: v })} />
+        <DateField label="Return Date" value={form.returnDate} onChange={v => setForm({ ...form, returnDate: v })} />
         <TextField label="Remarks" value={form.remarks} onChangeText={v => setForm({ ...form, remarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
@@ -151,13 +127,13 @@ export function DonationAdFormScreen({ route, navigation }: any) {
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSaveButtonPress} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
-          {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update' : 'Save'}</Text>}
+          {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update Loan' : 'Save Loan'}</Text>}
         </TouchableOpacity>
       </View>
 
       <PinConfirmSheet
         visible={pinSheetOpen}
-        itemLabel={form.donorName || form.companyName}
+        itemLabel={form.donorName}
         onCancel={() => setPinSheetOpen(false)}
         onConfirm={() => { setPinSheetOpen(false); doSave(); }}
       />
@@ -171,6 +147,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 14 },
   title: { fontSize: 17, fontWeight: '800', color: colors.ink, flex: 1 },
   form: { padding: 20, gap: 14 },
+  row: { flexDirection: 'row', gap: 12 },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
   cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },

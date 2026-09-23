@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { View, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Users, CheckCircle2, Clock } from 'lucide-react-native';
+import { Users, CheckCircle2 } from 'lucide-react-native';
 import { listMembers, getMemberCreditAmount, Member } from '../lib/db';
 import { colors } from '../theme';
 import { ListHeader } from '../components/ListHeader';
@@ -9,12 +9,13 @@ import { SummaryWidgets } from '../components/SummaryWidgets';
 import { SearchBar } from '../components/SearchBar';
 import { ListRow } from '../components/ListRow';
 import { Fab } from '../components/Fab';
-import { formatAmount } from '../lib/labels';
+import { formatAmount, formatCamelLabel } from '../lib/labels';
 
 export function MembersListScreen({ navigation }: any) {
   const [rows, setRows] = useState<Member[] | null>(null);
   const [search, setSearch] = useState('');
   const [showStats, setShowStats] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
 
   const load = useCallback(async () => setRows(await listMembers()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -28,17 +29,23 @@ export function MembersListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ListHeader title="Members" onBack={() => navigation.goBack()} showStats={showStats} onToggleStats={() => setShowStats(s => !s)} />
+      <ListHeader
+        title="Members"
+        onBack={() => navigation.goBack()}
+        showStats={showStats}
+        onToggleStats={() => setShowStats(s => !s)}
+        showSearch={showSearch}
+        onToggleSearch={() => setShowSearch(s => !s)}
+      />
       {showStats && (
         <SummaryWidgets
           widgets={[
             { label: 'Total Members', value: String(rows.length), icon: Users, tint: 'neutral' },
             { label: 'Paid', value: String(paidCount), icon: CheckCircle2, tint: 'green' },
-            { label: 'Pending', value: String(rows.length - paidCount), icon: Clock, tint: 'amber' },
           ]}
         />
       )}
-      <SearchBar value={search} onChangeText={setSearch} placeholder="Search name, phone, designation…" />
+      {showSearch && <SearchBar value={search} onChangeText={setSearch} placeholder="Search name, phone, designation…" />}
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
@@ -51,11 +58,9 @@ export function MembersListScreen({ navigation }: any) {
               avatarBg={paid ? '#dcfce7' : '#fef3c7'}
               avatarColor={paid ? '#166534' : '#92400e'}
               title={item.name}
-              subtitle={item.role || 'Member'}
+              subtitle={formatCamelLabel(item.role) || 'Member'}
+              metaText={item.phone}
               amount={formatAmount(getMemberCreditAmount(item))}
-              badgeLabel={paid ? 'Paid' : 'Pending'}
-              badgeBg={paid ? '#dcfce7' : '#fef3c7'}
-              badgeColor={paid ? '#166534' : '#92400e'}
               onPress={() => navigation.navigate('MemberForm', { mode: 'edit', id: item.id })}
             />
           );

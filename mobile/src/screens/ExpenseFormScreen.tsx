@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { listExpenses, createExpense, updateExpense, Expense, ExpensePaymentStatus, PaidThrough } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
+import { DateField } from '../components/DateField';
+import { SheetSelect } from '../components/SheetSelect';
+import { PartialPaymentsField, PartialPaymentRow } from '../components/PartialPaymentsField';
+import { PinConfirmSheet } from '../components/PinConfirmSheet';
+import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { todayISO } from '../lib/labels';
 
 const CATEGORY_OPTIONS = [
@@ -44,18 +49,21 @@ const STATUS_OPTIONS: { value: ExpensePaymentStatus; label: string }[] = [
 const emptyForm = {
   title: '', amount: '', category: 'other', paymentStatus: 'paid' as ExpensePaymentStatus,
   paidThrough: 'notSelected' as PaidThrough, date: todayISO(), voucherNumber: '',
-  vendorName: '', vendorContact: '', remarks: '', partialAmount: '',
+  vendorName: '', vendorContact: '', remarks: '',
 };
 
 export function ExpenseFormScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const keyboardVisible = useKeyboardVisible();
   const { mode, id } = route.params || { mode: 'add' };
   const isEdit = mode === 'edit' && !!id;
 
   const [form, setForm] = useState(emptyForm);
+  const [partialPayments, setPartialPayments] = useState<PartialPaymentRow[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pinSheetOpen, setPinSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -68,25 +76,45 @@ export function ExpenseFormScreen({ route, navigation }: any) {
           paymentStatus: existing.paymentStatus, paidThrough: existing.paidThrough, date: existing.date,
           voucherNumber: existing.voucherNumber || '', vendorName: existing.vendorName || '',
           vendorContact: existing.vendorContact || '', remarks: existing.remarks,
-          partialAmount: existing.partialPayments?.[0] ? String(existing.partialPayments[0].amount) : '',
         });
+        setPartialPayments(
+          (existing.partialPayments || []).map(p => ({
+            amount: String(p.amount ?? ''),
+            voucherNumber: p.voucherNumber || '',
+            date: p.date || '',
+          }))
+        );
       }
       setLoading(false);
     })();
   }, [isEdit, id]);
 
-  const handleSave = async () => {
+  const handleSaveButtonPress = () => {
     setError('');
     if (!form.title.trim() || !form.amount.trim()) {
       setError('Title and amount are required.');
       return;
     }
+    if (isEdit) {
+      setPinSheetOpen(true);
+    } else {
+      doSave();
+    }
+  };
+
+  const doSave = async () => {
     const payload: Omit<Expense, 'id'> = {
       title: form.title.trim(),
       amount: parseFloat(form.amount) || 0,
       paymentStatus: form.paymentStatus,
       partialPayments: form.paymentStatus === 'partial'
-        ? [{ amount: parseFloat(form.partialAmount) || 0, voucherNumber: form.voucherNumber.trim() || undefined, date: form.date }]
+        ? partialPayments
+            .filter(p => p.amount.trim() !== '' || p.voucherNumber.trim() !== '' || p.date.trim() !== '')
+            .map(p => ({
+              amount: parseFloat(p.amount) || 0,
+              voucherNumber: p.voucherNumber.trim() || undefined,
+              date: p.date.trim() || undefined,
+            }))
         : undefined,
       paidThrough: form.paidThrough,
       date: form.date,
@@ -111,7 +139,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
   if (loading) return <View style={styles.loading}><ActivityIndicator color={colors.orange} size="large" /></View>;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 14, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
@@ -119,13 +147,13 @@ export function ExpenseFormScreen({ route, navigation }: any) {
         <Text style={styles.title}>{isEdit ? 'Edit Expense' : 'Add Expense'}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.form}>
+      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField label="Title" required value={form.title} onChangeText={v => setForm({ ...form, title: v })} placeholder="What was this expense for?" />
         <TextField label="Amount (₹)" required value={form.amount} onChangeText={v => setForm({ ...form, amount: v })} placeholder="0" keyboardType="numeric" />
-        <ChipSelect label="Category" value={form.category} onChange={v => setForm({ ...form, category: v })} options={CATEGORY_OPTIONS} />
+        <SheetSelect label="Category" value={form.category} onChange={v => setForm({ ...form, category: v })} options={CATEGORY_OPTIONS} />
         <ChipSelect label="Payment Status" required value={form.paymentStatus} onChange={v => setForm({ ...form, paymentStatus: v as ExpensePaymentStatus })} options={STATUS_OPTIONS} />
         {form.paymentStatus === 'partial' && (
-          <TextField label="Amount Paid So Far (₹)" value={form.partialAmount} onChangeText={v => setForm({ ...form, partialAmount: v })} placeholder="0" keyboardType="numeric" />
+          <PartialPaymentsField rows={partialPayments} onChange={setPartialPayments} totalAmount={parseFloat(form.amount) || 0} />
         )}
         <ChipSelect label="Paid Through" value={form.paidThrough} onChange={v => setForm({ ...form, paidThrough: v as PaidThrough })} options={PAID_THROUGH_OPTIONS} />
         <TextField label="Voucher Number" value={form.voucherNumber} onChangeText={v => setForm({ ...form, voucherNumber: v })} placeholder="Optional" />
@@ -137,20 +165,27 @@ export function ExpenseFormScreen({ route, navigation }: any) {
             <TextField label="Vendor Contact" value={form.vendorContact} onChangeText={v => setForm({ ...form, vendorContact: v })} placeholder="Optional" keyboardType="phone-pad" />
           </View>
         </View>
-        <TextField label="Date" required value={form.date} onChangeText={v => setForm({ ...form, date: v })} placeholder="YYYY-MM-DD" />
+        <DateField label="Date" required value={form.date} onChange={v => setForm({ ...form, date: v })} />
         <TextField label="Remarks" value={form.remarks} onChangeText={v => setForm({ ...form, remarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
+      <View style={[styles.footer, { paddingBottom: keyboardVisible ? 12 : Math.max(insets.bottom + 12, 24) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
+        <TouchableOpacity onPress={handleSaveButtonPress} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
           {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update Expense' : 'Save Expense'}</Text>}
         </TouchableOpacity>
       </View>
-    </View>
+
+      <PinConfirmSheet
+        visible={pinSheetOpen}
+        itemLabel={form.title}
+        onCancel={() => setPinSheetOpen(false)}
+        onConfirm={() => { setPinSheetOpen(false); doSave(); }}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
