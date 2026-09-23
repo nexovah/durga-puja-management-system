@@ -1035,7 +1035,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} />
+          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} committeeAssociation={committeeInfo.association || committeeInfo.name} />
         )}
         {currentPage === 'report' && (
           <Report />

@@ -445,7 +445,7 @@ export function EstimationPage({
             triggers window.print(). Uses the estimation's own column labels
             and skips blank rows, same "has a title or an amount" rule as Save. */}
         {createPortal(
-          <div id="estimation-print-area" className="hidden print:block bg-white text-gray-900 p-0">
+          <div id="estimation-print-area" className="print-area hidden print:block bg-white text-gray-900 p-0">
             <h1 className="text-lg font-normal text-gray-900 mb-1">
               {t('estimation.printHeading').replace('{name}', committeeAssociation || '')}
             </h1>

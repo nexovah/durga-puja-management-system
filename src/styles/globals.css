@@ -197,7 +197,10 @@ html {
   #root {
     display: none !important;
   }
-  #estimation-print-area {
+  /* Shared by any portaled print view (Estimation's #estimation-print-area,
+     Treasury's report — see TreasuryReportModal.tsx) — give an element
+     this class instead of writing a new id-specific block each time. */
+  .print-area {
     display: block !important;
     position: static;
     width: 100%;

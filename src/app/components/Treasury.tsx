@@ -1,8 +1,12 @@
-import { TrendingUp, TrendingDown, Wallet, Download, Gift, Landmark, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, MoreVertical, Download, FileText } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
+import { TreasuryReportModal } from './TreasuryReportModal';
+import { LedgerRow, buildLedger, ledgerTotals } from '../lib/reportExport';
 
 interface TreasuryProps {
   chandaList: Chanda[];
@@ -10,10 +14,34 @@ interface TreasuryProps {
   expenses: Expense[];
   loansList: Loan[];
   members: Member[];
+  committeeAssociation: string;
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses, loansList, members }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation }: TreasuryProps) {
   const { t, locale } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [printReport, setPrintReport] = useState<{ rows: LedgerRow[]; totals: ReturnType<typeof ledgerTotals>; rangeLabel: string } | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!printReport) return;
+    const timer = setTimeout(() => window.print(), 50);
+    const onAfterPrint = () => setPrintReport(null);
+    window.addEventListener('afterprint', onAfterPrint);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('afterprint', onAfterPrint);
+    };
+  }, [printReport]);
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
@@ -106,27 +134,64 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount);
 
-  const handlePrintReport = () => {
-    window.print();
-  };
-
   const categoryLabel = (value: string) => {
     const key = `expenses.category.${value}` as TranslationKey;
     const label = t(key);
     return label === key ? value : label;
   };
 
+  const statusLabel = (value: string) => {
+    const key = `chanda.status.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+
+  const ledgerSources = { chandaList, donationAdsList, members, loansList, expenses };
+  const ledgerLabels = {
+    chanda: t('treasury.report.chanda'),
+    donation: t('treasury.report.donation'),
+    ads: t('treasury.report.ads'),
+    membership: t('treasury.report.membership'),
+    loan: t('treasury.report.loan'),
+    expense: t('treasury.report.expense'),
+    categoryLabel,
+    statusLabel,
+  };
+
+  const handleRequestPrint = (rangeLabel: string, range: { start: string; end: string }) => {
+    const rows = buildLedger(range, ledgerSources, ledgerLabels);
+    setPrintReport({ rows, totals: ledgerTotals(rows), rangeLabel });
+  };
+
   return (
     <div className="space-y-6">
       <PageHeading
         action={
-          <button
-            onClick={handlePrintReport}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
-          >
-            <Download size={20} />
-            {t('treasury.printReport')}
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              title={t('treasury.printReport')}
+              className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <MoreVertical size={20} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                <button
+                  onClick={() => { setMenuOpen(false); setReportModalOpen(true); }}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Download size={16} /> {t('treasury.report.downloadCSV')}
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); setReportModalOpen(true); }}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <FileText size={16} /> {t('treasury.report.downloadPDF')}
+                </button>
+              </div>
+            )}
+          </div>
         }
       >
         {t('treasury.pageTitle')}
@@ -294,6 +359,73 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           )}
         </div>
       </div>
+
+      <TreasuryReportModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        sources={ledgerSources}
+        labels={ledgerLabels}
+        onRequestPrint={handleRequestPrint}
+      />
+
+      {/* Print-only detailed ledger for the range picked in the modal —
+          same hidden-until-print pattern as Estimation.tsx's print area
+          (see .print-area in globals.css). Portaled to document.body so
+          it's a sibling of #root, not hidden by #root's own
+          display:none in @media print. */}
+      {printReport && createPortal(
+        <div className="print-area hidden print:block bg-white text-gray-900 p-0">
+          <h1 className="text-lg font-normal text-gray-900 mb-1">
+            {t('treasury.report.printHeading').replace('{name}', committeeAssociation || '')}
+          </h1>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{t('treasury.pageTitle')}</h2>
+          <p className="text-sm text-gray-600 mb-6">{printReport.rangeLabel}</p>
+
+          <table className="w-full border-collapse mb-6">
+            <thead>
+              <tr className="border-b-2 border-gray-800">
+                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.date')}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.type')}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.name')}</th>
+                <th className="text-left py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.detail')}</th>
+                <th className="text-right py-2 pr-2 text-sm font-bold">{t('treasury.report.csv.credit')}</th>
+                <th className="text-right py-2 text-sm font-bold">{t('treasury.report.csv.debit')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printReport.rows.map((r, i) => (
+                <tr key={i} className="border-b border-gray-300">
+                  <td className="py-1.5 pr-2 text-xs">{r.date}</td>
+                  <td className="py-1.5 pr-2 text-xs">{r.type}</td>
+                  <td className="py-1.5 pr-2 text-xs">{r.name}</td>
+                  <td className="py-1.5 pr-2 text-xs">{r.detail}</td>
+                  <td className="py-1.5 pr-2 text-xs text-right">{r.credit ? `₹${r.credit.toLocaleString()}` : ''}</td>
+                  <td className="py-1.5 text-xs text-right">{r.debit ? `₹${r.debit.toLocaleString()}` : ''}</td>
+                </tr>
+              ))}
+              {printReport.rows.length === 0 && (
+                <tr><td colSpan={6} className="py-6 text-center text-sm text-gray-500">{t('treasury.noMonthlyData')}</td></tr>
+              )}
+            </tbody>
+          </table>
+
+          <div className="flex justify-end gap-8 pt-4 border-t-2 border-gray-800">
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.totalCredit')}</p>
+              <p className="text-lg font-bold text-green-700">₹{printReport.totals.credit.toLocaleString()}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.totalDebit')}</p>
+              <p className="text-lg font-bold text-red-700">₹{printReport.totals.debit.toLocaleString()}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-wide">{t('treasury.report.netBalance')}</p>
+              <p className="text-lg font-bold">₹{printReport.totals.balance.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
