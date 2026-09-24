@@ -29,7 +29,12 @@ export type SettingsTab = 'committee' | 'password' | 'users' | 'developer' | 'la
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   members: 'permission.members',
   chanda: 'permission.chanda',
+  // 'donationAds' is legacy (pre menu-split) — kept only so a user saved
+  // before the split still renders a label instead of crashing; every new
+  // user form uses 'donation'/'ads' below instead.
   donationAds: 'permission.donationAds',
+  donation: 'permission.donation',
+  ads: 'permission.ads',
   expenses: 'permission.expenses',
   treasury: 'permission.treasury',
   settings: 'permission.settings',
@@ -82,7 +87,8 @@ export function Settings({
     permissions: {
       members: true,
       chanda: true,
-      donationAds: true,
+      donation: true,
+      ads: true,
       expenses: true,
       treasury: true,
       loans: true,
@@ -167,7 +173,8 @@ export function Settings({
       permissions: {
         members: true,
         chanda: true,
-        donationAds: true,
+        donation: true,
+        ads: true,
         expenses: true,
         treasury: true,
         loans: true,
@@ -183,6 +190,11 @@ export function Settings({
   };
 
   const handleEditUser = (user: User) => {
+    // Users saved before donation/ads were split only have a combined
+    // 'donationAds' key — migrate it into 'donation'/'ads' here (both
+    // inherit its value) and drop it, so the checkbox grid doesn't render
+    // a stray extra "Donation/Advertisement" box alongside the new ones.
+    const { donationAds: legacyDonationAds, ...restPermissions } = user.permissions as User['permissions'] & { donationAds?: boolean };
     setUserForm({
       name: user.name,
       username: user.username,
@@ -190,7 +202,12 @@ export function Settings({
       canEdit: user.canEdit !== false,
       canDelete: user.canDelete !== false,
       canBulkImport: user.canBulkImport !== false,
-      permissions: { vendors: true, tasks: true, estimation: true, ...user.permissions },
+      permissions: {
+        vendors: true, tasks: true, estimation: true,
+        donation: legacyDonationAds ?? true,
+        ads: legacyDonationAds ?? true,
+        ...restPermissions,
+      },
     });
     setEditingUserId(user.id);
     setShowUserForm(true);
@@ -568,7 +585,8 @@ export function Settings({
                       permissions: {
                         members: true,
                         chanda: true,
-                        donationAds: true,
+                        donation: true,
+        ads: true,
                         expenses: true,
                         treasury: true,
                         loans: true,

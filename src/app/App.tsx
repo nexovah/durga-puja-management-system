@@ -65,7 +65,13 @@ export interface User {
   permissions: {
     members: boolean;
     chanda: boolean;
-    donationAds: boolean;
+    // donation/ads used to be one combined permission (donationAds) before
+    // the menus were split — kept here, optional, so users saved before
+    // that split still carry a value; Sidebar/GlobalSearch fall back to it
+    // when donation/ads aren't set yet. New users get donation/ads directly.
+    donationAds?: boolean;
+    donation?: boolean;
+    ads?: boolean;
     expenses: boolean;
     treasury: boolean;
     settings: boolean;

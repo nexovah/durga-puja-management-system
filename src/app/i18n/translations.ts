@@ -617,6 +617,8 @@ export const translations = {
     'permission.members': 'Members',
     'permission.chanda': 'Chanda',
     'permission.donationAds': 'Donation/Advertisement',
+    'permission.donation': 'Donation',
+    'permission.ads': 'Advertisement',
     'permission.expenses': 'Expenses',
     'permission.treasury': 'Treasury',
     'permission.settings': 'Settings',

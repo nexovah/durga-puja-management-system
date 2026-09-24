@@ -17,7 +17,9 @@ interface SidebarProps {
   permissions?: {
     members?: boolean;
     chanda?: boolean;
-    donationAds?: boolean;
+    donationAds?: boolean; // legacy combined permission — see App.tsx User['permissions']
+    donation?: boolean;
+    ads?: boolean;
     expenses?: boolean;
     treasury?: boolean;
     vendors?: boolean;
@@ -50,8 +52,8 @@ export function Sidebar({
       items: [
         { key: 'dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), show: true },
         { key: 'chanda', icon: HandCoins, label: t('nav.chanda'), show: !!permissions?.chanda },
-        { key: 'donation', icon: Gift, label: t('nav.donation'), show: !!permissions?.donationAds },
-        { key: 'ads', icon: Megaphone, label: t('nav.ads'), show: !!permissions?.donationAds },
+        { key: 'donation', icon: Gift, label: t('nav.donation'), show: !!(permissions?.donation ?? permissions?.donationAds) },
+        { key: 'ads', icon: Megaphone, label: t('nav.ads'), show: !!(permissions?.ads ?? permissions?.donationAds) },
         { key: 'expenses', icon: TrendingDown, label: t('nav.expenses'), show: !!permissions?.expenses },
         { key: 'vendors', icon: Truck, label: t('nav.vendors'), show: !!permissions?.vendors },
         { key: 'members', icon: Users, label: t('nav.members'), show: !!permissions?.members },

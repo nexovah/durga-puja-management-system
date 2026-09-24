@@ -78,15 +78,19 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
         ])).slice(0, RESULTS_PER_SECTION)
       : [];
 
-    const donationAdsMatches = currentUser?.permissions.donationAds
-      ? donationAdsList.filter(d => matches([
-          d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.amount, d.inKind, d.date, d.voucherNumber,
-          label(`donationAds.category.${d.category}`, d.category),
-          label(`common.paidMethod.${d.paidMethod}`, d.paidMethod),
-        ]))
+    const donationAdsMatchOn = (d: DonationAd) => matches([
+      d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.amount, d.inKind, d.date, d.voucherNumber,
+      label(`donationAds.category.${d.category}`, d.category),
+      label(`common.paidMethod.${d.paidMethod}`, d.paidMethod),
+    ]);
+    const hasDonationPerm = currentUser?.permissions.donation ?? currentUser?.permissions.donationAds;
+    const hasAdsPerm = currentUser?.permissions.ads ?? currentUser?.permissions.donationAds;
+    const donationResults = hasDonationPerm
+      ? donationAdsList.filter(d => d.category === 'donation' && donationAdsMatchOn(d)).slice(0, RESULTS_PER_SECTION)
       : [];
-    const donationResults = donationAdsMatches.filter(d => d.category === 'donation').slice(0, RESULTS_PER_SECTION);
-    const adsResults = donationAdsMatches.filter(d => d.category === 'ads').slice(0, RESULTS_PER_SECTION);
+    const adsResults = hasAdsPerm
+      ? donationAdsList.filter(d => d.category === 'ads' && donationAdsMatchOn(d)).slice(0, RESULTS_PER_SECTION)
+      : [];
 
     const expenseResults = currentUser?.permissions.expenses
       ? expenses.filter(exp => matches([
