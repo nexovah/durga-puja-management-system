@@ -39,9 +39,6 @@ export function SuperAdminOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [tenantFilter, setTenantFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
-
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -107,11 +104,11 @@ export function SuperAdminOrders() {
   const statuses = useMemo(() => Array.from(new Set(orders.map(o => o.status))).sort(), [orders]);
 
   const filtered = orders.filter(o => {
-    if (tenantFilter && o.tenantName !== tenantFilter) return false;
-    if (sourceFilter && o.source !== sourceFilter) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q && !o.tenantName.toLowerCase().includes(q)) return false;
     const f = appliedFilters;
+    if (f.designation && o.tenantName !== f.designation) return false; // tenant filter, reusing the generic slot
+    if (f.inKind && o.source !== f.inKind) return false; // source filter, reusing the generic slot
     if (f.status && o.status !== f.status) return false;
     if (f.dateFrom && new Date(o.createdAt).getTime() < new Date(f.dateFrom).getTime()) return false;
     if (f.dateTo && new Date(o.createdAt).getTime() > new Date(f.dateTo).getTime()) return false;
@@ -216,6 +213,13 @@ export function SuperAdminOrders() {
           resultCount={filtered.length}
           totalCount={orders.length}
           statusOptions={statuses.map(s => ({ value: s, label: s }))}
+          designationOptions={tenants.map(t => ({ value: t, label: t }))}
+          designationLabel="Tenant"
+          inKindOptions={[
+            { value: 'razorpay', label: 'Razorpay' },
+            { value: 'manual', label: 'Manual' },
+          ]}
+          inKindLabel="Source"
           showDateRange
         />
       </CollapsibleSearchPanel>
@@ -225,18 +229,6 @@ export function SuperAdminOrders() {
           {error}
         </div>
       )}
-
-      <div className="flex flex-wrap gap-3 mb-4">
-        <select value={tenantFilter} onChange={e => setTenantFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
-          <option value="">All tenants</option>
-          {tenants.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
-          <option value="">All sources</option>
-          <option value="razorpay">Razorpay</option>
-          <option value="manual">Manual</option>
-        </select>
-      </div>
 
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
