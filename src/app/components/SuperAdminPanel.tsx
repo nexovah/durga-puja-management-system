@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Plus, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { Tenant, listTenantsRequest, createTenantRequest, generatePassword, isPasswordStrong } from '../lib/superAdminDb';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 const slugify = (name: string) =>
   name
@@ -42,6 +45,11 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -82,17 +90,52 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
     }
   };
 
+  const filteredTenants = tenants.filter(tenant => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q && !tenant.name.toLowerCase().includes(q) && !tenant.slug.toLowerCase().includes(q)) return false;
+
+    const f = appliedFilters;
+    if (f.status && tenant.status !== f.status) return false;
+    if (f.dateFrom && new Date(tenant.createdAt).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(tenant.createdAt).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tenants</h1>
-        <button
-          onClick={() => setShowCreate(s => !s)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
-        >
-          <Plus className="w-4 h-4" /> New tenant
-        </button>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+          <button
+            onClick={() => setShowCreate(s => !s)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
+          >
+            <Plus className="w-4 h-4" /> New tenant
+          </button>
+        </div>
       </div>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder="Search by committee name or slug"
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredTenants.length}
+          totalCount={tenants.length}
+          statusOptions={[
+            { value: 'active', label: 'Active' },
+            { value: 'disabled', label: 'Disabled' },
+            { value: 'deleted', label: 'Deleted' },
+          ]}
+          showDateRange
+        />
+      </CollapsibleSearchPanel>
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -188,8 +231,10 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
 
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
-      ) : tenants.length === 0 ? (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-12">No tenants yet.</div>
+      ) : filteredTenants.length === 0 ? (
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+          {tenants.length === 0 ? 'No tenants yet.' : 'No tenants match your search.'}
+        </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
           <table className="w-full text-sm">
@@ -205,7 +250,7 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {tenants.map(tenant => (
+              {filteredTenants.map(tenant => (
                 <tr
                   key={tenant.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer"

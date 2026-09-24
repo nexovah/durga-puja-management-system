@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ShoppingCart, XCircle } from 'lucide-react';
 import { Order, OrderDetail, listOrdersRequest, getOrderDetailRequest, cancelManualGrantRequest } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 const formatAmount = (paise: number, currency: string) =>
   (paise / 100).toLocaleString('en-IN', { style: 'currency', currency });
@@ -37,8 +40,12 @@ export function SuperAdminOrders() {
   const [error, setError] = useState('');
 
   const [tenantFilter, setTenantFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
+
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
   const [selected, setSelectedState] = useState<{ id: string; source: 'razorpay' | 'manual' } | null>(() => getSelectionFromPath());
   const [detail, setDetail] = useState<OrderDetail | null>(null);
@@ -99,11 +106,17 @@ export function SuperAdminOrders() {
   const tenants = useMemo(() => Array.from(new Set(orders.map(o => o.tenantName))).sort(), [orders]);
   const statuses = useMemo(() => Array.from(new Set(orders.map(o => o.status))).sort(), [orders]);
 
-  const filtered = orders.filter(o =>
-    (!tenantFilter || o.tenantName === tenantFilter) &&
-    (!statusFilter || o.status === statusFilter) &&
-    (!sourceFilter || o.source === sourceFilter)
-  );
+  const filtered = orders.filter(o => {
+    if (tenantFilter && o.tenantName !== tenantFilter) return false;
+    if (sourceFilter && o.source !== sourceFilter) return false;
+    const q = searchQuery.trim().toLowerCase();
+    if (q && !o.tenantName.toLowerCase().includes(q)) return false;
+    const f = appliedFilters;
+    if (f.status && o.status !== f.status) return false;
+    if (f.dateFrom && new Date(o.createdAt).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(o.createdAt).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
 
   if (selected) {
     return (
@@ -185,7 +198,27 @@ export function SuperAdminOrders() {
 
   return (
     <div>
-      <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Orders</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Orders</h1>
+        <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+      </div>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder="Search by tenant name"
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filtered.length}
+          totalCount={orders.length}
+          statusOptions={statuses.map(s => ({ value: s, label: s }))}
+          showDateRange
+        />
+      </CollapsibleSearchPanel>
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -198,10 +231,6 @@ export function SuperAdminOrders() {
           <option value="">All tenants</option>
           {tenants.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
-          <option value="">All statuses</option>
-          {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
         <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
           <option value="">All sources</option>
           <option value="razorpay">Razorpay</option>
@@ -212,7 +241,9 @@ export function SuperAdminOrders() {
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-12">No orders yet.</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+          {orders.length === 0 ? 'No orders yet.' : 'No orders match your search.'}
+        </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
           <table className="w-full text-sm">

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import { X, Inbox, Search } from 'lucide-react';
+import { X, Inbox } from 'lucide-react';
 import { SupportTicket, TicketStatus, listSupportTicketsRequest, setTicketStatusRequest } from '../lib/superAdminDb';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 const STATUS_BADGE: Record<TicketStatus, string> = {
   open: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
@@ -16,10 +19,10 @@ export function SuperAdminHelpSupport() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus>('all');
-  const [search, setSearch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [viewing, setViewing] = useState<SupportTicket | null>(null);
   const [updating, setUpdating] = useState(false);
 
@@ -47,20 +50,42 @@ export function SuperAdminHelpSupport() {
   };
 
   const filtered = tickets.filter(t => {
-    if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      if (!t.ticketCode.toLowerCase().includes(q) && !t.tenantName.toLowerCase().includes(q)) return false;
-    }
-    const createdDate = t.createdAt.slice(0, 10); // YYYY-MM-DD, comparable as strings
-    if (dateFrom && createdDate < dateFrom) return false;
-    if (dateTo && createdDate > dateTo) return false;
+    const q = searchQuery.trim().toLowerCase();
+    if (q && !t.ticketCode.toLowerCase().includes(q) && !t.tenantName.toLowerCase().includes(q)) return false;
+    const f = appliedFilters;
+    if (f.status && t.status !== f.status) return false;
+    if (f.dateFrom && new Date(t.createdAt).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(t.createdAt).getTime() > new Date(f.dateTo).getTime()) return false;
     return true;
   });
 
   return (
     <div>
-      <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Help & Support</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Help & Support</h1>
+        <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+      </div>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder="Search by Ticket ID or Tenant"
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filtered.length}
+          totalCount={tickets.length}
+          statusOptions={[
+            { value: 'open', label: 'Open' },
+            { value: 'in_progress', label: 'In Progress' },
+            { value: 'resolved', label: 'Resolved' },
+          ]}
+          showDateRange
+        />
+      </CollapsibleSearchPanel>
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -68,62 +93,12 @@ export function SuperAdminHelpSupport() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search Ticket ID or Tenant"
-            className="pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm w-56"
-          />
-        </div>
-
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as any)}
-          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
-        >
-          <option value="all">All statuses</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-        </select>
-
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            max={dateTo || undefined}
-            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            min={dateFrom || undefined}
-            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
-          />
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(''); setDateTo(''); }}
-              className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
-            >
-              Clear dates
-            </button>
-          )}
-        </div>
-      </div>
-
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12 flex flex-col items-center gap-2">
           <Inbox className="w-8 h-8 opacity-50" />
-          No support requests yet.
+          {tickets.length === 0 ? 'No support requests yet.' : 'No tickets match your search.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">

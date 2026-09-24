@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { X, Copy, Check, Inbox } from 'lucide-react';
 import { Lead, listLeadsRequest } from '../lib/superAdminDb';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 // Read-only view of the `leads` table — rows land here automatically from
 // the public landing page's "Bring your committee online" form
@@ -12,6 +15,11 @@ export function SuperAdminLeads() {
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState<Lead | null>(null);
 
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+
   useEffect(() => {
     listLeadsRequest()
       .then(setLeads)
@@ -19,9 +27,41 @@ export function SuperAdminLeads() {
       .finally(() => setLoading(false));
   }, []);
 
+  const filteredLeads = leads.filter(lead => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const inText = [lead.committeeName, lead.contactName, lead.phone, lead.email]
+        .some(v => v !== undefined && v !== null && String(v).toLowerCase().includes(q));
+      if (!inText) return false;
+    }
+    const f = appliedFilters;
+    if (f.dateFrom && new Date(lead.createdAt).getTime() < new Date(f.dateFrom).getTime()) return false;
+    if (f.dateTo && new Date(lead.createdAt).getTime() > new Date(f.dateTo).getTime()) return false;
+    return true;
+  });
+
   return (
     <div>
-      <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Leads</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Leads</h1>
+        <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+      </div>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder="Search by committee, contact, phone or email"
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredLeads.length}
+          totalCount={leads.length}
+          showDateRange
+        />
+      </CollapsibleSearchPanel>
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -31,10 +71,12 @@ export function SuperAdminLeads() {
 
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
-      ) : leads.length === 0 ? (
+      ) : filteredLeads.length === 0 ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12 flex flex-col items-center gap-2">
           <Inbox className="w-8 h-8 opacity-50" />
-          No leads yet — submissions from the landing page's "Bring your committee online" form will show up here.
+          {leads.length === 0
+            ? 'No leads yet — submissions from the landing page\'s "Bring your committee online" form will show up here.'
+            : 'No leads match your search.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
@@ -50,7 +92,7 @@ export function SuperAdminLeads() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {leads.map(lead => (
+              {filteredLeads.map(lead => (
                 <tr
                   key={lead.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer"
