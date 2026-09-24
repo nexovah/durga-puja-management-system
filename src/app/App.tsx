@@ -466,10 +466,16 @@ export default function App() {
   }, [loggedOutPath]);
 
   // Keep the URL path in sync whenever the page changes from within the app.
+  // Pages with their own sub-route (Report's /report/<module>, Settings'
+  // /settings/<tab>, ...) manage that deeper path themselves — this only
+  // steps in when the current path isn't already inside this page at all
+  // (e.g. sidebar nav from a different page), so it doesn't clobber a
+  // sub-route back to the bare slug on every mount/reload.
   useEffect(() => {
     if (!isLoggedIn) return;
     const newPath = PAGE_SLUGS[currentPage];
-    if (window.location.pathname !== newPath) {
+    const pathname = window.location.pathname;
+    if (pathname !== newPath && !pathname.startsWith(`${newPath}/`)) {
       window.history.pushState(null, '', newPath);
     }
   }, [currentPage, isLoggedIn]);
