@@ -78,7 +78,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           <h1 className="text-2xl font-extrabold text-orange-600">
             {t('login.brandName')}
           </h1>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
             {t('login.systemTitle')}
           </p>
         </div>
@@ -153,7 +153,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         </div>
 
         <div className="mt-5 text-center">
-          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+          <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed mx-auto" style={{ width: '85%' }}>
             {t('login.tagline1')} {t('login.tagline2')}
           </p>
         </div>

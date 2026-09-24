@@ -721,7 +721,7 @@ export const translations = {
     'login.submit': 'Log In',
     'login.submitting': 'Logging in…',
     'login.tagline1': 'Manage your committee, collections, donations, subscriptions, sponsors, expenses, loans, budgets, estimates and tasks',
-    'login.tagline2': '— all from one powerful platform.',
+    'login.tagline2': '— all from one powerful Durga CRM platform.',
 
     // Global Search
     'search.placeholder': 'Search members, chanda, donation/advertisement, expenses…',
@@ -1375,7 +1375,7 @@ export const translations = {
     'login.submit': 'লগইন করুন',
     'login.submitting': 'লগইন হচ্ছে…',
     'login.tagline1': 'আপনার কমিটি, সংগ্রহ, অনুদান, সাবস্ক্রিপশন, স্পনসর, খরচ, ঋণ, বাজেট, প্রাক্কলন ও কাজ পরিচালনা করুন',
-    'login.tagline2': '— সব একটি শক্তিশালী প্ল্যাটফর্ম থেকে।',
+    'login.tagline2': '— সব একটি শক্তিশালী দুর্গা সিআরএম প্ল্যাটফর্ম থেকে।',
 
     // Global Search
     'search.placeholder': 'সদস্য, চাঁদা, দান/বিজ্ঞাপন, খরচ খুঁজুন…',
@@ -2029,7 +2029,7 @@ export const translations = {
     'login.submit': 'लॉग इन करें',
     'login.submitting': 'लॉग इन हो रहा है…',
     'login.tagline1': 'अपनी समिति, संग्रह, दान, सदस्यता, प्रायोजक, खर्च, ऋण, बजट, अनुमान और कार्य प्रबंधित करें',
-    'login.tagline2': '— सब एक शक्तिशाली प्लेटफ़ॉर्म से।',
+    'login.tagline2': '— सब एक शक्तिशाली दुर्गा सीआरएम प्लेटफ़ॉर्म से।',
 
     // Global Search
     'search.placeholder': 'सदस्य, चंदा, दान/विज्ञापन, खर्च खोजें…',

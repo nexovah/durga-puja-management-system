@@ -96,7 +96,7 @@ export function Sidebar({
   const content = (
     <div className="h-full flex flex-col">
       <div className={`flex items-center gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 border-4 border-orange-600 rounded-lg overflow-hidden shrink-0 w-9 h-9 flex items-center justify-center">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 border border-gray-300 dark:border-gray-600 rounded-full overflow-hidden shrink-0 w-[41px] h-[41px] flex items-center justify-center">
           {logo && (logo.startsWith('data:') || logo.startsWith('http')) ? (
             <img src={logo} alt="Logo" className="w-full h-full object-cover" />
           ) : (

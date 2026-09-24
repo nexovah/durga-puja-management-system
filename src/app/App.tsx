@@ -1103,6 +1103,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
             <ProfileMenu
               currentUser={currentUser}
+              logo={committeeInfo.logo}
               onLogout={handleLogout}
               onGoToSettingsTab={goToSettingsTab}
               onGoToBilling={() => setCurrentPage('billing')}
@@ -1271,17 +1272,23 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
 function ProfileMenu({
   currentUser,
+  logo,
   onLogout,
   onGoToSettingsTab,
   onGoToBilling,
   showSettings,
 }: {
   currentUser: User | null;
+  logo: string;
   onLogout: () => void;
   onGoToSettingsTab: (tab: SettingsTab) => void;
   onGoToBilling: () => void;
   showSettings: boolean;
 }) {
+  // No per-user profile photo exists in this schema — reuse the committee
+  // logo as the avatar image when one's been uploaded, same as mobile's
+  // ProfileScreen; fall back to the name-initial circle otherwise.
+  const isLogoUrl = !!logo && (logo.startsWith('data:') || logo.startsWith('http'));
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1308,8 +1315,12 @@ function ProfileMenu({
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
       >
-        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
-          {(currentUser?.name || '?').charAt(0).toUpperCase()}
+        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 border border-gray-300 dark:border-gray-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+          {isLogoUrl ? (
+            <img src={logo} alt="" className="w-full h-full object-cover" />
+          ) : (
+            (currentUser?.name || '?').charAt(0).toUpperCase()
+          )}
         </div>
         <div className="text-left hidden sm:block">
           <p className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
@@ -1320,8 +1331,12 @@ function ProfileMenu({
       {open && (
         <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
           <div className="flex items-center gap-3 px-4 py-4">
-            <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-base shrink-0">
-              {(currentUser?.name || '?').charAt(0).toUpperCase()}
+            <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-700 border border-gray-300 dark:border-gray-600 flex items-center justify-center font-bold text-base shrink-0 overflow-hidden">
+              {isLogoUrl ? (
+                <img src={logo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (currentUser?.name || '?').charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0">
               <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
