@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { FileText, Save } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bold, FileText, Heading2, Heading3, Italic, List, Save } from 'lucide-react';
 import { CmsPage, listCmsPagesRequest, upsertCmsPageRequest } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
+import { MarkdownBody } from '../lib/markdown';
 
 // /super-admin/cms/<slug> — see docs/URL_STATE_CONVENTION.md.
 function getSlugFromPath(): string | null {
@@ -18,6 +19,8 @@ export function SuperAdminCms() {
   const [form, setForm] = useState<CmsPage | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const setActiveSlug = (slug: string) => {
     setActiveSlugState(slug);
@@ -66,6 +69,38 @@ export function SuperAdminCms() {
     setForm(page);
     setMessage('');
     setError('');
+  };
+
+  // Wraps the current selection with `before`/`after` (bold/italic), or
+  // inserts a placeholder at the cursor when nothing is selected.
+  const wrapSelection = (before: string, after: string, placeholder: string) => {
+    const el = bodyRef.current;
+    if (!el || !form) return;
+    const { selectionStart: start, selectionEnd: end, value } = el;
+    const selected = value.slice(start, end) || placeholder;
+    const next = value.slice(0, start) + before + selected + after + value.slice(end);
+    setForm({ ...form, body: next });
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, start + before.length + selected.length);
+    });
+  };
+
+  // Prefixes the line(s) the cursor/selection touches (heading/bullet).
+  const prefixLines = (prefix: string) => {
+    const el = bodyRef.current;
+    if (!el || !form) return;
+    const { selectionStart: start, selectionEnd: end, value } = el;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = value.indexOf('\n', end);
+    const block = value.slice(lineStart, lineEnd === -1 ? value.length : lineEnd);
+    const withPrefix = block
+      .split('\n')
+      .map(line => (line.startsWith(prefix) ? line : prefix + line))
+      .join('\n');
+    const next = value.slice(0, lineStart) + withPrefix + value.slice(lineEnd === -1 ? value.length : lineEnd);
+    setForm({ ...form, body: next });
+    requestAnimationFrame(() => el.focus());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,14 +212,52 @@ export function SuperAdminCms() {
 
                 {form.slug !== 'home' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Page content</label>
-                    <textarea
-                      rows={14}
-                      value={form.body}
-                      onChange={e => setForm({ ...form, body: e.target.value })}
-                      placeholder="Blank line = new paragraph."
-                      className={`${inputClass} font-mono text-sm`}
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Page content</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPreview(v => !v)}
+                        className="text-xs font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                      >
+                        {showPreview ? 'Edit' : 'Preview'}
+                      </button>
+                    </div>
+
+                    {showPreview ? (
+                      <div className={`${inputClass} min-h-[280px] space-y-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed`}>
+                        <MarkdownBody body={form.body} />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-1 mb-2 p-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg w-fit">
+                          <button type="button" title="Heading" onClick={() => prefixLines('## ')} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <Heading2 size={16} />
+                          </button>
+                          <button type="button" title="Subheading" onClick={() => prefixLines('### ')} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <Heading3 size={16} />
+                          </button>
+                          <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-0.5" />
+                          <button type="button" title="Bold" onClick={() => wrapSelection('**', '**', 'bold text')} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <Bold size={16} />
+                          </button>
+                          <button type="button" title="Italic" onClick={() => wrapSelection('*', '*', 'italic text')} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <Italic size={16} />
+                          </button>
+                          <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-0.5" />
+                          <button type="button" title="Bullet list" onClick={() => prefixLines('- ')} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <List size={16} />
+                          </button>
+                        </div>
+                        <textarea
+                          ref={bodyRef}
+                          rows={14}
+                          value={form.body}
+                          onChange={e => setForm({ ...form, body: e.target.value })}
+                          placeholder="Blank line = new paragraph. Use the toolbar above for headings, bold, italic and bullet lists."
+                          className={`${inputClass} font-mono text-sm`}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
 

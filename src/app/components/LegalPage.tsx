@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { CmsPageContent, getCmsPageRequest } from '../lib/db';
+import { MarkdownBody } from '../lib/markdown';
 
 interface LegalPageProps {
   slug: string;
@@ -34,9 +35,7 @@ export function LegalPage({ slug, onBack }: LegalPageProps) {
           <article className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 sm:p-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{page.metaTitle || page.navLabel}</h1>
             <div className="space-y-4 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              {page.body.split('\n').filter(Boolean).map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+              <MarkdownBody body={page.body} />
             </div>
           </article>
         )}
