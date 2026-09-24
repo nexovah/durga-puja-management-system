@@ -133,12 +133,16 @@ export interface SummaryLine {
 // (e.g. "Total Collected" / "Pending"), then the data table.
 export function downloadTableCSV(filename: string, opts: {
   companyName: string;
+  eventLabel?: string; // active Puja/Festival name+year — see EventSwitcher.tsx
+  downloadedAt?: string; // pre-formatted date/time string
   summary: SummaryLine[];
   headers: string[];
   rows: (string | number)[][];
 }) {
   const lines: string[] = [];
   if (opts.companyName) lines.push(csvField(opts.companyName));
+  if (opts.eventLabel) lines.push(csvField(opts.eventLabel));
+  if (opts.downloadedAt) lines.push(csvField(opts.downloadedAt));
   opts.summary.forEach(s => lines.push([s.label, s.value].map(csvField).join(',')));
   if (opts.summary.length > 0) lines.push('');
   lines.push(opts.headers.map(csvField).join(','));

@@ -613,16 +613,23 @@ export default function App() {
     }
     if (previousActiveEventId.current === activeEventId) return;
     previousActiveEventId.current = activeEventId;
-    fetchAllData().then(data => {
-      setMembersState(data.members);
-      setChandaListState(data.chandaList);
-      setDonationAdsListState(data.donationAdsList);
-      setExpensesState(data.expenses);
-      setLoansListState(data.loansList);
-      setTasksListState(data.tasksList);
-      setEstimationsListState(data.estimationsList);
-    }).catch(err => console.error('Failed to reload data after event switch', err));
+    refreshCoreData().catch(err => console.error('Failed to reload data after event switch', err));
   }, [activeEventId, isLoggedIn]);
+
+  // Refetch the 7 event-scoped lists on demand — used by the event-switch
+  // reload above, and exposed to the Report page's Balance Sheet refresh
+  // button, so it always reflects the latest entry in every module without
+  // requiring a full page reload.
+  const refreshCoreData = async () => {
+    const data = await fetchAllData();
+    setMembersState(data.members);
+    setChandaListState(data.chandaList);
+    setDonationAdsListState(data.donationAdsList);
+    setExpensesState(data.expenses);
+    setLoansListState(data.loansList);
+    setTasksListState(data.tasksList);
+    setEstimationsListState(data.estimationsList);
+  };
 
   // Keep the active-event display fresh: if a teammate's admin switches
   // events mid-session, RLS makes their *data* correct instantly, but the
@@ -1207,6 +1214,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             estimationsList={estimationsList}
             committeeAssociation={committeeInfo.association || committeeInfo.name}
             committeeLogo={committeeInfo.logo}
+            activeEventLabel={(() => {
+              const e = events.find(ev => ev.id === activeEventId);
+              return e ? `${e.name} ${e.year}` : '';
+            })()}
+            onRefreshData={refreshCoreData}
           />
         )}
         {currentPage === 'settings' && (

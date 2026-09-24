@@ -11,6 +11,8 @@ interface ReportPrintTableProps {
   companyLogo: string; // emoji or data:/http URL, same convention as CommitteeInfo.logo
   title: string;
   rangeLabel?: string;
+  eventLabel?: string; // active Puja/Festival name+year — see EventSwitcher.tsx
+  downloadedAt?: string; // pre-formatted date/time string, shown top-right when set
   summary: SummaryLine[];
   columns: PrintColumn[];
   rows: (string | number)[][];
@@ -26,25 +28,29 @@ interface ReportPrintTableProps {
 // real embedded image, unlike the CSV export which can only carry the
 // name as plain text — see reportExport.ts's downloadTableCSV), then
 // the module's own summary widgets, then the data table.
-export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, summary, columns, rows, emptyMessage }: ReportPrintTableProps) {
+export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, eventLabel, downloadedAt, summary, columns, rows, emptyMessage }: ReportPrintTableProps) {
   const isEmoji = companyLogo && companyLogo.length <= 10 && !companyLogo.startsWith('data:') && !companyLogo.startsWith('http');
 
   return createPortal(
     <div className="print-area hidden print:block bg-white text-gray-900 p-0">
-      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-300">
-        <div className="w-12 h-12 rounded-lg overflow-hidden bg-orange-50 flex items-center justify-center shrink-0">
-          {isEmoji ? (
-            <span className="text-2xl">{companyLogo}</span>
-          ) : companyLogo ? (
-            <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-2xl">🕉️</span>
-          )}
+      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-300">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-orange-50 flex items-center justify-center shrink-0">
+            {isEmoji ? (
+              <span className="text-2xl">{companyLogo}</span>
+            ) : companyLogo ? (
+              <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl">🕉️</span>
+            )}
+          </div>
+          <div>
+            <p className="text-lg font-bold text-gray-900">{companyName}</p>
+            {eventLabel && <p className="text-sm font-semibold text-orange-700">{eventLabel}</p>}
+            <p className="text-sm text-gray-600">{title}{rangeLabel ? ` — ${rangeLabel}` : ''}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-lg font-bold text-gray-900">{companyName}</p>
-          <p className="text-sm text-gray-600">{title}{rangeLabel ? ` — ${rangeLabel}` : ''}</p>
-        </div>
+        {downloadedAt && <p className="text-xs text-gray-500 whitespace-nowrap">{downloadedAt}</p>}
       </div>
 
       {summary.length > 0 && (

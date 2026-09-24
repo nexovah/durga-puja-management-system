@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList } from 'lucide-react';
+import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Member, Loan, Estimation,
   getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
@@ -8,6 +8,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { ReportModulePage, ReportColumn, ReportWidget } from './ReportModulePage';
 import { ReportEstimationPage } from './ReportEstimationPage';
+import { ReportBalanceSheetPage } from './ReportBalanceSheetPage';
 import { ADS_CATEGORIES } from './DonationAdsCollection';
 
 interface ReportProps {
@@ -19,10 +20,12 @@ interface ReportProps {
   estimationsList: Estimation[];
   committeeAssociation: string;
   committeeLogo: string;
+  activeEventLabel: string;
+  onRefreshData: () => Promise<void>;
 }
 
-type ModuleKey = 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendor' | 'member' | 'loan' | 'estimation';
-const VALID_MODULES: ModuleKey[] = ['chanda', 'donation', 'ads', 'expenses', 'vendor', 'member', 'loan', 'estimation'];
+type ModuleKey = 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendor' | 'member' | 'loan' | 'estimation' | 'balanceSheet';
+const VALID_MODULES: ModuleKey[] = ['chanda', 'donation', 'ads', 'expenses', 'vendor', 'member', 'loan', 'estimation', 'balanceSheet'];
 
 // /report/<module> — see docs/URL_STATE_CONVENTION.md; same pattern as
 // SuperAdminCms.tsx's left-nav (URL-backed, not the tenant Settings
@@ -43,7 +46,7 @@ interface VendorRow {
   voucherNumbers: string;
 }
 
-export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo }: ReportProps) {
+export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo, activeEventLabel, onRefreshData }: ReportProps) {
   const { t, locale } = useLanguage();
   const [activeModule, setActiveModuleState] = useState<ModuleKey>(() => getModuleFromPath());
 
@@ -124,6 +127,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     { key: 'member', label: t('report.nav.member'), icon: Users },
     { key: 'loan', label: t('report.nav.loan'), icon: Landmark },
     { key: 'estimation', label: t('report.nav.estimation'), icon: ClipboardList },
+    { key: 'balanceSheet', label: t('report.nav.balanceSheet'), icon: Scale },
   ];
 
   // Vendor rows derived from Expenses — same grouping Vendors.tsx uses,
@@ -169,6 +173,27 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         <ReportNav items={NAV_ITEMS} active={activeModule} onSelect={setActiveModule} />
         <div className="flex-1 min-w-0">
           <ReportEstimationPage estimationsList={estimationsList} companyName={committeeAssociation} companyLogo={committeeLogo} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeModule === 'balanceSheet') {
+    return (
+      <div className="flex flex-col sm:flex-row gap-6">
+        <ReportNav items={NAV_ITEMS} active={activeModule} onSelect={setActiveModule} />
+        <div className="flex-1 min-w-0">
+          <ReportBalanceSheetPage
+            members={members}
+            chandaList={chandaList}
+            donationAdsList={donationAdsList}
+            expenses={expenses}
+            loansList={loansList}
+            companyName={committeeAssociation}
+            companyLogo={committeeLogo}
+            eventLabel={activeEventLabel}
+            onRefresh={onRefreshData}
+          />
         </div>
       </div>
     );
