@@ -264,7 +264,7 @@ export function Settings({
 
       {/* Left-nav settings shell — matches Super Admin's Settings layout */}
       <div className="flex flex-col sm:flex-row gap-6">
-        <nav className="sm:w-56 shrink-0">
+        <nav className="sm:w-56 shrink-0 sm:sticky sm:top-20 sm:self-start">
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-2 flex sm:flex-col gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('committee')}

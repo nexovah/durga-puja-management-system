@@ -202,7 +202,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Settings</h1>
 
       <div className="flex flex-col sm:flex-row gap-6">
-        <nav className="sm:w-56 shrink-0">
+        <nav className="sm:w-56 shrink-0 sm:sticky sm:top-20 sm:self-start">
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-2 flex sm:flex-col gap-1 overflow-x-auto">
             {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
               <button
