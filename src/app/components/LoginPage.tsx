@@ -21,6 +21,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showForgotPasswordNote, setShowForgotPasswordNote] = useState(false);
   const [platformLogo, setPlatformLogo] = useState('');
 
   useEffect(() => {
@@ -74,9 +75,12 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
             </div>
           </div>
 
-          <h1 className="text-xl font-bold text-orange-600">
-            {t('login.systemTitle')}
+          <h1 className="text-2xl font-extrabold text-orange-600">
+            {t('login.brandName')}
           </h1>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+            {t('login.systemTitle')}
+          </p>
         </div>
 
         {/* Login Form */}
@@ -115,6 +119,20 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              <div className="text-right mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPasswordNote(true)}
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:hover:text-orange-400"
+                >
+                  {t('login.forgotPassword')}
+                </button>
+              </div>
+              {showForgotPasswordNote && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                  {t('login.forgotPasswordComingSoon')}
+                </p>
+              )}
             </div>
 
             {error && (
