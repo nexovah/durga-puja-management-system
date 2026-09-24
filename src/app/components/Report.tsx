@@ -39,6 +39,7 @@ interface VendorRow {
   totalPaid: number;
   lastDate: string;
   categories: string;
+  voucherNumbers: string;
 }
 
 export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo }: ReportProps) {
@@ -82,6 +83,22 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     const label = t(key);
     return label === key ? value : label;
   };
+  const paidThroughLabel = (value: string) => {
+    const key = `common.paidMethod.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const roleLabel = (value: string) => {
+    const key = `members.role.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const partialPaymentsLabel = (payments?: { amount: number; voucherNumber?: string; date?: string }[]) => {
+    if (!payments || payments.length === 0) return '';
+    return payments
+      .map(p => `₹${p.amount.toLocaleString()}${p.date ? ` (${fmtDate(p.date)})` : ''}${p.voucherNumber ? ` [${p.voucherNumber}]` : ''}`)
+      .join('; ');
+  };
   const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString(locale) : '');
   const fmtAmount = (n: number) => `₹${n.toLocaleString()}`;
 
@@ -100,7 +117,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
   // simplified for reporting purposes (no per-payment breakdown here,
   // just the vendor-level totals + latest activity date).
   const vendorRows = useMemo((): VendorRow[] => {
-    const groups = new Map<string, VendorRow & { categorySet: Set<string> }>();
+    const groups = new Map<string, VendorRow & { categorySet: Set<string>; voucherSet: Set<string> }>();
     expenses.forEach(e => {
       if (!e.vendorName?.trim()) return;
       const key = `${e.vendorName.trim()}__${(e.vendorContact || '').trim()}`;
@@ -113,7 +130,9 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
           totalPaid: 0,
           lastDate: e.date,
           categories: '',
+          voucherNumbers: '',
           categorySet: new Set(),
+          voucherSet: new Set(),
         });
       }
       const g = groups.get(key)!;
@@ -121,8 +140,14 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       g.totalPaid += getExpenseCreditAmount(e);
       if (e.date > g.lastDate) g.lastDate = e.date;
       g.categorySet.add(categoryLabel(e.category));
+      if (e.voucherNumber?.trim()) g.voucherSet.add(e.voucherNumber.trim());
+      (e.partialPayments || []).forEach(p => { if (p.voucherNumber?.trim()) g.voucherSet.add(p.voucherNumber.trim()); });
     });
-    return Array.from(groups.values()).map(g => ({ ...g, categories: Array.from(g.categorySet).join(', ') }));
+    return Array.from(groups.values()).map(g => ({
+      ...g,
+      categories: Array.from(g.categorySet).join(', '),
+      voucherNumbers: Array.from(g.voucherSet).join(', '),
+    }));
   }, [expenses, categoryLabel]);
 
   if (activeModule === 'estimation') {
@@ -161,10 +186,16 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: Chanda) => `${r.donorName} ${r.phone} ${r.billNumber || ''}`,
       columns: [
         { key: 'donor', label: t('report.col.donor'), render: (r: Chanda) => r.donorName },
+        { key: 'amount1', label: t('report.col.amount1'), align: 'right', render: (r: Chanda) => (r.amount1 !== undefined ? fmtAmount(r.amount1) : '') },
+        { key: 'amount2', label: t('report.col.amount2'), align: 'right', render: (r: Chanda) => (r.amount2 !== undefined ? fmtAmount(r.amount2) : '') },
         { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Chanda) => fmtAmount(getChandaCreditAmount(r)) },
         { key: 'pending', label: t('report.col.pending'), align: 'right', render: (r: Chanda) => fmtAmount(pendingOf(r)) },
         { key: 'status', label: t('report.col.status'), render: (r: Chanda) => chandaStatusLabel(r.paymentStatus) },
         { key: 'method', label: t('report.col.method'), render: (r: Chanda) => paidMethodLabel(r.paidMethod) },
+        { key: 'billNumber', label: t('report.col.billNumber'), render: (r: Chanda) => r.billNumber || '' },
+        { key: 'phone', label: t('report.col.phone'), render: (r: Chanda) => r.phone },
+        { key: 'phone2', label: t('report.col.phone2'), render: (r: Chanda) => r.phone2 || '' },
+        { key: 'remarks', label: t('report.col.remarks'), render: (r: Chanda) => r.remarks || '' },
         { key: 'date', label: t('report.col.date'), render: (r: Chanda) => fmtDate(r.date) },
       ],
       chartType: 'bar',
@@ -190,6 +221,11 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { key: 'name', label: t('report.col.company'), render: (r: DonationAd) => r.donorName || r.companyName || '-' },
         { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: DonationAd) => fmtAmount(r.amount) },
         { key: 'method', label: t('report.col.method'), render: (r: DonationAd) => paidMethodLabel(r.paidMethod) },
+        { key: 'inKind', label: t('report.col.inKind'), render: (r: DonationAd) => r.inKind || '' },
+        ...(category === 'donation' ? [{ key: 'voucherNumber', label: t('report.col.voucherNumber'), render: (r: DonationAd) => r.voucherNumber || '' }] : []),
+        { key: 'phone', label: t('report.col.phone'), render: (r: DonationAd) => r.phone },
+        { key: 'phone2', label: t('report.col.phone2'), render: (r: DonationAd) => r.phone2 || '' },
+        { key: 'remarks', label: t('report.col.remarks'), render: (r: DonationAd) => r.remarks || '' },
         { key: 'date', label: t('report.col.date'), render: (r: DonationAd) => fmtDate(r.date) },
       ],
       chartType: 'bar',
@@ -208,9 +244,15 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       columns: [
         { key: 'title', label: t('report.col.title'), render: (r: Expense) => r.title },
         { key: 'category', label: t('report.col.category'), render: (r: Expense) => categoryLabel(r.category) },
-        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Expense) => fmtAmount(getExpenseCreditAmount(r)) },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Expense) => fmtAmount(r.amount) },
+        { key: 'paid', label: t('report.col.paid'), align: 'right', render: (r: Expense) => fmtAmount(getExpenseCreditAmount(r)) },
         { key: 'status', label: t('report.col.status'), render: (r: Expense) => expenseStatusLabel(r.paymentStatus) },
+        { key: 'partialPayments', label: t('report.col.partialPayments'), render: (r: Expense) => partialPaymentsLabel(r.partialPayments) },
+        { key: 'paidThrough', label: t('report.col.paidThrough'), render: (r: Expense) => paidThroughLabel(r.paidThrough) },
+        { key: 'voucherNumber', label: t('report.col.voucherNumber'), render: (r: Expense) => r.voucherNumber || '' },
         { key: 'vendor', label: t('report.col.vendor'), render: (r: Expense) => r.vendorName || '' },
+        { key: 'contact', label: t('report.col.contact'), render: (r: Expense) => r.vendorContact || '' },
+        { key: 'remarks', label: t('report.col.remarks'), render: (r: Expense) => r.remarks || '' },
         { key: 'date', label: t('report.col.date'), render: (r: Expense) => fmtDate(r.date) },
       ],
       chartType: 'donut',
@@ -232,9 +274,13 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: VendorRow) => `${r.name} ${r.contact}`,
       columns: [
         { key: 'vendor', label: t('report.col.vendor'), render: (r: VendorRow) => r.name },
+        { key: 'contact', label: t('report.col.contact'), render: (r: VendorRow) => r.contact },
+        { key: 'categories', label: t('report.col.categories'), render: (r: VendorRow) => r.categories },
         { key: 'contract', label: t('report.col.contractAmount'), align: 'right', render: (r: VendorRow) => fmtAmount(r.totalContractAmount) },
         { key: 'paid', label: t('report.col.paid'), align: 'right', render: (r: VendorRow) => fmtAmount(r.totalPaid) },
         { key: 'pending', label: t('report.col.pending'), align: 'right', render: (r: VendorRow) => fmtAmount(Math.max(0, r.totalContractAmount - r.totalPaid)) },
+        { key: 'voucherNumbers', label: t('report.col.voucherNumber'), render: (r: VendorRow) => r.voucherNumbers },
+        { key: 'date', label: t('report.col.date'), render: (r: VendorRow) => fmtDate(r.lastDate) },
       ],
       chartType: 'donut',
       breakdownOf: (rows: VendorRow[]) => {
@@ -258,9 +304,14 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: Member) => `${r.name} ${r.phone} ${r.role}`,
       columns: [
         { key: 'name', label: t('report.col.name'), render: (r: Member) => r.name },
-        { key: 'role', label: t('report.col.role'), render: (r: Member) => r.role },
+        { key: 'role', label: t('report.col.role'), render: (r: Member) => roleLabel(r.role) },
+        { key: 'phone', label: t('report.col.phone'), render: (r: Member) => r.phone },
+        { key: 'address', label: t('report.col.address'), render: (r: Member) => r.address || '' },
         { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Member) => fmtAmount(getMemberCreditAmount(r)) },
         { key: 'status', label: t('report.col.status'), render: (r: Member) => (r.membershipPaymentStatus ? chandaStatusLabel(r.membershipPaymentStatus) : '') },
+        { key: 'billNumber', label: t('report.col.billNumber'), render: (r: Member) => r.membershipBillNumber || '' },
+        { key: 'remarks', label: t('report.col.remarks'), render: (r: Member) => r.membershipRemarks || '' },
+        { key: 'joinDate', label: t('report.col.joinDate'), render: (r: Member) => fmtDate(r.joinDate) },
         { key: 'date', label: t('report.col.date'), render: (r: Member) => fmtDate(r.membershipDate) },
       ],
       chartType: 'area',
@@ -279,9 +330,13 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: Loan) => `${r.donorName} ${r.phone}`,
       columns: [
         { key: 'lender', label: t('report.col.lender'), render: (r: Loan) => r.donorName },
+        { key: 'phone', label: t('report.col.phone'), render: (r: Loan) => r.phone },
         { key: 'received', label: t('report.col.received'), align: 'right', render: (r: Loan) => fmtAmount(r.amountReceived) },
         { key: 'repaid', label: t('report.col.repaid'), align: 'right', render: (r: Loan) => fmtAmount(r.amountPaid) },
         { key: 'net', label: t('report.col.net'), align: 'right', render: (r: Loan) => fmtAmount(getLoanNetAmount(r)) },
+        { key: 'method', label: t('report.col.method'), render: (r: Loan) => paidMethodLabel(r.paymentMethod) },
+        { key: 'returnDate', label: t('report.col.returnDate'), render: (r: Loan) => fmtDate(r.returnDate) },
+        { key: 'remarks', label: t('report.col.remarks'), render: (r: Loan) => r.remarks || '' },
         { key: 'date', label: t('report.col.date'), render: (r: Loan) => fmtDate(r.date) },
       ],
       chartType: 'bar',
