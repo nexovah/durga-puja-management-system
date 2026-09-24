@@ -15,6 +15,11 @@ export interface ReportColumn<T> {
   label: string;
   align?: 'right';
   render: (row: T) => string;
+  // Set true for columns that only belong in CSV/PDF exports (e.g. one
+  // triplet per partial-payment installment) — they'd otherwise force
+  // horizontal scrolling on-screen for data most rows don't even have.
+  // Table view skips them; handleDownloadCSV/PDF still use every column.
+  exportOnly?: boolean;
 }
 
 export interface ReportWidget {
@@ -49,6 +54,11 @@ export function ReportModulePage<T extends { id: string }>({
   const { theme } = useTheme();
   const gridStroke = theme === 'dark' ? '#2d3138' : '#f0f0f0';
   const axisStroke = theme === 'dark' ? '#3d434b' : '#e5e7eb';
+
+  // On-screen table skips exportOnly columns (e.g. per-installment partial
+  // payment detail) so it doesn't force horizontal scrolling; CSV/PDF below
+  // still use the full `columns` list.
+  const tableColumns = columns.filter(c => !c.exportOnly);
 
   const [rangePreset, setRangePreset] = useState<RangePreset>('all');
   const [customStart, setCustomStart] = useState('');
@@ -306,7 +316,7 @@ export function ReportModulePage<T extends { id: string }>({
                 <th className="w-10 px-4 py-3">
                   <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 rounded" />
                 </th>
-                {columns.map(c => (
+                {tableColumns.map(c => (
                   <th key={c.key} className={`px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 ${c.align === 'right' ? 'text-right' : 'text-left'}`}>{c.label}</th>
                 ))}
               </tr>
@@ -317,7 +327,7 @@ export function ReportModulePage<T extends { id: string }>({
                   <td className="px-4 py-3">
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleOne(row.id)} className="w-4 h-4 rounded" />
                   </td>
-                  {columns.map(c => (
+                  {tableColumns.map(c => (
                     <td key={c.key} className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${c.align === 'right' ? 'text-right font-medium' : ''}`}>{c.render(row)}</td>
                   ))}
                 </tr>

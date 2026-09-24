@@ -242,9 +242,9 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     for (let i = 0; i < maxPartialPayments; i++) {
       const n = i + 1;
       partialPaymentColumns.push(
-        { key: `partial${n}Amount`, label: `${t('report.col.partialPayment')} ${n}`, align: 'right', render: (r: Expense) => (r.partialPayments?.[i] ? fmtAmount(r.partialPayments[i].amount) : '') },
-        { key: `partial${n}Voucher`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.voucherNumber')}`, render: (r: Expense) => r.partialPayments?.[i]?.voucherNumber || '' },
-        { key: `partial${n}Date`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.date')}`, render: (r: Expense) => fmtDate(r.partialPayments?.[i]?.date) },
+        { key: `partial${n}Amount`, label: `${t('report.col.partialPayment')} ${n}`, align: 'right', exportOnly: true, render: (r: Expense) => (r.partialPayments?.[i] ? fmtAmount(r.partialPayments[i].amount) : '') },
+        { key: `partial${n}Voucher`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.voucherNumber')}`, exportOnly: true, render: (r: Expense) => r.partialPayments?.[i]?.voucherNumber || '' },
+        { key: `partial${n}Date`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.date')}`, exportOnly: true, render: (r: Expense) => fmtDate(r.partialPayments?.[i]?.date) },
       );
     }
     moduleProps = {
