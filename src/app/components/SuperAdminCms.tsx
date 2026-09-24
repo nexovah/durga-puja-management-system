@@ -199,7 +199,7 @@ export function SuperAdminCms() {
                         const file = e.target.files?.[0];
                         if (!file || !form) return;
                         try {
-                          const url = await uploadLogo(file);
+                          const url = await uploadLogo(file, form.ogImageUrl);
                           setForm({ ...form, ogImageUrl: url });
                         } catch (err: any) {
                           setError(err?.message || 'Failed to upload image');

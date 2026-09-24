@@ -558,7 +558,30 @@ async function compressLogoImage(file: File): Promise<File> {
   return new File([blob], newName, { type: 'image/jpeg' });
 }
 
-export async function uploadLogo(file: File): Promise<string> {
+// Extracts the storage path out of a public logos-bucket URL, e.g.
+// "https://xxx.supabase.co/storage/v1/object/public/logos/foo.jpg" -> "foo.jpg".
+// Returns null for anything that isn't a real logos-bucket URL (an emoji,
+// a data: URI, empty, or some other bucket/host) — nothing to delete then.
+function logoStoragePathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const marker = '/object/public/logos/';
+  const i = url.indexOf(marker);
+  if (i === -1) return null;
+  return decodeURIComponent(url.slice(i + marker.length));
+}
+
+// Replacing a logo/profile picture is a delete-then-upload, not an
+// overwrite: the previous file is removed from Supabase Storage first, and
+// only once that succeeds does the new one get uploaded — so a stale image
+// is never left behind, and the new upload is never allowed to proceed
+// while an old one it's replacing still exists.
+export async function uploadLogo(file: File, previousUrl?: string | null): Promise<string> {
+  const previousPath = logoStoragePathFromUrl(previousUrl);
+  if (previousPath) {
+    const { error: deleteError } = await supabase.storage.from('logos').remove([previousPath]);
+    if (deleteError) throw deleteError;
+  }
+
   const compressed = await compressLogoImage(file);
   const ext = compressed.name.split('.').pop() || 'png';
   const path = `committee-logo-${Date.now()}.${ext}`;

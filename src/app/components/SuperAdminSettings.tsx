@@ -246,7 +246,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                         if (!file) return;
                         setLogoFileUploading(true);
                         try {
-                          const url = await uploadLogo(file);
+                          const url = await uploadLogo(file, platformForm.logoUrl);
                           setPlatformForm(f => ({ ...f, logoUrl: url }));
                         } catch (err: any) {
                           setPlatformError(err?.message || 'Failed to upload logo');
@@ -274,7 +274,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                         if (!file) return;
                         setFaviconUploading(true);
                         try {
-                          const url = await uploadLogo(file);
+                          const url = await uploadLogo(file, platformForm.faviconUrl);
                           setPlatformForm(f => ({ ...f, faviconUrl: url }));
                         } catch (err: any) {
                           setPlatformError(err?.message || 'Failed to upload favicon');
@@ -337,7 +337,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                           if (!file) return;
                           setBgUploading(true);
                           try {
-                            const url = await uploadLogo(file);
+                            const url = await uploadLogo(file, platformForm.signinBackgroundUrl);
                             setPlatformForm(f => ({ ...f, signinBackgroundUrl: url }));
                           } catch (err: any) {
                             setPlatformError(err?.message || 'Failed to upload background');
@@ -381,7 +381,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                       if (!file) return;
                       setLogoUploading(true);
                       try {
-                        const url = await uploadLogo(file);
+                        const url = await uploadLogo(file, profileForm.logoUrl);
                         setProfileForm(f => ({ ...f, logoUrl: url }));
                       } catch (err: any) {
                         setProfileError(err?.message || 'Failed to upload logo');

@@ -343,7 +343,7 @@ export function Settings({
                     if (!file) return;
                     setLogoUploading(true);
                     try {
-                      const url = await uploadLogo(file);
+                      const url = await uploadLogo(file, committeeForm.logo);
                       setCommitteeForm({ ...committeeForm, logo: url });
                     } catch (err) {
                       console.error('Logo upload failed', err);
