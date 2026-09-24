@@ -56,7 +56,12 @@ export function SuperAdminConfirmModal({ open, title, message, confirmLabel, dan
   if (!open) return null;
 
   const handleConfirmClick = () => {
-    if (input === code) {
+    // Case-insensitive on purpose: the charset keeps both cases of letters
+    // like k/K for entropy, but many fonts render them near-identically,
+    // so a visually-exact retype can still fail a case-sensitive compare.
+    // Length still means real entropy; case sensitivity added nothing but
+    // false negatives.
+    if (input.toLowerCase() === code.toLowerCase()) {
       onConfirm();
     } else {
       setError(true);
