@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Check, ChevronsUpDown, Plus, Pencil, X } from 'lucide-react';
 import { EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest } from '../lib/db';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
@@ -88,9 +87,8 @@ export function EventSwitcher({
         )}
       </button>
 
-      {open && isAdmin && createPortal(
+      {open && isAdmin && (
         <EventPopover
-          anchorRef={anchorRef}
           events={events}
           activeEventId={activeEventId}
           mode={mode}
@@ -103,8 +101,7 @@ export function EventSwitcher({
           onBackToList={() => setMode('list')}
           onCreated={(event) => { onEventCreated(event); setMode('list'); }}
           onUpdated={(event) => { onEventUpdated(event); setMode('list'); setEditingEvent(null); }}
-        />,
-        document.body
+        />
       )}
 
       <SuperAdminConfirmModal
@@ -122,10 +119,9 @@ export function EventSwitcher({
 }
 
 function EventPopover({
-  anchorRef, events, activeEventId, mode, editingEvent, currentUserId,
+  events, activeEventId, mode, editingEvent, currentUserId,
   onClose, onRowClick, onEditClick, onCreateClick, onBackToList, onCreated, onUpdated,
 }: {
-  anchorRef: React.RefObject<HTMLButtonElement>;
   events: EventInfo[];
   activeEventId: string | null;
   mode: 'list' | 'create' | 'edit';
@@ -139,18 +135,8 @@ function EventPopover({
   onCreated: (event: EventInfo) => void;
   onUpdated: (event: EventInfo) => void;
 }) {
-  const rect = anchorRef.current?.getBoundingClientRect();
-  if (!rect) return null;
-
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    left: rect.left,
-    bottom: window.innerHeight - rect.top + 8,
-    width: Math.max(rect.width, 280),
-  };
-
   return (
-    <div style={style} className="z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="absolute bottom-full left-0 mb-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
       {mode === 'list' && (
         <>
           <div className="py-1.5 max-h-72 overflow-y-auto">
