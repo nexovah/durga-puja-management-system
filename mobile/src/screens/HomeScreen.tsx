@@ -6,9 +6,11 @@ import {
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   listChanda, listMembers, listDonationAds, listExpenses, getCommitteeInfo,
   getChandaCreditAmount, getMemberCreditAmount, getExpenseCreditAmount,
+  getActiveEvent, ActiveEventInfo,
   Chanda, Expense, DonationAd,
 } from '../lib/db';
 import { colors, radius } from '../theme';
@@ -76,6 +78,16 @@ export function HomeScreen({ navigation }: any) {
   const [committeeLogo, setCommitteeLogo] = useState('');
   const [totals, setTotals] = useState<Totals | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeEvent, setActiveEvent] = useState<ActiveEventInfo | null>(null);
+
+  // Read-only — refetched on screen focus (not just mount) so it can't drift
+  // if an admin switches the event on web mid-session; switching only ever
+  // happens there, never on mobile.
+  useFocusEffect(
+    useCallback(() => {
+      getActiveEvent().then(setActiveEvent).catch(() => {});
+    }, [])
+  );
 
   const load = useCallback(async () => {
     const [chandaList, members, donationAds, expenses, committee] = await Promise.all([
@@ -140,6 +152,13 @@ export function HomeScreen({ navigation }: any) {
             <Text style={styles.locationText} numberOfLines={1}>{committeeName || 'Your Committee'}</Text>
           </TouchableOpacity>
           <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] || 'there'}!</Text>
+          {activeEvent && (
+            <View style={styles.eventBadge}>
+              <Text style={styles.eventBadgeText} numberOfLines={1}>
+                {activeEvent.emoji || '🪔'} {activeEvent.name} {activeEvent.year}
+              </Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Menu')}>
           <LayoutGrid size={18} color={colors.ink} />
@@ -315,6 +334,8 @@ const styles = StyleSheet.create({
   committeeInitialText: { fontSize: 15, fontWeight: '800', color: '#ffffff' },
   locationText: { flex: 1, fontSize: 13.5, color: colors.inkSoft, fontWeight: '800' },
   greeting: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  eventBadge: { marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.orangeSoft },
+  eventBadgeText: { fontSize: 12, fontWeight: '700', color: colors.orange },
   menuButton: { width: 42, height: 42, borderRadius: 13, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 120, gap: 18 },
   statsRow: { flexDirection: 'row', gap: 12 },

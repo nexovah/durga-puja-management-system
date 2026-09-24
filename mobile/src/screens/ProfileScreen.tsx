@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, LogOut } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
-import { getCommitteeInfo, CommitteeInfo } from '../lib/db';
+import { getCommitteeInfo, CommitteeInfo, getActiveEvent, ActiveEventInfo } from '../lib/db';
 import { colors, radius } from '../theme';
 import { BottomSheet } from '../components/BottomSheet';
 
@@ -13,9 +13,12 @@ export function ProfileScreen({ navigation }: any) {
   const { user, logout } = useAuth();
   const [committee, setCommittee] = useState<CommitteeInfo | null>(null);
   const [logoutSheetOpen, setLogoutSheetOpen] = useState(false);
+  const [activeEvent, setActiveEvent] = useState<ActiveEventInfo | null>(null);
 
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Read-only, refetched on focus — switching only ever happens on web.
+  useFocusEffect(useCallback(() => { getActiveEvent().then(setActiveEvent).catch(() => {}); }, []));
 
   return (
     <View style={styles.container}>
@@ -40,6 +43,7 @@ export function ProfileScreen({ navigation }: any) {
         </View>
 
         <View style={styles.card}>
+          <Row label="Puja / Festival" value={activeEvent ? `${activeEvent.emoji || '🪔'} ${activeEvent.name} ${activeEvent.year}` : 'None active'} />
           <Row label="Role" value={user?.isAdmin ? 'Administrator' : 'Member'} />
           <Row label="Committee" value={committee?.association || committee?.name} />
           <Row label="Email" value={committee?.email} />

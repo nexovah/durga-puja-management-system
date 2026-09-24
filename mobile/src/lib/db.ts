@@ -473,3 +473,32 @@ export function diffFields(
   }
   return changes;
 }
+
+// ---------------------------------------------------------------------------
+// Active event (Puja / Festival) — read-only on mobile. Switching only
+// happens on web, admin-only (see supabase/064_events.sql,
+// src/app/components/EventSwitcher.tsx). Mobile just displays whichever
+// event tenants.active_event_id currently points at, refetched on screen
+// focus (useFocusEffect, same convention as HomeScreen/HelpSupportScreen)
+// so it can't silently drift if an admin switches mid-session.
+// ---------------------------------------------------------------------------
+export interface ActiveEventInfo {
+  id: string;
+  name: string;
+  year: number;
+  emoji: string | null;
+}
+
+export async function getActiveEvent(): Promise<ActiveEventInfo | null> {
+  const { data: tenantRow, error: tenantError } = await supabase.from('tenants').select('active_event_id').single();
+  if (tenantError) throw tenantError;
+  if (!tenantRow?.active_event_id) return null;
+  const { data, error } = await supabase
+    .from('events')
+    .select('id, name, year, emoji')
+    .eq('id', tenantRow.active_event_id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { id: data.id, name: data.name, year: data.year, emoji: data.emoji ?? null };
+}

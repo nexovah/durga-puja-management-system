@@ -11,7 +11,7 @@ import {
   Info, LifeBuoy, Shield, RotateCcw,
 } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
-import { getCommitteeInfo, CommitteeInfo } from '../lib/db';
+import { getCommitteeInfo, CommitteeInfo, getActiveEvent, ActiveEventInfo } from '../lib/db';
 import { colors, radius } from '../theme';
 import { SearchBar } from '../components/SearchBar';
 
@@ -68,9 +68,12 @@ export function MenuScreen({ navigation }: any) {
   const { user } = useAuth();
   const [committee, setCommittee] = useState<CommitteeInfo | null>(null);
   const [search, setSearch] = useState('');
+  const [activeEvent, setActiveEvent] = useState<ActiveEventInfo | null>(null);
 
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Read-only, refetched on focus — switching only ever happens on web.
+  useFocusEffect(useCallback(() => { getActiveEvent().then(setActiveEvent).catch(() => {}); }, []));
 
   const committeeName = committee?.association || committee?.name || '';
   const isCommitteeLogoUrl = !!committee?.logo && /^https?:\/\//.test(committee.logo);
@@ -113,6 +116,14 @@ export function MenuScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
+      {activeEvent && (
+        <View style={styles.eventBanner}>
+          <Text style={styles.eventBannerText} numberOfLines={1}>
+            {activeEvent.emoji || '🪔'} {activeEvent.name} {activeEvent.year}
+          </Text>
+        </View>
+      )}
+
       <SearchBar value={search} onChangeText={setSearch} placeholder="Search menu…" />
 
       <ScrollView contentContainerStyle={styles.list}>
@@ -146,6 +157,8 @@ const styles = StyleSheet.create({
   profileAvatarImage: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
   profileAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.orangeSoft, alignItems: 'center', justifyContent: 'center' },
   profileAvatarText: { fontSize: 14, fontWeight: '800', color: colors.orange },
+  eventBanner: { marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.orangeSoft, alignSelf: 'flex-start' },
+  eventBannerText: { fontSize: 13, fontWeight: '700', color: colors.orange },
   list: { padding: 20, paddingTop: 8, gap: 20 },
   section: { gap: 8 },
   sectionLabel: { fontSize: 11.5, fontWeight: '700', color: colors.mutedLight, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2, paddingLeft: 2 },
