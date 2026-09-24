@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Inbox } from 'lucide-react';
+import { X, Inbox, Search } from 'lucide-react';
 import { SupportTicket, TicketStatus, listSupportTicketsRequest, setTicketStatusRequest } from '../lib/superAdminDb';
 
 const STATUS_BADGE: Record<TicketStatus, string> = {
@@ -17,6 +17,9 @@ export function SuperAdminHelpSupport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus>('all');
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [viewing, setViewing] = useState<SupportTicket | null>(null);
   const [updating, setUpdating] = useState(false);
 
@@ -43,7 +46,17 @@ export function SuperAdminHelpSupport() {
     }
   };
 
-  const filtered = tickets.filter(t => statusFilter === 'all' || t.status === statusFilter);
+  const filtered = tickets.filter(t => {
+    if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      if (!t.ticketCode.toLowerCase().includes(q) && !t.tenantName.toLowerCase().includes(q)) return false;
+    }
+    const createdDate = t.createdAt.slice(0, 10); // YYYY-MM-DD, comparable as strings
+    if (dateFrom && createdDate < dateFrom) return false;
+    if (dateTo && createdDate > dateTo) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -55,7 +68,18 @@ export function SuperAdminHelpSupport() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search Ticket ID or Tenant"
+            className="pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm w-56"
+          />
+        </div>
+
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value as any)}
@@ -66,6 +90,32 @@ export function SuperAdminHelpSupport() {
           <option value="in_progress">In Progress</option>
           <option value="resolved">Resolved</option>
         </select>
+
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            max={dateTo || undefined}
+            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+          />
+          <span>to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            min={dateFrom || undefined}
+            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
