@@ -720,8 +720,8 @@ export const translations = {
     'login.forgotPasswordComingSoon': 'Password reset via email is coming soon — contact your committee admin for now.',
     'login.submit': 'Log In',
     'login.submitting': 'Logging in…',
-    'login.tagline1': 'Stop managing your Puja across notebooks, spreadsheets, WhatsApp messages and scattered records.',
-    'login.tagline2': 'Durga CRM brings your committee’s everyday work together in one organized platform.',
+    'login.tagline1': 'Manage your committee, collections, donations, subscriptions, sponsors, expenses, loans, budgets, estimates and tasks',
+    'login.tagline2': '— all from one powerful platform.',
 
     // Global Search
     'search.placeholder': 'Search members, chanda, donation/advertisement, expenses…',
@@ -1374,8 +1374,8 @@ export const translations = {
     'login.forgotPasswordComingSoon': 'ইমেলের মাধ্যমে পাসওয়ার্ড রিসেট শীঘ্রই আসছে — আপাতত আপনার কমিটি অ্যাডমিনের সাথে যোগাযোগ করুন।',
     'login.submit': 'লগইন করুন',
     'login.submitting': 'লগইন হচ্ছে…',
-    'login.tagline1': 'নোটবুক, স্প্রেডশিট, হোয়াটসঅ্যাপ মেসেজ আর ছড়িয়ে থাকা রেকর্ড দিয়ে আর নয়।',
-    'login.tagline2': 'দুর্গা সিআরএম আপনার কমিটির প্রতিদিনের কাজ একটি সংগঠিত প্ল্যাটফর্মে নিয়ে আসে।',
+    'login.tagline1': 'আপনার কমিটি, সংগ্রহ, অনুদান, সাবস্ক্রিপশন, স্পনসর, খরচ, ঋণ, বাজেট, প্রাক্কলন ও কাজ পরিচালনা করুন',
+    'login.tagline2': '— সব একটি শক্তিশালী প্ল্যাটফর্ম থেকে।',
 
     // Global Search
     'search.placeholder': 'সদস্য, চাঁদা, দান/বিজ্ঞাপন, খরচ খুঁজুন…',
@@ -2028,8 +2028,8 @@ export const translations = {
     'login.forgotPasswordComingSoon': 'ईमेल से पासवर्ड रीसेट जल्द आ रहा है — फ़िलहाल अपने समिति एडमिन से संपर्क करें।',
     'login.submit': 'लॉग इन करें',
     'login.submitting': 'लॉग इन हो रहा है…',
-    'login.tagline1': 'नोटबुक, स्प्रेडशीट, व्हाट्सएप मैसेज और बिखरे रिकॉर्ड्स में पूजा प्रबंधन बंद करें।',
-    'login.tagline2': 'दुर्गा सीआरएम आपकी समिति के रोज़मर्रा के काम को एक व्यवस्थित प्लेटफ़ॉर्म में लाता है।',
+    'login.tagline1': 'अपनी समिति, संग्रह, दान, सदस्यता, प्रायोजक, खर्च, ऋण, बजट, अनुमान और कार्य प्रबंधित करें',
+    'login.tagline2': '— सब एक शक्तिशाली प्लेटफ़ॉर्म से।',
 
     // Global Search
     'search.placeholder': 'सदस्य, चंदा, दान/विज्ञापन, खर्च खोजें…',

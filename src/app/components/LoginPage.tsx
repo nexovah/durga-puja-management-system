@@ -153,7 +153,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         </div>
 
         <div className="mt-5 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
             {t('login.tagline1')} {t('login.tagline2')}
           </p>
         </div>
