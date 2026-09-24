@@ -238,6 +238,8 @@ export const translations = {
     // Donation/Ads Collection
     'donationAds.pageTitle': 'Donation/Advertisement Collection',
     'donationAds.widget.total': 'Total Collection',
+    'donationAds.widget.totalDonors': 'Total Donors',
+    'donationAds.widget.totalAdvertisers': 'Total Advertisers',
     'donationAds.widget.donation': 'Donation Collection',
     'donationAds.widget.ads': 'Advertisement Collection',
     'donationAds.searchPlaceholder': 'Search donor/company name, phone, voucher number…',

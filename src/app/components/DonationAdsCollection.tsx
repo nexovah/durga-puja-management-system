@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -649,6 +649,17 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
         </div>
+        {fixedCategory && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {fixedCategory === 'donation' ? t('donationAds.widget.totalDonors') : t('donationAds.widget.totalAdvertisers')}
+            </h3>
+            <Users className="text-orange-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-600">{scopedList.length.toLocaleString()}</p>
+        </div>
+        )}
         {!fixedCategory && (
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-emerald-500 dark:border-emerald-500/60">
           <div className="flex items-center justify-between mb-2">
