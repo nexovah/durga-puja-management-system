@@ -513,12 +513,58 @@ export function generatePassword(): string {
 // Committee logo upload (Supabase Storage — see supabase/storage.sql)
 // ---------------------------------------------------------------------------
 
+const LOGO_MAX_BYTES = 200 * 1024; // 200 KB — every profile-picture/logo upload (super admin or tenant admin) must fit under this
+
+// Client-side compression for logo/profile-picture uploads only — never
+// applied to the Help & Support attachment upload, which stays untouched.
+// Draws the image onto a canvas and re-encodes as JPEG, stepping the
+// quality down (and shrinking dimensions if quality alone isn't enough)
+// until the result is under LOGO_MAX_BYTES. Skips non-raster types (ico)
+// where canvas re-encoding isn't meaningful, and skips files already
+// under the limit.
+async function compressLogoImage(file: File): Promise<File> {
+  if (file.size <= LOGO_MAX_BYTES) return file;
+  if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) return file;
+
+  const bitmap = await createImageBitmap(file);
+  let { width, height } = bitmap;
+
+  const encode = (w: number, h: number, quality: number): Promise<Blob | null> =>
+    new Promise(resolve => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(null); return; }
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    });
+
+  let blob: Blob | null = null;
+  for (const quality of [0.8, 0.6, 0.5, 0.4, 0.3]) {
+    blob = await encode(width, height, quality);
+    if (blob && blob.size <= LOGO_MAX_BYTES) break;
+  }
+  // Quality alone wasn't enough — also shrink dimensions, halving until it fits.
+  while (blob && blob.size > LOGO_MAX_BYTES && (width > 100 || height > 100)) {
+    width = Math.round(width * 0.75);
+    height = Math.round(height * 0.75);
+    blob = await encode(width, height, 0.5);
+  }
+
+  bitmap.close();
+  if (!blob) return file;
+  const newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return new File([blob], newName, { type: 'image/jpeg' });
+}
+
 export async function uploadLogo(file: File): Promise<string> {
-  const ext = file.name.split('.').pop() || 'png';
+  const compressed = await compressLogoImage(file);
+  const ext = compressed.name.split('.').pop() || 'png';
   const path = `committee-logo-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from('logos').upload(path, file, {
+  const { error } = await supabase.storage.from('logos').upload(path, compressed, {
     upsert: true,
-    contentType: file.type,
+    contentType: compressed.type,
   });
   if (error) throw error;
   const { data } = supabase.storage.from('logos').getPublicUrl(path);
