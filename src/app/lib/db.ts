@@ -536,6 +536,7 @@ export type TicketStatus = 'open' | 'in_progress' | 'resolved';
 
 export interface SupportTicket {
   id: string;
+  ticketCode: string;
   title: string;
   body: string;
   imageUrl: string | null;
@@ -546,6 +547,7 @@ export interface SupportTicket {
 function fromTicketRow(row: any): SupportTicket {
   return {
     id: row.id,
+    ticketCode: row.ticket_code,
     title: row.title,
     body: row.body,
     imageUrl: row.image_url,

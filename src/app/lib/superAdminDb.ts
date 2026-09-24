@@ -401,6 +401,7 @@ export type TicketStatus = 'open' | 'in_progress' | 'resolved';
 
 export interface SupportTicket {
   id: string;
+  ticketCode: string;
   tenantId: string;
   tenantName: string;
   username: string;
@@ -415,6 +416,7 @@ export interface SupportTicket {
 function fromTicketRow(row: any): SupportTicket {
   return {
     id: row.id,
+    ticketCode: row.ticket_code,
     tenantId: row.tenant_id,
     tenantName: row.tenant_name,
     username: row.username,

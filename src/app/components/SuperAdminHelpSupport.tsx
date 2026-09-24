@@ -80,6 +80,7 @@ export function SuperAdminHelpSupport() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400">
               <tr>
+                <th className="text-left px-4 py-2.5 font-medium">Ticket ID</th>
                 <th className="text-left px-4 py-2.5 font-medium">Tenant</th>
                 <th className="text-left px-4 py-2.5 font-medium">Submitted by</th>
                 <th className="text-left px-4 py-2.5 font-medium">Title</th>
@@ -94,6 +95,7 @@ export function SuperAdminHelpSupport() {
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer"
                   onClick={() => setViewing(ticket)}
                 >
+                  <td className="px-4 py-3 font-mono text-xs text-orange-600 dark:text-orange-400 font-semibold">{ticket.ticketCode}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{ticket.tenantName}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{ticket.userName}</td>
                   <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{ticket.title}</td>
@@ -114,7 +116,10 @@ export function SuperAdminHelpSupport() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{viewing.title}</h3>
+              <div>
+                <p className="text-xs font-mono font-semibold text-orange-600 dark:text-orange-400 mb-0.5">{viewing.ticketCode}</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{viewing.title}</h3>
+              </div>
               <button onClick={() => setViewing(null)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                 <X size={22} />
               </button>

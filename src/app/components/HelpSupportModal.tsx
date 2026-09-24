@@ -188,7 +188,10 @@ export function HelpSupportModal({ open, onClose, currentUser }: HelpSupportModa
             tickets.map(ticket => (
               <div key={ticket.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-3 mb-1.5">
-                  <h4 className="font-medium text-gray-800 dark:text-gray-200">{ticket.title}</h4>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 tracking-wide mb-0.5">{ticket.ticketCode}</p>
+                    <h4 className="font-medium text-gray-800 dark:text-gray-200">{ticket.title}</h4>
+                  </div>
                   <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[ticket.status]}`}>
                     {STATUS_LABEL[ticket.status]}
                   </span>
