@@ -14,7 +14,7 @@ import { formatAmount, formatDate } from '../lib/labels';
 export function DonationAdListScreen({ route, navigation }: any) {
   const category: DonationAdCategory = route.params?.category || 'donation';
   const isAds = category === 'ads';
-  const title = isAds ? 'Ads Collection' : 'Donations';
+  const title = isAds ? 'Advertisement Collection' : 'Donations';
 
   const [rows, setRows] = useState<DonationAd[] | null>(null);
   const [search, setSearch] = useState('');
@@ -45,7 +45,7 @@ export function DonationAdListScreen({ route, navigation }: any) {
       {showStats && (
         <SummaryWidgets
           widgets={[
-            { label: isAds ? 'Total Ads' : 'Total Donations', value: formatAmount(total), icon: isAds ? Megaphone : HeartHandshake, tint: 'neutral' },
+            { label: isAds ? 'Total Advertisement' : 'Total Donations', value: formatAmount(total), icon: isAds ? Megaphone : HeartHandshake, tint: 'neutral' },
             { label: 'Transactions', value: String(rows.length), icon: Landmark, tint: 'neutral' },
             { label: 'This month', value: formatAmount(thisMonth), icon: TrendingUp, tint: 'amber' },
           ]}

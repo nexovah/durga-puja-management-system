@@ -234,7 +234,7 @@ export function HomeScreen({ navigation }: any) {
             <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Chanda" onPress={() => navigation.navigate('ChandaList')} />
             <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />
             <QuickTile icon={HeartHandshake} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
-            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Ads" onPress={() => navigation.navigate('AdsList')} />
+            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Advertisement" onPress={() => navigation.navigate('AdsList')} />
           </View>
           <View style={[styles.grid, { marginTop: 10 }]}>
             <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />

@@ -35,7 +35,7 @@ const RANGES: { key: Range; label: string }[] = [
 ];
 
 const MODULE_LABELS: Record<string, string> = {
-  chanda: 'Chanda', donation: 'Donation', ads: 'Ads', expenses: 'Expenses',
+  chanda: 'Chanda', donation: 'Donation', ads: 'Advertisement', expenses: 'Expenses',
   vendor: 'Vendor', member: 'Members', loan: 'Loans', estimation: 'Estimation',
 };
 
