@@ -123,6 +123,9 @@ export function ledgerTotals(rows: LedgerRow[]) {
 export interface SummaryLine {
   label: string;
   value: string;
+  // Optional color hint for print/PDF summary widgets — e.g. Balance
+  // Sheet's Closing Balance: green when positive, red when negative.
+  tone?: 'positive' | 'negative';
 }
 
 // Generic CSV writer used by every Reports module (see

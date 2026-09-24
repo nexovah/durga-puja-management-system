@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { SummaryLine } from '../lib/reportExport';
 
@@ -16,6 +17,26 @@ interface ReportPrintTableProps {
   summary: SummaryLine[];
   columns: PrintColumn[];
   rows: (string | number)[][];
+  // Optional per-row color hint, parallel to `rows` — e.g. Balance Sheet's
+  // income rows green, expenditure rows red. Omit or leave entries
+  // undefined for rows that should stay the default black/gray.
+  rowTones?: ('positive' | 'negative' | undefined)[];
+  // Optional per-row bold hint, parallel to `rows` — e.g. Balance Sheet's
+  // "Income"/"Expenditure" section header rows.
+  boldRows?: boolean[];
+  // Optional per-row "this is a subtotal of everything above" hint,
+  // parallel to `rows` — draws the same dark top border as the header row
+  // instead of the usual light divider (e.g. Balance Sheet's Total Income).
+  strongTopBorderRows?: boolean[];
+  // Optional per-row "this is the final figure" hint, parallel to `rows` —
+  // dark top border plus extra row height (e.g. Balance Sheet's Closing
+  // Balance).
+  emphasizedRows?: boolean[];
+  // Optional per-row "insert a visible blank gap above this row" hint,
+  // parallel to `rows` — e.g. Balance Sheet separating its Income,
+  // Expenditure and Closing Balance sections. A plain border-top margin
+  // won't work across <tr>s, so this renders a real spacer row instead.
+  sectionGapBeforeRows?: boolean[];
   emptyMessage: string;
 }
 
@@ -28,7 +49,7 @@ interface ReportPrintTableProps {
 // real embedded image, unlike the CSV export which can only carry the
 // name as plain text — see reportExport.ts's downloadTableCSV), then
 // the module's own summary widgets, then the data table.
-export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, eventLabel, downloadedAt, summary, columns, rows, emptyMessage }: ReportPrintTableProps) {
+export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, eventLabel, downloadedAt, summary, columns, rows, rowTones, boldRows, strongTopBorderRows, emphasizedRows, sectionGapBeforeRows, emptyMessage }: ReportPrintTableProps) {
   const isEmoji = companyLogo && companyLogo.length <= 10 && !companyLogo.startsWith('data:') && !companyLogo.startsWith('http');
 
   return createPortal(
@@ -58,7 +79,7 @@ export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, 
           {summary.map((s, i) => (
             <div key={i} className="flex-1 border border-gray-300 rounded-lg px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{s.label}</p>
-              <p className="text-xl font-bold text-gray-900">{s.value}</p>
+              <p className={`text-xl font-bold ${s.tone === 'positive' ? 'text-green-700' : s.tone === 'negative' ? 'text-red-700' : 'text-gray-900'}`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -73,13 +94,30 @@ export function ReportPrintTable({ companyName, companyLogo, title, rangeLabel, 
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-b border-gray-300">
-              {row.map((cell, j) => (
-                <td key={j} className={`py-1.5 pr-2 text-xs ${columns[j]?.align === 'right' ? 'text-right' : 'text-left'}`}>{cell}</td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((row, i) => {
+            const tone = rowTones?.[i];
+            const toneClass = tone === 'positive' ? 'text-green-700' : tone === 'negative' ? 'text-red-700' : '';
+            const emphasized = emphasizedRows?.[i];
+            const boldClass = boldRows?.[i] || emphasized ? 'font-bold' : '';
+            const topBorderClass = emphasized || strongTopBorderRows?.[i] ? 'border-t-2 border-t-gray-800' : '';
+            return (
+              <Fragment key={i}>
+                {sectionGapBeforeRows?.[i] && (
+                  <tr aria-hidden="true">
+                    <td colSpan={columns.length} style={{ height: 40 }} />
+                  </tr>
+                )}
+                <tr className={`border-b border-gray-300 ${topBorderClass}`}>
+                  {row.map((cell, j) => {
+                    const isAmountCell = columns[j]?.align === 'right';
+                    return (
+                      <td key={j} className={`${emphasized ? 'py-3' : 'py-1.5'} pr-2 ${emphasized ? 'text-sm' : 'text-xs'} ${isAmountCell ? 'text-right' : 'text-left'} ${isAmountCell ? toneClass : ''} ${boldClass}`}>{cell}</td>
+                    );
+                  })}
+                </tr>
+              </Fragment>
+            );
+          })}
           {rows.length === 0 && (
             <tr><td colSpan={columns.length} className="py-6 text-center text-sm text-gray-500">{emptyMessage}</td></tr>
           )}

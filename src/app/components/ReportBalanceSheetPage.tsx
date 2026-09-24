@@ -91,6 +91,20 @@ export function ReportBalanceSheetPage({
 
   const closingBalance = totalIncome - totalExpenditure;
 
+  // Single source of truth for the exported table shape — a total row is
+  // only shown for a section when it actually sums more than one line
+  // item; with just one ("Expenses Total"), a separate "Total Expenditure"
+  // row would just repeat the same number.
+  const printRows: { cells: [string, string]; tone?: 'positive' | 'negative'; bold?: boolean; strongTopBorder?: boolean; emphasized?: boolean; sectionGapBefore?: boolean }[] = [
+    { cells: [t('report.balanceSheet.income'), ''], bold: true },
+    ...incomeRows.map(r => ({ cells: [r.label, fmtAmount(r.value)] as [string, string], tone: 'positive' as const })),
+    ...(incomeRows.length > 1 ? [{ cells: [t('report.balanceSheet.totalIncome'), fmtAmount(totalIncome)] as [string, string], tone: 'positive' as const, bold: true, strongTopBorder: true }] : []),
+    { cells: [t('report.balanceSheet.expenditure'), ''], bold: true, sectionGapBefore: true },
+    ...expenditureRows.map(r => ({ cells: [r.label, fmtAmount(r.value)] as [string, string], tone: 'negative' as const })),
+    ...(expenditureRows.length > 1 ? [{ cells: [t('report.balanceSheet.totalExpenditure'), fmtAmount(totalExpenditure)] as [string, string], tone: 'negative' as const, bold: true, strongTopBorder: true }] : []),
+    { cells: [t('report.balanceSheet.closingBalance'), fmtAmount(closingBalance)], tone: closingBalance >= 0 ? 'positive' as const : 'negative' as const, emphasized: true, sectionGapBefore: true },
+  ];
+
   const handleDownloadCSV = () => {
     const downloadedAt = now();
     downloadTableCSV(`balance-sheet-${new Date().toISOString().slice(0, 10)}.csv`, {
@@ -98,16 +112,8 @@ export function ReportBalanceSheetPage({
       eventLabel,
       downloadedAt: `${t('report.balanceSheet.downloadedAt')}: ${downloadedAt}`,
       summary: [{ label: t('report.balanceSheet.closingBalance'), value: fmtAmount(closingBalance) }],
-      headers: [t('report.balanceSheet.section'), t('report.balanceSheet.item'), t('report.col.amount')],
-      rows: [
-        [t('report.balanceSheet.income'), '', ''],
-        ...incomeRows.map(r => ['', r.label, fmtAmount(r.value)]),
-        ['', t('report.balanceSheet.totalIncome'), fmtAmount(totalIncome)],
-        [t('report.balanceSheet.expenditure'), '', ''],
-        ...expenditureRows.map(r => ['', r.label, fmtAmount(r.value)]),
-        ['', t('report.balanceSheet.totalExpenditure'), fmtAmount(totalExpenditure)],
-        [t('report.balanceSheet.closingBalance'), '', fmtAmount(closingBalance)],
-      ],
+      headers: [t('report.balanceSheet.item'), t('report.col.amount')],
+      rows: printRows.map(r => r.cells),
     });
     setMenuOpen(false);
   };
@@ -165,7 +171,7 @@ export function ReportBalanceSheetPage({
             {incomeRows.map((r, i) => (
               <div key={i} className="flex items-center justify-between px-5 py-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">{i + 1}. {r.label}</span>
-                <span className="text-sm font-semibold text-green-600">{fmtAmount(r.value)}</span>
+                <span className="text-sm font-semibold text-green-700">{fmtAmount(r.value)}</span>
               </div>
             ))}
           </div>
@@ -185,31 +191,33 @@ export function ReportBalanceSheetPage({
             {expenditureRows.map((r, i) => (
               <div key={i} className="flex items-center justify-between px-5 py-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">{i + 1}. {r.label}</span>
-                <span className="text-sm font-semibold text-red-600">{fmtAmount(r.value)}</span>
+                <span className="text-sm font-semibold text-red-700">{fmtAmount(r.value)}</span>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between px-5 py-3.5 bg-red-50 dark:bg-red-500/10 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{t('report.balanceSheet.totalExpenditure')}</span>
-            <span className="text-base font-bold text-red-700">{fmtAmount(totalExpenditure)}</span>
-          </div>
+          {expenditureRows.length > 1 && (
+            <div className="flex items-center justify-between px-5 py-3.5 bg-red-50 dark:bg-red-500/10 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{t('report.balanceSheet.totalExpenditure')}</span>
+              <span className="text-base font-bold text-red-700">{fmtAmount(totalExpenditure)}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* C. Closing Balance */}
       <div className={`rounded-xl border p-6 flex items-center justify-between ${
         closingBalance >= 0
-          ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30'
+          ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30'
           : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30'
       }`}>
         <div className="flex items-center gap-3">
-          <Scale className={closingBalance >= 0 ? 'text-orange-600' : 'text-red-600'} size={28} />
+          <Scale className={closingBalance >= 0 ? 'text-green-700' : 'text-red-600'} size={28} />
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('report.balanceSheet.closingBalance')}</p>
             <p className="text-xs text-gray-500 dark:text-gray-500">{t('report.balanceSheet.totalIncome')} − {t('report.balanceSheet.totalExpenditure')}</p>
           </div>
         </div>
-        <p className={`text-3xl font-bold ${closingBalance >= 0 ? 'text-orange-700' : 'text-red-700'}`}>
+        <p className={`text-3xl font-bold ${closingBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
           {fmtAmount(closingBalance)}
         </p>
       </div>
@@ -221,20 +229,17 @@ export function ReportBalanceSheetPage({
           title={t('report.nav.balanceSheet')}
           eventLabel={eventLabel}
           downloadedAt={printData.downloadedAt}
-          summary={[{ label: t('report.balanceSheet.closingBalance'), value: fmtAmount(closingBalance) }]}
+          summary={[{ label: t('report.balanceSheet.closingBalance'), value: fmtAmount(closingBalance), tone: closingBalance >= 0 ? 'positive' : 'negative' }]}
           columns={[
             { label: t('report.balanceSheet.item') },
             { label: t('report.col.amount'), align: 'right' },
           ]}
-          rows={[
-            [t('report.balanceSheet.income'), ''],
-            ...incomeRows.map(r => [r.label, fmtAmount(r.value)]),
-            [t('report.balanceSheet.totalIncome'), fmtAmount(totalIncome)],
-            [t('report.balanceSheet.expenditure'), ''],
-            ...expenditureRows.map(r => [r.label, fmtAmount(r.value)]),
-            [t('report.balanceSheet.totalExpenditure'), fmtAmount(totalExpenditure)],
-            [t('report.balanceSheet.closingBalance'), fmtAmount(closingBalance)],
-          ]}
+          rows={printRows.map(r => r.cells)}
+          boldRows={printRows.map(r => r.bold)}
+          rowTones={printRows.map(r => r.tone)}
+          strongTopBorderRows={printRows.map(r => r.strongTopBorder)}
+          emphasizedRows={printRows.map(r => r.emphasized)}
+          sectionGapBeforeRows={printRows.map(r => r.sectionGapBefore)}
           emptyMessage=""
         />
       )}

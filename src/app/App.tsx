@@ -1216,7 +1216,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             committeeLogo={committeeInfo.logo}
             activeEventLabel={(() => {
               const e = events.find(ev => ev.id === activeEventId);
-              return e ? `${e.name} ${e.year}` : '';
+              return e ? `${e.name} – ${e.year}` : '';
             })()}
             onRefreshData={refreshCoreData}
           />
