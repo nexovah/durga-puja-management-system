@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SuperAdminLogin } from './SuperAdminLogin';
+import { SuperAdminResetPassword } from './SuperAdminResetPassword';
 import { SuperAdminLayout, SuperAdminPage } from './SuperAdminLayout';
 import { SuperAdminTenants } from './SuperAdminPanel';
 import { SuperAdminTenantDetail } from './SuperAdminTenantDetail';
@@ -143,6 +144,14 @@ export function SuperAdminRoot() {
     localStorage.removeItem(SESSION_KEY);
     setTenantAccessToken(null);
   };
+
+  if (window.location.pathname === '/super-admin/reset-password') {
+    return (
+      <SuperAdminResetPassword
+        onDone={() => { window.location.href = '/super-admin'; }}
+      />
+    );
+  }
 
   if (!admin) {
     return <SuperAdminLogin onLogin={handleLogin} />;

@@ -616,6 +616,23 @@ export async function updateDeveloperInfoRequest(info: DeveloperInfo): Promise<D
   return fromDeveloperRow(data);
 }
 
+// "Forgot password?" — calls the send-super-admin-reset-email Edge Function
+// (supabase/functions/send-super-admin-reset-email), which always resolves
+// the same way regardless of whether the username exists (see that
+// function's own comment) so this never throws for a bad username.
+export async function superAdminRequestPasswordResetRequest(username: string): Promise<void> {
+  await supabase.functions.invoke('send-super-admin-reset-email', { body: { username } });
+}
+
+export async function superAdminResetPasswordRequest(token: string, newPassword: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('super_admin_reset_password', {
+    p_token: token,
+    p_new_password: newPassword,
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
 export async function superAdminChangePasswordRequest(currentPassword: string, newPassword: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('super_admin_change_password', {
     p_current_password: currentPassword,

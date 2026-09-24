@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import { getPlatformSettingsRequest, PlatformSettings } from '../lib/superAdminDb';
+import { Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
+import { getPlatformSettingsRequest, PlatformSettings, superAdminRequestPasswordResetRequest } from '../lib/superAdminDb';
 
 interface SuperAdminLoginProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
@@ -13,6 +13,10 @@ export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [platform, setPlatform] = useState<PlatformSettings | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotUsername, setForgotUsername] = useState('');
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
 
   useEffect(() => {
     getPlatformSettingsRequest().then(setPlatform).catch(() => {});
@@ -29,6 +33,23 @@ export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
     const success = await onLogin(username, password);
     setSubmitting(false);
     if (!success) setError('Invalid username or password.');
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsername.trim()) return;
+    setForgotSubmitting(true);
+    setForgotMessage('');
+    try {
+      await superAdminRequestPasswordResetRequest(forgotUsername.trim());
+    } catch {
+      // Deliberately no error surfaced — the endpoint always resolves the
+      // same way regardless of outcome, so a network hiccup gets the same
+      // generic message rather than leaking anything about the account.
+    } finally {
+      setForgotSubmitting(false);
+      setForgotMessage('If that account exists and has an email on file, a reset link has been sent.');
+    }
   };
 
   const showLogo = platform?.showLogoOnSignin !== false;
@@ -103,15 +124,72 @@ export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
             >
               {submitting ? 'Signing in…' : 'Sign in'}
             </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => { setShowForgotPassword(true); setForgotMessage(''); }}
+                className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
               Durga CRM platform administration
             </p>
+            <a
+              href="/login"
+              onClick={e => { e.preventDefault(); window.history.pushState(null, '', '/login'); window.location.reload(); }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
+            >
+              Login as tenant
+              <ArrowRight size={15} />
+            </a>
           </div>
         </div>
       </div>
+
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForgotPassword(false)}>
+          <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Reset your password</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Enter your Super Admin username — if it has an email on file, we'll send a reset link there.
+            </p>
+            {forgotMessage ? (
+              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
+                {forgotMessage}
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                <input
+                  value={forgotUsername}
+                  onChange={e => setForgotUsername(e.target.value)}
+                  placeholder="Username"
+                  autoFocus
+                  className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={forgotSubmitting}
+                  className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors disabled:opacity-60"
+                >
+                  {forgotSubmitting ? 'Sending…' : 'Send reset link'}
+                </button>
+              </form>
+            )}
+            <button
+              onClick={() => setShowForgotPassword(false)}
+              className="w-full mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
