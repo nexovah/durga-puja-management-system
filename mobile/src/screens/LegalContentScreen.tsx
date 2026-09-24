@@ -7,6 +7,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { getCmsPageRequest, CmsPageContent } from '../lib/db';
+import { MarkdownBody } from '../lib/markdown';
 import { colors } from '../theme';
 
 // The web About page doesn't exist yet either, so there's no 'about' row in
@@ -47,9 +48,7 @@ export function LegalContentScreen({ route, navigation }: any) {
         <View style={styles.loading}><Text style={styles.notFound}>Content not available.</Text></View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {body.split('\n').filter(Boolean).map((para: string, i: number) => (
-            <Text key={i} style={styles.paragraph}>{para}</Text>
-          ))}
+          <MarkdownBody body={body} />
         </ScrollView>
       )}
     </View>
@@ -63,5 +62,4 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: { fontSize: 13.5, color: colors.mutedLight },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
-  paragraph: { fontSize: 14, color: colors.inkSoft, lineHeight: 21 },
 });
