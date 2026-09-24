@@ -544,6 +544,7 @@ export default function App() {
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
   const [events, setEvents] = useState<EventInfo[]>([]);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [eventsLoadError, setEventsLoadError] = useState<string | null>(null);
 
   // Load everything from Supabase once the user is logged in. Pre-login,
   // RLS has no tenant token to scope by (see supabase/020_multi_tenant.sql)
@@ -573,12 +574,25 @@ export default function App() {
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
-        const [eventsList, activeId] = await Promise.all([fetchEvents(), currentUser?.tenantId ? fetchActiveEventId(currentUser.tenantId) : Promise.resolve(null)]);
-        setEvents(eventsList);
-        setActiveEventId(activeId);
       } catch (err: any) {
         console.error('Failed to load data from Supabase', err);
         setLoadError(err?.message || 'unknown-error');
+        setDataLoading(false);
+        return;
+      }
+      // Kept out of the try/catch above on purpose: a failure here (e.g. a
+      // missing grant on tenants — see supabase/066_tenants_self_select.sql)
+      // must not take down the entire CRM's data load. Worst case, the
+      // event-switcher widget/gate is blank/stuck loading while every other
+      // page still works normally.
+      try {
+        const [eventsList, activeId] = await Promise.all([fetchEvents(), currentUser?.tenantId ? fetchActiveEventId(currentUser.tenantId) : Promise.resolve(null)]);
+        setEvents(eventsList);
+        setActiveEventId(activeId);
+        setEventsLoadError(null);
+      } catch (err: any) {
+        console.error('Failed to load events', err);
+        setEventsLoadError(err?.message || 'unknown-error');
       } finally {
         setDataLoading(false);
       }
@@ -980,6 +994,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             className="px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
           >
             Log out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (eventsLoadError) {
+    // Distinct from "no event exists yet" below — this means the check
+    // itself failed (e.g. a missing DB grant), so don't wrongly tell an
+    // admin with real events to go create one.
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+        <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200 dark:border-red-500/30">
+          <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't check your active Puja / Festival</h1>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">{eventsLoadError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition"
+          >
+            Retry
           </button>
         </div>
       </div>
