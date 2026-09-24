@@ -93,12 +93,6 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     const label = t(key);
     return label === key ? value : label;
   };
-  const partialPaymentsLabel = (payments?: { amount: number; voucherNumber?: string; date?: string }[]) => {
-    if (!payments || payments.length === 0) return '';
-    return payments
-      .map(p => `₹${p.amount.toLocaleString()}${p.date ? ` (${fmtDate(p.date)})` : ''}${p.voucherNumber ? ` [${p.voucherNumber}]` : ''}`)
-      .join('; ');
-  };
   const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString(locale) : '');
   const fmtAmount = (n: number) => `₹${n.toLocaleString()}`;
 
@@ -236,6 +230,23 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       ],
     };
   } else if (activeModule === 'expenses') {
+    // Partial payments are a variable-length list per expense — instead of
+    // squashing them into one "amt (date) [voucher]; amt (date) [voucher]"
+    // cell, generate 3 columns (Amount/Voucher/Date) per installment slot,
+    // up to however many installments the fullest row actually has, so
+    // CSV/PDF exports put each installment's fields in their own column.
+    // Based on the full expenses list, not the filtered view, so columns
+    // don't shift around as filters/search change.
+    const maxPartialPayments = expenses.reduce((max, e) => Math.max(max, (e.partialPayments || []).length), 0);
+    const partialPaymentColumns: ReportColumn<Expense>[] = [];
+    for (let i = 0; i < maxPartialPayments; i++) {
+      const n = i + 1;
+      partialPaymentColumns.push(
+        { key: `partial${n}Amount`, label: `${t('report.col.partialPayment')} ${n}`, align: 'right', render: (r: Expense) => (r.partialPayments?.[i] ? fmtAmount(r.partialPayments[i].amount) : '') },
+        { key: `partial${n}Voucher`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.voucherNumber')}`, render: (r: Expense) => r.partialPayments?.[i]?.voucherNumber || '' },
+        { key: `partial${n}Date`, label: `${t('report.col.partialPayment')} ${n} ${t('report.col.date')}`, render: (r: Expense) => fmtDate(r.partialPayments?.[i]?.date) },
+      );
+    }
     moduleProps = {
       pageTitle: t('report.nav.expenses'),
       data: expenses,
@@ -247,7 +258,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Expense) => fmtAmount(r.amount) },
         { key: 'paid', label: t('report.col.paid'), align: 'right', render: (r: Expense) => fmtAmount(getExpenseCreditAmount(r)) },
         { key: 'status', label: t('report.col.status'), render: (r: Expense) => expenseStatusLabel(r.paymentStatus) },
-        { key: 'partialPayments', label: t('report.col.partialPayments'), render: (r: Expense) => partialPaymentsLabel(r.partialPayments) },
+        ...partialPaymentColumns,
         { key: 'paidThrough', label: t('report.col.paidThrough'), render: (r: Expense) => paidThroughLabel(r.paidThrough) },
         { key: 'voucherNumber', label: t('report.col.voucherNumber'), render: (r: Expense) => r.voucherNumber || '' },
         { key: 'vendor', label: t('report.col.vendor'), render: (r: Expense) => r.vendorName || '' },

@@ -504,6 +504,7 @@ export const translations = {
     'report.col.inKind': 'In Kind',
     'report.col.paidThrough': 'Paid Through',
     'report.col.partialPayments': 'Partial Payments',
+    'report.col.partialPayment': 'Partial Payment',
     'report.col.contact': 'Contact',
     'report.col.categories': 'Categories',
     'report.col.address': 'Address',
