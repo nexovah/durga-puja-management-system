@@ -842,10 +842,13 @@ export async function fetchEvents(): Promise<EventInfo[]> {
   return (data || []).map(toEventInfo);
 }
 
-// The tenant's active event id — looked up live via tenants.active_event_id
-// (RLS already scopes this select to the caller's own tenant row).
-export async function fetchActiveEventId(): Promise<string | null> {
-  const { data, error } = await supabase.from('tenants').select('active_event_id').single();
+// The tenant's active event id — looked up live via tenants.active_event_id.
+// The tenants table itself has no RLS (only tenant-scoped tables like
+// events/members/etc. do), so this must filter to the caller's own tenant
+// explicitly — same pattern as fetchTenantSubscriptionExpiry above —
+// otherwise .single() sees every tenant's row and errors.
+export async function fetchActiveEventId(tenantId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('tenants').select('active_event_id').eq('id', tenantId).single();
   if (error) throw error;
   return data?.active_event_id ?? null;
 }

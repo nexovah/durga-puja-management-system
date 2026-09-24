@@ -573,7 +573,7 @@ export default function App() {
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
-        const [eventsList, activeId] = await Promise.all([fetchEvents(), fetchActiveEventId()]);
+        const [eventsList, activeId] = await Promise.all([fetchEvents(), currentUser?.tenantId ? fetchActiveEventId(currentUser.tenantId) : Promise.resolve(null)]);
         setEvents(eventsList);
         setActiveEventId(activeId);
       } catch (err: any) {
@@ -615,17 +615,18 @@ export default function App() {
   // *displayed* name is just client state unless refetched — refetch on
   // every route change plus a light poll so it can never drift far.
   useEffect(() => {
-    if (!isLoggedIn) return;
-    fetchActiveEventId().then(setActiveEventId).catch(() => {});
-  }, [isLoggedIn, currentPage]);
+    if (!isLoggedIn || !currentUser?.tenantId) return;
+    fetchActiveEventId(currentUser.tenantId).then(setActiveEventId).catch(() => {});
+  }, [isLoggedIn, currentPage, currentUser?.tenantId]);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !currentUser?.tenantId) return;
+    const tenantId = currentUser.tenantId;
     const interval = setInterval(() => {
-      fetchActiveEventId().then(setActiveEventId).catch(() => {});
+      fetchActiveEventId(tenantId).then(setActiveEventId).catch(() => {});
     }, 60000);
     return () => clearInterval(interval);
-  }, [isLoggedIn]);
+  }, [isLoggedIn, currentUser?.tenantId]);
 
   // --- List setters: keep the exact `setX(wholeNewArray)` signature every
   // page already uses, but sync the diff to Supabase behind the scenes. ---
