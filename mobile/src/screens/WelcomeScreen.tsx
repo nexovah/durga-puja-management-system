@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius } from '../theme';
@@ -36,6 +36,17 @@ export function WelcomeScreen({ navigation }: any) {
     const i = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
     setIndex(i);
   };
+
+  // Auto-advance every 4s, looping back to the first slide; restarts
+  // whenever the user manually swipes so it doesn't fight their gesture.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = (index + 1) % SLIDES.length;
+      scrollRef.current?.scrollTo({ x: next * SCREEN_WIDTH, animated: true });
+      setIndex(next);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [index]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
