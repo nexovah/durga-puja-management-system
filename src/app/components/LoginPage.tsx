@@ -78,7 +78,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           <h1 className="text-2xl font-extrabold text-orange-600">
             {t('login.brandName')}
           </h1>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">
             {t('login.systemTitle')}
           </p>
         </div>
@@ -119,20 +119,6 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <div className="text-right mt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPasswordNote(true)}
-                  className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:hover:text-orange-400"
-                >
-                  {t('login.forgotPassword')}
-                </button>
-              </div>
-              {showForgotPasswordNote && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-                  {t('login.forgotPasswordComingSoon')}
-                </p>
-              )}
             </div>
 
             {error && (
@@ -150,11 +136,26 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t('login.tagline1')} {t('login.tagline2')}
-            </p>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setShowForgotPasswordNote(true)}
+              className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:hover:text-orange-400"
+            >
+              {t('login.forgotPassword')}
+            </button>
+            {showForgotPasswordNote && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                {t('login.forgotPasswordComingSoon')}
+              </p>
+            )}
           </div>
+        </div>
+
+        <div className="mt-5 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            {t('login.tagline1')} {t('login.tagline2')}
+          </p>
         </div>
       </div>
     </div>
