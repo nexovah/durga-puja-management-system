@@ -5,13 +5,14 @@ import { colors } from '../theme';
 
 // Real auth check, not a timed splash — waits for AuthProvider to finish
 // reading the persisted session from AsyncStorage, then the navigator
-// (see RootNavigator.tsx) sends the user to Home or Login accordingly.
+// (see RootNavigator.tsx) sends the user to Home or the Welcome onboarding
+// carousel accordingly (Welcome leads to Login from there).
 export function SplashScreen({ navigation }: any) {
   const { loading, user } = useAuth();
 
   useEffect(() => {
     if (loading) return;
-    navigation.replace(user ? 'Home' : 'Login');
+    navigation.replace(user ? 'Home' : 'Welcome');
   }, [loading, user]);
 
   return (

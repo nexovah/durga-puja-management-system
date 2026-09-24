@@ -11,6 +11,7 @@ export type TicketStatus = 'open' | 'in_progress' | 'resolved';
 
 export interface SupportTicket {
   id: string;
+  ticketCode: string;
   userId: string;
   username: string;
   userName: string;
@@ -24,6 +25,7 @@ export interface SupportTicket {
 function fromTicketRow(row: any): SupportTicket {
   return {
     id: row.id,
+    ticketCode: row.ticket_code,
     userId: row.user_id,
     username: row.username,
     userName: row.user_name,

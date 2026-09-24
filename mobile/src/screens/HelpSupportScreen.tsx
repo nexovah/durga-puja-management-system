@@ -58,7 +58,10 @@ export function HelpSupportScreen({ navigation }: any) {
             return (
               <TouchableOpacity key={t.id} style={styles.card} activeOpacity={0.7} onPress={() => setSelected(t)}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{t.title}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.cardCode}>{t.ticketCode}</Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{t.title}</Text>
+                  </View>
                   <View style={[styles.badge, { backgroundColor: colorSet.bg }]}>
                     <Text style={[styles.badgeText, { color: colorSet.text }]}>{STATUS_LABEL[t.status]}</Text>
                   </View>
@@ -86,7 +89,10 @@ export function HelpSupportScreen({ navigation }: any) {
         {selected && (
           <View style={styles.detail}>
             <View style={styles.cardHeader}>
-              <Text style={styles.detailTitle}>{selected.title}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.cardCode}>{selected.ticketCode}</Text>
+                <Text style={styles.detailTitle}>{selected.title}</Text>
+              </View>
               <View style={[styles.badge, { backgroundColor: TICKET_STATUS_COLORS[selected.status].bg }]}>
                 <Text style={[styles.badgeText, { color: TICKET_STATUS_COLORS[selected.status].text }]}>
                   {STATUS_LABEL[selected.status]}
@@ -117,6 +123,7 @@ const styles = StyleSheet.create({
   list: { padding: 20, gap: 10, paddingBottom: 24 },
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 14, gap: 6 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardCode: { fontSize: 10.5, fontWeight: '700', color: colors.orange, letterSpacing: 0.3, marginBottom: 2 },
   cardTitle: { flex: 1, fontSize: 14.5, fontWeight: '800', color: colors.ink },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   badgeText: { fontSize: 10.5, fontWeight: '700' },
