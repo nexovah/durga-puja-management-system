@@ -2,13 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Search, MoreVertical, Download, FileText, ChevronDown } from 'lucide-react';
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { MoreVertical, Download, FileText } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 import { Pagination, usePagination } from './Pagination';
 import { ReportPrintTable } from './ReportPrintTable';
 import { downloadTableCSV, SummaryLine } from '../lib/reportExport';
+import { PageHeading } from './PageHeading';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 
 export interface ReportColumn<T> {
   key: string;
@@ -31,7 +34,7 @@ export type ReportChartType = 'bar' | 'area' | 'donut';
 
 const PIE_COLORS = ['#f97316', '#8b5cf6', '#06b6d4', '#22c55e', '#eab308', '#ef4444', '#3b82f6', '#ec4899'];
 
-type RangePreset = 'all' | 'thisMonth' | 'lastMonth' | 'custom';
+interface Option { value: string; label: string }
 
 export interface ReportModulePageProps<T extends { id: string }> {
   pageTitle: string;
@@ -45,10 +48,29 @@ export interface ReportModulePageProps<T extends { id: string }> {
   computeWidgets: (rows: T[]) => ReportWidget[];
   companyName: string;
   companyLogo: string;
+  // Advanced-filter field set, same TableSearchBar every other list page
+  // (Chanda/Donation/Expenses/Loans/Members) already uses — which fields
+  // apply depends entirely on that module's own data shape.
+  amountOf?: (row: T) => number;
+  statusOf?: (row: T) => string;
+  statusOptions?: Option[];
+  paidMethodOf?: (row: T) => string;
+  paidMethodOptions?: Option[];
+  billVoucherOf?: (row: T) => string;
+  billVoucherLabel?: string;
+  phoneOf?: (row: T) => string;
+  inKindOf?: (row: T) => string;
+  inKindOptions?: Option[];
+  inKindLabel?: string;
+  designationOf?: (row: T) => string;
+  designationOptions?: Option[];
+  designationLabel?: string;
 }
 
 export function ReportModulePage<T extends { id: string }>({
   pageTitle, data, dateOf, searchOf, columns, chartType, metricOf, breakdownOf, computeWidgets, companyName, companyLogo,
+  amountOf, statusOf, statusOptions, paidMethodOf, paidMethodOptions, billVoucherOf, billVoucherLabel,
+  phoneOf, inKindOf, inKindOptions, inKindLabel, designationOf, designationOptions, designationLabel,
 }: ReportModulePageProps<T>) {
   const { t, locale } = useLanguage();
   const { theme } = useTheme();
@@ -60,10 +82,10 @@ export function ReportModulePage<T extends { id: string }>({
   // still use the full `columns` list.
   const tableColumns = columns.filter(c => !c.exportOnly);
 
-  const [rangePreset, setRangePreset] = useState<RangePreset>('all');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,36 +111,33 @@ export function ReportModulePage<T extends { id: string }>({
   }, [printData]);
 
   // Reset selection whenever the filtered set changes shape, so stale
-  // checked ids from a previous range/search don't silently linger.
-  useEffect(() => { setSelected(new Set()); }, [rangePreset, customStart, customEnd, searchQuery]);
-
-  const rangeBounds = useMemo((): { start: string; end: string } | null => {
-    const now = new Date();
-    if (rangePreset === 'thisMonth') {
-      return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
-    }
-    if (rangePreset === 'lastMonth') {
-      const last = subMonths(now, 1);
-      return { start: format(startOfMonth(last), 'yyyy-MM-dd'), end: format(endOfMonth(last), 'yyyy-MM-dd') };
-    }
-    if (rangePreset === 'custom') {
-      if (!customStart || !customEnd) return null;
-      return { start: customStart, end: customEnd };
-    }
-    return null; // 'all'
-  }, [rangePreset, customStart, customEnd]);
+  // checked ids from a previous search don't silently linger.
+  useEffect(() => { setSelected(new Set()); }, [appliedFilters, searchQuery]);
 
   const filteredRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const f = appliedFilters;
     return data.filter(row => {
-      if (rangeBounds) {
-        const d = (dateOf(row) || '').slice(0, 10);
-        if (!d || d < rangeBounds.start || d > rangeBounds.end) return false;
-      }
       if (q && !searchOf(row).toLowerCase().includes(q)) return false;
+      if (f.dateFrom) {
+        const d = (dateOf(row) || '').slice(0, 10);
+        if (!d || d < f.dateFrom) return false;
+      }
+      if (f.dateTo) {
+        const d = (dateOf(row) || '').slice(0, 10);
+        if (!d || d > f.dateTo) return false;
+      }
+      if (f.amountMin && amountOf && amountOf(row) < parseFloat(f.amountMin)) return false;
+      if (f.amountMax && amountOf && amountOf(row) > parseFloat(f.amountMax)) return false;
+      if (f.status && statusOf && statusOf(row) !== f.status) return false;
+      if (f.paidMethod && paidMethodOf && paidMethodOf(row) !== f.paidMethod) return false;
+      if (f.billVoucher && billVoucherOf && !billVoucherOf(row).toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+      if (f.phone && phoneOf && !phoneOf(row).includes(f.phone.trim())) return false;
+      if (f.inKind && inKindOf && inKindOf(row) !== f.inKind) return false;
+      if (f.designation && designationOf && designationOf(row) !== f.designation) return false;
       return true;
     });
-  }, [data, rangeBounds, searchQuery, dateOf, searchOf]);
+  }, [data, searchQuery, appliedFilters, dateOf, searchOf, amountOf, statusOf, paidMethodOf, billVoucherOf, phoneOf, inKindOf, designationOf]);
 
   const widgets = useMemo(() => computeWidgets(filteredRows), [filteredRows, computeWidgets]);
 
@@ -159,9 +178,10 @@ export function ReportModulePage<T extends { id: string }>({
   const exportRows = () => (selected.size > 0 ? filteredRows.filter(r => selected.has(r.id)) : filteredRows);
 
   const rangeLabel = () => {
-    if (rangePreset === 'thisMonth') return t('report.range.thisMonth');
-    if (rangePreset === 'lastMonth') return t('report.range.lastMonth');
-    if (rangePreset === 'custom' && rangeBounds) return `${rangeBounds.start} – ${rangeBounds.end}`;
+    const f = appliedFilters;
+    if (f.dateFrom && f.dateTo) return `${f.dateFrom} – ${f.dateTo}`;
+    if (f.dateFrom) return `${t('search.dateFrom')} ${f.dateFrom}`;
+    if (f.dateTo) return `${t('search.dateTo')} ${f.dateTo}`;
     return t('report.range.all');
   };
 
@@ -186,37 +206,64 @@ export function ReportModulePage<T extends { id: string }>({
     setMenuOpen(false);
   };
 
-  const inputClass = "px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none";
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{pageTitle}</h1>
-      </div>
+      <PageHeading
+        action={
+          <div className="flex items-center gap-2">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {selected.size > 0 && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} {t('report.selected')}</span>
+            )}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={18} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button onClick={handleDownloadCSV} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <Download size={16} /> {t('treasury.report.downloadCSV')}
+                  </button>
+                  <button onClick={handleDownloadPDF} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <FileText size={16} /> {t('treasury.report.downloadPDF')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        }
+      >
+        {pageTitle}
+      </PageHeading>
 
-      {/* Date range + filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative">
-          <select
-            value={rangePreset}
-            onChange={e => setRangePreset(e.target.value as RangePreset)}
-            className={`${inputClass} appearance-none pr-8`}
-          >
-            <option value="all">{t('report.range.all')}</option>
-            <option value="thisMonth">{t('report.range.thisMonth')}</option>
-            <option value="lastMonth">{t('report.range.lastMonth')}</option>
-            <option value="custom">{t('report.range.custom')}</option>
-          </select>
-          <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-        </div>
-        {rangePreset === 'custom' && (
-          <>
-            <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className={inputClass} />
-            <span className="text-gray-400 text-sm">–</span>
-            <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className={inputClass} />
-          </>
-        )}
-      </div>
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder={t('common.search')}
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredRows.length}
+          totalCount={data.length}
+          showAmount={!!amountOf}
+          showBillVoucher={!!billVoucherOf}
+          billVoucherLabel={billVoucherLabel}
+          statusOptions={statusOptions}
+          paidMethodOptions={paidMethodOptions}
+          showDateRange
+          showPhone={!!phoneOf}
+          inKindOptions={inKindOptions}
+          inKindLabel={inKindLabel}
+          designationOptions={designationOptions}
+          designationLabel={designationLabel}
+        />
+      </CollapsibleSearchPanel>
 
       {/* Chart + widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -273,42 +320,6 @@ export function ReportModulePage<T extends { id: string }>({
 
       {/* Data table */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder={t('common.search')}
-              className={`${inputClass} w-full pl-9`}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            {selected.size > 0 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} {t('report.selected')}</span>
-            )}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen(o => !o)}
-                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <MoreVertical size={18} />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
-                  <button onClick={handleDownloadCSV} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <Download size={16} /> {t('treasury.report.downloadCSV')}
-                  </button>
-                  <button onClick={handleDownloadPDF} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <FileText size={16} /> {t('treasury.report.downloadPDF')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">

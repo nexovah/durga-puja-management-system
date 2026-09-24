@@ -8,6 +8,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { ReportModulePage, ReportColumn, ReportWidget } from './ReportModulePage';
 import { ReportEstimationPage } from './ReportEstimationPage';
+import { ADS_CATEGORIES } from './DonationAdsCollection';
 
 interface ReportProps {
   chandaList: Chanda[];
@@ -96,6 +97,24 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
   const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString(locale) : '');
   const fmtAmount = (n: number) => `₹${n.toLocaleString()}`;
 
+  // Advanced-filter option lists — same values ChandaCollection/
+  // DonationAdsCollection/Expenses/Members already offer in their own
+  // TableSearchBar, just re-labeled here for the Report module pages.
+  const CHANDA_STATUS_OPTIONS = ['paid', 'pending', 'partial', 'rejected'].map(v => ({ value: v, label: chandaStatusLabel(v) }));
+  const EXPENSE_STATUS_OPTIONS = ['paid', 'partial', 'cancelled'].map(v => ({ value: v, label: expenseStatusLabel(v) }));
+  const PAID_METHOD_OPTIONS = ['cash', 'qrScan', 'onlineBanking', 'check'].map(v => ({ value: v, label: paidMethodLabel(v) }));
+  const PAID_THROUGH_OPTIONS = ['cash', 'check', 'qrPayment', 'onlineBanking'].map(v => ({ value: v, label: paidThroughLabel(v) }));
+  const ROLE_OPTIONS = [
+    'president', 'vicePresident', 'secretary', 'assistantSecretary', 'treasurer', 'accountant',
+    'executiveMember', 'advisoryPatron', 'volunteer', 'chiefAdviser', 'adviser',
+  ].map(v => ({ value: v, label: roleLabel(v) }));
+  const adsCategoryLabel = (value: string) => {
+    const key = `donationAds.adsCategory.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const ADS_CATEGORY_OPTIONS = ADS_CATEGORIES.map(c => ({ value: c.value, label: adsCategoryLabel(c.value) }));
+
   const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof HandCoins }[] = [
     { key: 'chanda', label: t('report.nav.chanda'), icon: HandCoins },
     { key: 'donation', label: t('report.nav.donation'), icon: Gift },
@@ -165,6 +184,20 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     metricOf?: (row: any) => number;
     breakdownOf?: (rows: any[]) => { name: string; value: number }[];
     computeWidgets: (rows: any[]) => ReportWidget[];
+    amountOf?: (row: any) => number;
+    statusOf?: (row: any) => string;
+    statusOptions?: { value: string; label: string }[];
+    paidMethodOf?: (row: any) => string;
+    paidMethodOptions?: { value: string; label: string }[];
+    billVoucherOf?: (row: any) => string;
+    billVoucherLabel?: string;
+    phoneOf?: (row: any) => string;
+    inKindOf?: (row: any) => string;
+    inKindOptions?: { value: string; label: string }[];
+    inKindLabel?: string;
+    designationOf?: (row: any) => string;
+    designationOptions?: { value: string; label: string }[];
+    designationLabel?: string;
   };
 
   if (activeModule === 'chanda') {
@@ -202,6 +235,14 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
           { label: t('report.widget.pendingDue'), value: fmtAmount(pending) },
         ];
       },
+      amountOf: (r: Chanda) => r.amount,
+      statusOf: (r: Chanda) => r.paymentStatus,
+      statusOptions: CHANDA_STATUS_OPTIONS,
+      paidMethodOf: (r: Chanda) => r.paidMethod,
+      paidMethodOptions: PAID_METHOD_OPTIONS,
+      billVoucherOf: (r: Chanda) => r.billNumber || '',
+      billVoucherLabel: t('report.col.billNumber'),
+      phoneOf: (r: Chanda) => `${r.phone || ''} ${r.phone2 || ''}`,
     };
   } else if (activeModule === 'donation' || activeModule === 'ads') {
     const category = activeModule === 'ads' ? 'ads' : 'donation';
@@ -228,6 +269,13 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { label: t(activeModule === 'ads' ? 'report.widget.totalAds' : 'report.widget.totalDonations'), value: fmtAmount(rows.reduce((s, r) => s + r.amount, 0)) },
         { label: t('report.widget.transactions'), value: String(rows.length) },
       ],
+      amountOf: (r: DonationAd) => r.amount,
+      paidMethodOf: (r: DonationAd) => r.paidMethod,
+      paidMethodOptions: PAID_METHOD_OPTIONS,
+      phoneOf: (r: DonationAd) => `${r.phone || ''} ${r.phone2 || ''}`,
+      ...(category === 'donation'
+        ? { billVoucherOf: (r: DonationAd) => r.voucherNumber || '', billVoucherLabel: t('report.col.voucherNumber') }
+        : { inKindOf: (r: DonationAd) => r.inKind || '', inKindOptions: ADS_CATEGORY_OPTIONS, inKindLabel: t('report.col.inKind') }),
     };
   } else if (activeModule === 'expenses') {
     // Partial payments are a variable-length list per expense — instead of
@@ -276,6 +324,13 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { label: t('report.widget.totalSpent'), value: fmtAmount(rows.reduce((s, r) => s + getExpenseCreditAmount(r), 0)) },
         { label: t('report.widget.pendingPartial'), value: String(rows.filter(r => r.paymentStatus === 'partial').length) },
       ],
+      amountOf: (r: Expense) => r.amount,
+      statusOf: (r: Expense) => r.paymentStatus,
+      statusOptions: EXPENSE_STATUS_OPTIONS,
+      paidMethodOf: (r: Expense) => r.paidThrough,
+      paidMethodOptions: PAID_THROUGH_OPTIONS,
+      billVoucherOf: (r: Expense) => r.voucherNumber || '',
+      billVoucherLabel: t('report.col.voucherNumber'),
     };
   } else if (activeModule === 'vendor') {
     moduleProps = {
@@ -306,6 +361,10 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { label: t('report.widget.totalVendors'), value: String(rows.length) },
         { label: t('report.widget.totalPaid'), value: fmtAmount(rows.reduce((s, r) => s + r.totalPaid, 0)) },
       ],
+      amountOf: (r: VendorRow) => r.totalContractAmount,
+      billVoucherOf: (r: VendorRow) => r.voucherNumbers,
+      billVoucherLabel: t('report.col.voucherNumber'),
+      phoneOf: (r: VendorRow) => r.contact,
     };
   } else if (activeModule === 'member') {
     moduleProps = {
@@ -331,6 +390,15 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { label: t('report.widget.totalMembership'), value: fmtAmount(rows.reduce((s, r) => s + getMemberCreditAmount(r), 0)) },
         { label: t('report.widget.membersPaid'), value: String(rows.filter(r => getMemberCreditAmount(r) > 0).length) },
       ],
+      amountOf: (r: Member) => getMemberCreditAmount(r),
+      statusOf: (r: Member) => r.membershipPaymentStatus || '',
+      statusOptions: CHANDA_STATUS_OPTIONS,
+      billVoucherOf: (r: Member) => r.membershipBillNumber || '',
+      billVoucherLabel: t('report.col.billNumber'),
+      phoneOf: (r: Member) => r.phone,
+      designationOf: (r: Member) => r.role,
+      designationOptions: ROLE_OPTIONS,
+      designationLabel: t('report.col.role'),
     };
   } else {
     // loan
@@ -356,6 +424,10 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { label: t('report.widget.totalOutstanding'), value: fmtAmount(rows.reduce((s, r) => s + getLoanNetAmount(r), 0)) },
         { label: t('report.widget.loanCount'), value: String(rows.length) },
       ],
+      amountOf: (r: Loan) => r.amountReceived,
+      paidMethodOf: (r: Loan) => r.paymentMethod,
+      paidMethodOptions: PAID_METHOD_OPTIONS,
+      phoneOf: (r: Loan) => r.phone,
     };
   }
 

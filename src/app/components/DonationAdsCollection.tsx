@@ -40,7 +40,7 @@ const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
   phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
 };
 
-const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
+export const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'handBook', labelKey: 'donationAds.adsCategory.handBook' },
   { value: 'souvenir', labelKey: 'donationAds.adsCategory.souvenir' },
   { value: 'leaflet', labelKey: 'donationAds.adsCategory.leaflet' },
