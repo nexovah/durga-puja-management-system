@@ -50,7 +50,11 @@ import {
   ActivityAction,
   ActivityFieldChange,
   getCmsPageRequest,
+  EventInfo,
+  fetchEvents,
+  fetchActiveEventId,
 } from './lib/db';
+import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 
 export interface User {
   id: string;
@@ -538,6 +542,8 @@ export default function App() {
   const [tasksList, setTasksListState] = useState<Task[]>([]);
   const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
+  const [events, setEvents] = useState<EventInfo[]>([]);
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
 
   // Load everything from Supabase once the user is logged in. Pre-login,
   // RLS has no tenant token to scope by (see supabase/020_multi_tenant.sql)
@@ -567,6 +573,9 @@ export default function App() {
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
+        const [eventsList, activeId] = await Promise.all([fetchEvents(), fetchActiveEventId()]);
+        setEvents(eventsList);
+        setActiveEventId(activeId);
       } catch (err: any) {
         console.error('Failed to load data from Supabase', err);
         setLoadError(err?.message || 'unknown-error');
@@ -574,6 +583,48 @@ export default function App() {
         setDataLoading(false);
       }
     })();
+  }, [isLoggedIn]);
+
+  // The 7 event-scoped tables are RLS-filtered live by current_event_id() —
+  // once the active event actually changes (an admin switched it, here or
+  // for a teammate mid-session, picked up by the polling/route-change
+  // refetch below), the in-memory lists must be reloaded so the UI reflects
+  // the new event's data instead of stale rows from the old one.
+  const previousActiveEventId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn || !activeEventId) return;
+    if (previousActiveEventId.current === null) {
+      previousActiveEventId.current = activeEventId;
+      return;
+    }
+    if (previousActiveEventId.current === activeEventId) return;
+    previousActiveEventId.current = activeEventId;
+    fetchAllData().then(data => {
+      setMembersState(data.members);
+      setChandaListState(data.chandaList);
+      setDonationAdsListState(data.donationAdsList);
+      setExpensesState(data.expenses);
+      setLoansListState(data.loansList);
+      setTasksListState(data.tasksList);
+      setEstimationsListState(data.estimationsList);
+    }).catch(err => console.error('Failed to reload data after event switch', err));
+  }, [activeEventId, isLoggedIn]);
+
+  // Keep the active-event display fresh: if a teammate's admin switches
+  // events mid-session, RLS makes their *data* correct instantly, but the
+  // *displayed* name is just client state unless refetched — refetch on
+  // every route change plus a light poll so it can never drift far.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetchActiveEventId().then(setActiveEventId).catch(() => {});
+  }, [isLoggedIn, currentPage]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const interval = setInterval(() => {
+      fetchActiveEventId().then(setActiveEventId).catch(() => {});
+    }, 60000);
+    return () => clearInterval(interval);
   }, [isLoggedIn]);
 
   // --- List setters: keep the exact `setX(wholeNewArray)` signature every
@@ -934,6 +985,20 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     );
   }
 
+  if (!activeEventId) {
+    return (
+      <CreateFirstEventScreen
+        isAdmin={!!currentUser?.isAdmin}
+        currentUserId={currentUser?.id || ''}
+        onCreated={(event) => {
+          setEvents(prev => [...prev, event]);
+          setActiveEventId(event.id);
+        }}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
       <Sidebar
@@ -945,6 +1010,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         collapsed={sidebarCollapsed}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
+        events={events}
+        activeEventId={activeEventId}
+        isAdmin={!!currentUser?.isAdmin}
+        currentUserId={currentUser?.id || ''}
+        onEventCreated={(event) => setEvents(prev => [...prev, event])}
+        onEventUpdated={(event) => setEvents(prev => prev.map(e => e.id === event.id ? event : e))}
+        onEventSwitched={(eventId) => setActiveEventId(eventId)}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">

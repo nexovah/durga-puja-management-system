@@ -6,6 +6,8 @@ import {
   FileBarChart, Calculator, MoreHorizontal, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { EventSwitcher } from './EventSwitcher';
+import { EventInfo } from '../lib/db';
 
 type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
 
@@ -31,6 +33,13 @@ interface SidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  events: EventInfo[];
+  activeEventId: string | null;
+  isAdmin: boolean;
+  currentUserId: string;
+  onEventCreated: (event: EventInfo) => void;
+  onEventUpdated: (event: EventInfo) => void;
+  onEventSwitched: (eventId: string) => void;
 }
 
 type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; className?: string }>; label: string; show: boolean };
@@ -42,6 +51,7 @@ type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; classN
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
   logo, association, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
+  events, activeEventId, isAdmin, currentUserId, onEventCreated, onEventUpdated, onEventSwitched,
 }: SidebarProps) {
   const { t } = useLanguage();
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
@@ -145,6 +155,17 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <EventSwitcher
+        events={events}
+        activeEventId={activeEventId}
+        isAdmin={isAdmin}
+        collapsed={collapsed}
+        currentUserId={currentUserId}
+        onEventCreated={onEventCreated}
+        onEventUpdated={onEventUpdated}
+        onEventSwitched={onEventSwitched}
+      />
     </div>
   );
 

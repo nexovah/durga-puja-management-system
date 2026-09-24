@@ -809,6 +809,76 @@ export function diffFields(
   return changes;
 }
 
+// ---------------------------------------------------------------------------
+// Events (Puja / Festival scoping) — see supabase/064_events.sql. Each
+// tenant has one shared `active_event_id`; every transactional table is
+// scoped to it via RLS (`current_event_id()`), so a switch is instant for
+// everyone under that tenant without re-issuing tokens.
+// ---------------------------------------------------------------------------
+
+export interface EventInfo {
+  id: string;
+  tenantId: string;
+  name: string;
+  year: number;
+  emoji: string | null;
+  createdAt: string;
+}
+
+function toEventInfo(row: any): EventInfo {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    name: row.name,
+    year: row.year,
+    emoji: row.emoji ?? null,
+    createdAt: row.created_at,
+  };
+}
+
+export async function fetchEvents(): Promise<EventInfo[]> {
+  const { data, error } = await supabase.from('events').select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(toEventInfo);
+}
+
+// The tenant's active event id — looked up live via tenants.active_event_id
+// (RLS already scopes this select to the caller's own tenant row).
+export async function fetchActiveEventId(): Promise<string | null> {
+  const { data, error } = await supabase.from('tenants').select('active_event_id').single();
+  if (error) throw error;
+  return data?.active_event_id ?? null;
+}
+
+export async function createEventRequest(name: string, year: number, emoji: string | null, createdBy?: string): Promise<EventInfo> {
+  const { data, error } = await supabase
+    .from('events')
+    .insert({ name, year, emoji, created_by: createdBy ?? null })
+    .select()
+    .single();
+  if (error) throw error;
+  return toEventInfo(data);
+}
+
+export async function updateEventRequest(eventId: string, name: string, year: number, emoji: string | null): Promise<EventInfo> {
+  const { data, error } = await supabase
+    .from('events')
+    .update({ name, year, emoji })
+    .eq('id', eventId)
+    .select()
+    .single();
+  if (error) throw error;
+  return toEventInfo(data);
+}
+
+// Admin-only server-verified switch — see switch_active_event() in
+// supabase/064_events.sql. Moves every user under this tenant to the new
+// event immediately (single shared pointer, no per-user state).
+export async function switchActiveEventRequest(eventId: string): Promise<void> {
+  const { error } = await supabase.rpc('switch_active_event', { p_event_id: eventId });
+  if (error) throw error;
+}
+
 export async function fetchActivityLog(limit = 200): Promise<ActivityLogEntry[]> {
   const { data, error } = await supabase
     .from('activity_log')

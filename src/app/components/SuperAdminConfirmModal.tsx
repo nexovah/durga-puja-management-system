@@ -7,12 +7,14 @@ interface SuperAdminConfirmModalProps {
   message: string;
   confirmLabel: string;
   danger?: boolean; // red theme vs. amber for a lighter action like disable
+  codeLength?: number; // default 8 — event switching uses 12, since a wrong
+                        // switch risks money recorded against the wrong festival
   onCancel: () => void;
   onConfirm: () => void;
 }
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-const generateCode = () => Array.from({ length: 8 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+const generateCode = (length: number) => Array.from({ length }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 
 // Static class strings per accent — Tailwind's build-time purge can't see
 // through `text-${accent}-600` template interpolation, so every class used
@@ -37,17 +39,18 @@ const THEME = {
 // Stronger than the tenant-side 4-digit PIN (DeleteConfirmModal) — an 8-char
 // mixed-case alphanumeric code, since Super Admin actions here affect a
 // whole committee's account, not a single record.
-export function SuperAdminConfirmModal({ open, title, message, confirmLabel, danger = true, onCancel, onConfirm }: SuperAdminConfirmModalProps) {
+export function SuperAdminConfirmModal({ open, title, message, confirmLabel, danger = true, codeLength = 8, onCancel, onConfirm }: SuperAdminConfirmModalProps) {
   const [code, setCode] = useState('');
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setCode(generateCode());
+      setCode(generateCode(codeLength));
       setInput('');
       setError(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
@@ -86,7 +89,7 @@ export function SuperAdminConfirmModal({ open, title, message, confirmLabel, dan
           <div>
             <input
               type="text"
-              maxLength={8}
+              maxLength={codeLength}
               value={input}
               onChange={e => { setInput(e.target.value); setError(false); }}
               placeholder="Enter the code above"
@@ -105,7 +108,7 @@ export function SuperAdminConfirmModal({ open, title, message, confirmLabel, dan
         <div className="flex gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handleConfirmClick}
-            disabled={input.length !== 8}
+            disabled={input.length !== codeLength}
             className={`px-6 py-2 ${t.button} text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium`}
           >
             {confirmLabel}
