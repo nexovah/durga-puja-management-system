@@ -85,8 +85,8 @@ export function HomeScreen({ navigation }: any) {
   // happens there, never on mobile.
   useFocusEffect(
     useCallback(() => {
-      getActiveEvent().then(setActiveEvent).catch(() => {});
-    }, [])
+      if (user?.tenantId) getActiveEvent(user.tenantId).then(setActiveEvent).catch(() => {});
+    }, [user?.tenantId])
   );
 
   const load = useCallback(async () => {

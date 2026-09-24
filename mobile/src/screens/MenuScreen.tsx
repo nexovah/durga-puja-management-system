@@ -73,7 +73,7 @@ export function MenuScreen({ navigation }: any) {
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   // Read-only, refetched on focus — switching only ever happens on web.
-  useFocusEffect(useCallback(() => { getActiveEvent().then(setActiveEvent).catch(() => {}); }, []));
+  useFocusEffect(useCallback(() => { if (user?.tenantId) getActiveEvent(user.tenantId).then(setActiveEvent).catch(() => {}); }, [user?.tenantId]));
 
   const committeeName = committee?.association || committee?.name || '';
   const isCommitteeLogoUrl = !!committee?.logo && /^https?:\/\//.test(committee.logo);

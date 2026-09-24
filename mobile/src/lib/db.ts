@@ -489,8 +489,11 @@ export interface ActiveEventInfo {
   emoji: string | null;
 }
 
-export async function getActiveEvent(): Promise<ActiveEventInfo | null> {
-  const { data: tenantRow, error: tenantError } = await supabase.from('tenants').select('active_event_id').single();
+// tenants has no RLS of its own (only tenant-scoped tables like events do),
+// so this must filter to the caller's own tenant explicitly — otherwise
+// .single() sees every tenant's row and errors once more than one exists.
+export async function getActiveEvent(tenantId: string): Promise<ActiveEventInfo | null> {
+  const { data: tenantRow, error: tenantError } = await supabase.from('tenants').select('active_event_id').eq('id', tenantId).single();
   if (tenantError) throw tenantError;
   if (!tenantRow?.active_event_id) return null;
   const { data, error } = await supabase
