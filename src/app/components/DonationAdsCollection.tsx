@@ -24,6 +24,14 @@ interface DonationAdsCollectionProps {
   canDelete: boolean;
   canBulkImport: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'donation_ads', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
+  // When set, this instance is scoped to just that category — used to
+  // render "Donation" and "Ads" as separate sidebar menu items sharing
+  // this same component instead of one combined "Donation & Ads" page
+  // with a category picker (mobile already has them separate; this
+  // matches that). Category select is locked/hidden, totals and the
+  // table only cover this category, but writes still go through the
+  // full donationAdsList so the other category's rows are untouched.
+  fixedCategory?: DonationAdCategory;
 }
 
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
@@ -90,20 +98,22 @@ const emptyForm = {
   remarks: '',
 };
 
-export function DonationAdsCollection({ donationAdsList, setDonationAdsList, canEdit, canDelete, canBulkImport, onLog }: DonationAdsCollectionProps) {
+export function DonationAdsCollection({ donationAdsList, setDonationAdsList, canEdit, canDelete, canBulkImport, onLog, fixedCategory }: DonationAdsCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState(() => (fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm));
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DonationAd | null>(null);
   const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
 
-  const total = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
-  const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
-  const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
+  const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
+
+  const total = scopedList.reduce((sum, item) => sum + item.amount, 0);
+  const totalDonation = scopedList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
+  const totalAds = scopedList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
 
   const categoryLabel = (category: DonationAdCategory) =>
     category === 'donation' ? t('donationAds.category.donation') : t('donationAds.category.ads');
@@ -209,7 +219,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     }
 
     const wasEditing = editingId;
-    setFormData(emptyForm);
+    setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm);
     setEditingId(null);
     setShowForm(saveAndAddNew && !wasEditing);
   };
@@ -246,7 +256,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   };
 
   const handleCancel = () => {
-    setFormData(emptyForm);
+    setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm);
     setShowForm(false);
     setEditingId(null);
   };
@@ -266,7 +276,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         t('donationAds.csv.phone2'),
         t('donationAds.csv.remarks'),
       ].map(csvField).join(','),
-      ...donationAdsList.map(item => [
+      ...scopedList.map(item => [
         categoryLabel(item.category),
         item.donorName,
         item.companyName || '',
@@ -284,7 +294,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `donation-ads-collection-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `${fixedCategory ? fixedCategory + '-collection' : 'donation-ads-collection'}-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
@@ -355,7 +365,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
-  const filteredDonationAds = donationAdsList.filter(d => {
+  const filteredDonationAds = scopedList.filter(d => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       const inText = [d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.voucherNumber, d.inKind]
@@ -421,7 +431,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           </div>
         }
       >
-        {t('donationAds.pageTitle')}
+        {fixedCategory === 'donation' ? t('nav.donation') : fixedCategory === 'ads' ? t('nav.ads') : t('donationAds.pageTitle')}
       </PageHeading>
 
       <CollapsibleSearchPanel open={showSearch}>
@@ -435,7 +445,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
         filtersActive={hasActiveTableFilters(appliedFilters)}
         resultCount={filteredDonationAds.length}
-        totalCount={donationAdsList.length}
+        totalCount={scopedList.length}
         showAmount
         showBillVoucher
         billVoucherLabel={t('donationAds.voucherNumber')}
@@ -476,6 +486,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         }
       >
           <form id="donation-ads-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!fixedCategory && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')} *</label>
               <select
@@ -488,6 +499,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 <option value="donation">{t('donationAds.category.donation')}</option>
               </select>
             </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -629,7 +641,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       </FormModal>
 
       {/* Widgets — Treasury-style summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${fixedCategory ? '' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-purple-500 dark:border-purple-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.total')}</h3>
@@ -637,6 +649,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
         </div>
+        {!fixedCategory && (
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-emerald-500 dark:border-emerald-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
@@ -644,6 +657,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-emerald-600">₹{totalDonation.toLocaleString()}</p>
         </div>
+        )}
+        {!fixedCategory && (
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
@@ -651,6 +666,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">₹{totalAds.toLocaleString()}</p>
         </div>
+        )}
       </div>
 
       {/* List */}
@@ -663,7 +679,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.companyName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.category')}</th>
+                {!fixedCategory && <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.category')}</th>}
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone1')}</th>
@@ -686,13 +702,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.companyName || '-'}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {categoryLabel(item.category)}
-                    </span>
-                  </td>
+                  {!fixedCategory && (
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {categoryLabel(item.category)}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{inKindDisplay(item) || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}

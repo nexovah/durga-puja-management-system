@@ -360,13 +360,14 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
   members: '/members',
   chanda: '/chanda-collection',
-  donationAds: '/donation-ads-collection',
+  donation: '/donation-collection',
+  ads: '/ads-collection',
   expenses: '/expenses',
   vendors: '/vendors',
   loans: '/loans',
@@ -1028,7 +1029,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
-        {currentPage === 'donationAds' && (
+        {currentPage === 'donation' && (
           <DonationAdsCollection
             donationAdsList={donationAdsList}
             setDonationAdsList={setDonationAdsList}
@@ -1036,6 +1037,18 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={currentUser?.canDelete !== false}
             canBulkImport={currentUser?.canBulkImport !== false}
             onLog={handleLog}
+            fixedCategory="donation"
+          />
+        )}
+        {currentPage === 'ads' && (
+          <DonationAdsCollection
+            donationAdsList={donationAdsList}
+            setDonationAdsList={setDonationAdsList}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            canBulkImport={currentUser?.canBulkImport !== false}
+            onLog={handleLog}
+            fixedCategory="ads"
           />
         )}
         {currentPage === 'expenses' && (

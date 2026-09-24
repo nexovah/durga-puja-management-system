@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Users, DollarSign, Gift, TrendingDown } from 'lucide-react';
+import { Search, X, Users, DollarSign, Gift, Megaphone, TrendingDown } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, User } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
-type SearchablePage = 'members' | 'chanda' | 'donationAds' | 'expenses';
+type SearchablePage = 'members' | 'chanda' | 'donation' | 'ads' | 'expenses';
 
 interface GlobalSearchProps {
   members: Member[];
@@ -57,7 +57,7 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      return { members: [] as Member[], chanda: [] as Chanda[], donationAds: [] as DonationAd[], expenses: [] as Expense[] };
+      return { members: [] as Member[], chanda: [] as Chanda[], donation: [] as DonationAd[], ads: [] as DonationAd[], expenses: [] as Expense[] };
     }
 
     const matches = (parts: (string | number | undefined | null)[]) =>
@@ -78,13 +78,15 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
         ])).slice(0, RESULTS_PER_SECTION)
       : [];
 
-    const donationAdsResults = currentUser?.permissions.donationAds
+    const donationAdsMatches = currentUser?.permissions.donationAds
       ? donationAdsList.filter(d => matches([
           d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.amount, d.inKind, d.date, d.voucherNumber,
           label(`donationAds.category.${d.category}`, d.category),
           label(`common.paidMethod.${d.paidMethod}`, d.paidMethod),
-        ])).slice(0, RESULTS_PER_SECTION)
+        ]))
       : [];
+    const donationResults = donationAdsMatches.filter(d => d.category === 'donation').slice(0, RESULTS_PER_SECTION);
+    const adsResults = donationAdsMatches.filter(d => d.category === 'ads').slice(0, RESULTS_PER_SECTION);
 
     const expenseResults = currentUser?.permissions.expenses
       ? expenses.filter(exp => matches([
@@ -95,11 +97,11 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
         ])).slice(0, RESULTS_PER_SECTION)
       : [];
 
-    return { members: memberResults, chanda: chandaResults, donationAds: donationAdsResults, expenses: expenseResults };
+    return { members: memberResults, chanda: chandaResults, donation: donationResults, ads: adsResults, expenses: expenseResults };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, members, chandaList, donationAdsList, expenses, currentUser]);
 
-  const totalResults = results.members.length + results.chanda.length + results.donationAds.length + results.expenses.length;
+  const totalResults = results.members.length + results.chanda.length + results.donation.length + results.ads.length + results.expenses.length;
 
   const handleSelect = (page: SearchablePage) => {
     onNavigate(page);
@@ -166,14 +168,27 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                   </ResultSection>
                 )}
 
-                {results.donationAds.length > 0 && (
-                  <ResultSection icon={<Gift size={16} />} title={t('nav.donationAds')} onSeeAll={() => handleSelect('donationAds')}>
-                    {results.donationAds.map((d) => (
-                      <button key={d.id} onClick={() => handleSelect('donationAds')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                {results.donation.length > 0 && (
+                  <ResultSection icon={<Gift size={16} />} title={t('nav.donation')} onSeeAll={() => handleSelect('donation')}>
+                    {results.donation.map((d) => (
+                      <button key={d.id} onClick={() => handleSelect('donation')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {d.donorName || d.companyName || '-'} <span className="text-green-600 font-bold">₹{d.amount.toLocaleString()}</span>
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{label(`donationAds.category.${d.category}`, d.category)}{d.phone ? ` · ${d.phone}` : ''}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{d.phone || ''}</p>
+                      </button>
+                    ))}
+                  </ResultSection>
+                )}
+
+                {results.ads.length > 0 && (
+                  <ResultSection icon={<Megaphone size={16} />} title={t('nav.ads')} onSeeAll={() => handleSelect('ads')}>
+                    {results.ads.map((d) => (
+                      <button key={d.id} onClick={() => handleSelect('ads')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {d.donorName || d.companyName || '-'} <span className="text-green-600 font-bold">₹{d.amount.toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{d.phone || ''}</p>
                       </button>
                     ))}
                   </ResultSection>

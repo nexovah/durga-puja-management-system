@@ -33,6 +33,8 @@ export const translations = {
     'nav.members': 'Members',
     'nav.chanda': 'Chanda',
     'nav.donationAds': 'Donation & Ads',
+    'nav.donation': 'Donation',
+    'nav.ads': 'Ads',
     'nav.expenses': 'Expenses',
     'nav.vendors': 'Vendor',
     'nav.loans': 'Loan',

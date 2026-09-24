@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  LayoutDashboard, Users, HandCoins, Gift, TrendingDown, Wallet,
+  LayoutDashboard, Users, HandCoins, Gift, Megaphone, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
   FileBarChart, Calculator, MoreHorizontal, X,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donationAds' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation';
 
 interface SidebarProps {
   logo?: string;
@@ -50,7 +50,8 @@ export function Sidebar({
       items: [
         { key: 'dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), show: true },
         { key: 'chanda', icon: HandCoins, label: t('nav.chanda'), show: !!permissions?.chanda },
-        { key: 'donationAds', icon: Gift, label: t('nav.donationAds'), show: !!permissions?.donationAds },
+        { key: 'donation', icon: Gift, label: t('nav.donation'), show: !!permissions?.donationAds },
+        { key: 'ads', icon: Megaphone, label: t('nav.ads'), show: !!permissions?.donationAds },
         { key: 'expenses', icon: TrendingDown, label: t('nav.expenses'), show: !!permissions?.expenses },
         { key: 'vendors', icon: Truck, label: t('nav.vendors'), show: !!permissions?.vendors },
         { key: 'members', icon: Users, label: t('nav.members'), show: !!permissions?.members },
