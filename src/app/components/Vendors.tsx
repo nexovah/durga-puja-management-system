@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Download, Eye, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, Eye, Pencil, Plus, X } from 'lucide-react';
 import { Expense, getExpenseCreditAmount } from '../App';
+import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -12,12 +13,15 @@ import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 
 interface VendorsProps {
   expenses: Expense[];
+  canEdit: boolean;
+  onLog: (action: 'create' | 'update', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
 interface VendorGroup {
   key: string;
   name: string;
   contact: string;
+  directoryEntry: Vendor | null;
   entries: Expense[];
   totalAmount: number; // total actually credited/received (getExpenseCreditAmount sum)
   totalContractAmount: number; // total agreed/billed amount (raw exp.amount sum), regardless of payment status
@@ -70,17 +74,27 @@ function paymentRowsFor(entries: Expense[]): PaymentRow[] {
   return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-// Read-only view: every expense that has a Vendor/Supplier Name attached
-// (collected on the Expenses "Add New Expense" form) shows up here, merged
-// into one row per vendor Name + Contact so repeat payments to the same
-// vendor across different dates/expenses total up correctly.
-export function Vendors({ expenses }: VendorsProps) {
+// Every expense that has a Vendor/Supplier Name attached (collected on the
+// Expenses "Add New Expense" form) shows up here, merged one row per vendor
+// Name — plus an explicit vendor directory (supabase/075_vendors.sql) that
+// can be added/edited directly (name, company, phone, phone 01, address)
+// without needing an expense to exist first. Expenses' own vendor fields
+// stay untouched free text; the directory is just an optional, authoritative
+// contact record layered on top by matching vendor name.
+export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   const { t, locale } = useLanguage();
   const [viewingKey, setViewingKey] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [directory, setDirectory] = useState<Vendor[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<VendorGroup | null>(null);
+
+  useEffect(() => {
+    listVendorsRequest().then(setDirectory).catch(() => {});
+  }, []);
 
   const categoryLabel = (value: string) => {
     const key = `expenses.category.${value}` as TranslationKey;
@@ -91,14 +105,16 @@ export function Vendors({ expenses }: VendorsProps) {
   const vendorGroups = useMemo<VendorGroup[]>(() => {
     const withVendor = expenses.filter(exp => (exp.vendorName || '').trim() !== '');
     const groups = new Map<string, VendorGroup>();
+    const directoryByName = new Map(directory.map(v => [v.name.trim().toLowerCase(), v]));
 
     for (const exp of withVendor) {
       const name = (exp.vendorName || '').trim();
-      const contact = (exp.vendorContact || '').trim();
-      const key = `${name.toLowerCase()}|${contact.toLowerCase()}`;
+      const key = name.toLowerCase();
+      const directoryEntry = directoryByName.get(key) || null;
 
       if (!groups.has(key)) {
-        groups.set(key, { key, name, contact, entries: [], totalAmount: 0, totalContractAmount: 0, categories: [] });
+        const contact = directoryEntry?.phone || (exp.vendorContact || '').trim();
+        groups.set(key, { key, name, contact, directoryEntry, entries: [], totalAmount: 0, totalContractAmount: 0, categories: [] });
       }
       const group = groups.get(key)!;
       group.entries.push(exp);
@@ -107,13 +123,40 @@ export function Vendors({ expenses }: VendorsProps) {
       if (!group.categories.includes(exp.category)) group.categories.push(exp.category);
     }
 
+    // Directory-only vendors (added directly, no expense recorded yet).
+    for (const v of directory) {
+      const key = v.name.trim().toLowerCase();
+      if (groups.has(key)) continue;
+      groups.set(key, {
+        key, name: v.name, contact: v.phone || '', directoryEntry: v,
+        entries: [], totalAmount: 0, totalContractAmount: 0, categories: [],
+      });
+    }
+
     return [...groups.values()]
       .map(g => ({
         ...g,
         entries: g.entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
       }))
       .sort((a, b) => b.totalAmount - a.totalAmount);
-  }, [expenses]);
+  }, [expenses, directory]);
+
+  const openCreateVendor = () => { setEditingGroup(null); setShowForm(true); };
+  const openEditVendor = (group: VendorGroup) => { setEditingGroup(group); setShowForm(true); };
+
+  const handleSaveVendor = async (input: VendorInput) => {
+    if (editingGroup?.directoryEntry) {
+      const updated = await updateVendorRequest(editingGroup.directoryEntry.id, input);
+      setDirectory(prev => prev.map(v => (v.id === updated.id ? updated : v)));
+      onLog('update', 'vendors', input.name, undefined, undefined, input.name);
+    } else {
+      const created = await createVendorRequest(input);
+      setDirectory(prev => [...prev, created]);
+      onLog('create', 'vendors', input.name, undefined, undefined, input.name);
+    }
+    setShowForm(false);
+    setEditingGroup(null);
+  };
 
   const viewingVendor = vendorGroups.find(g => g.key === viewingKey) || null;
   const viewingVendorPaymentRows = viewingVendor ? paymentRowsFor(viewingVendor.entries) : [];
@@ -171,6 +214,14 @@ export function Vendors({ expenses }: VendorsProps) {
               <Download size={20} />
               {t('common.export')}
             </button>
+            {canEdit && (
+              <button
+                onClick={openCreateVendor}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} /> {t('vendors.addVendor')}
+              </button>
+            )}
           </div>
         }
       >
@@ -299,13 +350,24 @@ export function Vendors({ expenses }: VendorsProps) {
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 text-right">{g.entries.length}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors inline-flex items-center gap-1"
-                      title={t('vendors.view')}
-                    >
-                      <Eye size={18} />
-                    </button>
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                        title={t('vendors.view')}
+                      >
+                        <Eye size={18} />
+                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => openEditVendor(g)}
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          title={t('common.edit')}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -327,6 +389,126 @@ export function Vendors({ expenses }: VendorsProps) {
           startIndex={pagination.startIndex}
           endIndex={pagination.endIndex}
         />
+      </div>
+
+      {showForm && (
+        <VendorFormModal
+          group={editingGroup}
+          onCancel={() => { setShowForm(false); setEditingGroup(null); }}
+          onSave={handleSaveVendor}
+        />
+      )}
+    </div>
+  );
+}
+
+function VendorFormModal({
+  group, onCancel, onSave,
+}: {
+  group: VendorGroup | null;
+  onCancel: () => void;
+  onSave: (input: VendorInput) => Promise<void>;
+}) {
+  const { t } = useLanguage();
+  const entry = group?.directoryEntry || null;
+  const [name, setName] = useState(entry?.name || group?.name || '');
+  const [companyName, setCompanyName] = useState(entry?.companyName || '');
+  const [phone, setPhone] = useState(entry?.phone || group?.contact || '');
+  const [phone2, setPhone2] = useState(entry?.phone2 || '');
+  const [address, setAddress] = useState(entry?.address || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    if (!name.trim()) { setError(t('vendors.nameRequired')); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await onSave({ name: name.trim(), companyName, phone, phone2, address });
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save — please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            {group ? t('vendors.editVendor') : t('vendors.addVendor')}
+          </h3>
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.name')} *</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={t('vendors.name')}
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.companyName')}</label>
+            <input
+              value={companyName}
+              onChange={e => setCompanyName(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('expenses.vendorContact')}</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('expenses.vendorContact2')}</label>
+              <input
+                type="tel"
+                value={phone2}
+                onChange={e => setPhone2(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.address')}</label>
+            <textarea
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              rows={2}
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            />
+          </div>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        </div>
+
+        <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex gap-3">
+          <button
+            onClick={onCancel}
+            className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-60 transition-colors"
+          >
+            {saving ? '...' : t('common.save')}
+          </button>
+        </div>
       </div>
     </div>
   );

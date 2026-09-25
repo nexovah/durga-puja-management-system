@@ -707,6 +707,69 @@ function toAssetRow(a: AssetInput) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Vendors — explicit vendor/supplier directory (see supabase/075_vendors.sql).
+// Tenant-scoped only, not event-scoped — permanent like Assets. Merged on
+// the Vendors page with vendors implicitly derived from Expenses' own
+// vendorName/vendorContact fields, which stay untouched free text.
+// ---------------------------------------------------------------------------
+
+export interface Vendor {
+  id: string;
+  name: string;
+  companyName: string | null;
+  phone: string | null;
+  phone2: string | null;
+  address: string | null;
+}
+
+export interface VendorInput {
+  name: string;
+  companyName?: string | null;
+  phone?: string | null;
+  phone2?: string | null;
+  address?: string | null;
+}
+
+function fromVendorRow(row: any): Vendor {
+  return {
+    id: row.id,
+    name: row.name,
+    companyName: row.company_name,
+    phone: row.phone,
+    phone2: row.phone2,
+    address: row.address,
+  };
+}
+
+function toVendorRow(v: VendorInput) {
+  return {
+    name: v.name,
+    company_name: v.companyName || null,
+    phone: v.phone || null,
+    phone2: v.phone2 || null,
+    address: v.address || null,
+  };
+}
+
+export async function listVendorsRequest(): Promise<Vendor[]> {
+  const { data, error } = await supabase.from('vendors').select('*').order('name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(fromVendorRow);
+}
+
+export async function createVendorRequest(input: VendorInput): Promise<Vendor> {
+  const { data, error } = await supabase.from('vendors').insert(toVendorRow(input)).select().single();
+  if (error) throw error;
+  return fromVendorRow(data);
+}
+
+export async function updateVendorRequest(id: string, input: VendorInput): Promise<Vendor> {
+  const { data, error } = await supabase.from('vendors').update(toVendorRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromVendorRow(data);
+}
+
 export async function listAssetsRequest(): Promise<Asset[]> {
   const { data, error } = await supabase.from('assets').select('*').order('created_at', { ascending: false });
   if (error) throw error;
@@ -1093,7 +1156,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 

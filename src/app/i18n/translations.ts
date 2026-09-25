@@ -395,6 +395,11 @@ export const translations = {
     'vendors.pendingAmount': 'Pending Amount',
     'vendors.paymentHistory': 'Payment History',
     'vendors.view': 'View details',
+    'vendors.addVendor': 'Add Vendor',
+    'vendors.editVendor': 'Edit Vendor',
+    'vendors.companyName': 'Company Name',
+    'vendors.address': 'Address',
+    'vendors.nameRequired': "Vendor/Supplier's name is required.",
 
     // Loans
     'loans.pageTitle': 'Loans',
@@ -673,6 +678,7 @@ export const translations = {
     'activityLog.module.settings': 'Settings',
     'activityLog.module.assets': 'Assets',
     'activityLog.module.documents': 'Documents',
+    'activityLog.module.vendors': 'Vendors',
 
     // Tasks
     'tasks.pageTitle': 'Tasks',
@@ -1147,6 +1153,11 @@ export const translations = {
     'vendors.pendingAmount': 'বকেয়া পরিমাণ',
     'vendors.paymentHistory': 'পেমেন্ট ইতিহাস',
     'vendors.view': 'বিস্তারিত দেখুন',
+    'vendors.addVendor': 'ভেন্ডর যোগ করুন',
+    'vendors.editVendor': 'ভেন্ডর সম্পাদনা করুন',
+    'vendors.companyName': 'কোম্পানির নাম',
+    'vendors.address': 'ঠিকানা',
+    'vendors.nameRequired': 'ভেন্ডর/সরবরাহকারীর নাম আবশ্যক।',
 
     // Loans
     'loans.pageTitle': 'ঋণ',
@@ -1338,6 +1349,7 @@ export const translations = {
     'activityLog.module.settings': 'সেটিংস',
     'activityLog.module.assets': 'সম্পদ',
     'activityLog.module.documents': 'নথি',
+    'activityLog.module.vendors': 'ভেন্ডরস',
 
     // Tasks
     'tasks.pageTitle': 'টাস্ক',
@@ -1811,6 +1823,11 @@ export const translations = {
     'vendors.pendingAmount': 'बकाया राशि',
     'vendors.paymentHistory': 'भुगतान इतिहास',
     'vendors.view': 'विवरण देखें',
+    'vendors.addVendor': 'विक्रेता जोड़ें',
+    'vendors.editVendor': 'विक्रेता संपादित करें',
+    'vendors.companyName': 'कंपनी का नाम',
+    'vendors.address': 'पता',
+    'vendors.nameRequired': 'विक्रेता/आपूर्तिकर्ता का नाम आवश्यक है।',
 
     // Loans
     'loans.pageTitle': 'ऋण',
@@ -2002,6 +2019,7 @@ export const translations = {
     'activityLog.module.settings': 'सेटिंग्स',
     'activityLog.module.assets': 'संपत्ति',
     'activityLog.module.documents': 'दस्तावेज़',
+    'activityLog.module.vendors': 'विक्रेता',
 
     // Tasks
     'tasks.pageTitle': 'कार्य',

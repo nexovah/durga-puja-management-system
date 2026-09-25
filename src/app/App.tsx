@@ -1207,7 +1207,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'vendors' && (
-          <Vendors expenses={expenses} />
+          <Vendors
+            expenses={expenses}
+            canEdit={currentUser?.canEdit !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'loans' && (
           <Loans
