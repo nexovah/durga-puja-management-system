@@ -42,6 +42,7 @@ export const translations = {
     'nav.treasury': 'Treasury',
     'nav.settings': 'Settings',
     'nav.activityLog': 'Activity Log',
+    'nav.assets': 'Assets',
     'nav.tasks': 'Tasks',
     'nav.report': 'Report',
     'sidebar.expand': 'Expand sidebar',
@@ -665,6 +666,7 @@ export const translations = {
     'activityLog.module.loans': 'Loans',
     'activityLog.module.users': 'User Management',
     'activityLog.module.settings': 'Settings',
+    'activityLog.module.assets': 'Assets',
 
     // Tasks
     'tasks.pageTitle': 'Tasks',
@@ -791,6 +793,7 @@ export const translations = {
     'nav.treasury': 'কোষাধ্যক্ষ',
     'nav.settings': 'সেটিংস',
     'nav.activityLog': 'কার্যকলাপ লগ',
+    'nav.assets': 'সম্পদ',
     'nav.tasks': 'টাস্ক',
     'nav.report': 'রিপোর্ট',
     'sidebar.expand': 'সাইডবার প্রসারিত করুন',
@@ -1320,6 +1323,7 @@ export const translations = {
     'activityLog.module.loans': 'ঋণ',
     'activityLog.module.users': 'ব্যবহারকারী ব্যবস্থাপনা',
     'activityLog.module.settings': 'সেটিংস',
+    'activityLog.module.assets': 'সম্পদ',
 
     // Tasks
     'tasks.pageTitle': 'টাস্ক',
@@ -1445,6 +1449,7 @@ export const translations = {
     'nav.treasury': 'कोषाध्यक्ष',
     'nav.settings': 'सेटिंग्स',
     'nav.activityLog': 'गतिविधि लॉग',
+    'nav.assets': 'संपत्ति',
     'nav.tasks': 'कार्य',
     'nav.report': 'रिपोर्ट',
     'sidebar.expand': 'साइडबार विस्तृत करें',
@@ -1974,6 +1979,7 @@ export const translations = {
     'activityLog.module.loans': 'ऋण',
     'activityLog.module.users': 'यूज़र प्रबंधन',
     'activityLog.module.settings': 'सेटिंग्स',
+    'activityLog.module.assets': 'संपत्ति',
 
     // Tasks
     'tasks.pageTitle': 'कार्य',

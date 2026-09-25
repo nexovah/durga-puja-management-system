@@ -8,6 +8,7 @@ import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
 import { HelpSupportPage } from './components/HelpSupportPage';
+import { Assets } from './components/Assets';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -372,7 +373,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -387,6 +388,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   report: '/report',
   settings: '/settings',
   activityLog: '/activity-log',
+  assets: '/assets',
   tasks: '/tasks',
   estimation: '/estimation',
   billing: '/billing',
@@ -1248,6 +1250,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'activityLog' && (
           <ActivityLog />
+        )}
+        {currentPage === 'assets' && (
+          <Assets
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'tasks' && (
           <Tasks

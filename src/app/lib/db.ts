@@ -632,6 +632,100 @@ function fromTicketRow(row: any): SupportTicket {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Assets — the society's own reusable inventory (see supabase/071_assets.sql).
+// Tenant-scoped only, not event-scoped — permanent like Settings/Activity Log.
+// ---------------------------------------------------------------------------
+
+export type AssetCondition = 'good' | 'needs_repair' | 'damaged' | 'retired';
+
+export interface Asset {
+  id: string;
+  name: string;
+  quantityOwned: number;
+  quantityInUse: number;
+  unit: string;
+  category: string | null;
+  condition: AssetCondition;
+  value: number | null;
+  storedAt: string | null;
+  icon: string;
+  notes: string | null;
+  purchaseDate: string | null;
+  createdAt: string;
+}
+
+function fromAssetRow(row: any): Asset {
+  return {
+    id: row.id,
+    name: row.name,
+    quantityOwned: row.quantity_owned,
+    quantityInUse: row.quantity_in_use,
+    unit: row.unit,
+    category: row.category,
+    condition: row.condition,
+    value: row.value !== null ? Number(row.value) : null,
+    storedAt: row.stored_at,
+    icon: row.icon,
+    notes: row.notes,
+    purchaseDate: row.purchase_date,
+    createdAt: row.created_at,
+  };
+}
+
+export interface AssetInput {
+  name: string;
+  quantityOwned: number;
+  quantityInUse: number;
+  unit: string;
+  category?: string | null;
+  condition: AssetCondition;
+  value?: number | null;
+  storedAt?: string | null;
+  icon: string;
+  notes?: string | null;
+  purchaseDate?: string | null;
+}
+
+function toAssetRow(a: AssetInput) {
+  return {
+    name: a.name,
+    quantity_owned: a.quantityOwned,
+    quantity_in_use: a.quantityInUse,
+    unit: a.unit,
+    category: a.category || null,
+    condition: a.condition,
+    value: a.value ?? null,
+    stored_at: a.storedAt || null,
+    icon: a.icon,
+    notes: a.notes || null,
+    purchase_date: a.purchaseDate || null,
+  };
+}
+
+export async function listAssetsRequest(): Promise<Asset[]> {
+  const { data, error } = await supabase.from('assets').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromAssetRow);
+}
+
+export async function createAssetRequest(input: AssetInput): Promise<Asset> {
+  const { data, error } = await supabase.from('assets').insert(toAssetRow(input)).select().single();
+  if (error) throw error;
+  return fromAssetRow(data);
+}
+
+export async function updateAssetRequest(id: string, input: AssetInput): Promise<Asset> {
+  const { data, error } = await supabase.from('assets').update(toAssetRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromAssetRow(data);
+}
+
+export async function deleteAssetRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('assets').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function listMyTicketsRequest(): Promise<SupportTicket[]> {
   const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
   if (error) throw error;
@@ -919,7 +1013,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 
