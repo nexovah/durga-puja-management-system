@@ -704,6 +704,8 @@ export const translations = {
     // Estimation
     'nav.estimation': 'Estimation',
     'permission.estimation': 'Estimation',
+    'permission.assets': 'Assets',
+    'permission.documents': 'Documents',
     'estimation.pageTitle': 'Estimation',
     'estimation.addNew': 'Add New Estimation',
     'estimation.searchPlaceholder': 'Search estimation title…',
@@ -1363,6 +1365,8 @@ export const translations = {
     // Estimation
     'nav.estimation': 'হিসাব প্রাক্কলন',
     'permission.estimation': 'হিসাব প্রাক্কলন',
+    'permission.assets': 'সম্পদ',
+    'permission.documents': 'নথি',
     'estimation.pageTitle': 'হিসাব প্রাক্কলন',
     'estimation.addNew': 'নতুন প্রাক্কলন যোগ করুন',
     'estimation.searchPlaceholder': 'প্রাক্কলনের শিরোনাম খুঁজুন…',
@@ -2021,6 +2025,8 @@ export const translations = {
     // Estimation
     'nav.estimation': 'अनुमान',
     'permission.estimation': 'अनुमान',
+    'permission.assets': 'संपत्ति',
+    'permission.documents': 'दस्तावेज़',
     'estimation.pageTitle': 'अनुमान',
     'estimation.addNew': 'नया अनुमान जोड़ें',
     'estimation.searchPlaceholder': 'अनुमान का शीर्षक खोजें…',

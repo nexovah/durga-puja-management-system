@@ -42,6 +42,8 @@ const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   vendors: 'permission.vendors',
   tasks: 'permission.tasks',
   estimation: 'permission.estimation',
+  assets: 'permission.assets',
+  documents: 'permission.documents',
 };
 
 export function Settings({
@@ -95,6 +97,8 @@ export function Settings({
       vendors: true,
       tasks: true,
       estimation: true,
+      assets: true,
+      documents: true,
       settings: false,
     },
   });
@@ -181,6 +185,8 @@ export function Settings({
         vendors: true,
         tasks: true,
         estimation: true,
+        assets: true,
+        documents: true,
         settings: false,
       },
     });
@@ -204,6 +210,10 @@ export function Settings({
       canBulkImport: user.canBulkImport !== false,
       permissions: {
         vendors: true, tasks: true, estimation: true,
+        // New menus added after this user's permissions were last saved
+        // should default to granted (no Settings access) rather than
+        // silently missing, so existing users aren't locked out of them.
+        assets: true, documents: true,
         donation: legacyDonationAds ?? true,
         ads: legacyDonationAds ?? true,
         ...restPermissions,
@@ -593,6 +603,8 @@ export function Settings({
                         vendors: true,
                         tasks: true,
                         estimation: true,
+                        assets: true,
+                        documents: true,
                         settings: false,
                       },
                     });

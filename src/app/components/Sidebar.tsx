@@ -28,6 +28,8 @@ interface SidebarProps {
     loans?: boolean;
     tasks?: boolean;
     estimation?: boolean;
+    assets?: boolean;
+    documents?: boolean;
     settings?: boolean;
   };
   collapsed: boolean;
@@ -82,8 +84,8 @@ export function Sidebar({
       label: t('sidebar.groupEssential'),
       items: [
         { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
-        { key: 'documents', icon: FolderOpen, label: t('nav.documents'), show: !!permissions?.settings },
-        { key: 'assets', icon: Package, label: t('nav.assets'), show: !!permissions?.settings },
+        { key: 'documents', icon: FolderOpen, label: t('nav.documents'), show: permissions?.documents !== false },
+        { key: 'assets', icon: Package, label: t('nav.assets'), show: permissions?.assets !== false },
         { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
         { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
       ],

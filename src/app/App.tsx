@@ -87,6 +87,8 @@ export interface User {
     vendors: boolean;
     tasks: boolean;
     estimation: boolean;
+    assets?: boolean;
+    documents?: boolean;
   };
   tenantId?: string; // the committee this user belongs to (multi-tenant)
   accessToken?: string; // per-tenant JWT signed by login(); attached to every
