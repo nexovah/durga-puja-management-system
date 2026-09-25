@@ -126,8 +126,8 @@ export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageP
                       {STATUS_LABEL[ticket.status]}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{new Date(ticket.createdAt).toLocaleString()}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{ticket.body}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">{ticket.body}</p>
+                  <TicketMetaFooter date={ticket.createdAt} name={ticket.userName} email={ticket.userEmail} committeeName={ticket.committeeName} />
                 </button>
               ))
             )}
