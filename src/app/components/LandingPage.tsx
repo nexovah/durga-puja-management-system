@@ -59,7 +59,7 @@ interface LandingPageProps {
 
 const FEATURES = [
   { icon: Users, title: 'Committee & Members', desc: 'Manage members, roles, designations, contact details, membership fees and subscriptions from one centralized system.' },
-  { icon: HandCoins, title: 'Chanda Collection', desc: 'Record chanda collections, contributors, amounts, payment methods, payment status and collection history.' },
+  { icon: HandCoins, title: 'Collection', desc: 'Record collections, contributors, amounts, payment methods, payment status and collection history.' },
   { icon: Megaphone, title: 'Donations & Sponsorship', desc: 'Manage donations, advertisers and sponsors — commitments, amounts, payment status and outstanding collections.' },
   { icon: Receipt, title: 'Expense Management', desc: 'Record expenses, categories, vendors, bills, payment methods, partial payments and outstanding amounts.' },
   { icon: Wallet, title: 'Loan Management', desc: 'Track initial funds and committee loans — lender, amount, repayment status and outstanding balance.' },
@@ -81,8 +81,8 @@ const BEFORE_ITEMS = [
 
 const AFTER_ITEMS = [
   'Centralized committee & organized members',
-  'Chanda collection & donation tracking',
-  'Advertisement & sponsorship management',
+  'Collection & donation tracking',
+  'Sponsorship management',
   'Subscription & member fees',
   'Estimation & budgeting',
   'Expense management & partial payments',
