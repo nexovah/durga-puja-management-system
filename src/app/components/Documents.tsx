@@ -188,7 +188,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4 sm:p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 sm:p-6">
                 {pagination.pageItems.map(doc => (
                   <DocumentThumb key={doc.id} doc={doc} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
                 ))}
@@ -264,9 +264,9 @@ function DocumentThumb({ doc, canDelete, onDelete }: { doc: AppDocument; canDele
         href={doc.fileUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={`aspect-[3/4] flex items-center justify-center ${cat.bg} ${cat.fg} hover:opacity-80 transition-opacity`}
+        className={`h-16 flex items-center justify-center ${cat.bg} ${cat.fg} hover:opacity-80 transition-opacity`}
       >
-        <FileText size={40} />
+        <FileText size={22} />
       </a>
       <div className="p-3 space-y-1.5">
         <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate" title={doc.name}>{doc.name}</h4>
