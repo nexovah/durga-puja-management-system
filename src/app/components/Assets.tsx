@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus, Pencil, Trash2, Package, Armchair, Home, Volume2, Lightbulb, Plug, Fan, UtensilsCrossed, Drum, X,
-  Layers, Boxes, IndianRupee, MapPin,
+  Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText,
 } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
@@ -9,6 +9,8 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { ReportPrintTable } from './ReportPrintTable';
+import { downloadTableCSV, SummaryLine } from '../lib/reportExport';
 import {
   Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest,
 } from '../lib/db';
@@ -18,6 +20,8 @@ interface AssetsProps {
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: any, recordLabel?: string) => void;
+  companyName: string;
+  companyLogo: string;
 }
 
 const ASSET_ICONS: { key: string; label: string; Icon?: React.ComponentType<{ size?: number; className?: string }>; glyph?: string; bg: string; fg: string }[] = [
@@ -51,7 +55,20 @@ const EMPTY_FORM: AssetInput = {
 
 // Permanent, tenant-wide inventory — not event-scoped (mirrors Settings /
 // Activity Log, reused across every festival, per the feature request).
-export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
+const ASSET_COLUMNS: { label: string; render: (a: Asset) => string | number }[] = [
+  { label: 'Asset Name', render: a => a.name },
+  { label: 'Category', render: a => a.category || '' },
+  { label: 'Condition', render: a => conditionInfo(a.condition).label },
+  { label: 'Owned', render: a => a.quantityOwned },
+  { label: 'In Use', render: a => a.quantityInUse },
+  { label: 'Available', render: a => Math.max(0, a.quantityOwned - a.quantityInUse) },
+  { label: 'Unit', render: a => a.unit },
+  { label: 'Value (₹)', render: a => a.value ?? '' },
+  { label: 'Stored At', render: a => a.storedAt || '' },
+  { label: 'Purchase Date', render: a => a.purchaseDate || '' },
+];
+
+export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: AssetsProps) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,6 +83,28 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [printData, setPrintData] = useState<{ rows: (string | number)[][]; summary: SummaryLine[] } | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!printData) return;
+    const timer = setTimeout(() => window.print(), 50);
+    const onAfterPrint = () => setPrintData(null);
+    window.addEventListener('afterprint', onAfterPrint);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('afterprint', onAfterPrint);
+    };
+  }, [printData]);
 
   const reload = () => {
     setLoading(true);
@@ -105,6 +144,34 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+
+  const exportRows = () => (selected.size > 0 ? filteredAssets.filter(a => selected.has(a.id)) : filteredAssets);
+  const exportSummary = (rows: Asset[]): SummaryLine[] => [
+    { label: 'Distinct assets', value: String(rows.length) },
+    { label: 'Units owned', value: String(rows.reduce((s, a) => s + a.quantityOwned, 0)) },
+    { label: 'Units in use', value: String(rows.reduce((s, a) => s + a.quantityInUse, 0)) },
+    { label: 'Asset value', value: `₹${rows.reduce((s, a) => s + (a.value || 0), 0).toLocaleString()}` },
+  ];
+
+  const handleDownloadCSV = () => {
+    const rows = exportRows();
+    downloadTableCSV('assets.csv', {
+      companyName,
+      summary: exportSummary(rows),
+      headers: ASSET_COLUMNS.map(c => c.label),
+      rows: rows.map(a => ASSET_COLUMNS.map(c => c.render(a))),
+    });
+    setMenuOpen(false);
+  };
+
+  const handleDownloadPDF = () => {
+    const rows = exportRows();
+    setPrintData({
+      rows: rows.map(a => ASSET_COLUMNS.map(c => c.render(a))),
+      summary: exportSummary(rows),
+    });
+    setMenuOpen(false);
+  };
 
   const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setFormError(''); setShowForm(true); };
   const openEdit = (asset: Asset) => {
@@ -157,8 +224,29 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
     <div className="space-y-6">
       <PageHeading
         action={
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {selected.size > 0 && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} selected</span>
+            )}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={18} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button onClick={handleDownloadCSV} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <Download size={16} /> Download CSV
+                  </button>
+                  <button onClick={handleDownloadPDF} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <FileText size={16} /> Download PDF
+                  </button>
+                </div>
+              )}
+            </div>
             {canEdit && (
               <button
                 onClick={openCreate}
@@ -336,6 +424,18 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
+
+      {printData && (
+        <ReportPrintTable
+          companyName={companyName}
+          companyLogo={companyLogo}
+          title="Assets"
+          summary={printData.summary}
+          columns={ASSET_COLUMNS.map((c, i) => ({ label: c.label, align: i >= 3 && i <= 7 ? 'right' : 'left' }))}
+          rows={printData.rows}
+          emptyMessage="No assets to show."
+        />
+      )}
     </div>
   );
 }

@@ -1256,6 +1256,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             onLog={handleLog}
+            companyName={committeeInfo.association || committeeInfo.name}
+            companyLogo={committeeInfo.logo}
           />
         )}
         {currentPage === 'tasks' && (

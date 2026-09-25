@@ -75,13 +75,13 @@ export function Sidebar({
         { key: 'treasury', icon: Wallet, label: t('nav.treasury'), show: !!permissions?.treasury },
         { key: 'report', icon: FileBarChart, label: t('nav.report'), show: !!permissions?.treasury },
         { key: 'loans', icon: Landmark, label: t('nav.loans'), show: !!permissions?.loans },
+        { key: 'estimation', icon: Calculator, label: t('nav.estimation'), show: !!permissions?.estimation },
       ],
     },
     {
       label: t('sidebar.groupEssential'),
       items: [
         { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
-        { key: 'estimation', icon: Calculator, label: t('nav.estimation'), show: !!permissions?.estimation },
         { key: 'assets', icon: Package, label: t('nav.assets'), show: !!permissions?.settings },
         { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
         { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
