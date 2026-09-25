@@ -181,7 +181,7 @@ export function SuperAdminRoot() {
       {page === 'plans' && <SuperAdminPlans key={navResetKey} />}
       {page === 'orders' && <SuperAdminOrders key={navResetKey} />}
       {page === 'leads' && <SuperAdminLeads key={navResetKey} />}
-      {page === 'support' && <SuperAdminHelpSupport key={navResetKey} />}
+      {page === 'support' && <SuperAdminHelpSupport key={navResetKey} adminName={admin.name} />}
       {page === 'cms' && <SuperAdminCms key={navResetKey} />}
       {page === 'settings' && (
         <SuperAdminSettings

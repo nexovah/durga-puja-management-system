@@ -406,6 +406,8 @@ export interface SupportTicket {
   tenantName: string;
   username: string;
   userName: string;
+  userEmail: string | null;
+  committeeName: string | null;
   title: string;
   body: string;
   imageUrl: string | null;
@@ -421,6 +423,8 @@ function fromTicketRow(row: any): SupportTicket {
     tenantName: row.tenant_name,
     username: row.username,
     userName: row.user_name,
+    userEmail: row.user_email,
+    committeeName: row.committee_name,
     title: row.title,
     body: row.body,
     imageUrl: row.image_url,
@@ -437,6 +441,69 @@ export async function listSupportTicketsRequest(): Promise<SupportTicket[]> {
 
 export async function setTicketStatusRequest(ticketId: string, status: TicketStatus): Promise<void> {
   const { error } = await supabase.rpc('super_admin_set_ticket_status', { p_ticket_id: ticketId, p_status: status });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Ticket reply thread — Super Admin reads/writes bypass RLS through
+// SECURITY DEFINER RPCs (see supabase/068_support_ticket_admin_replies.sql)
+// since a Super Admin session carries no tenant_id/sub JWT claim to match
+// support_ticket_replies' tenant-scoped policies against.
+// ---------------------------------------------------------------------------
+
+export interface SupportTicketReply {
+  id: string;
+  ticketId: string;
+  senderRole: 'user' | 'admin';
+  senderName: string;
+  senderEmail: string | null;
+  body: string;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+function fromTicketReplyRow(row: any): SupportTicketReply {
+  return {
+    id: row.id,
+    ticketId: row.ticket_id,
+    senderRole: row.sender_role,
+    senderName: row.sender_name,
+    senderEmail: row.sender_email,
+    body: row.body,
+    imageUrl: row.image_url,
+    createdAt: row.created_at,
+  };
+}
+
+export async function uploadSuperAdminTicketReplyImage(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'png';
+  const path = `admin-reply-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('support-attachments').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('support-attachments').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function fetchSuperAdminTicketReplies(ticketId: string): Promise<SupportTicketReply[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_ticket_replies', { p_ticket_id: ticketId });
+  if (error) throw error;
+  return (data || []).map(fromTicketReplyRow);
+}
+
+export async function postSuperAdminTicketReply(entry: {
+  ticketId: string;
+  senderName: string;
+  senderEmail?: string;
+  body: string;
+  imageUrl?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_reply_to_ticket', {
+    p_ticket_id: entry.ticketId,
+    p_body: entry.body,
+    p_sender_name: entry.senderName,
+    p_sender_email: entry.senderEmail || null,
+    p_image_url: entry.imageUrl || null,
+  });
   if (error) throw error;
 }
 

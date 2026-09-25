@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2 } from 'lucide-react';
+import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2, Reply } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import {
   SupportTicket, SupportTicketReply, listMyTicketsRequest, createTicketRequest, uploadTicketImage,
@@ -9,6 +9,7 @@ import { User } from '../App';
 
 interface HelpSupportPageProps {
   currentUser: User | null;
+  committeeName?: string;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -27,7 +28,7 @@ type View = 'list' | 'create' | { ticket: SupportTicket };
 // selecting a ticket opens its thread in place of the list, with a small
 // thumbnail attachment per message that opens a lightbox on click instead
 // of embedding the full-size image inline.
-export function HelpSupportPage({ currentUser }: HelpSupportPageProps) {
+export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageProps) {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -137,6 +138,7 @@ export function HelpSupportPage({ currentUser }: HelpSupportPageProps) {
       {view === 'create' && (
         <CreateTicketForm
           currentUser={currentUser}
+          committeeName={committeeName}
           onCancel={() => setView('list')}
           onCreated={() => { setView('list'); reload(); }}
         />
@@ -157,7 +159,7 @@ export function HelpSupportPage({ currentUser }: HelpSupportPageProps) {
   );
 }
 
-function CreateTicketForm({ currentUser, onCancel, onCreated }: { currentUser: User | null; onCancel: () => void; onCreated: () => void }) {
+function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: { currentUser: User | null; committeeName?: string; onCancel: () => void; onCreated: () => void }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -184,6 +186,8 @@ function CreateTicketForm({ currentUser, onCancel, onCreated }: { currentUser: U
         userId: currentUser.id,
         username: currentUser.username,
         userName: currentUser.name,
+        userEmail: currentUser.email,
+        committeeName,
         title: title.trim(),
         body: body.trim(),
         imageUrl,
@@ -289,6 +293,32 @@ function AttachmentThumb({ url, onOpen }: { url: string; onOpen: (url: string) =
   );
 }
 
+// Footer identity strip shown under every message — date/time · posted by
+// name (email) · committee — separated by a gray divider line above it, per
+// the reference screenshot's footer layout.
+function TicketMetaFooter({
+  date, name, email, committeeName,
+}: {
+  date: string;
+  name: string;
+  email?: string | null;
+  committeeName?: string | null;
+}) {
+  return (
+    <div className="mt-2.5 pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
+      <span>{new Date(date).toLocaleString()}</span>
+      <span>•</span>
+      <span>Posted by {name}{email ? ` (${email})` : ''}</span>
+      {committeeName && (
+        <>
+          <span>•</span>
+          <span>{committeeName}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Lightbox({ url, onClose }: { url: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6" onClick={onClose}>
@@ -346,6 +376,7 @@ function TicketThread({
         ownerUserId: currentUser.id,
         senderUserId: currentUser.id,
         senderName: currentUser.name,
+        senderEmail: currentUser.email,
         body: replyBody.trim(),
         imageUrl,
       });
@@ -384,11 +415,12 @@ function TicketThread({
         {/* Original message */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3.5">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{ticket.userName}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(ticket.createdAt).toLocaleString()}</p>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{ticket.body}</p>
           {ticket.imageUrl && <AttachmentThumb url={ticket.imageUrl} onOpen={onOpenImage} />}
+          <TicketMetaFooter date={ticket.createdAt} name={ticket.userName} email={ticket.userEmail} committeeName={ticket.committeeName} />
         </div>
 
         {loading ? (
@@ -397,16 +429,24 @@ function TicketThread({
           replies.map(reply => (
             <div
               key={reply.id}
-              className={`rounded-lg p-3.5 ${reply.senderRole === 'admin' ? 'bg-orange-50 dark:bg-orange-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}
+              className={`rounded-lg p-3.5 border ${reply.senderRole === 'admin' ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30' : 'bg-gray-50 dark:bg-gray-800/50 border-transparent'}`}
             >
               <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {reply.senderName}{reply.senderRole === 'admin' && <span className="ml-1.5 text-xs font-normal text-orange-600 dark:text-orange-400">(Support)</span>}
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                  {reply.senderRole === 'admin' && <Reply size={13} className="text-orange-600 dark:text-orange-400" />}
+                  {reply.senderName}
+                  {reply.senderRole === 'admin' && <span className="text-xs font-normal text-orange-600 dark:text-orange-400">(Support)</span>}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{reply.body}</p>
               {reply.imageUrl && <AttachmentThumb url={reply.imageUrl} onOpen={onOpenImage} />}
+              <TicketMetaFooter
+                date={reply.createdAt}
+                name={reply.senderName}
+                email={reply.senderEmail}
+                committeeName={reply.senderRole === 'admin' ? null : ticket.committeeName}
+              />
             </div>
           ))
         )}

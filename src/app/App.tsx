@@ -60,6 +60,7 @@ export interface User {
   id: string;
   name: string;
   username: string;
+  email?: string; // optional, from app_users.email — used to attribute Help & Support posts
   password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
   canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Import
@@ -1274,7 +1275,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'helpSupport' && (
-          <HelpSupportPage currentUser={currentUser} />
+          <HelpSupportPage currentUser={currentUser} committeeName={committeeInfo.association || committeeInfo.name} />
         )}
         </div>
         </div>

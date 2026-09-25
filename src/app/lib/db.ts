@@ -334,6 +334,7 @@ function fromUserRow(row: any): User {
     id: row.id,
     name: row.name,
     username: row.username,
+    email: row.email || undefined,
     password: '', // never stored/returned client-side; see supabase/README.md
     isAdmin: row.is_admin,
     canEdit: row.can_edit !== false, // defaults true for older rows before this column existed
@@ -611,6 +612,9 @@ export interface SupportTicket {
   imageUrl: string | null;
   status: TicketStatus;
   createdAt: string;
+  userName: string;
+  userEmail: string | null;
+  committeeName: string | null;
 }
 
 function fromTicketRow(row: any): SupportTicket {
@@ -622,6 +626,9 @@ function fromTicketRow(row: any): SupportTicket {
     imageUrl: row.image_url,
     status: row.status,
     createdAt: row.created_at,
+    userName: row.user_name,
+    userEmail: row.user_email,
+    committeeName: row.committee_name,
   };
 }
 
@@ -646,6 +653,8 @@ export async function createTicketRequest(entry: {
   userId: string;
   username: string;
   userName: string;
+  userEmail?: string;
+  committeeName?: string;
   title: string;
   body: string;
   imageUrl?: string;
@@ -656,6 +665,8 @@ export async function createTicketRequest(entry: {
       user_id: entry.userId,
       username: entry.username,
       user_name: entry.userName,
+      user_email: entry.userEmail || null,
+      committee_name: entry.committeeName || null,
       title: entry.title,
       body: entry.body,
       image_url: entry.imageUrl || null,
@@ -677,6 +688,7 @@ export interface SupportTicketReply {
   ticketId: string;
   senderRole: 'user' | 'admin';
   senderName: string;
+  senderEmail: string | null;
   body: string;
   imageUrl: string | null;
   createdAt: string;
@@ -688,6 +700,7 @@ function fromTicketReplyRow(row: any): SupportTicketReply {
     ticketId: row.ticket_id,
     senderRole: row.sender_role,
     senderName: row.sender_name,
+    senderEmail: row.sender_email,
     body: row.body,
     imageUrl: row.image_url,
     createdAt: row.created_at,
@@ -709,6 +722,7 @@ export async function postTicketReplyRequest(entry: {
   ownerUserId: string;
   senderUserId: string;
   senderName: string;
+  senderEmail?: string;
   body: string;
   imageUrl?: string;
 }): Promise<SupportTicketReply> {
@@ -720,6 +734,7 @@ export async function postTicketReplyRequest(entry: {
       sender_role: 'user',
       sender_user_id: entry.senderUserId,
       sender_name: entry.senderName,
+      sender_email: entry.senderEmail || null,
       body: entry.body,
       image_url: entry.imageUrl || null,
     })
