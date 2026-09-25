@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronsUpDown, Plus, Pencil, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Pencil, X, MoreHorizontal } from 'lucide-react';
 import { EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest } from '../lib/db';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
 // Curated Indian-festival/puja emoji set — a static picker, not a general
-// emoji library, per the plan.
-const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺', '🪘'];
+// emoji library, per the plan. Kept to 11 + a "more" tile so the grid
+// stays at exactly 2 rows; MORE_EVENT_EMOJIS holds the expanded set shown
+// in the secondary picker popover.
+const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺'];
+const MORE_EVENT_EMOJIS = [
+  '🪘', '🛕', '🚩', '🔔', '📿', '🪷', '🦚', '🐚', '🎊', '🎇', '🌼', '🎭',
+  '🍬', '🎈', '🥻', '🌟', '✨', '🎋', '🪬', '🎐', '🪈', '🌙', '🧿', '🪯',
+];
 
 interface EventSwitcherProps {
   events: EventInfo[];
@@ -208,6 +214,17 @@ function EventForm({
   const [emoji, setEmoji] = useState<string | null>(existing?.emoji ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [moreOpen]);
 
   const handleSave = async () => {
     if (!name.trim() || !year.trim()) {
@@ -233,7 +250,7 @@ function EventForm({
     <div className="p-3.5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-          {existing ? 'Edit Puja / Festival' : 'Puja / Festival to Manage CRM'}
+          {existing ? 'Edit Puja/Festival' : 'Add Puja/Festival'}
         </p>
         <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
           <X size={16} />
@@ -260,7 +277,7 @@ function EventForm({
             className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
           />
         </div>
-        <div>
+        <div className="relative" ref={moreRef}>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Emoji (optional)</label>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {EVENT_EMOJIS.map(e => (
@@ -274,12 +291,39 @@ function EventForm({
                 {e}
               </button>
             ))}
+            <button
+              onClick={() => setMoreOpen(o => !o)}
+              aria-label="More emojis"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
+                moreOpen || (emoji && MORE_EVENT_EMOJIS.includes(emoji))
+                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 text-gray-500 dark:text-gray-400'
+              }`}
+            >
+              <MoreHorizontal size={16} />
+            </button>
           </div>
+
+          {moreOpen && (
+            <div className="absolute left-0 top-full mt-2 w-64 max-h-48 overflow-y-auto z-10 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2.5 grid grid-cols-6 gap-1.5">
+              {MORE_EVENT_EMOJIS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => { setEmoji(emoji === e ? null : e); setMoreOpen(false); }}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-colors ${
+                    emoji === e ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                  }`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
 
-      <div className="flex gap-2 mt-3.5">
+      <div className="border-t border-gray-100 dark:border-gray-800 mt-3.5 pt-3.5 flex gap-2">
         <button
           onClick={handleSave}
           disabled={saving}

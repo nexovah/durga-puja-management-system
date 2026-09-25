@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Globe, Smartphone, Apple } from 'lucide-react';
 import { PageHeading } from './PageHeading';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule, ActivityDevice } from '../lib/db';
 import { Pagination, usePagination } from './Pagination';
@@ -67,6 +69,7 @@ export function ActivityLog() {
   const [actionFilter, setActionFilter] = useState<'all' | ActivityAction>('all');
   const [userFilter, setUserFilter] = useState<'all' | string>('all');
   const [deviceFilter, setDeviceFilter] = useState<'all' | ActivityDevice>('all');
+  const [showSearch, setShowSearch] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -119,19 +122,23 @@ export function ActivityLog() {
     <div>
       <PageHeading
         action={
-          <button
-            onClick={load}
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            {t('common.refresh')}
-          </button>
+          <div className="flex items-center gap-2">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            <button
+              onClick={load}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              {t('common.refresh')}
+            </button>
+          </div>
         }
       >
         {t('activityLog.title')}
       </PageHeading>
 
-      <div className="flex flex-wrap gap-2 sm:gap-3 mb-4">
+      <CollapsibleSearchPanel open={showSearch}>
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 flex flex-wrap gap-2 sm:gap-3">
         <select
           value={moduleFilter}
           onChange={e => setModuleFilter(e.target.value as any)}
@@ -173,6 +180,7 @@ export function ActivityLog() {
           ))}
         </select>
       </div>
+      </CollapsibleSearchPanel>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
