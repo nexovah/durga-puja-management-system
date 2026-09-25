@@ -53,6 +53,7 @@ import {
   EventInfo,
   fetchEvents,
   fetchActiveEventId,
+  fetchMyTicketActivity,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 
@@ -415,6 +416,7 @@ export default function App() {
   });
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadStoredSession() !== null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(() => getPageFromPath());
+  const [hasUnreadSupportReply, setHasUnreadSupportReply] = useState(false);
 
   // App title/favicon apply site-wide (landing page, every tenant's
   // dashboard, Super Admin) — set once here regardless of which sub-app
@@ -575,6 +577,8 @@ export default function App() {
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
+        // Non-fatal — the Help & Support notification dot just stays off if this fails.
+        fetchMyTicketActivity().then(rows => setHasUnreadSupportReply(rows.some(r => r.hasUnreadAdminReply))).catch(() => {});
       } catch (err: any) {
         console.error('Failed to load data from Supabase', err);
         setLoadError(err?.message || 'unknown-error');
@@ -1102,11 +1106,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
             <button
               onClick={() => setCurrentPage('helpSupport')}
-              className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
+              className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
               aria-label="Help & Support"
               title="Help & Support"
             >
               <HelpCircle size={20} />
+              {hasUnreadSupportReply && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-gray-900" />
+              )}
             </button>
 
             <ProfileMenu
@@ -1275,7 +1282,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'helpSupport' && (
-          <HelpSupportPage currentUser={currentUser} committeeName={committeeInfo.association || committeeInfo.name} />
+          <HelpSupportPage
+            currentUser={currentUser}
+            committeeName={committeeInfo.association || committeeInfo.name}
+            onUnreadChange={setHasUnreadSupportReply}
+          />
         )}
         </div>
         </div>

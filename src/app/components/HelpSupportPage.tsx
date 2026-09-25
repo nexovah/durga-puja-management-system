@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2, Reply } from 'lucide-react';
+import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2, Reply, MessageSquare } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import {
-  SupportTicket, SupportTicketReply, listMyTicketsRequest, createTicketRequest, uploadTicketImage,
-  fetchTicketReplies, postTicketReplyRequest,
+  SupportTicket, SupportTicketReply, TicketActivity, listMyTicketsRequest, createTicketRequest, uploadTicketImage,
+  fetchTicketReplies, postTicketReplyRequest, fetchMyTicketActivity, markTicketRead,
 } from '../lib/db';
 import { User } from '../App';
 
 interface HelpSupportPageProps {
   currentUser: User | null;
   committeeName?: string;
+  onUnreadChange?: (hasUnread: boolean) => void;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -28,13 +29,25 @@ type View = 'list' | 'create' | { ticket: SupportTicket };
 // selecting a ticket opens its thread in place of the list, with a small
 // thumbnail attachment per message that opens a lightbox on click instead
 // of embedding the full-size image inline.
-export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageProps) {
+export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: HelpSupportPageProps) {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [activity, setActivity] = useState<Record<string, TicketActivity>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<Tab>('open');
   const [view, setView] = useState<View>('list');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  const reloadActivity = () => {
+    fetchMyTicketActivity()
+      .then(rows => {
+        const map: Record<string, TicketActivity> = {};
+        rows.forEach(row => { map[row.ticketId] = row; });
+        setActivity(map);
+        onUnreadChange?.(rows.some(r => r.hasUnreadAdminReply));
+      })
+      .catch(() => {});
+  };
 
   const reload = () => {
     setLoading(true);
@@ -42,6 +55,7 @@ export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageP
       .then(setTickets)
       .catch(err => setError(err?.message || 'Failed to load tickets'))
       .finally(() => setLoading(false));
+    reloadActivity();
   };
 
   useEffect(() => { reload(); }, []);
@@ -51,6 +65,15 @@ export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageP
   const visibleTickets = tab === 'open' ? openTickets : resolvedTickets;
 
   const selectedTicket = typeof view === 'object' ? tickets.find(t => t.id === view.ticket.id) || view.ticket : null;
+
+  const handleOpenTicket = (ticket: SupportTicket) => {
+    setView({ ticket });
+    if (currentUser) {
+      markTicketRead(ticket.id, currentUser.id)
+        .then(reloadActivity)
+        .catch(() => {});
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -111,25 +134,45 @@ export function HelpSupportPage({ currentUser, committeeName }: HelpSupportPageP
                 <p className="text-sm">{tab === 'open' ? "You don't have any open tickets." : "No resolved tickets yet."}</p>
               </div>
             ) : (
-              visibleTickets.map(ticket => (
-                <button
-                  key={ticket.id}
-                  onClick={() => setView({ ticket })}
-                  className="w-full text-left bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-orange-300 dark:hover:border-orange-500/40 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-1.5">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 tracking-wide mb-0.5">{ticket.ticketCode}</p>
-                      <h4 className="font-medium text-gray-800 dark:text-gray-200">{ticket.title}</h4>
+              visibleTickets.map(ticket => {
+                const act = activity[ticket.id];
+                return (
+                  <button
+                    key={ticket.id}
+                    onClick={() => handleOpenTicket(ticket)}
+                    className={`w-full text-left bg-white dark:bg-gray-900 rounded-xl border p-4 transition-colors ${
+                      act?.hasUnreadAdminReply
+                        ? 'border-orange-300 dark:border-orange-500/50 hover:border-orange-400'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-500/40'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-1.5">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 tracking-wide mb-0.5">{ticket.ticketCode}</p>
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200">{ticket.title}</h4>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!!act?.replyCount && (
+                          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                            <MessageSquare size={13} /> {act.replyCount}
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[ticket.status]}`}>
+                          {STATUS_LABEL[ticket.status]}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[ticket.status]}`}>
-                      {STATUS_LABEL[ticket.status]}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">{ticket.body}</p>
-                  <TicketMetaFooter date={ticket.createdAt} name={ticket.userName} email={ticket.userEmail} committeeName={ticket.committeeName} />
-                </button>
-              ))
+                    {act?.hasUnreadAdminReply && (
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 mb-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        New reply from Support
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">{ticket.body}</p>
+                    <TicketMetaFooter date={ticket.createdAt} name={ticket.userName} email={ticket.userEmail} committeeName={ticket.committeeName} />
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

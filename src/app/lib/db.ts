@@ -717,6 +717,44 @@ export async function fetchTicketReplies(ticketId: string): Promise<SupportTicke
   return (data || []).map(fromTicketReplyRow);
 }
 
+// ---------------------------------------------------------------------------
+// Ticket activity — reply counts + unread-admin-reply tracking (see
+// supabase/070_support_ticket_activity.sql). Drives the conversation-count
+// badge and "new reply" indicator on the ticket list, and the notification
+// dot on the header's Help & Support icon.
+// ---------------------------------------------------------------------------
+
+export interface TicketActivity {
+  ticketId: string;
+  replyCount: number;
+  lastAdminReplyAt: string | null;
+  lastReadAt: string | null;
+  hasUnreadAdminReply: boolean;
+}
+
+function fromTicketActivityRow(row: any): TicketActivity {
+  return {
+    ticketId: row.ticket_id,
+    replyCount: row.reply_count,
+    lastAdminReplyAt: row.last_admin_reply_at,
+    lastReadAt: row.last_read_at,
+    hasUnreadAdminReply: row.has_unread_admin_reply,
+  };
+}
+
+export async function fetchMyTicketActivity(): Promise<TicketActivity[]> {
+  const { data, error } = await supabase.rpc('my_ticket_activity');
+  if (error) throw error;
+  return (data || []).map(fromTicketActivityRow);
+}
+
+export async function markTicketRead(ticketId: string, tenantUserId: string): Promise<void> {
+  const { error } = await supabase
+    .from('support_ticket_reads')
+    .upsert({ ticket_id: ticketId, user_id: tenantUserId, last_read_at: new Date().toISOString() }, { onConflict: 'ticket_id' });
+  if (error) throw error;
+}
+
 export async function postTicketReplyRequest(entry: {
   ticketId: string;
   ownerUserId: string;
