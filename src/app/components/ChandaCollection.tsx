@@ -638,7 +638,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone1')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone1')}</label>
               <input
                 type="tel"
                 value={formData.phone}
@@ -648,7 +648,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone2')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone2')}</label>
               <input
                 type="tel"
                 value={formData.phone2}
@@ -715,8 +715,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.billNumber')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone2')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.phone1')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.phone2')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
                 {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
               </tr>
@@ -869,8 +869,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           }] : []),
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
           { label: t('chanda.billNumber'), value: viewTarget.billNumber || '-' },
-          { label: t('common.phone1'), value: viewTarget.phone || '-' },
-          { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
+          { label: t('chanda.phone1'), value: viewTarget.phone || '-' },
+          { label: t('chanda.phone2'), value: viewTarget.phone2 || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
         ] : []}
       />

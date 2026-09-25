@@ -203,6 +203,8 @@ export const translations = {
     'chanda.donorNamePlaceholder': "Donor's name",
     'chanda.amountLabel': 'Total Amount (₹)',
     'chanda.category': 'Category',
+    'chanda.phone1': 'Phone Number',
+    'chanda.phone2': 'Phone Number 01',
     'chanda.amountPlaceholder': 'Amount',
     'chanda.amount1Label': 'Amount 01',
     'chanda.amount2Label': 'Amount 02',
@@ -376,7 +378,8 @@ export const translations = {
     'expenses.voucherNumberPlaceholder': 'e.g. VCH-2026-014',
     'expenses.vendorName': 'Vendor/Supplier Name',
     'expenses.vendorNamePlaceholder': "Vendor/supplier's name",
-    'expenses.vendorContact': 'Contact',
+    'expenses.vendorContact': 'Phone Number',
+    'expenses.vendorContact2': 'Phone Number 01',
     'expenses.vendorContactPlaceholder': 'Phone number',
 
     // Vendors (derived from Expenses)
@@ -955,6 +958,8 @@ export const translations = {
     'chanda.donorNamePlaceholder': 'দাতার নাম',
     'chanda.amountLabel': 'মোট পরিমাণ (₹)',
     'chanda.category': 'বিভাগ',
+    'chanda.phone1': 'ফোন নম্বর',
+    'chanda.phone2': 'ফোন নম্বর ০১',
     'chanda.amountPlaceholder': 'পরিমাণ',
     'chanda.amount1Label': 'পরিমাণ ০১',
     'chanda.amount2Label': 'পরিমাণ ০২',
@@ -1125,7 +1130,8 @@ export const translations = {
     'expenses.voucherNumberPlaceholder': 'যেমন: VCH-2026-014',
     'expenses.vendorName': 'ভেন্ডর/সরবরাহকারীর নাম',
     'expenses.vendorNamePlaceholder': 'ভেন্ডর/সরবরাহকারীর নাম',
-    'expenses.vendorContact': 'যোগাযোগ',
+    'expenses.vendorContact': 'ফোন নম্বর',
+    'expenses.vendorContact2': 'ফোন নম্বর ০১',
     'expenses.vendorContactPlaceholder': 'ফোন নম্বর',
 
     // Vendors (derived from Expenses)
@@ -1616,6 +1622,8 @@ export const translations = {
     'chanda.donorNamePlaceholder': 'दानकर्ता का नाम',
     'chanda.amountLabel': 'कुल राशि (₹)',
     'chanda.category': 'श्रेणी',
+    'chanda.phone1': 'फ़ोन नंबर',
+    'chanda.phone2': 'फ़ोन नंबर 01',
     'chanda.amountPlaceholder': 'राशि',
     'chanda.amount1Label': 'राशि 01',
     'chanda.amount2Label': 'राशि 02',
@@ -1786,7 +1794,8 @@ export const translations = {
     'expenses.voucherNumberPlaceholder': 'उदाहरण: VCH-2026-014',
     'expenses.vendorName': 'विक्रेता/आपूर्तिकर्ता का नाम',
     'expenses.vendorNamePlaceholder': 'विक्रेता/आपूर्तिकर्ता का नाम',
-    'expenses.vendorContact': 'संपर्क',
+    'expenses.vendorContact': 'फ़ोन नंबर',
+    'expenses.vendorContact2': 'फ़ोन नंबर 01',
     'expenses.vendorContactPlaceholder': 'फ़ोन नंबर',
 
     // Vendors (derived from Expenses)

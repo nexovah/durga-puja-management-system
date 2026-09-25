@@ -31,7 +31,7 @@ interface ExpensesProps {
 const EXPENSES_FIELD_LABELS: Record<string, string> = {
   title: 'Title', amount: 'Amount', paymentStatus: 'Payment Status', paidThrough: 'Paid Through',
   date: 'Date', category: 'Category', voucherNumber: 'Voucher Number', vendorName: 'Vendor Name',
-  vendorContact: 'Vendor Contact', remarks: 'Remarks',
+  vendorContact: 'Vendor Contact', vendorContact2: 'Vendor Contact 01', remarks: 'Remarks',
 };
 
 const categories: { value: string; labelKey: TranslationKey }[] = [
@@ -87,6 +87,7 @@ const emptyForm = {
   voucherNumber: '',
   vendorName: '',
   vendorContact: '',
+  vendorContact2: '',
   remarks: '',
 };
 
@@ -194,6 +195,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       voucherNumber: formData.voucherNumber,
       vendorName: formData.vendorName,
       vendorContact: formData.vendorContact,
+      vendorContact2: formData.vendorContact2,
       remarks: formData.remarks,
     };
 
@@ -262,6 +264,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       voucherNumber: expense.voucherNumber || '',
       vendorName: expense.vendorName || '',
       vendorContact: expense.vendorContact || '',
+      vendorContact2: expense.vendorContact2 || '',
       remarks: expense.remarks,
     });
     setEditingId(expense.id);
@@ -413,7 +416,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const filteredExpenses = expenses.filter(exp => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      const inText = [exp.title, exp.remarks, exp.voucherNumber, exp.vendorName, exp.vendorContact]
+      const inText = [exp.title, exp.remarks, exp.voucherNumber, exp.vendorName, exp.vendorContact, exp.vendorContact2]
         .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
       if (!inText) return false;
     }
@@ -424,7 +427,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     if (f.billVoucher && !(exp.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
     if (f.status && exp.paymentStatus !== f.status) return false;
     if (f.paidMethod && exp.paidThrough !== f.paidMethod) return false;
-    if (f.phone && !(exp.vendorContact || '').includes(f.phone.trim())) return false;
+    if (f.phone && !(exp.vendorContact || '').includes(f.phone.trim()) && !(exp.vendorContact2 || '').includes(f.phone.trim())) return false;
     if (f.dateFrom && new Date(exp.date).getTime() < new Date(f.dateFrom).getTime()) return false;
     if (f.dateTo && new Date(exp.date).getTime() > new Date(f.dateTo).getTime()) return false;
     return true;
@@ -713,6 +716,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 placeholder={t('expenses.vendorContactPlaceholder')}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorContact2')}</label>
+              <input
+                type="tel"
+                value={formData.vendorContact2}
+                onChange={(e) => setFormData({ ...formData, vendorContact2: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('expenses.vendorContactPlaceholder')}
+              />
+            </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
@@ -914,6 +927,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           { label: t('expenses.voucherNumber'), value: viewTarget.voucherNumber || '-' },
           { label: t('expenses.vendorName'), value: viewTarget.vendorName || '-' },
           { label: t('expenses.vendorContact'), value: viewTarget.vendorContact || '-' },
+          { label: t('expenses.vendorContact2'), value: viewTarget.vendorContact2 || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
           ];
         })() : []}

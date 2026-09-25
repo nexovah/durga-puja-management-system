@@ -233,6 +233,7 @@ export interface Expense {
   voucherNumber?: string;
   vendorName?: string;
   vendorContact?: string;
+  vendorContact2?: string;
   remarks: string;
 }
 
