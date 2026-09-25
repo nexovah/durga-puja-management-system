@@ -77,6 +77,7 @@ export interface Expense {
   voucherNumber?: string;
   vendorName?: string;
   vendorContact?: string;
+  vendorContact2?: string;
   remarks: string;
 }
 
@@ -232,6 +233,7 @@ function fromExpenseRow(row: any): Expense {
     voucherNumber: row.voucher_number || '',
     vendorName: row.vendor_name || '',
     vendorContact: row.vendor_contact || '',
+    vendorContact2: row.vendor_contact2 || '',
     remarks: row.remarks || '',
   };
 }
@@ -247,6 +249,7 @@ function toExpenseRow(e: Partial<Expense>) {
     voucher_number: e.voucherNumber || null,
     vendor_name: e.vendorName || null,
     vendor_contact: e.vendorContact || null,
+    vendor_contact2: e.vendorContact2 || null,
     remarks: e.remarks || '',
   };
 }

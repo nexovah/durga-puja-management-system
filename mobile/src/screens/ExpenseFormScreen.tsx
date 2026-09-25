@@ -50,13 +50,13 @@ const STATUS_OPTIONS: { value: ExpensePaymentStatus; label: string }[] = [
 const emptyForm = {
   title: '', amount: '', category: 'other', paymentStatus: 'paid' as ExpensePaymentStatus,
   paidThrough: 'notSelected' as PaidThrough, date: todayISO(), voucherNumber: '',
-  vendorName: '', vendorContact: '', remarks: '',
+  vendorName: '', vendorContact: '', vendorContact2: '', remarks: '',
 };
 
 const EXPENSE_FIELD_LABELS: Record<string, string> = {
   title: 'Title', amount: 'Amount', paymentStatus: 'Payment Status', paidThrough: 'Paid Through',
   date: 'Date', category: 'Category', voucherNumber: 'Voucher Number', vendorName: 'Vendor Name',
-  vendorContact: 'Vendor Contact', remarks: 'Remarks',
+  vendorContact: 'Phone Number', vendorContact2: 'Phone Number 01', remarks: 'Remarks',
 };
 
 export function ExpenseFormScreen({ route, navigation }: any) {
@@ -85,7 +85,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
           title: existing.title, amount: String(existing.amount), category: existing.category,
           paymentStatus: existing.paymentStatus, paidThrough: existing.paidThrough, date: existing.date,
           voucherNumber: existing.voucherNumber || '', vendorName: existing.vendorName || '',
-          vendorContact: existing.vendorContact || '', remarks: existing.remarks,
+          vendorContact: existing.vendorContact || '', vendorContact2: existing.vendorContact2 || '', remarks: existing.remarks,
         });
         setPartialPayments(
           (existing.partialPayments || []).map(p => ({
@@ -132,6 +132,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
       voucherNumber: form.voucherNumber.trim() || undefined,
       vendorName: form.vendorName.trim() || undefined,
       vendorContact: form.vendorContact.trim() || undefined,
+      vendorContact2: form.vendorContact2.trim() || undefined,
       remarks: form.remarks.trim(),
     };
     setSaving(true);
@@ -185,9 +186,10 @@ export function ExpenseFormScreen({ route, navigation }: any) {
             <TextField label="Vendor Name" value={form.vendorName} onChangeText={v => setForm({ ...form, vendorName: v })} placeholder="Optional" />
           </View>
           <View style={{ flex: 1 }}>
-            <TextField label="Vendor Contact" value={form.vendorContact} onChangeText={v => setForm({ ...form, vendorContact: v })} placeholder="Optional" keyboardType="phone-pad" />
+            <TextField label="Phone Number" value={form.vendorContact} onChangeText={v => setForm({ ...form, vendorContact: v })} placeholder="Optional" keyboardType="phone-pad" />
           </View>
         </View>
+        <TextField label="Phone Number 01" value={form.vendorContact2} onChangeText={v => setForm({ ...form, vendorContact2: v })} placeholder="Optional" keyboardType="phone-pad" />
         <DateField label="Date" required value={form.date} onChange={v => setForm({ ...form, date: v })} />
         <TextField label="Remarks" value={form.remarks} onChangeText={v => setForm({ ...form, remarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}

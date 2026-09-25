@@ -38,7 +38,7 @@ const emptyForm = {
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
   donorName: "Donor's Name", category: 'Category', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
-  billNumber: 'Bill Number', phone: 'Phone Number', phone2: 'Phone Number 2',
+  billNumber: 'Bill Number', phone: 'Phone Number', phone2: 'Phone Number 01',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', remarks: 'Remarks',
 };
