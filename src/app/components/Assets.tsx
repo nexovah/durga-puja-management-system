@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Plus, Pencil, Trash2, Package, Armchair, Home, Volume2, Lightbulb, Plug, Fan, UtensilsCrossed, Drum, X,
+  Layers, Boxes, IndianRupee, MapPin,
 } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { SearchToggleButton } from './SearchToggleButton';
+import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import {
   Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest,
 } from '../lib/db';
@@ -58,6 +62,10 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
   const reload = () => {
     setLoading(true);
@@ -69,7 +77,21 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
 
   useEffect(() => { reload(); }, []);
 
-  const pagination = usePagination(assets);
+  const filteredAssets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return assets.filter(a => {
+      if (q) {
+        const hay = `${a.name} ${a.category || ''} ${a.storedAt || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (appliedFilters.status && a.condition !== appliedFilters.status) return false;
+      if (appliedFilters.dateFrom && (!a.purchaseDate || a.purchaseDate < appliedFilters.dateFrom)) return false;
+      if (appliedFilters.dateTo && (!a.purchaseDate || a.purchaseDate > appliedFilters.dateTo)) return false;
+      return true;
+    });
+  }, [assets, searchQuery, appliedFilters]);
+
+  const pagination = usePagination(filteredAssets);
 
   const summary = useMemo(() => {
     const unitsOwned = assets.reduce((s, a) => s + a.quantityOwned, 0);
@@ -78,8 +100,6 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
     return { distinct: assets.length, unitsOwned, unitsOut, totalValue };
   }, [assets]);
 
-  const allSelected = assets.length > 0 && selected.size === assets.length;
-  const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(assets.map(a => a.id)));
   const toggleSelect = (id: string) => setSelected(prev => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -134,64 +154,94 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeading
-        action={canEdit && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-          >
-            <Plus size={20} /> Add asset
-          </button>
-        )}
+        action={
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {canEdit && (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} /> Add asset
+              </button>
+            )}
+          </div>
+        }
       >
         Assets
       </PageHeading>
-      <div className="flex items-start justify-between gap-3 mb-5 -mt-4">
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-          The society's own assets, chairs, tents, sound, decorations, reused across every festival.
-        </p>
-        {assets.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 shrink-0 cursor-pointer select-none">
-            <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500" />
-            Select all
-          </label>
-        )}
-      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 -mt-4 max-w-2xl">
+        The society's own assets, chairs, tents, sound, decorations, reused across every festival.
+      </p>
+
+      <CollapsibleSearchPanel open={showSearch}>
+        <TableSearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          placeholder="Search by asset name, category or stored location"
+          filters={draftFilters}
+          onFiltersChange={setDraftFilters}
+          onSearch={() => setAppliedFilters(draftFilters)}
+          onClear={() => { setSearchQuery(''); setDraftFilters(emptyTableSearchFilters); setAppliedFilters(emptyTableSearchFilters); }}
+          filtersActive={hasActiveTableFilters(appliedFilters)}
+          resultCount={filteredAssets.length}
+          totalCount={assets.length}
+          statusOptions={CONDITION_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+          statusLabel="Condition"
+          showDateRange
+        />
+      </CollapsibleSearchPanel>
 
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+        <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Distinct assets</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1">{summary.distinct}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Distinct assets</h3>
+            <Layers className="text-blue-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">{summary.distinct}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Units owned · out now</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1">
-            {summary.unitsOwned} <span className="text-sm font-medium text-gray-400 dark:text-gray-500">· {summary.unitsOut} out</span>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Units owned · out now</h3>
+            <Boxes className="text-amber-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-600">
+            {summary.unitsOwned} <span className="text-base font-medium text-gray-400 dark:text-gray-500">· {summary.unitsOut} out</span>
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Asset value</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1">₹{summary.totalValue.toLocaleString()}</p>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Asset value</h3>
+            <IndianRupee className="text-green-500" size={24} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{summary.totalValue.toLocaleString()}</p>
         </div>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
-      ) : assets.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-          <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
-          <p className="text-sm">No assets added yet.</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        {loading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
+        ) : assets.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+            <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
+            <p className="text-sm">No assets added yet.</p>
+          </div>
+        ) : filteredAssets.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+            <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
+            <p className="text-sm">No assets match your search.</p>
+          </div>
+        ) : (
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 sm:p-6">
             {pagination.pageItems.map(asset => {
               const icon = iconFor(asset.icon);
               const cond = conditionInfo(asset.condition);
@@ -243,27 +293,30 @@ export function Assets({ canEdit, canDelete, onLog }: AssetsProps) {
 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cond.badgeClass}`}>{cond.label}</span>
-                    {asset.storedAt && <span className="text-xs text-gray-500 dark:text-gray-400">📍 {asset.storedAt}</span>}
+                    {asset.storedAt && (
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        <MapPin size={12} /> {asset.storedAt}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 mt-4">
-            <Pagination
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={pagination.setPage}
-              pageSize={pagination.pageSize}
-              onPageSizeChange={pagination.setPageSize}
-              totalItems={pagination.totalItems}
-              startIndex={pagination.startIndex}
-              endIndex={pagination.endIndex}
-            />
-          </div>
-        </>
-      )}
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={pagination.setPage}
+            pageSize={pagination.pageSize}
+            onPageSizeChange={pagination.setPageSize}
+            totalItems={pagination.totalItems}
+            startIndex={pagination.startIndex}
+            endIndex={pagination.endIndex}
+          />
+          </>
+        )}
+      </div>
 
       {showForm && (
         <AssetFormModal

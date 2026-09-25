@@ -38,6 +38,7 @@ interface TableSearchBarProps {
   showBillVoucher?: boolean;
   billVoucherLabel?: string;
   statusOptions?: Option[];
+  statusLabel?: string;
   paidMethodOptions?: Option[];
   showDateRange?: boolean;
   showPhone?: boolean;
@@ -55,7 +56,7 @@ interface TableSearchBarProps {
 export function TableSearchBar({
   query, onQueryChange, placeholder, filters, onFiltersChange, onSearch, onClear, filtersActive,
   resultCount, totalCount,
-  showAmount, showBillVoucher, billVoucherLabel, statusOptions, paidMethodOptions, showDateRange, showPhone,
+  showAmount, showBillVoucher, billVoucherLabel, statusOptions, statusLabel, paidMethodOptions, showDateRange, showPhone,
   inKindOptions, inKindLabel, designationOptions, designationLabel,
 }: TableSearchBarProps) {
   const { t } = useLanguage();
@@ -159,7 +160,7 @@ export function TableSearchBar({
             )}
             {statusOptions && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.paymentStatus')}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{statusLabel || t('search.paymentStatus')}</label>
                 <select
                   value={filters.status}
                   onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
