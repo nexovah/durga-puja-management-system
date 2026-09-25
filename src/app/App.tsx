@@ -9,6 +9,7 @@ import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
 import { HelpSupportPage } from './components/HelpSupportPage';
 import { Assets } from './components/Assets';
+import { Documents } from './components/Documents';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -373,7 +374,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -389,6 +390,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   settings: '/settings',
   activityLog: '/activity-log',
   assets: '/assets',
+  documents: '/documents',
   tasks: '/tasks',
   estimation: '/estimation',
   billing: '/billing',
@@ -1258,6 +1260,18 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
             companyName={committeeInfo.association || committeeInfo.name}
             companyLogo={committeeInfo.logo}
+          />
+        )}
+        {currentPage === 'documents' && (
+          <Documents
+            currentUser={currentUser}
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            eventLabel={(() => {
+              const e = events.find(ev => ev.id === activeEventId);
+              return e ? `${e.name} ${e.year}` : '';
+            })()}
+            onLog={handleLog}
           />
         )}
         {currentPage === 'tasks' && (

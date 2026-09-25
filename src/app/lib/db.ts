@@ -726,6 +726,82 @@ export async function deleteAssetRequest(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// Documents — government/committee permission paperwork (see
+// supabase/072_documents.sql). Event-scoped, unlike Assets — each Puja/
+// Festival has its own set of permissions.
+// ---------------------------------------------------------------------------
+
+export type DocumentCategory = 'police' | 'fire' | 'municipal' | 'committee' | 'electricity' | 'mom' | 'land' | 'other';
+
+export interface AppDocument {
+  id: string;
+  name: string;
+  category: DocumentCategory;
+  fileUrl: string;
+  fileSizeBytes: number | null;
+  uploadedByName: string;
+  uploadedAt: string;
+}
+
+function fromDocumentRow(row: any): AppDocument {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    fileUrl: row.file_url,
+    fileSizeBytes: row.file_size_bytes,
+    uploadedByName: row.uploaded_by_name,
+    uploadedAt: row.uploaded_at,
+  };
+}
+
+export async function listDocumentsRequest(): Promise<AppDocument[]> {
+  const { data, error } = await supabase.from('documents').select('*').order('uploaded_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromDocumentRow);
+}
+
+export async function uploadDocumentFile(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'pdf';
+  const path = `doc-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('documents').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('documents').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function createDocumentRequest(entry: {
+  name: string;
+  category: DocumentCategory;
+  fileUrl: string;
+  fileSizeBytes: number;
+  uploadedByUserId: string;
+  uploadedByName: string;
+  uploadedAt: string;
+}): Promise<AppDocument> {
+  const { data, error } = await supabase
+    .from('documents')
+    .insert({
+      name: entry.name,
+      category: entry.category,
+      file_url: entry.fileUrl,
+      file_size_bytes: entry.fileSizeBytes,
+      uploaded_by_user_id: entry.uploadedByUserId,
+      uploaded_by_name: entry.uploadedByName,
+      uploaded_at: entry.uploadedAt,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromDocumentRow(data);
+}
+
+export async function deleteDocumentRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('documents').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function listMyTicketsRequest(): Promise<SupportTicket[]> {
   const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
   if (error) throw error;
@@ -1013,7 +1089,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 
