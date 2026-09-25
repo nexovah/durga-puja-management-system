@@ -45,7 +45,7 @@ export function ChandaListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <ListHeader
-        title="Chanda Collection"
+        title="Collection"
         onBack={() => navigation.goBack()}
         showStats={showStats}
         onToggleStats={() => setShowStats(s => !s)}

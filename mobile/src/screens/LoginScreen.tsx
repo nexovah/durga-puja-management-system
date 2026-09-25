@@ -114,7 +114,7 @@ export function LoginScreen({ navigation }: any) {
           </View>
 
           <Text style={styles.footnote}>
-            Add and update your committee's Chanda, Members, Expenses and more — right from your phone.
+            Add and update your committee's Collection, Members, Expenses and more — right from your phone.
           </Text>
         </View>
       </ScrollView>

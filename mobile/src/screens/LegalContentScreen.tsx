@@ -15,7 +15,7 @@ import { colors } from '../theme';
 // exists, not a data-integrity shortcut.
 const ABOUT_FALLBACK = [
   'Durga CRM is a simple platform built to help Puja and festival committees run their day-to-day work without the chaos of spreadsheets and WhatsApp threads.',
-  'From tracking Chanda collections, donations and ads, to managing expenses, vendors, loans and member records — everything your committee already does is organized in one place, accessible from your phone.',
+  'From tracking collections, donations and ads, to managing expenses, vendors, loans and member records — everything your committee already does is organized in one place, accessible from your phone.',
   'Built for committees of any size, Durga CRM keeps your accounts transparent and your tasks on track, right through to immersion day.',
 ].join('\n');
 

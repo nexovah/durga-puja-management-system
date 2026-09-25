@@ -13,7 +13,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDES = [
   {
     title: 'One Committee. One Dashboard.',
-    subtitle: 'Chanda, donations, expenses, members and tasks — everything your committee needs, organized in one place.',
+    subtitle: 'Collection, donations, expenses, members and tasks — everything your committee needs, organized in one place.',
   },
   {
     title: 'Every Rupee, Clearly Tracked.',

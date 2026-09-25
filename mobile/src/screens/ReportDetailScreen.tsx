@@ -35,8 +35,8 @@ const RANGES: { key: Range; label: string }[] = [
 ];
 
 const MODULE_LABELS: Record<string, string> = {
-  chanda: 'Chanda', donation: 'Donation', ads: 'Advertisement', expenses: 'Expenses',
-  vendor: 'Vendor', member: 'Members', loan: 'Loans', estimation: 'Estimation',
+  chanda: 'Collection', donation: 'Donation', ads: 'Sponsorship', expenses: 'Expenses',
+  vendor: 'Vendors', member: 'Members', loan: 'Loans', estimation: 'Estimation',
 };
 
 function inRange(dateStr: string | undefined, range: Range): boolean {
@@ -121,7 +121,7 @@ export function ReportDetailScreen({ navigation, route }: any) {
       const collected = rows.reduce((s, r) => s + getChandaCreditAmount(r), 0);
       const pending = rows.reduce((s, r) => s + (r.paymentStatus === 'pending' ? r.amount : r.paymentStatus === 'partial' ? Math.max(0, r.amount - (r.partialAmount || 0)) : 0), 0);
       const widgets: Widget[] = [
-        { label: 'Total Chanda', value: formatAmount(collected + pending), icon: Receipt, tint: 'neutral' },
+        { label: 'Total Collection', value: formatAmount(collected + pending), icon: Receipt, tint: 'neutral' },
         { label: 'Collected', value: formatAmount(collected), icon: CheckCircle2, tint: 'green' },
         { label: 'Pending', value: formatAmount(pending), icon: Clock, tint: 'amber' },
       ];

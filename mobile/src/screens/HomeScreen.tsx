@@ -103,7 +103,7 @@ export function HomeScreen({ navigation }: any) {
     const totalSpent = expenses.reduce((s, e) => s + getExpenseCreditAmount(e), 0);
 
     const recentChanda = chandaList.slice(0, 3).map((c: Chanda) => ({
-      id: `c-${c.id}`, kind: 'in' as const, label: `${c.donorName} — Chanda`, when: formatDate(c.date), amount: formatAmount(getChandaCreditAmount(c)),
+      id: `c-${c.id}`, kind: 'in' as const, label: `${c.donorName} — Collection`, when: formatDate(c.date), amount: formatAmount(getChandaCreditAmount(c)),
     }));
     const recentExpenses = expenses.slice(0, 3).map((e: Expense) => ({
       id: `e-${e.id}`, kind: 'out' as const, label: e.title, when: formatDate(e.date), amount: formatAmount(getExpenseCreditAmount(e)),
@@ -204,7 +204,7 @@ export function HomeScreen({ navigation }: any) {
               </View>
               <View style={{ gap: 2 }}>
                 <Text style={[styles.miniValue, { color: '#831843' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>{formatAmount(totals.totalChanda)}</Text>
-                <Text style={[styles.miniLabel, { color: '#a8477a' }]}>Total Chanda</Text>
+                <Text style={[styles.miniLabel, { color: '#a8477a' }]}>Total Collection</Text>
               </View>
             </View>
             <View style={[styles.miniCard, { backgroundColor: colors.indigoBg }]}>
@@ -250,14 +250,14 @@ export function HomeScreen({ navigation }: any) {
             <Text style={styles.sectionTitle}>Quick add</Text>
           </View>
           <View style={styles.grid}>
-            <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Chanda" onPress={() => navigation.navigate('ChandaList')} />
+            <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Collection" onPress={() => navigation.navigate('ChandaList')} />
             <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />
             <QuickTile icon={HeartHandshake} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
-            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Advertisement" onPress={() => navigation.navigate('AdsList')} />
+            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Sponsorship" onPress={() => navigation.navigate('AdsList')} />
           </View>
           <View style={[styles.grid, { marginTop: 10 }]}>
             <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />
-            <QuickTile icon={Store} color={colors.indigo} bg={colors.indigoBg} label="Vendor" onPress={() => navigation.navigate('VendorList')} />
+            <QuickTile icon={Store} color={colors.indigo} bg={colors.indigoBg} label="Vendors" onPress={() => navigation.navigate('VendorList')} />
             <QuickTile icon={HandCoins} color={colors.amber} bg={colors.amberBg} label="Loan" onPress={() => navigation.navigate('LoanList')} />
             <QuickTile icon={FileText} color={colors.orange} bg={colors.orangeSoft} label="Estimation" onPress={() => navigation.navigate('EstimationList')} />
           </View>

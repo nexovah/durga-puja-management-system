@@ -144,7 +144,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
         </TouchableOpacity>
-        <Text style={styles.title}>{isEdit ? `Edit ${isAds ? 'Advertisement' : 'Donation'}` : `Add ${isAds ? 'Advertisement' : 'Donation'}`}</Text>
+        <Text style={styles.title}>{isEdit ? `Edit ${isAds ? 'Sponsorship' : 'Donation'}` : `Add ${isAds ? 'Sponsorship' : 'Donation'}`}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
@@ -160,7 +160,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
           <TextField label="Voucher Number" value={form.voucherNumber} onChangeText={v => setForm({ ...form, voucherNumber: v })} placeholder="Optional" />
         )}
         {isAds ? (
-          <SheetSelect label="Advertisement Category" value={form.inKind} onChange={v => setForm({ ...form, inKind: v })} options={ADS_CATEGORY_OPTIONS} />
+          <SheetSelect label="Sponsorship Category" value={form.inKind} onChange={v => setForm({ ...form, inKind: v })} options={ADS_CATEGORY_OPTIONS} />
         ) : (
           <TextField label="In Kind (if any)" value={form.inKind} onChangeText={v => setForm({ ...form, inKind: v })} placeholder="e.g. materials, not cash" />
         )}

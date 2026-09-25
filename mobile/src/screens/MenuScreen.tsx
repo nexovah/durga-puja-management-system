@@ -30,9 +30,9 @@ const SECTIONS: MenuSection[] = [
   {
     label: 'Main Menu',
     items: [
-      { icon: Wallet, label: 'Chanda', onPress: nav => nav.navigate('ChandaList') },
+      { icon: Wallet, label: 'Collection', onPress: nav => nav.navigate('ChandaList') },
       { icon: HeartHandshake, label: 'Donations', onPress: nav => nav.navigate('DonationList') },
-      { icon: Megaphone, label: 'Advertisement', onPress: nav => nav.navigate('AdsList') },
+      { icon: Megaphone, label: 'Sponsorship', onPress: nav => nav.navigate('AdsList') },
       { icon: Receipt, label: 'Expenses', onPress: nav => nav.navigate('ExpensesList') },
       { icon: Store, label: 'Vendors', onPress: nav => nav.navigate('VendorList') },
       { icon: Users, label: 'Members', onPress: nav => nav.navigate('MembersList') },

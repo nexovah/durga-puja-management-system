@@ -6,11 +6,11 @@ import { ArrowLeft, Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, Ha
 import { colors, radius } from '../theme';
 
 const MODULES: { key: string; label: string; icon: any; color: string; bg: string }[] = [
-  { key: 'chanda', label: 'Chanda', icon: Wallet, color: colors.orange, bg: colors.orangeSoft },
+  { key: 'chanda', label: 'Collection', icon: Wallet, color: colors.orange, bg: colors.orangeSoft },
   { key: 'donation', label: 'Donation', icon: HeartHandshake, color: colors.green, bg: colors.greenBg },
-  { key: 'ads', label: 'Advertisement', icon: Megaphone, color: colors.indigo, bg: colors.indigoBg },
+  { key: 'ads', label: 'Sponsorship', icon: Megaphone, color: colors.indigo, bg: colors.indigoBg },
   { key: 'expenses', label: 'Expenses', icon: Receipt, color: colors.red, bg: colors.redBg },
-  { key: 'vendor', label: 'Vendor', icon: Store, color: colors.indigo, bg: colors.indigoBg },
+  { key: 'vendor', label: 'Vendors', icon: Store, color: colors.indigo, bg: colors.indigoBg },
   { key: 'member', label: 'Members', icon: Users, color: colors.indigo, bg: colors.indigoBg },
   { key: 'loan', label: 'Loans', icon: HandCoins, color: colors.amber, bg: colors.amberBg },
   { key: 'estimation', label: 'Estimation', icon: FileText, color: colors.orange, bg: colors.orangeSoft },
