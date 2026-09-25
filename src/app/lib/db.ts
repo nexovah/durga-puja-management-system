@@ -68,6 +68,7 @@ function fromChandaRow(row: any): Chanda {
   return {
     id: row.id,
     donorName: row.donor_name,
+    category: row.category || undefined,
     amount: Number(row.amount) || 0,
     amount1: row.amount1 === null || row.amount1 === undefined ? undefined : Number(row.amount1),
     amount2: row.amount2 === null || row.amount2 === undefined ? undefined : Number(row.amount2),
@@ -85,6 +86,7 @@ function toChandaRow(c: Chanda) {
   return {
     id: c.id,
     donor_name: c.donorName,
+    category: c.category || null,
     amount: c.amount,
     amount1: c.amount1 ?? null,
     amount2: c.amount2 ?? null,

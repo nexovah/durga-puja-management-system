@@ -156,9 +156,12 @@ export function getMemberCreditAmount(member: Member): number {
   }
 }
 
+export type ChandaCategory = 'owner' | 'tenant' | 'apartment' | 'shop';
+
 export interface Chanda {
   id: string;
   donorName: string;
+  category?: ChandaCategory; // donor type — Owner / Tenant / Apartment or Flat / Shop
   amount: number; // Amount mentioned/committed
   amount1?: number; // Optional split of `amount` — when either amount1/amount2 is set, amount = amount1 + amount2
   amount2?: number;

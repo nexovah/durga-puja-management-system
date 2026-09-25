@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
-import { Chanda, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
+import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -28,10 +28,18 @@ interface ChandaCollectionProps {
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
-  donorName: "Donor's Name", amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  donorName: "Donor's Name", category: 'Category', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', billNumber: 'Bill Number', phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
 };
+
+const CHANDA_CATEGORIES: { value: ChandaCategory; label: string }[] = [
+  { value: 'owner', label: 'Owner' },
+  { value: 'tenant', label: 'Tenant' },
+  { value: 'apartment', label: 'Apartment or Flat' },
+  { value: 'shop', label: 'Shop' },
+];
+const chandaCategoryLabel = (v?: ChandaCategory) => CHANDA_CATEGORIES.find(c => c.value === v)?.label || '—';
 
 const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
   { value: 'paid', labelKey: 'chanda.status.paid' },
@@ -62,6 +70,7 @@ const matches = (parts: (string | number | undefined | null)[], q: string) =>
 
 const emptyForm = {
   donorName: '',
+  category: '' as ChandaCategory | '',
   amount: '',
   amount1: '',
   amount2: '',
@@ -163,6 +172,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
     const payload = {
       donorName: formData.donorName,
+      category: formData.category || undefined,
       amount: parseFloat(formData.amount),
       amount1: formData.amount1.trim() !== '' ? parseFloat(formData.amount1) : undefined,
       amount2: formData.amount2.trim() !== '' ? parseFloat(formData.amount2) : undefined,
@@ -233,6 +243,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const handleEdit = (chanda: Chanda) => {
     setFormData({
       donorName: chanda.donorName,
+      category: chanda.category || '',
       amount: chanda.amount.toString(),
       amount1: chanda.amount1 !== undefined ? chanda.amount1.toString() : '',
       amount2: chanda.amount2 !== undefined ? chanda.amount2.toString() : '',
@@ -388,6 +399,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     if (f.billVoucher && !normalizeKey(c.billNumber).includes(f.billVoucher.trim().toLowerCase())) return false;
     if (f.status && c.paymentStatus !== f.status) return false;
     if (f.paidMethod && c.paidMethod !== f.paidMethod) return false;
+    if (f.designation && c.category !== f.designation) return false;
     if (f.phone && !(c.phone || '').includes(f.phone.trim()) && !(c.phone2 || '').includes(f.phone.trim())) return false;
     if (f.dateFrom && new Date(c.date).getTime() < new Date(f.dateFrom).getTime()) return false;
     if (f.dateTo && new Date(c.date).getTime() > new Date(f.dateTo).getTime()) return false;
@@ -460,6 +472,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           billVoucherLabel={t('chanda.billNumber')}
           statusOptions={PAYMENT_STATUSES.map(s => ({ value: s.value, label: t(s.labelKey) }))}
           paidMethodOptions={PAID_METHODS.filter(m => m.value !== 'notSelected').map(m => ({ value: m.value, label: t(m.labelKey) }))}
+          designationOptions={CHANDA_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+          designationLabel={t('chanda.category')}
           showDateRange
           showPhone
         />
@@ -506,20 +520,33 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amountLabel')} *</label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.category')}</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as ChandaCategory | '' })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('chanda.amountPlaceholder')}
-              />
+              >
+                <option value="">{t('search.any')}</option>
+                {CHANDA_CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+            <div className="md:col-span-2 grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amountLabel')} *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.amountPlaceholder')}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amount1Label')}</label>
                 <input
@@ -682,6 +709,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.donorName')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.category')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
@@ -706,6 +734,13 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                       >
                         {chanda.donorName}
                       </button>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {chanda.category ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                          {chandaCategoryLabel(chanda.category)}
+                        </span>
+                      ) : '-'}
                     </td>
                     <td className={`px-6 py-4 text-sm font-bold ${
                       status === 'rejected'
@@ -807,6 +842,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onEdit={canEdit && viewTarget ? () => { const c = viewTarget; setViewTarget(null); handleEdit(c); } : undefined}
         fields={viewTarget ? [
           { label: t('chanda.donorName'), value: viewTarget.donorName },
+          { label: t('chanda.category'), value: chandaCategoryLabel(viewTarget.category) },
           {
             label: t('chanda.amountLabel'),
             value: `₹${viewTarget.amount.toLocaleString()}`,
