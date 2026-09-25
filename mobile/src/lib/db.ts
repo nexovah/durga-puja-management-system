@@ -9,9 +9,12 @@ export type DonationAdCategory = 'donation' | 'ads';
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
 export type PaidThrough = 'notSelected' | 'cash' | 'check' | 'qrPayment' | 'onlineBanking';
 
+export type ChandaCategory = 'owner' | 'tenant' | 'apartment' | 'shop';
+
 export interface Chanda {
   id: string;
   donorName: string;
+  category?: ChandaCategory;
   amount: number;
   amount1?: number;
   amount2?: number;
@@ -111,6 +114,7 @@ function fromChandaRow(row: any): Chanda {
   return {
     id: row.id,
     donorName: row.donor_name,
+    category: row.category || undefined,
     amount: Number(row.amount) || 0,
     amount1: row.amount1 === null || row.amount1 === undefined ? undefined : Number(row.amount1),
     amount2: row.amount2 === null || row.amount2 === undefined ? undefined : Number(row.amount2),
@@ -127,6 +131,7 @@ function fromChandaRow(row: any): Chanda {
 function toChandaRow(c: Partial<Chanda>) {
   return {
     donor_name: c.donorName,
+    category: c.category ?? null,
     amount: c.amount,
     amount1: c.amount1 ?? null,
     amount2: c.amount2 ?? null,

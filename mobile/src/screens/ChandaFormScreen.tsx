@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listChanda, createChanda, updateChanda, logActivity, diffFields, Chanda, PaidMethod, PaymentStatus } from '../lib/db';
+import { listChanda, createChanda, updateChanda, logActivity, diffFields, Chanda, ChandaCategory, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
@@ -23,15 +23,21 @@ const STATUS_OPTIONS: { value: PaymentStatus; label: string }[] = [
   { value: 'paid', label: 'Paid' },
   { value: 'partial', label: 'Partial' },
 ];
+const CATEGORY_OPTIONS: { value: ChandaCategory; label: string }[] = [
+  { value: 'owner', label: 'Owner' },
+  { value: 'tenant', label: 'Tenant' },
+  { value: 'apartment', label: 'Apartment or Flat' },
+  { value: 'shop', label: 'Shop' },
+];
 
 const emptyForm = {
-  donorName: '', amount: '', amount1: '', amount2: '', billNumber: '', phone: '', phone2: '',
+  donorName: '', category: '' as ChandaCategory | '', amount: '', amount1: '', amount2: '', billNumber: '', phone: '', phone2: '',
   paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus,
   partialAmount: '', date: todayISO(), remarks: '',
 };
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
-  donorName: "Donor's Name", amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  donorName: "Donor's Name", category: 'Category', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
   billNumber: 'Bill Number', phone: 'Phone Number', phone2: 'Phone Number 2',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', remarks: 'Remarks',
@@ -60,6 +66,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
         setOriginal(existing);
         setForm({
           donorName: existing.donorName,
+          category: existing.category || '',
           amount: String(existing.amount),
           amount1: existing.amount1 !== undefined ? String(existing.amount1) : '',
           amount2: existing.amount2 !== undefined ? String(existing.amount2) : '',
@@ -106,6 +113,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
   const doSave = async () => {
     const payload: Omit<Chanda, 'id'> = {
       donorName: form.donorName.trim(),
+      category: form.category || undefined,
       amount: parseFloat(form.amount) || 0,
       amount1: form.amount1.trim() !== '' ? parseFloat(form.amount1) : undefined,
       amount2: form.amount2.trim() !== '' ? parseFloat(form.amount2) : undefined,
@@ -167,6 +175,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        <ChipSelect label="Category" value={form.category} onChange={v => setForm({ ...form, category: v as ChandaCategory })} options={CATEGORY_OPTIONS} />
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <TextField label="Amount (₹)" required value={form.amount} onChangeText={v => setForm({ ...form, amount: v })} placeholder="0" keyboardType="numeric" />
