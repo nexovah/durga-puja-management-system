@@ -70,7 +70,7 @@ export function EventSwitcher({
   };
 
   return (
-    <div ref={containerRef} className="relative shrink-0 px-3 pb-3">
+    <div ref={containerRef} className="relative shrink-0 px-3">
       <button
         ref={anchorRef}
         onClick={() => isAdmin && setOpen(o => !o)}
@@ -142,7 +142,7 @@ function EventPopover({
   onUpdated: (event: EventInfo) => void;
 }) {
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+    <div className="absolute top-full left-0 mt-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
       {mode === 'list' && (
         <div className="rounded-xl overflow-hidden">
           <div className="py-1.5 max-h-72 overflow-y-auto">
