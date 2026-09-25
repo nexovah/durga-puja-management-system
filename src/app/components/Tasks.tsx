@@ -466,7 +466,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                     <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
                       <button
                         onClick={() => setViewingTask(task)}
-                        className="text-left hover:text-orange-600 dark:hover:text-orange-400 hover:underline transition-colors"
+                        className="text-left text-sm font-medium hover:text-orange-600 dark:hover:text-orange-400 hover:underline transition-colors"
                       >
                         {task.title}
                       </button>
