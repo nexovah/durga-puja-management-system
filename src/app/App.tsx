@@ -7,7 +7,7 @@ import { LegalPage } from './components/LegalPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
-import { HelpSupportModal } from './components/HelpSupportModal';
+import { HelpSupportPage } from './components/HelpSupportPage';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -370,7 +370,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -388,6 +388,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   tasks: '/tasks',
   estimation: '/estimation',
   billing: '/billing',
+  helpSupport: '/help-support',
 };
 
 const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
@@ -516,7 +517,6 @@ export default function App() {
     });
   };
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [helpSupportOpen, setHelpSupportOpen] = useState(false);
   useEffect(() => {
     setMobileNavOpen(false);
   }, [currentPage]);
@@ -1100,7 +1100,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             </button>
 
             <button
-              onClick={() => setHelpSupportOpen(true)}
+              onClick={() => setCurrentPage('helpSupport')}
               className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
               aria-label="Help & Support"
               title="Help & Support"
@@ -1273,11 +1273,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onSubscriptionExtended={handleSubscriptionExtended}
           />
         )}
+        {currentPage === 'helpSupport' && (
+          <HelpSupportPage currentUser={currentUser} />
+        )}
         </div>
         </div>
         </main>
       </div>
-      <HelpSupportModal open={helpSupportOpen} onClose={() => setHelpSupportOpen(false)} currentUser={currentUser} />
     </div>
   );
 }

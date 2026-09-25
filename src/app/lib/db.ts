@@ -667,6 +667,69 @@ export async function createTicketRequest(entry: {
 }
 
 // ---------------------------------------------------------------------------
+// Support ticket replies — thread on a single ticket (see
+// supabase/067_support_ticket_replies.sql). RLS blocks inserting once the
+// ticket is resolved, so a rejected write there is expected, not a bug.
+// ---------------------------------------------------------------------------
+
+export interface SupportTicketReply {
+  id: string;
+  ticketId: string;
+  senderRole: 'user' | 'admin';
+  senderName: string;
+  body: string;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+function fromTicketReplyRow(row: any): SupportTicketReply {
+  return {
+    id: row.id,
+    ticketId: row.ticket_id,
+    senderRole: row.sender_role,
+    senderName: row.sender_name,
+    body: row.body,
+    imageUrl: row.image_url,
+    createdAt: row.created_at,
+  };
+}
+
+export async function fetchTicketReplies(ticketId: string): Promise<SupportTicketReply[]> {
+  const { data, error } = await supabase
+    .from('support_ticket_replies')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(fromTicketReplyRow);
+}
+
+export async function postTicketReplyRequest(entry: {
+  ticketId: string;
+  ownerUserId: string;
+  senderUserId: string;
+  senderName: string;
+  body: string;
+  imageUrl?: string;
+}): Promise<SupportTicketReply> {
+  const { data, error } = await supabase
+    .from('support_ticket_replies')
+    .insert({
+      ticket_id: entry.ticketId,
+      owner_user_id: entry.ownerUserId,
+      sender_role: 'user',
+      sender_user_id: entry.senderUserId,
+      sender_name: entry.senderName,
+      body: entry.body,
+      image_url: entry.imageUrl || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromTicketReplyRow(data);
+}
+
+// ---------------------------------------------------------------------------
 // CMS pages (public read — landing page + legal pages, no auth needed;
 // see supabase/055_cms_pages.sql). Writes are Super Admin-only, in
 // superAdminDb.ts.
