@@ -142,9 +142,9 @@ function EventPopover({
   onUpdated: (event: EventInfo) => void;
 }) {
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="absolute bottom-full left-0 mb-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
       {mode === 'list' && (
-        <>
+        <div className="rounded-xl overflow-hidden">
           <div className="py-1.5 max-h-72 overflow-y-auto">
             {events.map(event => {
               const active = event.id === activeEventId;
@@ -186,7 +186,7 @@ function EventPopover({
               <p className="text-xs text-gray-500 dark:text-gray-400">Collaborate with your entire committee to take full management under control.</p>
             </div>
           </button>
-        </>
+        </div>
       )}
 
       {(mode === 'create' || mode === 'edit') && (
@@ -216,6 +216,12 @@ function EventForm({
   const [error, setError] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  // When a "more" emoji is picked, pin it to the front of the visible row
+  // so the selection is obvious without needing to reopen the more popover.
+  const displayEmojis = emoji && !EVENT_EMOJIS.includes(emoji)
+    ? [emoji, ...EVENT_EMOJIS.slice(0, EVENT_EMOJIS.length - 1)]
+    : EVENT_EMOJIS;
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -280,7 +286,7 @@ function EventForm({
         <div className="relative" ref={moreRef}>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Emoji (optional)</label>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {EVENT_EMOJIS.map(e => (
+            {displayEmojis.map(e => (
               <button
                 key={e}
                 onClick={() => setEmoji(emoji === e ? null : e)}
@@ -291,34 +297,36 @@ function EventForm({
                 {e}
               </button>
             ))}
-            <button
-              onClick={() => setMoreOpen(o => !o)}
-              aria-label="More emojis"
-              className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
-                moreOpen || (emoji && MORE_EVENT_EMOJIS.includes(emoji))
-                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10 text-orange-600'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              <MoreHorizontal size={16} />
-            </button>
-          </div>
+            <div className="relative">
+              <button
+                onClick={() => setMoreOpen(o => !o)}
+                aria-label="More emojis"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
+                  moreOpen || (emoji && MORE_EVENT_EMOJIS.includes(emoji))
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 text-gray-500 dark:text-gray-400'
+                }`}
+              >
+                <MoreHorizontal size={16} />
+              </button>
 
-          {moreOpen && (
-            <div className="absolute right-0 bottom-full mb-2 w-64 max-h-48 overflow-y-auto z-[200] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2.5 grid grid-cols-6 gap-1.5">
-              {MORE_EVENT_EMOJIS.map(e => (
-                <button
-                  key={e}
-                  onClick={() => { setEmoji(emoji === e ? null : e); setMoreOpen(false); }}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-colors ${
-                    emoji === e ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
-                  }`}
-                >
-                  {e}
-                </button>
-              ))}
+              {moreOpen && (
+                <div className="absolute left-0 bottom-full mb-1.5 w-64 max-h-48 overflow-y-auto z-[200] origin-bottom-left animate-in fade-in zoom-in-90 duration-150 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2.5 grid grid-cols-6 gap-1.5">
+                  {MORE_EVENT_EMOJIS.map(e => (
+                    <button
+                      key={e}
+                      onClick={() => { setEmoji(emoji === e ? null : e); setMoreOpen(false); }}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-colors ${
+                        emoji === e ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                      }`}
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
