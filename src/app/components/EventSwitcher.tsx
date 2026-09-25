@@ -305,7 +305,7 @@ function EventForm({
           </div>
 
           {moreOpen && (
-            <div className="absolute left-0 top-full mt-2 w-64 max-h-48 overflow-y-auto z-10 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2.5 grid grid-cols-6 gap-1.5">
+            <div className="absolute right-0 bottom-full mb-2 w-64 max-h-48 overflow-y-auto z-[200] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2.5 grid grid-cols-6 gap-1.5">
               {MORE_EVENT_EMOJIS.map(e => (
                 <button
                   key={e}
