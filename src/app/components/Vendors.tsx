@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, Eye, Pencil, Plus, X } from 'lucide-react';
 import { Expense, getExpenseCreditAmount } from '../App';
 import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest } from '../lib/db';
+import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -121,6 +122,9 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
       group.totalAmount += getExpenseCreditAmount(exp);
       group.totalContractAmount += exp.amount;
       if (!group.categories.includes(exp.category)) group.categories.push(exp.category);
+      if (directoryEntry?.category && !group.categories.includes(directoryEntry.category)) {
+        group.categories.push(directoryEntry.category);
+      }
     }
 
     // Directory-only vendors (added directly, no expense recorded yet).
@@ -129,7 +133,8 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
       if (groups.has(key)) continue;
       groups.set(key, {
         key, name: v.name, contact: v.phone || '', directoryEntry: v,
-        entries: [], totalAmount: 0, totalContractAmount: 0, categories: [],
+        entries: [], totalAmount: 0, totalContractAmount: 0,
+        categories: v.category ? [v.category] : [],
       });
     }
 
@@ -416,6 +421,7 @@ function VendorFormModal({
   const [phone, setPhone] = useState(entry?.phone || group?.contact || '');
   const [phone2, setPhone2] = useState(entry?.phone2 || '');
   const [address, setAddress] = useState(entry?.address || '');
+  const [category, setCategory] = useState(entry?.category || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -424,7 +430,7 @@ function VendorFormModal({
     setSaving(true);
     setError('');
     try {
-      await onSave({ name: name.trim(), companyName, phone, phone2, address });
+      await onSave({ name: name.trim(), companyName, phone, phone2, address, category: category || null });
     } catch (err: any) {
       setError(err?.message || 'Failed to save — please try again.');
     } finally {
@@ -461,6 +467,19 @@ function VendorFormModal({
               onChange={e => setCompanyName(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.category')}</label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            >
+              <option value="">{t('search.any')}</option>
+              {EXPENSE_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

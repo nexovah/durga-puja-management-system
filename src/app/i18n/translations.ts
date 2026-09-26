@@ -398,6 +398,7 @@ export const translations = {
     'vendors.addVendor': 'Add Vendor',
     'vendors.editVendor': 'Edit Vendor',
     'vendors.companyName': 'Company Name',
+    'vendors.category': 'Category',
     'vendors.address': 'Address',
     'vendors.nameRequired': "Vendor/Supplier's name is required.",
 
@@ -1156,6 +1157,7 @@ export const translations = {
     'vendors.addVendor': 'ভেন্ডর যোগ করুন',
     'vendors.editVendor': 'ভেন্ডর সম্পাদনা করুন',
     'vendors.companyName': 'কোম্পানির নাম',
+    'vendors.category': 'বিভাগ',
     'vendors.address': 'ঠিকানা',
     'vendors.nameRequired': 'ভেন্ডর/সরবরাহকারীর নাম আবশ্যক।',
 
@@ -1826,6 +1828,7 @@ export const translations = {
     'vendors.addVendor': 'विक्रेता जोड़ें',
     'vendors.editVendor': 'विक्रेता संपादित करें',
     'vendors.companyName': 'कंपनी का नाम',
+    'vendors.category': 'श्रेणी',
     'vendors.address': 'पता',
     'vendors.nameRequired': 'विक्रेता/आपूर्तिकर्ता का नाम आवश्यक है।',
 

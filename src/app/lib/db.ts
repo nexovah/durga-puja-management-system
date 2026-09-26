@@ -721,6 +721,7 @@ export interface Vendor {
   phone: string | null;
   phone2: string | null;
   address: string | null;
+  category: string | null;
 }
 
 export interface VendorInput {
@@ -729,6 +730,7 @@ export interface VendorInput {
   phone?: string | null;
   phone2?: string | null;
   address?: string | null;
+  category?: string | null;
 }
 
 function fromVendorRow(row: any): Vendor {
@@ -739,6 +741,7 @@ function fromVendorRow(row: any): Vendor {
     phone: row.phone,
     phone2: row.phone2,
     address: row.address,
+    category: row.category,
   };
 }
 
@@ -749,6 +752,7 @@ function toVendorRow(v: VendorInput) {
     phone: v.phone || null,
     phone2: v.phone2 || null,
     address: v.address || null,
+    category: v.category || null,
   };
 }
 

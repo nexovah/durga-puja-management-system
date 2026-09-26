@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
-import { diffFields, ActivityFieldChange } from '../lib/db';
+import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
@@ -34,7 +34,7 @@ const EXPENSES_FIELD_LABELS: Record<string, string> = {
   vendorContact: 'Vendor Contact', vendorContact2: 'Vendor Contact 01', remarks: 'Remarks',
 };
 
-const categories: { value: string; labelKey: TranslationKey }[] = [
+export const EXPENSE_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
   { value: 'construction', labelKey: 'expenses.category.construction' },
   { value: 'decoration', labelKey: 'expenses.category.decoration' },
   { value: 'idol', labelKey: 'expenses.category.idol' },
@@ -102,9 +102,28 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [viewTarget, setViewTarget] = useState<Expense | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Expense, 'id'>; saveAndAddNew: boolean } | null>(null);
+  const [vendorDirectory, setVendorDirectory] = useState<Vendor[]>([]);
+
+  useEffect(() => {
+    listVendorsRequest().then(setVendorDirectory).catch(() => {});
+  }, []);
+
+  // Picking a known vendor name auto-fills its category/phone numbers from
+  // the vendor directory (Vendors.tsx) — only into fields still blank, so
+  // it never overwrites something already typed/saved.
+  const handleVendorNameChange = (value: string) => {
+    const match = vendorDirectory.find(v => v.name.trim().toLowerCase() === value.trim().toLowerCase());
+    setFormData(prev => ({
+      ...prev,
+      vendorName: value,
+      category: match?.category && !prev.category ? match.category : prev.category,
+      vendorContact: match?.phone && !prev.vendorContact ? match.phone : prev.vendorContact,
+      vendorContact2: match?.phone2 && !prev.vendorContact2 ? match.phone2 : prev.vendorContact2,
+    }));
+  };
 
   const categoryLabel = (value: string) => {
-    const found = categories.find(c => c.value === value);
+    const found = EXPENSE_CATEGORIES.find(c => c.value === value);
     return found ? t(found.labelKey) : value;
   };
 
@@ -368,8 +387,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         const parsedPartials = unpackPartialPayments(partialPaymentsRaw || '');
 
         const categoryRawTrim = (categoryRaw || '').trim();
-        const category = categories.find(c => c.value === categoryRawTrim)
-          || categories.find(c => Object.values(translations).some(lang => normalize(lang[c.labelKey]) === normalize(categoryRawTrim)));
+        const category = EXPENSE_CATEGORIES.find(c => c.value === categoryRawTrim)
+          || EXPENSE_CATEGORIES.find(c => Object.values(translations).some(lang => normalize(lang[c.labelKey]) === normalize(categoryRawTrim)));
 
         imported.push({
           id: crypto.randomUUID(),
@@ -400,7 +419,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setImportPreview(null);
   };
 
-  const categoryTotals = categories.map(cat => ({
+  const categoryTotals = EXPENSE_CATEGORIES.map(cat => ({
     category: cat.value,
     label: t(cat.labelKey),
     total: expenses.filter(exp => exp.category === cat.value).reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0),
@@ -411,7 +430,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
-  const knownVendorNames = Array.from(new Set(expenses.map(exp => exp.vendorName?.trim()).filter((n): n is string => !!n))).sort((a, b) => a.localeCompare(b));
+  const knownVendorNames = Array.from(
+    new Set([
+      ...expenses.map(exp => exp.vendorName?.trim()),
+      ...vendorDirectory.map(v => v.name?.trim()),
+    ].filter((n): n is string => !!n))
+  ).sort((a, b) => a.localeCompare(b));
 
   const filteredExpenses = expenses.filter(exp => {
     const q = searchQuery.trim().toLowerCase();
@@ -674,7 +698,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
                 <option value="">{t('expenses.selectCategory')}</option>
-                {categories.map((cat) => (
+                {EXPENSE_CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
                 ))}
               </select>
@@ -694,7 +718,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               <input
                 type="text"
                 value={formData.vendorName}
-                onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
+                onChange={(e) => handleVendorNameChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('expenses.vendorNamePlaceholder')}
                 list="vendor-name-suggestions"
