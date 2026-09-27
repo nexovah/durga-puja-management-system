@@ -8,7 +8,7 @@ import {
   eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format,
 } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 import { TranslationKey } from '../i18n/translations';
@@ -76,7 +76,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
 
   const incomeRecords: Record_[] = useMemo(() => [
     ...chandaList.map(c => ({ date: c.date, amount: getChandaCreditAmount(c) })),
-    ...donationAdsList.map(d => ({ date: d.date, amount: d.amount })),
+    ...donationAdsList.map(d => ({ date: d.date, amount: getDonationAdCreditAmount(d) })),
     ...loansList.map(l => ({ date: l.date, amount: getLoanNetAmount(l) })),
     ...members.filter(m => m.membershipDate).map(m => ({ date: m.membershipDate as string, amount: getMemberCreditAmount(m) })),
   ], [chandaList, donationAdsList, loansList, members]);

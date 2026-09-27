@@ -1,5 +1,5 @@
 import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
-import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
 import { DashboardCategoryBars } from './DashboardCategoryBars';
@@ -16,9 +16,9 @@ interface DashboardProps {
 export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList }: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
-  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
-  const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
-  const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
+  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalDonation = donationAdsList.filter(item => item.category === 'donation').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembershipPayments;

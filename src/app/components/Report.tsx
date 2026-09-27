@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Member, Loan, Estimation,
-  getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
+  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
 } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -279,7 +279,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: DonationAd) => `${r.donorName} ${r.companyName || ''} ${r.phone}`,
       columns: [
         { key: 'name', label: t('report.col.company'), render: (r: DonationAd) => r.donorName || r.companyName || '-' },
-        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: DonationAd) => fmtAmount(r.amount) },
+        { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: DonationAd) => fmtAmount(getDonationAdCreditAmount(r)) },
         { key: 'method', label: t('report.col.method'), render: (r: DonationAd) => paidMethodLabel(r.paidMethod) },
         { key: 'inKind', label: t('report.col.inKind'), render: (r: DonationAd) => r.inKind || '' },
         ...(category === 'donation' ? [{ key: 'voucherNumber', label: t('report.col.voucherNumber'), render: (r: DonationAd) => r.voucherNumber || '' }] : []),
@@ -289,12 +289,12 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
         { key: 'date', label: t('report.col.date'), render: (r: DonationAd) => fmtDate(r.date) },
       ],
       chartType: 'bar',
-      metricOf: (r: DonationAd) => r.amount,
+      metricOf: (r: DonationAd) => getDonationAdCreditAmount(r),
       computeWidgets: (rows: DonationAd[]) => [
-        { label: t(activeModule === 'ads' ? 'report.widget.totalAds' : 'report.widget.totalDonations'), value: fmtAmount(rows.reduce((s, r) => s + r.amount, 0)) },
+        { label: t(activeModule === 'ads' ? 'report.widget.totalAds' : 'report.widget.totalDonations'), value: fmtAmount(rows.reduce((s, r) => s + getDonationAdCreditAmount(r), 0)) },
         { label: t('report.widget.transactions'), value: String(rows.length) },
       ],
-      amountOf: (r: DonationAd) => r.amount,
+      amountOf: (r: DonationAd) => getDonationAdCreditAmount(r),
       paidMethodOf: (r: DonationAd) => r.paidMethod,
       paidMethodOptions: PAID_METHOD_OPTIONS,
       phoneOf: (r: DonationAd) => `${r.phone || ''} ${r.phone2 || ''}`,

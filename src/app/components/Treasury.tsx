@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, MoreVertical, Download, FileText } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -44,7 +44,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     };
   }, [printReport]);
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
-  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + item.amount, 0);
+  const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const membersPaidCount = members.filter(m => getMemberCreditAmount(m) > 0).length;
@@ -69,7 +69,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       if (!monthlyData[month]) {
         monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
       }
-      monthlyData[month].donationAds += d.amount;
+      monthlyData[month].donationAds += getDonationAdCreditAmount(d);
     });
 
     members.forEach(m => {
@@ -115,7 +115,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
   // Top donors (Chanda + Donation/Ads combined)
   const topDonors = Object.entries(
     [...chandaList.map(c => ({ name: c.donorName, amount: getChandaCreditAmount(c) })),
-     ...donationAdsList.map(d => ({ name: d.donorName || d.companyName || '-', amount: d.amount }))]
+     ...donationAdsList.map(d => ({ name: d.donorName || d.companyName || '-', amount: getDonationAdCreditAmount(d) }))]
       .reduce((acc, entry) => {
         acc[entry.name] = (acc[entry.name] || 0) + entry.amount;
         return acc;

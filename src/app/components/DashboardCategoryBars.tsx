@@ -2,7 +2,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 
@@ -33,10 +33,10 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
   const totalChanda = chandaList.reduce((sum, c) => sum + getChandaCreditAmount(c), 0);
   const totalDonation = donationAdsList
     .filter(d => d.category === 'donation')
-    .reduce((sum, d) => sum + d.amount, 0);
+    .reduce((sum, d) => sum + getDonationAdCreditAmount(d), 0);
   const totalAds = donationAdsList
     .filter(d => d.category === 'ads')
-    .reduce((sum, d) => sum + d.amount, 0);
+    .reduce((sum, d) => sum + getDonationAdCreditAmount(d), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + getExpenseCreditAmount(e), 0);
   const totalLoan = loansList.reduce((sum, l) => sum + getLoanNetAmount(l), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);

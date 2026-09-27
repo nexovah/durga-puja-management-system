@@ -5,7 +5,7 @@
 // the CSV export and the print/PDF report (TreasuryReportModal.tsx).
 
 import { csvField } from './csv';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 
 export interface LedgerRow {
   date: string; // ISO yyyy-mm-dd
@@ -67,7 +67,7 @@ export function buildLedger(range: DateRange, sources: LedgerSources, labels: Le
       type: d.category === 'ads' ? labels.ads : labels.donation,
       name: d.donorName || d.companyName || '-',
       detail: d.companyName && d.donorName ? d.companyName : '',
-      credit: d.amount,
+      credit: getDonationAdCreditAmount(d),
       debit: 0,
     });
   });
