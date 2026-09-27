@@ -75,7 +75,7 @@ const emptyForm = {
   amount1: '',
   amount2: '',
   paidMethod: 'notSelected' as PaidMethod,
-  paymentStatus: 'paid' as PaymentStatus,
+  paymentStatus: 'pending' as PaymentStatus,
   partialAmount: '',
   date: new Date().toISOString().split('T')[0],
   billNumber: '',
