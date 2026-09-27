@@ -12,6 +12,7 @@ import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
 import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
@@ -127,6 +128,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DonationAd | null>(null);
   const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
+  const [pendingSave, setPendingSave] = useState<{ payload: Omit<DonationAd, 'id'>; saveAndAddNew: boolean } | null>(null);
 
   const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
 
@@ -222,6 +224,20 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       remarks: formData.remarks,
     };
 
+    // Editing a record already marked Paid requires PIN confirmation —
+    // same guard as Chanda & Expenses (paid means money already received).
+    if (editingId) {
+      const original = donationAdsList.find(item => item.id === editingId);
+      if (original?.paymentStatus === 'paid') {
+        setPendingSave({ payload, saveAndAddNew });
+        return;
+      }
+    }
+
+    commitSave(payload, saveAndAddNew);
+  };
+
+  const commitSave = (payload: Omit<DonationAd, 'id'>, saveAndAddNew: boolean) => {
     if (editingId) {
       const original = donationAdsList.find(item => item.id === editingId);
       setDonationAdsList(donationAdsList.map(item =>
@@ -247,6 +263,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm);
     setEditingId(null);
     setShowForm(saveAndAddNew && !wasEditing);
+  };
+
+  const confirmStatusChange = () => {
+    if (!pendingSave) return;
+    commitSave(pendingSave.payload, pendingSave.saveAndAddNew);
+    setPendingSave(null);
   };
 
   const handleEdit = (item: DonationAd) => {
@@ -864,6 +886,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         itemLabel={deleteTarget?.donorName || deleteTarget?.companyName}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
+      />
+      <StatusChangeConfirmModal
+        open={!!pendingSave}
+        itemLabel={pendingSave?.payload.donorName || pendingSave?.payload.companyName}
+        fromStatusLabel={statusLabel('paid')}
+        toStatusLabel={pendingSave ? statusLabel(pendingSave.payload.paymentStatus) : ''}
+        messageOverride={pendingSave && pendingSave.payload.paymentStatus === 'paid' ? t('statusChange.confirmMessageEditPaid') : undefined}
+        onCancel={() => setPendingSave(null)}
+        onConfirm={confirmStatusChange}
       />
     </div>
   );
