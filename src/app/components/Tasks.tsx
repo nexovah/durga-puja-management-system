@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useMemo, useState } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
@@ -323,8 +322,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.createdAt')}</label>
-              <DateInput
-                
+              <input
+                type="date"
                 disabled
                 value={formData.createdDate}
                 className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg outline-none cursor-not-allowed"
@@ -332,8 +331,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.expiry')}</label>
-              <DateInput
-                
+              <input
+                type="date"
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -414,8 +413,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             <option key={p.value} value={p.value}>{t(p.labelKey)}</option>
           ))}
         </select>
-        <DateInput
-          
+        <input
+          type="date"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
           className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"

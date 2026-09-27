@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
@@ -620,8 +619,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
-              <DateInput
-                
+              <input
+                type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}

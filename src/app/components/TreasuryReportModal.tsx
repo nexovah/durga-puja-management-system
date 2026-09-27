@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useMemo, useState } from 'react';
 import { X, Download, FileText } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -149,8 +148,8 @@ export function TreasuryReportModal({ open, onClose, sources, labels, companyNam
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.from')}</label>
-                <DateInput
-                  
+                <input
+                  type="date"
                   value={customStart}
                   onChange={e => setCustomStart(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -158,8 +157,8 @@ export function TreasuryReportModal({ open, onClose, sources, labels, companyNam
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.to')}</label>
-                <DateInput
-                  
+                <input
+                  type="date"
                   value={customEnd}
                   onChange={e => setCustomEnd(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"

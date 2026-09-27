@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
@@ -483,8 +482,8 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}</label>
-                    <DateInput
-                      
+                    <input
+                      type="date"
                       value={formData.membershipDate}
                       onChange={(e) => setFormData({ ...formData, membershipDate: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"

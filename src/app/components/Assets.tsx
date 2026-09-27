@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus, Pencil, Trash2, Package, Armchair, Home, Volume2, Lightbulb, Plug, Fan, UtensilsCrossed, Drum, X,
@@ -556,8 +555,8 @@ function AssetFormModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Purchase date <span className="text-orange-500 font-normal">(optional)</span>
             </label>
-            <DateInput
-              
+            <input
+              type="date"
               value={form.purchaseDate || ''}
               onChange={e => setForm({ ...form, purchaseDate: e.target.value })}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"

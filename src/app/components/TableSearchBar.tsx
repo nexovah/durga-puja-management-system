@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useState } from 'react';
 import { Search, X, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -223,8 +222,8 @@ export function TableSearchBar({
               <>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.dateFrom')}</label>
-                  <DateInput
-                    
+                  <input
+                    type="date"
                     value={filters.dateFrom}
                     onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -232,8 +231,8 @@ export function TableSearchBar({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t('search.dateTo')}</label>
-                  <DateInput
-                    
+                  <input
+                    type="date"
                     value={filters.dateTo}
                     onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"

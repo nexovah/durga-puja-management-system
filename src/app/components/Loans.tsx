@@ -1,4 +1,3 @@
-import { DateInput } from './DateInput';
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Loan, PaidMethod, getLoanNetAmount } from '../App';
@@ -404,8 +403,8 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
-              <DateInput
-                
+              <input
+                type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -414,8 +413,8 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnDate')}</label>
-              <DateInput
-                
+              <input
+                type="date"
                 value={formData.returnDate}
                 onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
