@@ -1,3 +1,4 @@
+import { DateInput } from './DateInput';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
@@ -651,8 +652,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         placeholder={t('expenses.voucherNumber')}
                       />
-                      <input
-                        type="date"
+                      <DateInput
+                        
                         value={payment.date}
                         onChange={(e) => {
                           const next = [...formData.partialPayments];
@@ -691,8 +692,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
-              <input
-                type="date"
+              <DateInput
+                
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
