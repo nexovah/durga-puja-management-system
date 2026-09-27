@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MoreVertical, Download, FileText, RefreshCw, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Loan, Member,
-  getChandaCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
+  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
 } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -70,8 +70,8 @@ export function ReportBalanceSheetPage({
 
   const totalMembership = members.reduce((s, m) => s + getMemberCreditAmount(m), 0);
   const totalChanda = chandaList.reduce((s, c) => s + getChandaCreditAmount(c), 0);
-  const totalDonation = donationAdsList.filter(d => d.category === 'donation').reduce((s, d) => s + d.amount, 0);
-  const totalAds = donationAdsList.filter(d => d.category === 'ads').reduce((s, d) => s + d.amount, 0);
+  const totalDonation = donationAdsList.filter(d => d.category === 'donation').reduce((s, d) => s + getDonationAdCreditAmount(d), 0);
+  const totalAds = donationAdsList.filter(d => d.category === 'ads').reduce((s, d) => s + getDonationAdCreditAmount(d), 0);
   const totalLoans = loansList.reduce((s, l) => s + getLoanNetAmount(l), 0);
   const totalExpenses = expenses.reduce((s, e) => s + getExpenseCreditAmount(e), 0);
 
