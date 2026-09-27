@@ -194,6 +194,22 @@ export function getChandaCreditAmount(chanda: Chanda): number {
 
 export type DonationAdCategory = 'donation' | 'ads';
 
+// The amount credited toward total collection for a Donation/Ads entry:
+// paid -> full amount counts, pending/rejected -> 0 (no partial for Donation/Ads).
+export function getDonationAdCreditAmount(item: DonationAd): number {
+  switch (item.paymentStatus) {
+    case 'paid':
+      return item.amount;
+    case 'pending':
+    case 'rejected':
+      return 0;
+    default:
+      // Backward compatibility: records saved before payment_status existed default to paid.
+      return item.amount;
+  }
+}
+
+
 export interface DonationAd {
   id: string;
   category: DonationAdCategory;

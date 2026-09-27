@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users } from 'lucide-react';
-import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus } from '../App';
+import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -90,6 +90,18 @@ const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
   { value: 'rejected', labelKey: 'chanda.status.rejected' },
 ];
 
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  paid: 'bg-green-100 text-green-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+  rejected: 'bg-red-100 text-red-700',
+};
+
+const AMOUNT_COLOR: Record<string, string> = {
+  paid: 'text-green-600',
+  pending: 'text-yellow-600',
+  rejected: 'text-red-500 line-through',
+};
+
 const emptyForm = {
   category: 'ads' as DonationAdCategory,
   donorName: '',
@@ -118,9 +130,14 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
   const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
 
-  const total = scopedList.reduce((sum, item) => sum + item.amount, 0);
-  const totalDonation = scopedList.filter(item => item.category === 'donation').reduce((sum, item) => sum + item.amount, 0);
-  const totalAds = scopedList.filter(item => item.category === 'ads').reduce((sum, item) => sum + item.amount, 0);
+  const total = scopedList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalDonation = scopedList.filter(item => item.category === 'donation').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalAds = scopedList.filter(item => item.category === 'ads').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+
+  const statusLabel = (status: string) => {
+    const found = PAYMENT_STATUSES.find(s => s.value === status);
+    return found ? t(found.labelKey) : status;
+  };
 
   const categoryLabel = (category: DonationAdCategory) =>
     category === 'donation' ? t('donationAds.category.donation') : t('donationAds.category.ads');
@@ -712,6 +729,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.companyName')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
                 {!fixedCategory && <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.category')}</th>}
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.inKindOrAdsCategory')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
@@ -733,8 +751,13 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                     </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.companyName || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{item.amount.toLocaleString()}</td>
+                  <td className={`px-6 py-4 text-sm font-bold ${AMOUNT_COLOR[item.paymentStatus || 'paid'] || 'text-green-600'}`}>₹{item.amount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[item.paymentStatus || 'paid'] || 'bg-green-100 text-green-700'}`}>
+                      {statusLabel(item.paymentStatus || 'paid')}
+                    </span>
+                  </td>
                   {!fixedCategory && (
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
