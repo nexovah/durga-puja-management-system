@@ -799,7 +799,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((expense) => {
                 const status = expense.paymentStatus || 'paid';
-                const partialSum = (expense.partialAmounts || []).reduce((sum, v) => sum + (v || 0), 0);
+                const partialSum = (expense.partialPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
                 return (
                   <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -820,7 +820,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         : 'text-red-600'
                     }`}>₹{expense.amount.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}>
                         {statusLabel(status)}
                       </span>
                       {status === 'partial' && (
