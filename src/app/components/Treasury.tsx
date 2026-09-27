@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, MoreVertical, Download, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -45,6 +45,8 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
   }, [printReport]);
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalDonation = donationAdsList.filter(d => d.category === 'donation').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+  const totalAds = donationAdsList.filter(d => d.category === 'ads').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const membersPaidCount = members.filter(m => getMemberCreditAmount(m) > 0).length;
@@ -199,7 +201,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       </PageHeading>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-green-500 dark:border-green-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalChanda')}</h3>
@@ -211,11 +213,20 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-emerald-500 dark:border-emerald-500/60">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalDonationAds')}</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
             <Gift className="text-emerald-500" size={24} />
           </div>
-          <p className="text-3xl font-bold text-emerald-600">₹{totalDonationAds.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.length} {t('treasury.transactions')}</p>
+          <p className="text-3xl font-bold text-emerald-600">₹{totalDonation.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'donation').length} {t('treasury.transactions')}</p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
+            <Megaphone className="text-blue-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-blue-600">₹{totalAds.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'ads').length} {t('treasury.transactions')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-violet-500 dark:border-violet-500/60">
