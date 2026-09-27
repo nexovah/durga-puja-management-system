@@ -188,6 +188,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
         t('vendors.contact'),
         t('expenses.category'),
         t('vendors.transactions'),
+        t('vendors.totalContractAmount'),
         t('vendors.totalAmount'),
       ].map(csvField).join(','),
       ...vendorGroups.map(g => [
@@ -195,6 +196,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
         g.contact,
         g.categories.map(categoryLabel).join(' / '),
         g.entries.length,
+        g.totalContractAmount,
         g.totalAmount,
       ].map(csvField).join(','))
     ].join('\n');
@@ -334,6 +336,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.contact')}</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.transactions')}</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.totalContractAmount')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.totalAmount')}</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
               </tr>
@@ -353,6 +356,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 text-right">{g.entries.length}</td>
+                  <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">₹{g.totalContractAmount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center gap-1">
