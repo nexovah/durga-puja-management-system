@@ -834,8 +834,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         {statusLabel(status)}
                       </span>
                       {status === 'partial' && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          ₹{partialSum.toLocaleString()} / ₹{expense.amount.toLocaleString()}
+                        <div className="text-xs mt-1 font-medium">
+                          <span className="text-red-600">₹{partialSum.toLocaleString()}</span>
+                          <span className="text-gray-400 mx-0.5"> / </span>
+                          <span className="text-yellow-600">₹{expense.amount.toLocaleString()}</span>
                         </div>
                       )}
                     </td>
