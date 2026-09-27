@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users } from 'lucide-react';
-import { DonationAd, DonationAdCategory, PaidMethod } from '../App';
+import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -36,7 +36,7 @@ interface DonationAdsCollectionProps {
 
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
   category: 'Category', donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount',
-  paidMethod: 'Paid Method', inKind: 'In-Kind / Ads Category', date: 'Date', voucherNumber: 'Voucher Number',
+  paidMethod: 'Paid Method', paymentStatus: 'Payment Status', inKind: 'In-Kind / Ads Category', date: 'Date', voucherNumber: 'Voucher Number',
   phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
 };
 
@@ -84,12 +84,19 @@ const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
   { value: 'check', labelKey: 'common.paidMethod.check' },
 ];
 
+const PAYMENT_STATUSES: { value: PaymentStatus; labelKey: TranslationKey }[] = [
+  { value: 'pending', labelKey: 'chanda.status.pending' },
+  { value: 'paid', labelKey: 'chanda.status.paid' },
+  { value: 'rejected', labelKey: 'chanda.status.rejected' },
+];
+
 const emptyForm = {
   category: 'ads' as DonationAdCategory,
   donorName: '',
   companyName: '',
   amount: '',
   paidMethod: 'notSelected' as PaidMethod,
+  paymentStatus: 'pending' as PaymentStatus,
   inKind: '',
   date: new Date().toISOString().split('T')[0],
   voucherNumber: '',
@@ -189,6 +196,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       companyName: formData.category === 'ads' ? formData.companyName : '',
       amount: parseFloat(formData.amount) || 0,
       paidMethod: formData.paidMethod,
+      paymentStatus: formData.paymentStatus,
       inKind: formData.inKind,
       date: formData.date,
       voucherNumber: formData.category === 'donation' ? formData.voucherNumber : '',
@@ -231,6 +239,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       companyName: item.companyName || '',
       amount: item.amount.toString(),
       paidMethod: item.paidMethod || 'notSelected',
+      paymentStatus: item.paymentStatus || 'pending',
       inKind: item.inKind || '',
       date: item.date,
       voucherNumber: item.voucherNumber || '',
@@ -550,6 +559,19 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
               >
                 {PAID_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
+              <select
+                value={formData.paymentStatus}
+                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus, partialAmount: '' })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              >
+                {PAYMENT_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
                 ))}
               </select>
             </div>

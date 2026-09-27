@@ -201,6 +201,7 @@ export interface DonationAd {
   companyName?: string; // Ads only
   amount: number;
   paidMethod: PaidMethod;
+  paymentStatus: PaymentStatus;
   inKind: string; // Donation/Ads in kinds (free text)
   date: string;
   voucherNumber?: string; // Donation entries only
