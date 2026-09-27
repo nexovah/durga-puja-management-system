@@ -108,14 +108,24 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     listVendorsRequest().then(setVendorDirectory).catch(() => {});
   }, []);
 
-  // Picking a known vendor name auto-fills its category/phone numbers from
-  // the vendor directory (Vendors.tsx) — only into fields still blank, so
-  // it never overwrites something already typed/saved.
+  // Picking a known vendor name auto-fills:
+  // - category / phone numbers from the vendor directory (Vendors.tsx)
+  // - title from the most recent expense that matches this vendor name
+  // Only fills fields that are currently blank, never overwrites user input.
   const handleVendorNameChange = (value: string) => {
     const match = vendorDirectory.find(v => v.name.trim().toLowerCase() === value.trim().toLowerCase());
+    // Find the most recent past expense for this vendor to suggest a title.
+    const nameLower = value.trim().toLowerCase();
+    const lastExpense = nameLower
+      ? [...expenses]
+          .filter(e => (e.vendorName || '').trim().toLowerCase() === nameLower)
+          .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+          [0]
+      : undefined;
     setFormData(prev => ({
       ...prev,
       vendorName: value,
+      title: lastExpense?.title && !prev.title ? lastExpense.title : prev.title,
       category: match?.category && !prev.category ? match.category : prev.category,
       vendorContact: match?.phone && !prev.vendorContact ? match.phone : prev.vendorContact,
       vendorContact2: match?.phone2 && !prev.vendorContact2 ? match.phone2 : prev.vendorContact2,
