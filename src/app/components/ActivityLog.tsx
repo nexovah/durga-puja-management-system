@@ -119,11 +119,11 @@ export function ActivityLog() {
 
   const activityLogColumns: ColumnDef<ActivityLogEntry>[] = useMemo(() => [
     { id: 'time', label: t('activityLog.col.time'), sortValue: e => new Date(e.createdAt).getTime() },
-    { id: 'device', label: 'Device', sortValue: e => e.device || 'web' },
+    { id: 'device', label: t('activityLog.col.device'), sortValue: e => e.device || 'web' },
     { id: 'user', label: t('activityLog.col.user'), required: true, sortValue: e => e.userName },
     { id: 'action', label: t('activityLog.col.action'), sortValue: e => e.action },
     { id: 'module', label: t('activityLog.col.module'), sortValue: e => e.module },
-    { id: 'who', label: 'Who', sortValue: e => whoLabel(e) },
+    { id: 'who', label: t('activityLog.col.who'), sortValue: e => whoLabel(e) },
     { id: 'details', label: t('activityLog.col.details'), sortable: false },
   ], [t]);
 
@@ -194,7 +194,7 @@ export function ActivityLog() {
           onChange={e => setDeviceFilter(e.target.value as any)}
           className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
         >
-          <option value="all">All Devices</option>
+          <option value="all">{t('activityLog.allDevices')}</option>
           {devices.map(d => (
             <option key={d} value={d}>{DEVICE_META[d].label}</option>
           ))}
@@ -227,7 +227,7 @@ export function ActivityLog() {
                 )}
                 {tableCols.isColumnVisible('device') && (
                   <SortableTh columnId="device" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
-                    Device
+                    {t('activityLog.col.device')}
                   </SortableTh>
                 )}
                 {tableCols.isColumnVisible('user') && (
@@ -247,7 +247,7 @@ export function ActivityLog() {
                 )}
                 {tableCols.isColumnVisible('who') && (
                   <SortableTh columnId="who" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
-                    Who
+                    {t('activityLog.col.who')}
                   </SortableTh>
                 )}
                 {tableCols.isColumnVisible('details') && (

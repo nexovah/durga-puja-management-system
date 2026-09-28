@@ -10,6 +10,7 @@ import {
   loadRazorpayCheckout,
 } from '../lib/billingDb';
 import { User } from '../App';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface BillingProps {
   currentUser: User | null;
@@ -21,6 +22,7 @@ const formatAmount = (paise: number, currency: string) =>
   (paise / 100).toLocaleString('en-IN', { style: 'currency', currency });
 
 export function Billing({ currentUser, committeeName, onSubscriptionExtended }: BillingProps) {
+  const { t, locale } = useLanguage();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
@@ -37,7 +39,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
       setSelectedPlanId(prev => prev && p.some(pl => pl.id === prev) ? prev : (p[0]?.id ?? null));
       setHistory(h);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load billing info');
+      setError(err?.message || t('billing.loadError'));
     } finally {
       setLoading(false);
     }
@@ -49,9 +51,6 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
   const expiresAt = currentUser?.subscriptionExpiresAt ? new Date(currentUser.subscriptionExpiresAt) : null;
   const isExpired = !expiresAt || expiresAt.getTime() < Date.now();
 
-  // "Active" plan = the plan matching the most recent paid/manual history
-  // entry, only while the subscription hasn't lapsed (an expired sub has
-  // no currently-active plan, even though history still shows one).
   const latestHistoryItem = history.length
     ? [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
     : null;
@@ -60,6 +59,50 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
     : null;
   const activePlanId = !isExpired ? grantedPlanId : null;
   const expiredPlanId = isExpired ? grantedPlanId : null;
+
+  const translatePlanName = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('monthly')) return t('billing.plan.monthly');
+    if (n.includes('yearly')) return t('billing.plan.yearly');
+    return name;
+  };
+
+  const translatePlanDesc = (desc?: string) => {
+    if (!desc) return '';
+    const d = desc.toLowerCase();
+    if (d.includes('monthly')) return t('billing.plan.monthlyDesc');
+    if (d.includes('yearly')) return t('billing.plan.yearlyDesc');
+    return desc;
+  };
+
+  const translateFeature = (feature: string) => {
+    const f = feature.trim().toLowerCase();
+    if (f.includes('unlimited members')) return t('billing.feature.unlimitedMembers');
+    if (f.includes('all collection modules')) return t('billing.feature.allModules');
+    if (f.includes('budgeting & estimation') || f.includes('budgeting')) return t('billing.feature.budgeting');
+    if (f.includes('task management') || f.includes('task')) return t('billing.feature.tasks');
+    if (f.includes('full activity log') || f.includes('activity log')) return t('billing.feature.activityLog');
+    if (f.includes('priority support') || f.includes('support')) return t('billing.feature.support');
+    return feature;
+  };
+
+  const translatePeriod = (period: string) => {
+    const p = period.toLowerCase();
+    if (p === 'monthly') return t('billing.history.period.monthly');
+    if (p === 'yearly') return t('billing.history.period.yearly');
+    return period;
+  };
+
+  const translateStatus = (status: string) => {
+    if (status === 'paid') return t('billing.history.status.paid');
+    if (status === 'failed') return t('billing.history.status.failed');
+    return status;
+  };
+
+  const translateSource = (source: string) => {
+    if (source === 'manual') return t('billing.history.source.manual');
+    return t('billing.history.source.razorpay');
+  };
 
   const handlePay = async () => {
     if (!plan) return;
@@ -80,11 +123,11 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
         handler: async (response: any) => {
           try {
             await verifyPaymentRequest(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
-            setSuccessMessage('Payment successful — subscription extended.');
+            setSuccessMessage(t('billing.paymentSuccess'));
             await load();
             await onSubscriptionExtended();
           } catch (err: any) {
-            setError(err?.message || 'Payment verification failed');
+            setError(err?.message || t('billing.verificationFailed'));
           } finally {
             setPaying(false);
           }
@@ -96,7 +139,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
       });
       razorpay.open();
     } catch (err: any) {
-      setError(err?.message || 'Failed to start payment');
+      setError(err?.message || t('billing.startFailed'));
       setPaying(false);
     }
   };
@@ -104,17 +147,17 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Billing</h1>
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('billing.title')}</h1>
         {!isExpired && (
           <p className="text-sm mt-1">
             {expiresAt ? (
               <>
-                Subscription active until{' '}
-                <span className="font-medium">{expiresAt.toLocaleDateString()}</span>{' '}
-                <span className="text-green-600 dark:text-green-400">(active)</span>
+                {t('billing.activeUntil')}{' '}
+                <span className="font-medium">{expiresAt.toLocaleDateString(locale)}</span>{' '}
+                <span className="text-green-600 dark:text-green-400">{t('billing.activeStatus')}</span>
               </>
             ) : (
-              <span className="text-gray-500 dark:text-gray-400">No active subscription</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('billing.noActive')}</span>
             )}
           </p>
         )}
@@ -125,10 +168,12 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
           <AlertTriangle className="w-6 h-6 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">
-              Subscription expired{expiresAt ? ` on ${expiresAt.toLocaleDateString()}` : ''}
+              {expiresAt
+                ? t('billing.expiredOn', { date: expiresAt.toLocaleDateString(locale) })
+                : t('billing.expired')}
             </p>
             <p className="text-sm text-red-100 mt-0.5">
-              Your account is not operable until you renew. Pick a plan below and complete payment to restore access.
+              {t('billing.expiredNotice')}
             </p>
           </div>
         </div>
@@ -146,12 +191,12 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
       )}
 
       {loading ? (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-12">{t('billing.loading')}</div>
       ) : (
         <>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 max-w-md">
             {plans.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">Plan pricing not available right now.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('billing.notAvailable')}</p>
             ) : (
               <>
                 {plans.length > 1 && (
@@ -170,15 +215,15 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {p.name}
+                        {translatePlanName(p.name)}
                         {p.id === activePlanId && (
                           <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
-                            Active
+                            {t('billing.active')}
                           </span>
                         )}
                         {p.id === expiredPlanId && (
                           <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
-                            Expired
+                            {t('billing.expiredBadge')}
                           </span>
                         )}
                       </button>
@@ -194,21 +239,28 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       </div>
                       {plan.id === activePlanId && (
                         <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                          Active plan
+                          {t('billing.activePlan')}
                         </span>
                       )}
                       {plan.id === expiredPlanId && (
                         <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                          Expired plan
+                          {t('billing.expiredPlan')}
                         </span>
                       )}
                     </div>
-                    {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{plan.description}</p>}
+                    {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{translatePlanDesc(plan.description)}</p>}
                     <ul className="space-y-2 my-5">
-                      {(plan.features ? plan.features.split('\n').filter(Boolean) : ['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Priority support']).map(item => (
+                      {(plan.features ? plan.features.split('\n').filter(Boolean) : [
+                        'Unlimited members & users',
+                        'All collection modules',
+                        'Budgeting & estimation',
+                        'Task management',
+                        'Full activity log',
+                        'Priority support',
+                      ]).map(item => (
                         <li key={item} className="flex items-center gap-2 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
-                          {item}
+                          {translateFeature(item)}
                         </li>
                       ))}
                     </ul>
@@ -217,7 +269,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       disabled={paying}
                       className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
                     >
-                      {paying ? 'Processing…' : `Pay ${formatAmount(plan.amountPaise, plan.currency)}`}
+                      {paying ? t('billing.processing') : t('billing.pay', { amount: formatAmount(plan.amountPaise, plan.currency) })}
                     </button>
                   </>
                 )}
@@ -227,21 +279,21 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
 
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-1.5">
-              <Receipt className="w-4 h-4" /> Billing history
+              <Receipt className="w-4 h-4" /> {t('billing.history.title')}
             </h4>
             {history.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No payments yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('billing.history.empty')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="text-gray-500 dark:text-gray-400">
                     <tr>
-                      <th className="text-left font-medium pb-2">Plan</th>
-                      <th className="text-left font-medium pb-2">Amount</th>
-                      <th className="text-left font-medium pb-2">Status</th>
-                      <th className="text-left font-medium pb-2">Activated</th>
-                      <th className="text-left font-medium pb-2">Expires</th>
-                      <th className="text-left font-medium pb-2">Source</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.plan')}</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.amount')}</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.status')}</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.activated')}</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.expires')}</th>
+                      <th className="text-left font-medium pb-2">{t('billing.history.col.source')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -251,7 +303,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       expires.setMonth(expires.getMonth() + item.durationMonths);
                       return (
                         <tr key={item.id}>
-                          <td className="py-2 capitalize text-gray-700 dark:text-gray-300">{item.period}</td>
+                          <td className="py-2 capitalize text-gray-700 dark:text-gray-300">{translatePeriod(item.period)}</td>
                           <td className="py-2 font-medium">{formatAmount(item.amountPaise, item.currency)}</td>
                           <td className="py-2">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -261,13 +313,13 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                                 ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                                 : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                             }`}>
-                              {item.status}
+                              {translateStatus(item.status)}
                             </span>
                           </td>
-                          <td className="py-2 text-gray-500 dark:text-gray-400">{activated.toLocaleDateString()}</td>
-                          <td className="py-2 text-gray-500 dark:text-gray-400">{expires.toLocaleDateString()}</td>
+                          <td className="py-2 text-gray-500 dark:text-gray-400">{activated.toLocaleDateString(locale)}</td>
+                          <td className="py-2 text-gray-500 dark:text-gray-400">{expires.toLocaleDateString(locale)}</td>
                           <td className="py-2 text-gray-500 dark:text-gray-400">
-                            {item.source === 'manual' ? 'Manual grant' : 'Razorpay'}
+                            {translateSource(item.source)}
                           </td>
                         </tr>
                       );

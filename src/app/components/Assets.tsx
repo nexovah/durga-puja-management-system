@@ -15,6 +15,8 @@ import {
   Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest,
 } from '../lib/db';
 import { ActivityModule } from '../lib/db';
+import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
 interface AssetsProps {
   canEdit: boolean;
@@ -40,35 +42,20 @@ const ASSET_ICONS: { key: string; label: string; Icon?: React.ComponentType<{ si
 const ICON_MAP = Object.fromEntries(ASSET_ICONS.map(i => [i.key, i]));
 const iconFor = (key: string) => ICON_MAP[key] || ASSET_ICONS[0];
 
-const CONDITION_OPTIONS: { value: AssetCondition; label: string; badgeClass: string }[] = [
-  { value: 'good', label: 'Good', badgeClass: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' },
-  { value: 'needs_repair', label: 'Needs Repair', badgeClass: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
-  { value: 'damaged', label: 'Damaged', badgeClass: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400' },
-  { value: 'retired', label: 'Retired', badgeClass: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' },
+const CONDITION_KEYS: { value: AssetCondition; labelKey: TranslationKey; badgeClass: string }[] = [
+  { value: 'good', labelKey: 'assets.condition.good', badgeClass: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' },
+  { value: 'needs_repair', labelKey: 'assets.condition.needs_repair', badgeClass: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
+  { value: 'damaged', labelKey: 'assets.condition.damaged', badgeClass: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400' },
+  { value: 'retired', labelKey: 'assets.condition.retired', badgeClass: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' },
 ];
-const conditionInfo = (c: AssetCondition) => CONDITION_OPTIONS.find(o => o.value === c) || CONDITION_OPTIONS[0];
 
 const EMPTY_FORM: AssetInput = {
   name: '', quantityOwned: 1, quantityInUse: 0, unit: 'pcs', category: '', condition: 'good',
   value: null, storedAt: '', icon: 'box', notes: '', purchaseDate: '',
 };
 
-// Permanent, tenant-wide inventory — not event-scoped (mirrors Settings /
-// Activity Log, reused across every festival, per the feature request).
-const ASSET_COLUMNS: { label: string; render: (a: Asset) => string | number }[] = [
-  { label: 'Asset Name', render: a => a.name },
-  { label: 'Category', render: a => a.category || '' },
-  { label: 'Condition', render: a => conditionInfo(a.condition).label },
-  { label: 'Owned', render: a => a.quantityOwned },
-  { label: 'In Use', render: a => a.quantityInUse },
-  { label: 'Available', render: a => Math.max(0, a.quantityOwned - a.quantityInUse) },
-  { label: 'Unit', render: a => a.unit },
-  { label: 'Value (₹)', render: a => a.value ?? '' },
-  { label: 'Stored At', render: a => a.storedAt || '' },
-  { label: 'Purchase Date', render: a => a.purchaseDate || '' },
-];
-
 export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: AssetsProps) {
+  const { t } = useLanguage();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -86,6 +73,27 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [printData, setPrintData] = useState<{ rows: (string | number)[][]; summary: SummaryLine[] } | null>(null);
+
+  const conditionOptions = useMemo(() => CONDITION_KEYS.map(o => ({
+    value: o.value,
+    label: t(o.labelKey),
+    badgeClass: o.badgeClass,
+  })), [t]);
+
+  const conditionInfo = (c: AssetCondition) => conditionOptions.find(o => o.value === c) || conditionOptions[0];
+
+  const assetColumns = useMemo((): { label: string; render: (a: Asset) => string | number }[] => [
+    { label: t('assets.col.name'), render: a => a.name },
+    { label: t('assets.col.category'), render: a => a.category || '' },
+    { label: t('assets.col.condition'), render: a => conditionInfo(a.condition).label },
+    { label: t('assets.col.owned'), render: a => a.quantityOwned },
+    { label: t('assets.col.inUse'), render: a => a.quantityInUse },
+    { label: t('assets.col.available'), render: a => Math.max(0, a.quantityOwned - a.quantityInUse) },
+    { label: t('assets.col.unit'), render: a => a.unit },
+    { label: t('assets.col.value'), render: a => a.value ?? '' },
+    { label: t('assets.col.storedAt'), render: a => a.storedAt || '' },
+    { label: t('assets.col.purchaseDate'), render: a => a.purchaseDate || '' },
+  ], [t, conditionOptions]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -139,18 +147,21 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
     return { distinct: assets.length, unitsOwned, unitsOut, totalValue };
   }, [assets]);
 
-  const toggleSelect = (id: string) => setSelected(prev => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
-  const exportRows = () => (selected.size > 0 ? filteredAssets.filter(a => selected.has(a.id)) : filteredAssets);
+  const exportRows = () => (selected.size > 0 ? assets.filter(a => selected.has(a.id)) : filteredAssets);
+
   const exportSummary = (rows: Asset[]): SummaryLine[] => [
-    { label: 'Distinct assets', value: String(rows.length) },
-    { label: 'Units owned', value: String(rows.reduce((s, a) => s + a.quantityOwned, 0)) },
-    { label: 'Units in use', value: String(rows.reduce((s, a) => s + a.quantityInUse, 0)) },
-    { label: 'Asset value', value: `₹${rows.reduce((s, a) => s + (a.value || 0), 0).toLocaleString()}` },
+    { label: t('assets.distinctAssets'), value: String(rows.length) },
+    { label: t('assets.owned'), value: String(rows.reduce((s, a) => s + a.quantityOwned, 0)) },
+    { label: t('assets.inUse'), value: String(rows.reduce((s, a) => s + a.quantityInUse, 0)) },
+    { label: t('assets.assetValue'), value: `₹${rows.reduce((s, a) => s + (a.value || 0), 0).toLocaleString()}` },
   ];
 
   const handleDownloadCSV = () => {
@@ -158,8 +169,8 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
     downloadTableCSV('assets.csv', {
       companyName,
       summary: exportSummary(rows),
-      headers: ASSET_COLUMNS.map(c => c.label),
-      rows: rows.map(a => ASSET_COLUMNS.map(c => c.render(a))),
+      headers: assetColumns.map(c => c.label),
+      rows: rows.map(a => assetColumns.map(c => c.render(a))),
     });
     setMenuOpen(false);
   };
@@ -167,7 +178,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   const handleDownloadPDF = () => {
     const rows = exportRows();
     setPrintData({
-      rows: rows.map(a => ASSET_COLUMNS.map(c => c.render(a))),
+      rows: rows.map(a => assetColumns.map(c => c.render(a))),
       summary: exportSummary(rows),
     });
     setMenuOpen(false);
@@ -186,7 +197,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setFormError('Asset name is required.'); return; }
+    if (!form.name.trim()) { setFormError(t('assets.validation.nameRequired')); return; }
     setSaving(true);
     setFormError('');
     try {
@@ -201,7 +212,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
       }
       setShowForm(false);
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to save — please try again.');
+      setFormError(err?.message || t('assets.validation.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -214,7 +225,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
       setAssets(prev => prev.filter(a => a.id !== deleteTarget.id));
       onLog('delete', 'assets', deleteTarget.name, undefined, undefined, deleteTarget.name);
     } catch (err: any) {
-      setError(err?.message || 'Failed to delete');
+      setError(err?.message || t('assets.validation.deleteFailed'));
     } finally {
       setDeleteTarget(null);
     }
@@ -227,7 +238,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {selected.size > 0 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} selected</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} {t('assets.selected')}</span>
             )}
             <div className="relative" ref={menuRef}>
               <button
@@ -239,10 +250,10 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                   <button onClick={handleDownloadCSV} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <Download size={16} /> Download CSV
+                    <Download size={16} /> {t('assets.downloadCSV')}
                   </button>
                   <button onClick={handleDownloadPDF} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <FileText size={16} /> Download PDF
+                    <FileText size={16} /> {t('assets.downloadPDF')}
                   </button>
                 </div>
               )}
@@ -252,23 +263,23 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                 onClick={openCreate}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
-                <Plus size={20} /> Add asset
+                <Plus size={20} /> {t('assets.addAsset')}
               </button>
             )}
           </div>
         }
       >
-        Assets
+        {t('assets.pageTitle')}
       </PageHeading>
       <p className="text-sm text-gray-500 dark:text-gray-400 -mt-4 max-w-2xl">
-        The society's own assets, chairs, tents, sound, decorations, reused across every festival.
+        {t('assets.subtitle')}
       </p>
 
       <CollapsibleSearchPanel open={showSearch}>
         <TableSearchBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
-          placeholder="Search by asset name, category or stored location"
+          placeholder={t('assets.searchPlaceholder')}
           filters={draftFilters}
           onFiltersChange={setDraftFilters}
           onSearch={() => setAppliedFilters(draftFilters)}
@@ -276,8 +287,8 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
           filtersActive={hasActiveTableFilters(appliedFilters)}
           resultCount={filteredAssets.length}
           totalCount={assets.length}
-          statusOptions={CONDITION_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
-          statusLabel="Condition"
+          statusOptions={conditionOptions.map(o => ({ value: o.value, label: o.label }))}
+          statusLabel={t('assets.condition')}
           showDateRange
         />
       </CollapsibleSearchPanel>
@@ -291,23 +302,23 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Distinct assets</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.distinctAssets')}</h3>
             <Layers className="text-blue-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">{summary.distinct}</p>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Units owned · out now</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.unitsOwnedOut')}</h3>
             <Boxes className="text-amber-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-amber-600">
-            {summary.unitsOwned} <span className="text-base font-medium text-gray-400 dark:text-gray-500">· {summary.unitsOut} out</span>
+            {summary.unitsOwned} <span className="text-base font-medium text-gray-400 dark:text-gray-500">· {summary.unitsOut} {t('assets.out')}</span>
           </p>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Asset value</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.assetValue')}</h3>
             <IndianRupee className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{summary.totalValue.toLocaleString()}</p>
@@ -316,16 +327,16 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
 
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('assets.loading')}</p>
         ) : assets.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
-            <p className="text-sm">No assets added yet.</p>
+            <p className="text-sm">{t('assets.empty')}</p>
           </div>
         ) : filteredAssets.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
-            <p className="text-sm">No assets match your search.</p>
+            <p className="text-sm">{t('assets.noMatch')}</p>
           </div>
         ) : (
           <>
@@ -348,16 +359,16 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-gray-800 dark:text-gray-200 truncate">{asset.name}</h4>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{asset.category || 'Asset'}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{asset.category || t('assets.col.category')}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {canEdit && (
-                        <button onClick={() => openEdit(asset)} className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400" aria-label="Edit">
+                        <button onClick={() => openEdit(asset)} className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400" aria-label={t('common.edit')}>
                           <Pencil size={16} />
                         </button>
                       )}
                       {canDelete && (
-                        <button onClick={() => setDeleteTarget(asset)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label="Delete">
+                        <button onClick={() => setDeleteTarget(asset)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('common.delete')}>
                           <Trash2 size={16} />
                         </button>
                       )}
@@ -367,15 +378,15 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-lg p-2 text-center">
                       <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{available}</p>
-                      <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">Available</p>
+                      <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">{t('assets.available')}</p>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-2 text-center">
                       <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{asset.quantityInUse}</p>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">In use</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('assets.inUse')}</p>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-2 text-center">
                       <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{asset.quantityOwned}</p>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">Owned ({asset.unit})</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('assets.owned')} ({asset.unit})</p>
                     </div>
                   </div>
 
@@ -410,6 +421,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
         <AssetFormModal
           form={form}
           setForm={setForm}
+          conditionOptions={conditionOptions}
           editing={!!editingId}
           saving={saving}
           error={formError}
@@ -429,11 +441,11 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
         <ReportPrintTable
           companyName={companyName}
           companyLogo={companyLogo}
-          title="Assets"
+          title={t('assets.pageTitle')}
           summary={printData.summary}
-          columns={ASSET_COLUMNS.map((c, i) => ({ label: c.label, align: i >= 3 && i <= 7 ? 'right' : 'left' }))}
+          columns={assetColumns.map((c, i) => ({ label: c.label, align: i >= 3 && i <= 7 ? 'right' : 'left' }))}
           rows={printData.rows}
-          emptyMessage="No assets to show."
+          emptyMessage={t('assets.noAssetsToShow')}
         />
       )}
     </div>
@@ -441,16 +453,19 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
 }
 
 function AssetFormModal({
-  form, setForm, editing, saving, error, onCancel, onSave,
+  form, setForm, conditionOptions, editing, saving, error, onCancel, onSave,
 }: {
   form: AssetInput;
   setForm: (f: AssetInput) => void;
+  conditionOptions: { value: AssetCondition; label: string }[];
   editing: boolean;
   saving: boolean;
   error: string;
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -459,8 +474,8 @@ function AssetFormModal({
             <Package size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{editing ? 'Edit asset' : 'Add asset'}</h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Reusable across every festival</p>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{editing ? t('assets.editAsset') : t('assets.addAsset')}</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('assets.form.reusableNotice')}</p>
           </div>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <X size={20} />
@@ -469,18 +484,18 @@ function AssetFormModal({
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Asset name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('assets.form.name')}</label>
             <input
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Plastic chairs"
+              placeholder={t('assets.form.namePlaceholder')}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quantity owned</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('assets.form.quantityOwned')}</label>
               <input
                 type="number"
                 min={0}
@@ -490,11 +505,11 @@ function AssetFormModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('assets.form.unit')}</label>
               <input
                 value={form.unit}
                 onChange={e => setForm({ ...form, unit: e.target.value })}
-                placeholder="pcs"
+                placeholder={t('assets.form.unitPlaceholder')}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
@@ -503,23 +518,23 @@ function AssetFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Category <span className="text-orange-500 font-normal">(optional)</span>
+                {t('assets.form.category')} <span className="text-orange-500 font-normal">{t('assets.form.optional')}</span>
               </label>
               <input
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
-                placeholder="e.g. Seating, Sound"
+                placeholder={t('assets.form.categoryPlaceholder')}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Condition</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('assets.condition')}</label>
               <select
                 value={form.condition}
                 onChange={e => setForm({ ...form, condition: e.target.value as AssetCondition })}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               >
-                {CONDITION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {conditionOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
           </div>
@@ -527,25 +542,25 @@ function AssetFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Value (₹) <span className="text-orange-500 font-normal">(optional)</span>
+                {t('assets.form.value')} <span className="text-orange-500 font-normal">{t('assets.form.optional')}</span>
               </label>
               <input
                 type="number"
                 min={0}
                 value={form.value ?? ''}
                 onChange={e => setForm({ ...form, value: e.target.value === '' ? null : Number(e.target.value) })}
-                placeholder="Book value"
+                placeholder={t('assets.form.valuePlaceholder')}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Stored at <span className="text-orange-500 font-normal">(optional)</span>
+                {t('assets.form.storedAt')} <span className="text-orange-500 font-normal">{t('assets.form.optional')}</span>
               </label>
               <input
                 value={form.storedAt || ''}
                 onChange={e => setForm({ ...form, storedAt: e.target.value })}
-                placeholder="e.g. Society store room"
+                placeholder={t('assets.form.storedAtPlaceholder')}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
@@ -553,7 +568,7 @@ function AssetFormModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Purchase date <span className="text-orange-500 font-normal">(optional)</span>
+              {t('assets.form.purchaseDate')} <span className="text-orange-500 font-normal">{t('assets.form.optional')}</span>
             </label>
             <input
               type="date"
@@ -564,7 +579,7 @@ function AssetFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('assets.form.icon')}</label>
             <div className="flex flex-wrap gap-1.5">
               {ASSET_ICONS.map(icon => (
                 <button
@@ -584,12 +599,12 @@ function AssetFormModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Notes <span className="text-orange-500 font-normal">(optional)</span>
+              {t('assets.form.notes')} <span className="text-orange-500 font-normal">{t('assets.form.optional')}</span>
             </label>
             <input
               value={form.notes || ''}
               onChange={e => setForm({ ...form, notes: e.target.value })}
-              placeholder="Anything worth remembering"
+              placeholder={t('assets.form.notesPlaceholder')}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
@@ -602,14 +617,14 @@ function AssetFormModal({
             onClick={onCancel}
             className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={onSave}
             disabled={saving}
             className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-60 transition-colors"
           >
-            {saving ? 'Saving…' : editing ? 'Save changes' : 'Add asset'}
+            {saving ? t('assets.saving') : editing ? t('assets.saveChanges') : t('assets.addAsset')}
           </button>
         </div>
       </div>

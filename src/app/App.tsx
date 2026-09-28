@@ -1134,8 +1134,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             <button
               onClick={() => setCurrentPage('helpSupport')}
               className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
-              aria-label="Help & Support"
-              title="Help & Support"
+              aria-label={t('nav.helpSupport')}
+              title={t('nav.helpSupport')}
             >
               <HelpCircle size={20} />
               {hasUnreadSupportReply && (
@@ -1457,7 +1457,7 @@ function ProfileMenu({
                     className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                   >
                     <CreditCardIcon size={18} />
-                    Billing
+                    {t('nav.billing')}
                   </button>
                 )}
                 <button

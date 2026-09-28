@@ -14,6 +14,8 @@ import {
   listDocumentsRequest, uploadDocumentFile, createDocumentRequest, deleteDocumentRequest,
 } from '../lib/db';
 import { User } from '../App';
+import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
 interface DocumentsProps {
   currentUser: User | null;
@@ -25,18 +27,16 @@ interface DocumentsProps {
 
 const DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
 
-const CATEGORIES: { key: DocumentCategory; label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string }[] = [
-  { key: 'police', label: 'Police', Icon: Shield, bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-600 dark:text-blue-400', border: 'border-blue-400' },
-  { key: 'fire', label: 'Fire dept.', Icon: FlameKindling, bg: 'bg-red-50 dark:bg-red-500/10', fg: 'text-red-600 dark:text-red-400', border: 'border-red-400' },
-  { key: 'municipal', label: 'Municipal', Icon: Landmark, bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-700 dark:text-amber-400', border: 'border-amber-400' },
-  { key: 'committee', label: 'Society committee', Icon: Users, bg: 'bg-purple-50 dark:bg-purple-500/10', fg: 'text-purple-600 dark:text-purple-400', border: 'border-purple-400' },
-  { key: 'electricity', label: 'Electricity', Icon: Zap, bg: 'bg-yellow-50 dark:bg-yellow-500/10', fg: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-400' },
-  { key: 'mom', label: 'MOM (minutes)', Icon: FileSignature, bg: 'bg-cyan-50 dark:bg-cyan-500/10', fg: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-400' },
-  { key: 'land', label: 'Land Permission', Icon: LandPlot, bg: 'bg-emerald-50 dark:bg-emerald-500/10', fg: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-400' },
-  { key: 'other', label: 'Other', Icon: FileText, bg: 'bg-gray-100 dark:bg-gray-800', fg: 'text-gray-600 dark:text-gray-400', border: 'border-gray-400' },
+const CATEGORY_KEYS: { key: DocumentCategory; labelKey: TranslationKey; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string }[] = [
+  { key: 'police', labelKey: 'documents.category.police', Icon: Shield, bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-600 dark:text-blue-400', border: 'border-blue-400' },
+  { key: 'fire', labelKey: 'documents.category.fire', Icon: FlameKindling, bg: 'bg-red-50 dark:bg-red-500/10', fg: 'text-red-600 dark:text-red-400', border: 'border-red-400' },
+  { key: 'municipal', labelKey: 'documents.category.municipal', Icon: Landmark, bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-700 dark:text-amber-400', border: 'border-amber-400' },
+  { key: 'committee', labelKey: 'documents.category.committee', Icon: Users, bg: 'bg-purple-50 dark:bg-purple-500/10', fg: 'text-purple-600 dark:text-purple-400', border: 'border-purple-400' },
+  { key: 'electricity', labelKey: 'documents.category.electricity', Icon: Zap, bg: 'bg-yellow-50 dark:bg-yellow-500/10', fg: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-400' },
+  { key: 'mom', labelKey: 'documents.category.mom', Icon: FileSignature, bg: 'bg-cyan-50 dark:bg-cyan-500/10', fg: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-400' },
+  { key: 'land', labelKey: 'documents.category.land', Icon: LandPlot, bg: 'bg-emerald-50 dark:bg-emerald-500/10', fg: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-400' },
+  { key: 'other', labelKey: 'documents.category.other', Icon: FileText, bg: 'bg-gray-100 dark:bg-gray-800', fg: 'text-gray-600 dark:text-gray-400', border: 'border-gray-400' },
 ];
-const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
-const categoryInfo = (k: DocumentCategory) => CATEGORY_MAP[k] || CATEGORIES[CATEGORIES.length - 1];
 
 const toLocalDateTimeInput = (d: Date) => {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -46,6 +46,7 @@ const toLocalDateTimeInput = (d: Date) => {
 // Event-scoped, unlike Assets — each Puja/Festival has its own government/
 // committee permission paperwork (supabase/072_documents.sql).
 export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }: DocumentsProps) {
+  const { t } = useLanguage();
   const [docs, setDocs] = useState<AppDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,11 +58,18 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
+  const categories = useMemo(() => CATEGORY_KEYS.map(c => ({
+    ...c,
+    label: t(c.labelKey),
+  })), [t]);
+
+  const getCategoryInfo = (k: DocumentCategory) => categories.find(c => c.key === k) || categories[categories.length - 1];
+
   const reload = () => {
     setLoading(true);
     listDocumentsRequest()
       .then(setDocs)
-      .catch(err => setError(err?.message || 'Failed to load documents'))
+      .catch(err => setError(err?.message || t('documents.validation.loadFailed')))
       .finally(() => setLoading(false));
   };
 
@@ -93,7 +101,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
       setDocs(prev => prev.filter(d => d.id !== deleteTarget.id));
       onLog('delete', 'documents', deleteTarget.name, undefined, undefined, deleteTarget.name);
     } catch (err: any) {
-      setError(err?.message || 'Failed to delete');
+      setError(err?.message || t('documents.validation.deleteFailed'));
     } finally {
       setDeleteTarget(null);
     }
@@ -108,14 +116,14 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
             <div className="flex items-center rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
               <button
                 onClick={() => setView('list')}
-                aria-label="List view"
+                aria-label={t('documents.viewList')}
                 className={`p-2.5 transition-colors ${view === 'list' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
               >
                 <List size={18} />
               </button>
               <button
                 onClick={() => setView('grid')}
-                aria-label="Folder / thumbnail view"
+                aria-label={t('documents.viewGrid')}
                 className={`p-2.5 border-l border-gray-300 dark:border-gray-600 transition-colors ${view === 'grid' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
               >
                 <LayoutGrid size={18} />
@@ -126,19 +134,19 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
                 onClick={() => setShowUpload(true)}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
-                <FileUp size={20} /> Upload document
+                <FileUp size={20} /> {t('documents.uploadDoc')}
               </button>
             )}
           </div>
         }
       >
-        Documents
+        {t('documents.pageTitle')}
       </PageHeading>
 
       <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4 flex items-start gap-2.5 -mt-4">
         <Info size={18} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <p className="text-sm text-blue-800 dark:text-blue-300">
-          Keep government & committee permissions here — police NOC, fire clearance, municipal pandal permission, land permission, society resolution. Upload each as a PDF.
+          {t('documents.info')}
         </p>
       </div>
 
@@ -146,7 +154,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
         <TableSearchBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
-          placeholder="Search by document name"
+          placeholder={t('documents.searchPlaceholder')}
           filters={draftFilters}
           onFiltersChange={setDraftFilters}
           onSearch={() => setAppliedFilters(draftFilters)}
@@ -154,8 +162,8 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
           filtersActive={hasActiveTableFilters(appliedFilters)}
           resultCount={filtered.length}
           totalCount={docs.length}
-          statusOptions={CATEGORIES.map(c => ({ value: c.key, label: c.label }))}
-          statusLabel="Category"
+          statusOptions={categories.map(c => ({ value: c.key, label: c.label }))}
+          statusLabel={t('documents.category')}
           showDateRange
         />
       </CollapsibleSearchPanel>
@@ -168,29 +176,29 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
 
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('documents.loading')}</p>
         ) : docs.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-60" />
-            <p className="text-sm">No documents uploaded yet.</p>
+            <p className="text-sm">{t('documents.empty')}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-60" />
-            <p className="text-sm">No documents match your search.</p>
+            <p className="text-sm">{t('documents.noMatch')}</p>
           </div>
         ) : (
           <>
             {view === 'list' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 sm:p-6">
                 {pagination.pageItems.map(doc => (
-                  <DocumentListRow key={doc.id} doc={doc} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
+                  <DocumentListRow key={doc.id} doc={doc} categoryInfo={getCategoryInfo(doc.category)} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 sm:p-6">
                 {pagination.pageItems.map(doc => (
-                  <DocumentThumb key={doc.id} doc={doc} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
+                  <DocumentThumb key={doc.id} doc={doc} categoryInfo={getCategoryInfo(doc.category)} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
                 ))}
               </div>
             )}
@@ -213,6 +221,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
         <UploadDocumentModal
           currentUser={currentUser}
           eventLabel={eventLabel}
+          categories={categories}
           onCancel={() => setShowUpload(false)}
           onUploaded={handleUploaded}
         />
@@ -228,8 +237,16 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
   );
 }
 
-function DocumentListRow({ doc, canDelete, onDelete }: { doc: AppDocument; canDelete: boolean; onDelete: () => void }) {
-  const cat = categoryInfo(doc.category);
+function DocumentListRow({
+  doc, categoryInfo, canDelete, onDelete,
+}: {
+  doc: AppDocument;
+  categoryInfo: { label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string };
+  canDelete: boolean;
+  onDelete: () => void;
+}) {
+  const { t } = useLanguage();
+  const cat = categoryInfo;
   return (
     <div className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${cat.bg} ${cat.fg}`}>
@@ -243,11 +260,11 @@ function DocumentListRow({ doc, canDelete, onDelete }: { doc: AppDocument; canDe
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label="View">
+        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label={t('documents.view')}>
           <Eye size={18} />
         </a>
         {canDelete && (
-          <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label="Delete">
+          <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('documents.delete')}>
             <Trash2 size={18} />
           </button>
         )}
@@ -256,8 +273,16 @@ function DocumentListRow({ doc, canDelete, onDelete }: { doc: AppDocument; canDe
   );
 }
 
-function DocumentThumb({ doc, canDelete, onDelete }: { doc: AppDocument; canDelete: boolean; onDelete: () => void }) {
-  const cat = categoryInfo(doc.category);
+function DocumentThumb({
+  doc, categoryInfo, canDelete, onDelete,
+}: {
+  doc: AppDocument;
+  categoryInfo: { label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string };
+  canDelete: boolean;
+  onDelete: () => void;
+}) {
+  const { t } = useLanguage();
+  const cat = categoryInfo;
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
       <a
@@ -273,11 +298,11 @@ function DocumentThumb({ doc, canDelete, onDelete }: { doc: AppDocument; canDele
         <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${cat.bg} ${cat.fg}`}>{cat.label}</span>
         <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{doc.uploadedByName} · {new Date(doc.uploadedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
         <div className="flex items-center justify-end gap-3 pt-1">
-          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label="View">
+          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label={t('documents.view')}>
             <Eye size={16} />
           </a>
           {canDelete && (
-            <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label="Delete">
+            <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('documents.delete')}>
               <Trash2 size={16} />
             </button>
           )}
@@ -288,13 +313,15 @@ function DocumentThumb({ doc, canDelete, onDelete }: { doc: AppDocument; canDele
 }
 
 function UploadDocumentModal({
-  currentUser, eventLabel, onCancel, onUploaded,
+  currentUser, eventLabel, categories, onCancel, onUploaded,
 }: {
   currentUser: User | null;
   eventLabel?: string;
+  categories: { key: DocumentCategory; label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string }[];
   onCancel: () => void;
   onUploaded: (doc: AppDocument) => void;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('police');
   const [file, setFile] = useState<File | null>(null);
@@ -305,15 +332,15 @@ function UploadDocumentModal({
   const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.type !== 'application/pdf') { setError('Please choose a PDF file.'); return; }
-    if (f.size > DOCUMENT_MAX_BYTES) { setError('File is larger than 5 MB.'); return; }
+    if (f.type !== 'application/pdf') { setError(t('documents.validation.choosePdf')); return; }
+    if (f.size > DOCUMENT_MAX_BYTES) { setError(t('documents.validation.fileTooLarge')); return; }
     setError('');
     setFile(f);
   };
 
   const handleUpload = async () => {
-    if (!name.trim()) { setError('Document name is required.'); return; }
-    if (!file) { setError('Please choose a PDF file.'); return; }
+    if (!name.trim()) { setError(t('documents.validation.nameRequired')); return; }
+    if (!file) { setError(t('documents.validation.choosePdf')); return; }
     if (!currentUser) return;
     setSaving(true);
     setError('');
@@ -330,7 +357,7 @@ function UploadDocumentModal({
       });
       onUploaded(doc);
     } catch (err: any) {
-      setError(err?.message || 'Failed to upload — please try again.');
+      setError(err?.message || t('documents.validation.uploadFailed'));
     } finally {
       setSaving(false);
     }
@@ -344,8 +371,8 @@ function UploadDocumentModal({
             <FileUp size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Upload document</h3>
-            {eventLabel && <p className="text-xs text-gray-400 dark:text-gray-500">{eventLabel} · permissions & approvals</p>}
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('documents.modal.title')}</h3>
+            {eventLabel && <p className="text-xs text-gray-400 dark:text-gray-500">{eventLabel} · {t('documents.modal.eventSubtitle')}</p>}
           </div>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <X size={20} />
@@ -354,19 +381,19 @@ function UploadDocumentModal({
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Document name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('documents.modal.name')}</label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Police NOC, pandal & procession"
+              placeholder={t('documents.modal.namePlaceholder')}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Issued by / category</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('documents.modal.categoryLabel')}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {CATEGORIES.map(c => (
+              {categories.map(c => (
                 <button
                   key={c.key}
                   type="button"
@@ -383,7 +410,7 @@ function UploadDocumentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Uploaded at</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('documents.modal.uploadedAt')}</label>
             <input
               type="datetime-local"
               value={uploadedAt}
@@ -393,7 +420,7 @@ function UploadDocumentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">PDF file</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('documents.modal.pdfFile')}</label>
             {file ? (
               <div className="flex items-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <FileText size={18} className="text-orange-600 dark:text-orange-400 shrink-0" />
@@ -407,7 +434,7 @@ function UploadDocumentModal({
                 <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
                   <FileUp size={16} />
                 </div>
-                Choose a PDF (max 5 MB)
+                {t('documents.modal.choosePdf')}
                 <input type="file" accept="application/pdf" onChange={handlePickFile} className="hidden" />
               </label>
             )}
@@ -421,14 +448,14 @@ function UploadDocumentModal({
             onClick={onCancel}
             className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleUpload}
             disabled={saving}
             className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-60 transition-colors"
           >
-            {saving ? 'Uploading…' : 'Upload document'}
+            {saving ? t('documents.uploading') : t('documents.uploadDoc')}
           </button>
         </div>
       </div>

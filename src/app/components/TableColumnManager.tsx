@@ -334,10 +334,10 @@ export function ColumnVisibilityDropdown({
             ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
             : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
         }`}
-        title="Customize visible columns"
+        title={t('table.customizeTooltip')}
       >
         <Columns3 size={15} className="shrink-0" />
-        <span>Columns</span>
+        <span>{t('table.columns')}</span>
         {hiddenCount > 0 ? (
           <span className="px-1.5 py-0.2 rounded-full text-[11px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400">
             {columns.length - hiddenCount}/{columns.length}
@@ -351,7 +351,7 @@ export function ColumnVisibilityDropdown({
         <div className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           <div className="px-3.5 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-850/40">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-              Customize Columns
+              {t('table.customizeColumns')}
             </span>
           </div>
 
@@ -381,7 +381,7 @@ export function ColumnVisibilityDropdown({
                   </span>
                   {isRequired && (
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">
-                      Required
+                      {t('table.required')}
                     </span>
                   )}
                 </label>
@@ -396,7 +396,7 @@ export function ColumnVisibilityDropdown({
                 onClick={showAllColumns}
                 className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
               >
-                Show All
+                {t('table.showAll')}
               </button>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <button
@@ -407,10 +407,10 @@ export function ColumnVisibilityDropdown({
                     ? 'text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 hover:underline font-semibold'
                     : 'text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400'
                 }`}
-                title="Reset to default columns"
+                title={t('table.resetTooltip')}
               >
                 <RotateCcw size={11} />
-                <span>Reset</span>
+                <span>{t('table.reset')}</span>
               </button>
             </div>
             <button
@@ -418,7 +418,7 @@ export function ColumnVisibilityDropdown({
               onClick={() => setOpen(false)}
               className="px-2.5 py-1 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-md transition-colors shadow-xs"
             >
-              Done
+              {t('table.done')}
             </button>
           </div>
         </div>
@@ -448,6 +448,7 @@ export function SortableTh({
   children,
   className = '',
 }: SortableThProps) {
+  const { t } = useLanguage();
   const colId = column?.id || columnId || '';
   const colAlign = align || column?.align || 'left';
   const isSortable = column ? column.sortable !== false : true;
@@ -483,7 +484,7 @@ export function SortableTh({
       className={`px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none group transition-colors hover:bg-gray-100/70 dark:hover:bg-gray-800/80 ${
         isSorted ? 'bg-orange-50/50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400' : ''
       } ${column?.headerClassName || ''} ${className}`}
-      title={`Click to sort by ${column?.label || (typeof children === 'string' ? children : colId)}`}
+      title={t('table.clickToSort').replace('{column}', String(column?.label || (typeof children === 'string' ? children : colId)))}
     >
       <div className={`flex items-center gap-1.5 ${alignClass}`}>
         <span className={isSorted ? 'text-orange-600 dark:text-orange-400 font-bold' : ''}>
@@ -543,6 +544,7 @@ export function DataTableToolbar<T = any>({
   extraActions,
   children,
 }: DataTableToolbarProps<T>) {
+  const { t } = useLanguage();
   const hasEntries = totalItems !== undefined && startIndex !== undefined && endIndex !== undefined && totalItems > 0;
 
   // Resolve sort label & direction if sortState was provided
@@ -577,23 +579,24 @@ export function DataTableToolbar<T = any>({
       <div className="flex items-center gap-2 flex-wrap text-gray-500 dark:text-gray-400">
         {hasEntries && (
           <span>
-            Showing <strong className="font-semibold text-gray-700 dark:text-gray-200">{startIndex}</strong>–
-            <strong className="font-semibold text-gray-700 dark:text-gray-200">{endIndex}</strong> of{' '}
-            <strong className="font-semibold text-gray-700 dark:text-gray-200">{totalItems}</strong> entries
+            {t('table.showingEntries')
+              .replace('{start}', String(startIndex))
+              .replace('{end}', String(endIndex))
+              .replace('{total}', String(totalItems))}
           </span>
         )}
 
         {resolvedSortLabel && resolvedSortDirection && (
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
             <span>
-              Sorted: {resolvedSortLabel} {resolvedSortDirection === 'asc' ? '↑' : '↓'}
+              {t('table.sorted')} {resolvedSortLabel} {resolvedSortDirection === 'asc' ? '↑' : '↓'}
             </span>
             {handleResetSort && (
               <button
                 type="button"
                 onClick={handleResetSort}
                 className="hover:text-red-600 dark:hover:text-red-400 ml-0.5"
-                title="Clear sort"
+                title={t('table.clearSort')}
               >
                 <X size={12} />
               </button>

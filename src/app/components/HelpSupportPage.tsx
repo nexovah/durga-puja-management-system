@@ -6,6 +6,7 @@ import {
   fetchTicketReplies, postTicketReplyRequest, fetchMyTicketActivity, markTicketRead,
 } from '../lib/db';
 import { User } from '../App';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HelpSupportPageProps {
   currentUser: User | null;
@@ -18,18 +19,12 @@ const STATUS_BADGE: Record<string, string> = {
   in_progress: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
   resolved: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
 };
-const STATUS_LABEL: Record<string, string> = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' };
 
 type Tab = 'open' | 'resolved';
 type View = 'list' | 'create' | { ticket: SupportTicket };
 
-// Full page (was HelpSupportModal.tsx) — a modal's fixed height made a
-// growing ticket list and a full reply thread cramped. Left-nav tab shell
-// matches Settings.tsx's own pattern (Open Tickets / Resolved Tickets);
-// selecting a ticket opens its thread in place of the list, with a small
-// thumbnail attachment per message that opens a lightbox on click instead
-// of embedding the full-size image inline.
 export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: HelpSupportPageProps) {
+  const { t, locale } = useLanguage();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [activity, setActivity] = useState<Record<string, TicketActivity>>({});
   const [loading, setLoading] = useState(true);
@@ -37,6 +32,15 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
   const [tab, setTab] = useState<Tab>('open');
   const [view, setView] = useState<View>('list');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return t('helpSupport.status.open');
+      case 'in_progress': return t('helpSupport.status.in_progress');
+      case 'resolved': return t('helpSupport.status.resolved');
+      default: return status;
+    }
+  };
 
   const reloadActivity = () => {
     fetchMyTicketActivity()
@@ -53,7 +57,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
     setLoading(true);
     listMyTicketsRequest()
       .then(setTickets)
-      .catch(err => setError(err?.message || 'Failed to load tickets'))
+      .catch(err => setError(err?.message || t('helpSupport.loadError')))
       .finally(() => setLoading(false));
     reloadActivity();
   };
@@ -84,12 +88,12 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
               onClick={() => setView('create')}
               className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
-              <Plus size={20} /> Post a New Query
+              <Plus size={20} /> {t('helpSupport.postQuery')}
             </button>
           )
         }
       >
-        Help & Support
+        {t('helpSupport.title')}
       </PageHeading>
 
       {view === 'list' && (
@@ -105,7 +109,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
                 }`}
               >
                 <OpenIcon size={18} />
-                Open Tickets
+                {t('helpSupport.openTickets')}
                 {openTickets.length > 0 && <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{openTickets.length}</span>}
               </button>
               <button
@@ -117,7 +121,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
                 }`}
               >
                 <CheckCircle2 size={18} />
-                Resolved Tickets
+                {t('helpSupport.resolvedTickets')}
                 {resolvedTickets.length > 0 && <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{resolvedTickets.length}</span>}
               </button>
             </div>
@@ -125,13 +129,13 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
 
           <div className="flex-1 min-w-0 space-y-3">
             {loading ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('helpSupport.loading')}</p>
             ) : error ? (
               <p className="text-sm text-red-600 dark:text-red-400 text-center py-12">{error}</p>
             ) : visibleTickets.length === 0 ? (
               <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
                 <Inbox className="w-8 h-8 mx-auto mb-2 opacity-60" />
-                <p className="text-sm">{tab === 'open' ? "You don't have any open tickets." : "No resolved tickets yet."}</p>
+                <p className="text-sm">{tab === 'open' ? t('helpSupport.noOpenTickets') : t('helpSupport.noResolvedTickets')}</p>
               </div>
             ) : (
               visibleTickets.map(ticket => {
@@ -158,14 +162,14 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
                           </span>
                         )}
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[ticket.status]}`}>
-                          {STATUS_LABEL[ticket.status]}
+                          {getStatusLabel(ticket.status)}
                         </span>
                       </div>
                     </div>
                     {act?.hasUnreadAdminReply && (
                       <p className="flex items-center gap-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 mb-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                        New reply from Support
+                        {t('helpSupport.newReplyFromSupport')}
                       </p>
                     )}
                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">{ticket.body}</p>
@@ -203,6 +207,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
 }
 
 function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: { currentUser: User | null; committeeName?: string; onCancel: () => void; onCreated: () => void }) {
+  const { t, locale } = useLanguage();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -237,7 +242,7 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
       });
       onCreated();
     } catch (err: any) {
-      setError(err?.message || 'Failed to submit — please try again.');
+      setError(err?.message || t('helpSupport.create.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -245,41 +250,41 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
 
   return (
     <div className="max-w-2xl bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6">
-      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">New Support Request</h3>
+      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">{t('helpSupport.create.title')}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Submitted by</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('helpSupport.create.submittedBy')}</p>
             <p className="font-medium text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Date</p>
-            <p className="font-medium text-gray-800 dark:text-gray-200">{new Date().toLocaleDateString()}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('helpSupport.create.date')}</p>
+            <p className="font-medium text-gray-800 dark:text-gray-200">{new Date().toLocaleDateString(locale)}</p>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.ticketTitle')}</label>
           <input
             required
             value={title}
             onChange={e => setTitle(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-            placeholder="What's this about?"
+            placeholder={t('helpSupport.create.titlePlaceholder')}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.description')}</label>
           <textarea
             required
             rows={5}
             value={body}
             onChange={e => setBody(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none"
-            placeholder="Describe your issue in detail…"
+            placeholder={t('helpSupport.create.descPlaceholder')}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attach a screenshot (optional)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.attachScreenshot')}</label>
           {imagePreview ? (
             <div className="relative inline-block">
               <img src={imagePreview} alt="Attachment preview" className="h-28 rounded-lg border border-gray-200 dark:border-gray-700" />
@@ -293,7 +298,7 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
             </div>
           ) : (
             <label className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:border-orange-400 w-fit">
-              <ImageIcon size={16} /> Choose image
+              <ImageIcon size={16} /> {t('helpSupport.create.chooseImage')}
               <input type="file" accept="image/*" onChange={handlePickImage} className="hidden" />
             </label>
           )}
@@ -306,14 +311,14 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
             disabled={submitting}
             className="px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-60 transition-colors"
           >
-            {submitting ? 'Submitting…' : 'Submit'}
+            {submitting ? t('helpSupport.create.submitting') : t('helpSupport.create.submit')}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </form>
@@ -321,9 +326,6 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
   );
 }
 
-// Attachment thumbnail — small by default, opens the shared Lightbox on
-// click instead of ever rendering full-size inline (the behavior explicitly
-// asked for, contrasted with the reference screenshot's inline images).
 function AttachmentThumb({ url, onOpen }: { url: string; onOpen: (url: string) => void }) {
   return (
     <button
@@ -336,9 +338,6 @@ function AttachmentThumb({ url, onOpen }: { url: string; onOpen: (url: string) =
   );
 }
 
-// Footer identity strip shown under every message — date/time · posted by
-// name (email) · committee — separated by a gray divider line above it, per
-// the reference screenshot's footer layout.
 function TicketMetaFooter({
   date, name, email, committeeName,
 }: {
@@ -347,11 +346,12 @@ function TicketMetaFooter({
   email?: string | null;
   committeeName?: string | null;
 }) {
+  const { t, locale } = useLanguage();
   return (
     <div className="mt-2.5 pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
-      <span>{new Date(date).toLocaleString()}</span>
+      <span>{new Date(date).toLocaleString(locale)}</span>
       <span>•</span>
-      <span>Posted by {name}{email ? ` (${email})` : ''}</span>
+      <span>{t('helpSupport.postedBy')} {name}{email ? ` (${email})` : ''}</span>
       {committeeName && (
         <>
           <span>•</span>
@@ -382,6 +382,7 @@ function TicketThread({
   onOpenImage: (url: string) => void;
   onTicketRepliedOrChanged: () => void;
 }) {
+  const { t, locale } = useLanguage();
   const [replies, setReplies] = useState<SupportTicketReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [replyBody, setReplyBody] = useState('');
@@ -390,11 +391,20 @@ function TicketThread({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return t('helpSupport.status.open');
+      case 'in_progress': return t('helpSupport.status.in_progress');
+      case 'resolved': return t('helpSupport.status.resolved');
+      default: return status;
+    }
+  };
+
   const loadReplies = () => {
     setLoading(true);
     fetchTicketReplies(ticket.id)
       .then(setReplies)
-      .catch(err => setError(err?.message || 'Failed to load replies'))
+      .catch(err => setError(err?.message || t('helpSupport.thread.loadRepliesFailed')))
       .finally(() => setLoading(false));
   };
 
@@ -429,7 +439,7 @@ function TicketThread({
       loadReplies();
       onTicketRepliedOrChanged();
     } catch (err: any) {
-      setError(err?.message || 'Failed to send reply — please try again.');
+      setError(err?.message || t('helpSupport.thread.failedReply'));
     } finally {
       setSending(false);
     }
@@ -441,7 +451,7 @@ function TicketThread({
     <div className="max-w-3xl bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 mb-3">
-          <ArrowLeft size={16} /> Back to tickets
+          <ArrowLeft size={16} /> {t('helpSupport.thread.back')}
         </button>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -449,7 +459,7 @@ function TicketThread({
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{ticket.title}</h3>
           </div>
           <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[ticket.status]}`}>
-            {STATUS_LABEL[ticket.status]}
+            {getStatusLabel(ticket.status)}
           </span>
         </div>
       </div>
@@ -459,7 +469,7 @@ function TicketThread({
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3.5">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{ticket.userName}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(ticket.createdAt).toLocaleString()}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(ticket.createdAt).toLocaleString(locale)}</p>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{ticket.body}</p>
           {ticket.imageUrl && <AttachmentThumb url={ticket.imageUrl} onOpen={onOpenImage} />}
@@ -467,7 +477,7 @@ function TicketThread({
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading replies…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('helpSupport.thread.loadingReplies')}</p>
         ) : (
           replies.map(reply => (
             <div
@@ -478,9 +488,9 @@ function TicketThread({
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
                   {reply.senderRole === 'admin' && <Reply size={13} className="text-orange-600 dark:text-orange-400" />}
                   {reply.senderName}
-                  {reply.senderRole === 'admin' && <span className="text-xs font-normal text-orange-600 dark:text-orange-400">(Support)</span>}
+                  {reply.senderRole === 'admin' && <span className="text-xs font-normal text-orange-600 dark:text-orange-400">{t('helpSupport.thread.supportBadge')}</span>}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(reply.createdAt).toLocaleString(locale)}</p>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{reply.body}</p>
               {reply.imageUrl && <AttachmentThumb url={reply.imageUrl} onOpen={onOpenImage} />}
@@ -502,7 +512,7 @@ function TicketThread({
               value={replyBody}
               onChange={e => setReplyBody(e.target.value)}
               rows={3}
-              placeholder="Write a reply…"
+              placeholder={t('helpSupport.thread.replyPlaceholder')}
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none"
             />
             {replyImagePreview && (
@@ -520,7 +530,7 @@ function TicketThread({
             {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex items-center justify-between gap-2">
               <label className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-xs text-gray-600 dark:text-gray-400 hover:border-orange-400">
-                <ImageIcon size={14} /> Attach
+                <ImageIcon size={14} /> {t('helpSupport.thread.attach')}
                 <input type="file" accept="image/*" onChange={handlePickReplyImage} className="hidden" />
               </label>
               <button
@@ -528,12 +538,12 @@ function TicketThread({
                 disabled={sending || !replyBody.trim()}
                 className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium text-sm hover:bg-orange-700 disabled:opacity-50 transition-colors"
               >
-                <Send size={14} /> {sending ? 'Sending…' : 'Reply'}
+                <Send size={14} /> {sending ? t('helpSupport.thread.sending') : t('helpSupport.thread.reply')}
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">This ticket is resolved — you can't reply to it anymore.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{t('helpSupport.thread.resolvedNotice')}</p>
         )}
       </div>
     </div>

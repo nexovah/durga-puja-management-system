@@ -86,6 +86,11 @@ export function Sidebar({
         { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
         { key: 'documents', icon: FolderOpen, label: t('nav.documents'), show: permissions?.documents !== false },
         { key: 'assets', icon: Package, label: t('nav.assets'), show: permissions?.assets !== false },
+      ],
+    },
+    {
+      label: t('sidebar.groupAdmin'),
+      items: [
         { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
         { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
       ],
