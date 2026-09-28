@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -17,6 +17,7 @@ import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -406,7 +407,27 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     return true;
   });
 
-  const sortedChanda = [...filteredChanda].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const chandaColumns: ColumnDef<Chanda>[] = useMemo(() => [
+    { id: 'donorName', label: t('chanda.donorName'), required: true, sortValue: c => c.donorName },
+    { id: 'category', label: t('chanda.category'), sortValue: c => chandaCategoryLabel(c.category) },
+    { id: 'amount', label: t('common.amount'), align: 'left', sortValue: c => c.amount },
+    { id: 'paidMethod', label: t('common.paidMethod'), sortValue: c => paidMethodLabel(c.paidMethod || 'notSelected') },
+    { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: c => c.paymentStatus || 'paid' },
+    { id: 'date', label: t('common.date'), sortValue: c => c.date },
+    { id: 'billNumber', label: t('chanda.billNumber'), sortValue: c => c.billNumber || '' },
+    { id: 'phone1', label: t('chanda.phone1'), sortValue: c => c.phone || '' },
+    { id: 'phone2', label: t('chanda.phone2'), sortValue: c => c.phone2 || '' },
+    { id: 'remarks', label: t('common.remarks'), sortValue: c => c.remarks || '' },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, canEdit, canDelete]);
+
+  const tableCols = useTableColumns<Chanda>({
+    tableId: 'chanda',
+    columns: chandaColumns,
+    defaultSort: { columnId: 'date', direction: 'desc' },
+  });
+
+  const sortedChanda = useMemo(() => tableCols.sortItems(filteredChanda), [tableCols, filteredChanda]);
   const pagination = usePagination(sortedChanda);
 
   return (
@@ -704,21 +725,62 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
       {/* Chanda List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.category')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.billNumber')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.phone2')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('donorName') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('category') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'category')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('amount') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'amount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paidMethod') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'paidMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paymentStatus') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'paymentStatus')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('date') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('billNumber') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'billNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('phone1') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'phone1')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('phone2') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'phone2')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('remarks') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -726,48 +788,68 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 const status = chanda.paymentStatus || 'paid';
                 return (
                   <tr key={chanda.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <button
-                        type="button"
-                        onClick={() => setViewTarget(chanda)}
-                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                      >
-                        {chanda.donorName}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {chanda.category ? (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                          {chandaCategoryLabel(chanda.category)}
+                    {tableCols.isColumnVisible('donorName') && (
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setViewTarget(chanda)}
+                          className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                        >
+                          {chanda.donorName}
+                        </button>
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('category') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {chanda.category ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                            {chandaCategoryLabel(chanda.category)}
+                          </span>
+                        ) : '-'}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('amount') && (
+                      <td className={`px-6 py-4 text-sm font-bold ${
+                        status === 'rejected'
+                          ? 'text-red-600 line-through'
+                          : status === 'partial'
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
+                      }`}>₹{chanda.amount.toLocaleString()}</td>
+                    )}
+                    {tableCols.isColumnVisible('paidMethod') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
+                    )}
+                    {tableCols.isColumnVisible('paymentStatus') && (
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                          {statusLabel(status)}
                         </span>
-                      ) : '-'}
-                    </td>
-                    <td className={`px-6 py-4 text-sm font-bold ${
-                      status === 'rejected'
-                        ? 'text-red-600 line-through'
-                        : status === 'partial'
-                        ? 'text-yellow-600'
-                        : 'text-green-600'
-                    }`}>₹{chanda.amount.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
-                        {statusLabel(status)}
-                      </span>
-                      {status === 'partial' && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          ₹{(chanda.partialAmount || 0).toLocaleString()} / ₹{chanda.amount.toLocaleString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(chanda.date).toLocaleDateString(locale)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.billNumber || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone2 || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.remarks || '-'}</td>
-                    {(canEdit || canDelete) && (
+                        {status === 'partial' && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            ₹{(chanda.partialAmount || 0).toLocaleString()} / ₹{chanda.amount.toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('date') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(chanda.date).toLocaleDateString(locale)}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('billNumber') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.billNumber || '-'}</td>
+                    )}
+                    {tableCols.isColumnVisible('phone1') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone || '-'}</td>
+                    )}
+                    {tableCols.isColumnVisible('phone2') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone2 || '-'}</td>
+                    )}
+                    {tableCols.isColumnVisible('remarks') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.remarks || '-'}</td>
+                    )}
+                    {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {canEdit && (
@@ -793,10 +875,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 );
               })}
             </tbody>
-            {filteredChanda.length > 0 && (
+            {filteredChanda.length > 0 && tableCols.isColumnVisible('amount') && (
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td
+                    colSpan={['donorName', 'category'].filter(id => tableCols.isColumnVisible(id)).length || 1}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.total')}
+                  </td>
                   <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredChanda.reduce((sum, c) => sum + getChandaCreditAmount(c), 0).toLocaleString()}
                   </td>
@@ -805,7 +892,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               </tfoot>
             )}
           </table>
-          {chandaList.length === 0 && (
+          {filteredChanda.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('chanda.empty')}
             </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Globe, Smartphone, Apple } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { SearchToggleButton } from './SearchToggleButton';
@@ -6,6 +6,7 @@ import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule, ActivityDevice } from '../lib/db';
 import { Pagination, usePagination } from './Pagination';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 const DEVICE_META: Record<ActivityDevice, { label: string; icon: typeof Globe; className: string }> = {
   web: { label: 'Web', icon: Globe, className: 'bg-gray-100 text-gray-700' },
@@ -116,7 +117,26 @@ export function ActivityLog() {
     )
   ).sort((a, b) => a[1].localeCompare(b[1]));
 
-  const pagination = usePagination(filtered);
+  const activityLogColumns: ColumnDef<ActivityLogEntry>[] = useMemo(() => [
+    { id: 'time', label: t('activityLog.col.time'), sortValue: e => new Date(e.createdAt).getTime() },
+    { id: 'device', label: 'Device', sortValue: e => e.device || 'web' },
+    { id: 'user', label: t('activityLog.col.user'), required: true, sortValue: e => e.userName },
+    { id: 'action', label: t('activityLog.col.action'), sortValue: e => e.action },
+    { id: 'module', label: t('activityLog.col.module'), sortValue: e => e.module },
+    { id: 'who', label: 'Who', sortValue: e => whoLabel(e) },
+    { id: 'details', label: t('activityLog.col.details'), sortable: false },
+  ], [t]);
+
+  const tableCols = useTableColumns<ActivityLogEntry>({
+    tableId: 'activity_log',
+    columns: activityLogColumns,
+    defaultSort: { columnId: 'time', direction: 'desc' },
+  });
+
+  const sortedEntries = useMemo(() => tableCols.sortItems(filtered), [tableCols, filtered]);
+  const pagination = usePagination(sortedEntries);
+
+  const visibleColumnCount = activityLogColumns.filter(c => tableCols.isColumnVisible(c.id)).length;
 
   return (
     <div>
@@ -183,49 +203,104 @@ export function ActivityLog() {
       </CollapsibleSearchPanel>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <DataTableToolbar
+          totalItems={entries.length}
+          filteredItemsCount={filtered.length}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          columns={activityLogColumns}
+          isColumnVisible={tableCols.isColumnVisible}
+          onToggleColumn={tableCols.toggleColumn}
+          onResetColumns={tableCols.resetColumns}
+          onShowAllColumns={tableCols.showAllColumns}
+          sortState={tableCols.sortState}
+          onClearSort={tableCols.resetSort}
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.time')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Device</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.user')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.action')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.module')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Who</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">{t('activityLog.col.details')}</th>
+                {tableCols.isColumnVisible('time') && (
+                  <SortableTh columnId="time" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('activityLog.col.time')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('device') && (
+                  <SortableTh columnId="device" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    Device
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('user') && (
+                  <SortableTh columnId="user" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('activityLog.col.user')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('action') && (
+                  <SortableTh columnId="action" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('activityLog.col.action')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('module') && (
+                  <SortableTh columnId="module" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('activityLog.col.module')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('who') && (
+                  <SortableTh columnId="who" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    Who
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('details') && (
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
+                    {t('activityLog.col.details')}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={visibleColumnCount || 1} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                     {t('activityLog.empty')}
                   </td>
                 </tr>
               )}
               {pagination.pageItems.map(entry => (
                 <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
-                    {new Date(entry.createdAt).toLocaleString(locale)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <DeviceBadge device={entry.device} />
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
-                    {entry.userName} <span className="text-gray-400 dark:text-gray-500 font-normal">({entry.username})</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${actionBadge[entry.action]}`}>
-                      {actionLabel(entry.action)}
-                      {entry.recordCount > 1 ? ` (${entry.recordCount})` : ''}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{moduleLabel(entry.module)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">{whoLabel(entry)}</td>
-                  <td className="px-4 py-3">
-                    <DetailsCell entry={entry} />
-                  </td>
+                  {tableCols.isColumnVisible('time') && (
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                      {new Date(entry.createdAt).toLocaleString(locale)}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('device') && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <DeviceBadge device={entry.device} />
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('user') && (
+                    <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
+                      {entry.userName} <span className="text-gray-400 dark:text-gray-500 font-normal">({entry.username})</span>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('action') && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${actionBadge[entry.action]}`}>
+                        {actionLabel(entry.action)}
+                        {entry.recordCount > 1 ? ` (${entry.recordCount})` : ''}
+                      </span>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('module') && (
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{moduleLabel(entry.module)}</td>
+                  )}
+                  {tableCols.isColumnVisible('who') && (
+                    <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">{whoLabel(entry)}</td>
+                  )}
+                  {tableCols.isColumnVisible('details') && (
+                    <td className="px-4 py-3">
+                      <DetailsCell entry={entry} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

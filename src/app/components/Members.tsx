@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users } from 'lucide-react';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -14,6 +14,7 @@ import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface MembersProps {
   members: Member[];
@@ -273,7 +274,24 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     return true;
   });
 
-  const pagination = usePagination(filteredMembers);
+  const memberColumns: ColumnDef<Member>[] = useMemo(() => [
+    { id: 'name', label: t('common.name'), required: true, sortValue: m => m.name },
+    { id: 'role', label: t('members.role'), sortValue: m => roleLabel(m.role) },
+    { id: 'phone', label: t('common.phone'), sortValue: m => m.phone },
+    { id: 'joinDate', label: t('members.joinDate'), sortValue: m => m.joinDate },
+    { id: 'membershipAmount', label: t('members.membershipAmount'), align: 'left', sortValue: m => m.membershipAmount ?? -1 },
+    { id: 'membershipPaymentStatus', label: t('chanda.paymentStatus'), sortValue: m => m.membershipPaymentStatus || 'pending' },
+    { id: 'assignedTasks', label: t('members.assignedTasks'), sortValue: m => tasksList.filter(task => task.assignedMemberIds?.includes(m.id)).length },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, canEdit, canDelete, tasksList]);
+
+  const tableCols = useTableColumns<Member>({
+    tableId: 'members',
+    columns: memberColumns,
+  });
+
+  const sortedMembers = useMemo(() => tableCols.sortItems(filteredMembers), [tableCols, filteredMembers]);
+  const pagination = usePagination(sortedMembers);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const isPartial = formData.membershipPaymentStatus === 'partial';
 
@@ -517,18 +535,53 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
 
       {/* Members List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.name')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.role')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.joinDate')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.membershipAmount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('members.assignedTasks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('name') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'name')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('role') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'role')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('phone') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'phone')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('joinDate') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'joinDate')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('membershipAmount') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'membershipAmount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('membershipPaymentStatus') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'membershipPaymentStatus')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('assignedTasks') && (
+                  <SortableTh column={memberColumns.find(c => c.id === 'assignedTasks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -538,47 +591,61 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 const assignedTasks = tasksList.filter(task => task.assignedMemberIds?.includes(member.id));
                 return (
                 <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setViewTarget(member)}
-                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                    >
-                      {member.name}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{member.phone}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(member.joinDate).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
-                    {hasPayment ? `₹${(member.membershipAmount || 0).toLocaleString()}` : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    {hasPayment ? (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
-                        {statusLabel(status)}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    {assignedTasks.length === 0 ? '-' : (
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {assignedTasks.map(task => (
-                          <span
-                            key={task.id}
-                            title={task.description || task.title}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-700 dark:text-gray-300"
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${TASK_PRIORITY_DOT[task.priority]}`} />
-                            {task.title}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                  {(canEdit || canDelete) && (
+                  {tableCols.isColumnVisible('name') && (
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(member)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {member.name}
+                      </button>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('role') && (
+                    <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
+                  )}
+                  {tableCols.isColumnVisible('phone') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{member.phone}</td>
+                  )}
+                  {tableCols.isColumnVisible('joinDate') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {new Date(member.joinDate).toLocaleDateString(locale)}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('membershipAmount') && (
+                    <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
+                      {hasPayment ? `₹${(member.membershipAmount || 0).toLocaleString()}` : '-'}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('membershipPaymentStatus') && (
+                    <td className="px-6 py-4 text-sm">
+                      {hasPayment ? (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+                          {statusLabel(status)}
+                        </span>
+                      ) : '-'}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('assignedTasks') && (
+                    <td className="px-6 py-4 text-sm">
+                      {assignedTasks.length === 0 ? '-' : (
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          {assignedTasks.map(task => (
+                            <span
+                              key={task.id}
+                              title={task.description || task.title}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-700 dark:text-gray-300"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${TASK_PRIORITY_DOT[task.priority]}`} />
+                              {task.title}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  )}
+                  {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (
@@ -604,10 +671,15 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 );
               })}
             </tbody>
-            {filteredMembers.length > 0 && (
+            {filteredMembers.length > 0 && tableCols.isColumnVisible('membershipAmount') && (
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td
+                    colSpan={['name', 'role', 'phone', 'joinDate'].filter(id => tableCols.isColumnVisible(id)).length || 1}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.total')}
+                  </td>
                   <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredMembers.reduce((sum, m) => sum + getMemberCreditAmount(m), 0).toLocaleString()}
                   </td>

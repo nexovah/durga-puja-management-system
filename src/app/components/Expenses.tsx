@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
@@ -17,6 +17,7 @@ import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -467,7 +468,26 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     return true;
   });
 
-  const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const expenseColumns: ColumnDef<Expense>[] = useMemo(() => [
+    { id: 'title', label: t('expenses.title'), required: true, sortValue: e => e.title },
+    { id: 'amount', label: t('common.amount'), align: 'left', sortValue: e => e.amount },
+    { id: 'paymentStatus', label: t('expenses.paymentStatus'), sortValue: e => e.paymentStatus || 'paid' },
+    { id: 'paidThrough', label: t('expenses.paidThrough'), sortValue: e => paidThroughLabel(e.paidThrough || 'notSelected') },
+    { id: 'date', label: t('common.date'), sortValue: e => e.date },
+    { id: 'category', label: t('expenses.category'), sortValue: e => categoryLabel(e.category) },
+    { id: 'voucherNumber', label: t('expenses.voucherNumber'), defaultVisible: false, sortValue: e => e.voucherNumber || '' },
+    { id: 'vendorName', label: t('expenses.vendorName'), defaultVisible: false, sortValue: e => e.vendorName || '' },
+    { id: 'remarks', label: t('common.remarks'), sortValue: e => e.remarks || '' },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, canEdit, canDelete]);
+
+  const tableCols = useTableColumns<Expense>({
+    tableId: 'expenses',
+    columns: expenseColumns,
+    defaultSort: { columnId: 'date', direction: 'desc' },
+  });
+
+  const sortedExpenses = useMemo(() => tableCols.sortItems(filteredExpenses), [tableCols, filteredExpenses]);
   const pagination = usePagination(sortedExpenses);
 
   return (
@@ -792,18 +812,59 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
       {/* Expenses List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.title')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.paymentStatus')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.paidThrough')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('title') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('amount') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'amount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paymentStatus') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'paymentStatus')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paidThrough') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'paidThrough')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('date') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('category') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'category')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('voucherNumber') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'voucherNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('vendorName') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'vendorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('remarks') && (
+                  <SortableTh column={expenseColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -813,45 +874,65 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
                 return (
                   <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <button
-                        type="button"
-                        onClick={() => setViewTarget(expense)}
-                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                      >
-                        {expense.title}
-                      </button>
-                    </td>
-                    <td className={`px-6 py-4 text-sm font-bold ${
-                      status === 'cancelled'
-                        ? 'text-red-600 line-through'
-                        : status === 'partial'
-                        ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
-                        : 'text-red-600'
-                    }`}>₹{expense.amount.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}>
-                        {statusLabel(status)}
-                      </span>
-                      {status === 'partial' && (
-                        <div className="text-xs mt-1 font-medium">
-                          <span className="text-red-600">₹{partialSum.toLocaleString()}</span>
-                          <span className="text-gray-400 mx-0.5"> / </span>
-                          <span className="text-yellow-600">₹{expense.amount.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidThroughLabel(expense.paidThrough || 'notSelected')}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(expense.date).toLocaleDateString(locale)}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                        {categoryLabel(expense.category)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expense.remarks || '-'}</td>
-                    {(canEdit || canDelete) && (
+                    {tableCols.isColumnVisible('title') && (
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setViewTarget(expense)}
+                          className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                        >
+                          {expense.title}
+                        </button>
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('amount') && (
+                      <td className={`px-6 py-4 text-sm font-bold ${
+                        status === 'cancelled'
+                          ? 'text-red-600 line-through'
+                          : status === 'partial'
+                          ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
+                          : 'text-red-600'
+                      }`}>₹{expense.amount.toLocaleString()}</td>
+                    )}
+                    {tableCols.isColumnVisible('paymentStatus') && (
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}>
+                          {statusLabel(status)}
+                        </span>
+                        {status === 'partial' && (
+                          <div className="text-xs mt-1 font-medium">
+                            <span className="text-red-600">₹{partialSum.toLocaleString()}</span>
+                            <span className="text-gray-400 mx-0.5"> / </span>
+                            <span className="text-yellow-600">₹{expense.amount.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('paidThrough') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidThroughLabel(expense.paidThrough || 'notSelected')}</td>
+                    )}
+                    {tableCols.isColumnVisible('date') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(expense.date).toLocaleDateString(locale)}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('category') && (
+                      <td className="px-6 py-4 text-sm">
+                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                          {categoryLabel(expense.category)}
+                        </span>
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('voucherNumber') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expense.voucherNumber || '-'}</td>
+                    )}
+                    {tableCols.isColumnVisible('vendorName') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expense.vendorName || '-'}</td>
+                    )}
+                    {tableCols.isColumnVisible('remarks') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expense.remarks || '-'}</td>
+                    )}
+                    {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {canEdit && (
@@ -877,10 +958,15 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 );
               })}
             </tbody>
-            {filteredExpenses.length > 0 && (
+            {filteredExpenses.length > 0 && tableCols.isColumnVisible('amount') && (
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td
+                    colSpan={tableCols.isColumnVisible('title') ? 1 : 0}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.total')}
+                  </td>
                   <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredExpenses.reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0).toLocaleString()}
                   </td>
@@ -889,7 +975,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               </tfoot>
             )}
           </table>
-          {expenses.length === 0 && (
+          {filteredExpenses.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('expenses.empty')}
             </div>

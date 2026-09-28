@@ -10,6 +10,7 @@ import { FormModal, FormModalCancelButton } from './FormModal';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { TasksBoard } from './TasksBoard';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface TasksProps {
   tasksList: Task[];
@@ -192,16 +193,31 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     setShowForm(true);
   };
 
+  const taskColumns: ColumnDef<Task>[] = useMemo(() => [
+    { id: 'title', label: t('tasks.title'), required: true, sortValue: t => t.title },
+    { id: 'priority', label: t('tasks.priority'), sortValue: t => t.priority },
+    { id: 'assignTo', label: t('tasks.assignTo'), sortValue: t => t.assignedMemberIds?.length || 0 },
+    { id: 'createdAt', label: t('tasks.createdAt'), sortValue: t => t.createdAt },
+    { id: 'expiry', label: t('tasks.expiry'), sortValue: t => t.expiryDate || '' },
+    { id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const },
+  ], [t]);
+
+  const tableCols = useTableColumns<Task>({
+    tableId: 'tasks',
+    columns: taskColumns,
+    defaultSort: { columnId: 'createdAt', direction: 'desc' },
+  });
+
   const filteredTasks = useMemo(() => {
     return [...tasksList]
       .filter(task => (activeTab === 'completed' ? task.priority === 'completed' : task.priority !== 'completed'))
       .filter(task => priorityFilter === 'all' || task.priority === priorityFilter)
       .filter(task => !dateFilter || task.createdAt.slice(0, 10) === dateFilter)
-      .filter(task => !searchTerm.trim() || task.title.toLowerCase().includes(searchTerm.trim().toLowerCase()))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .filter(task => !searchTerm.trim() || task.title.toLowerCase().includes(searchTerm.trim().toLowerCase()));
   }, [tasksList, activeTab, priorityFilter, dateFilter, searchTerm]);
 
-  const pagination = usePagination(filteredTasks);
+  const sortedTasks = useMemo(() => tableCols.sortItems(filteredTasks), [tableCols, filteredTasks]);
+  const pagination = usePagination(sortedTasks);
 
   return (
     <div className="space-y-6">
@@ -443,16 +459,47 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       {/* Task List */}
       {viewMode === 'list' && (
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tasks.title')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tasks.priority')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tasks.assignTo')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tasks.createdAt')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('tasks.expiry')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                {tableCols.isColumnVisible('title') && (
+                  <SortableTh column={taskColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('priority') && (
+                  <SortableTh column={taskColumns.find(c => c.id === 'priority')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('assignTo') && (
+                  <SortableTh column={taskColumns.find(c => c.id === 'assignTo')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('createdAt') && (
+                  <SortableTh column={taskColumns.find(c => c.id === 'createdAt')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('expiry') && (
+                  <SortableTh column={taskColumns.find(c => c.id === 'expiry')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -463,64 +510,75 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                 const deletable = canDeleteTask(task);
                 return (
                   <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
-                      <button
-                        onClick={() => setViewingTask(task)}
-                        className="text-left text-sm font-medium hover:text-orange-600 dark:hover:text-orange-400 hover:underline transition-colors"
-                      >
-                        {task.title}
-                      </button>
-                      {task.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-normal mt-0.5 max-w-xs truncate">{task.description}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${p.badgeClass}`}>
-                        <span className={`w-2 h-2 rounded-full ${p.dotClass}`} />
-                        {t(p.labelKey)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {task.assignedMemberIds.length === 0 ? '-' : (
-                        <div className="flex flex-wrap gap-1">
-                          {task.assignedMemberIds.map(id => (
-                            <span key={id} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs">{memberName(id)}</span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {new Date(task.createdAt).toLocaleString(locale)}
-                    </td>
-                    <td className={`px-6 py-4 text-sm whitespace-nowrap ${isExpired ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}`}>
-                      {task.expiryDate ? new Date(task.expiryDate).toLocaleDateString(locale) : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    {tableCols.isColumnVisible('title') && (
+                      <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
                         <button
                           onClick={() => setViewingTask(task)}
-                          title={t('tasks.view')}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          className="text-left text-sm font-medium hover:text-orange-600 dark:hover:text-orange-400 hover:underline transition-colors"
                         >
-                          <Eye size={18} />
+                          {task.title}
                         </button>
-                        {editable && task.priority !== 'completed' && (
-                          <button
-                            onClick={() => handleMarkComplete(task)}
-                            title={t('tasks.markComplete')}
-                            className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors"
-                          >
-                            <CheckCircle2 size={18} />
-                          </button>
+                        {task.description && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-normal mt-0.5 max-w-xs truncate">{task.description}</p>
                         )}
-                        {editable && (
-                          <button
-                            onClick={() => handleEdit(task)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                          >
-                            <Edit2 size={18} />
-                          </button>
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('priority') && (
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${p.badgeClass}`}>
+                          <span className={`w-2 h-2 rounded-full ${p.dotClass}`} />
+                          {t(p.labelKey)}
+                        </span>
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('assignTo') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {task.assignedMemberIds.length === 0 ? '-' : (
+                          <div className="flex flex-wrap gap-1">
+                            {task.assignedMemberIds.map(id => (
+                              <span key={id} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs">{memberName(id)}</span>
+                            ))}
+                          </div>
                         )}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('createdAt') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        {new Date(task.createdAt).toLocaleString(locale)}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('expiry') && (
+                      <td className={`px-6 py-4 text-sm whitespace-nowrap ${isExpired ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}`}>
+                        {task.expiryDate ? new Date(task.expiryDate).toLocaleDateString(locale) : '-'}
+                      </td>
+                    )}
+                    {tableCols.isColumnVisible('actions') && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setViewingTask(task)}
+                            title={t('tasks.view')}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          {editable && task.priority !== 'completed' && (
+                            <button
+                              onClick={() => handleMarkComplete(task)}
+                              title={t('tasks.markComplete')}
+                              className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors"
+                            >
+                              <CheckCircle2 size={18} />
+                            </button>
+                          )}
+                          {editable && (
+                            <button
+                              onClick={() => handleEdit(task)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          )}
                         {deletable && (
                           <button
                             onClick={() => handleDelete(task.id)}
@@ -531,7 +589,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                         )}
                       </div>
                     </td>
-                  </tr>
+                  )}
+                </tr>
                 );
               })}
             </tbody>

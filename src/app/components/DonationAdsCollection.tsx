@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -17,6 +17,7 @@ import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -433,7 +434,27 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     return true;
   });
 
-  const sortedDonationAds = [...filteredDonationAds].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const donationAdsColumns: ColumnDef<DonationAd>[] = useMemo(() => [
+    { id: 'donorName', label: t('donationAds.donorName'), required: true, sortValue: d => d.donorName || d.companyName || '' },
+    { id: 'companyName', label: t('donationAds.companyName'), sortValue: d => d.companyName || '' },
+    { id: 'amount', label: t('common.amount'), align: 'left', sortValue: d => d.amount },
+    { id: 'paidMethod', label: t('common.paidMethod'), sortValue: d => paidMethodLabel(d.paidMethod || 'notSelected') },
+    { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: d => d.paymentStatus || 'paid' },
+    ...(!fixedCategory ? [{ id: 'category', label: t('donationAds.category'), sortValue: (d: DonationAd) => categoryLabel(d.category) }] : []),
+    { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), sortValue: d => inKindDisplay(d) || '' },
+    { id: 'date', label: t('common.date'), sortValue: d => d.date },
+    { id: 'phone', label: t('common.phone1'), sortValue: d => d.phone || '' },
+    { id: 'remarks', label: t('common.remarks'), sortValue: d => d.remarks || '' },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, fixedCategory, canEdit, canDelete]);
+
+  const tableCols = useTableColumns<DonationAd>({
+    tableId: fixedCategory ? `donation_ads_${fixedCategory}` : 'donation_ads',
+    columns: donationAdsColumns,
+    defaultSort: { columnId: 'date', direction: 'desc' },
+  });
+
+  const sortedDonationAds = useMemo(() => tableCols.sortItems(filteredDonationAds), [tableCols, filteredDonationAds]);
   const pagination = usePagination(sortedDonationAds);
 
   return (
@@ -743,44 +764,95 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
 
       {/* List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.companyName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.amount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.paidMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('chanda.paymentStatus')}</th>
-                {!fixedCategory && <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.category')}</th>}
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('donationAds.inKindOrAdsCategory')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.phone1')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('donorName') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('companyName') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'companyName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('amount') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'amount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paidMethod') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'paidMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paymentStatus') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'paymentStatus')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {!fixedCategory && tableCols.isColumnVisible('category') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'category')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('inKind') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'inKind')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('date') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('phone') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'phone')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('remarks') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 text-sm font-medium">
-                    <button
-                      type="button"
-                      onClick={() => setViewTarget(item)}
-                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                    >
-                      {item.donorName || item.companyName || '-'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.companyName || '-'}</td>
-                  <td className={`px-6 py-4 text-sm font-bold ${AMOUNT_COLOR[item.paymentStatus || 'paid'] || 'text-green-600'}`}>₹{item.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[item.paymentStatus || 'paid'] || 'bg-green-100 text-green-700'}`}>
-                      {statusLabel(item.paymentStatus || 'paid')}
-                    </span>
-                  </td>
-                  {!fixedCategory && (
+                  {tableCols.isColumnVisible('donorName') && (
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(item)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {item.donorName || item.companyName || '-'}
+                      </button>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('companyName') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.companyName || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('amount') && (
+                    <td className={`px-6 py-4 text-sm font-bold ${AMOUNT_COLOR[item.paymentStatus || 'paid'] || 'text-green-600'}`}>₹{item.amount.toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('paidMethod') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(item.paidMethod || 'notSelected')}</td>
+                  )}
+                  {tableCols.isColumnVisible('paymentStatus') && (
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[item.paymentStatus || 'paid'] || 'bg-green-100 text-green-700'}`}>
+                        {statusLabel(item.paymentStatus || 'paid')}
+                      </span>
+                    </td>
+                  )}
+                  {!fixedCategory && tableCols.isColumnVisible('category') && (
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         item.category === 'donation' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -789,13 +861,21 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                       </span>
                     </td>
                   )}
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{inKindDisplay(item) || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.phone || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.remarks || '-'}</td>
-                  {(canEdit || canDelete) && (
+                  {tableCols.isColumnVisible('inKind') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{inKindDisplay(item) || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('date') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {item.date ? new Date(item.date).toLocaleDateString(locale) : '-'}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('phone') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.phone || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('remarks') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.remarks || '-'}</td>
+                  )}
+                  {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (
@@ -820,10 +900,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 </tr>
               ))}
             </tbody>
-            {filteredDonationAds.length > 0 && (
+            {filteredDonationAds.length > 0 && tableCols.isColumnVisible('amount') && (
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
-                  <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
+                  <td
+                    colSpan={['donorName', 'companyName'].filter(id => tableCols.isColumnVisible(id)).length || 1}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.total')}
+                  </td>
                   <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
                     ₹{filteredDonationAds.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
                   </td>
@@ -832,7 +917,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
               </tfoot>
             )}
           </table>
-          {donationAdsList.length === 0 && (
+          {filteredDonationAds.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('donationAds.empty')}
             </div>

@@ -11,6 +11,7 @@ import { Pagination, usePagination } from './Pagination';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface VendorsProps {
   expenses: Expense[];
@@ -166,6 +167,22 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   const viewingVendor = vendorGroups.find(g => g.key === viewingKey) || null;
   const viewingVendorPaymentRows = viewingVendor ? paymentRowsFor(viewingVendor.entries) : [];
 
+  const vendorColumns: ColumnDef<VendorGroup>[] = useMemo(() => [
+    { id: 'name', label: t('vendors.name'), required: true, sortValue: g => g.name },
+    { id: 'contact', label: t('vendors.contact'), sortValue: g => g.contact || '' },
+    { id: 'category', label: t('expenses.category'), sortValue: g => g.categories.map(categoryLabel).join(' / ') },
+    { id: 'transactions', label: t('vendors.transactions'), align: 'right', sortValue: g => g.entries.length },
+    { id: 'totalContractAmount', label: t('vendors.totalContractAmount'), align: 'right', sortValue: g => g.totalContractAmount },
+    { id: 'totalAmount', label: t('vendors.totalAmount'), align: 'right', sortValue: g => g.totalAmount },
+    { id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const },
+  ], [t]);
+
+  const tableCols = useTableColumns<VendorGroup>({
+    tableId: 'vendors',
+    columns: vendorColumns,
+    defaultSort: { columnId: 'totalAmount', direction: 'desc' },
+  });
+
   const filteredVendorGroups = vendorGroups.filter(g => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -179,7 +196,8 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
     return true;
   });
 
-  const pagination = usePagination(filteredVendorGroups);
+  const sortedVendorGroups = useMemo(() => tableCols.sortItems(filteredVendorGroups), [tableCols, filteredVendorGroups]);
+  const pagination = usePagination(sortedVendorGroups);
 
   const handleExport = () => {
     const csvContent = [
@@ -328,56 +346,111 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
       )}
 
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={vendorGroups.length}
+          filteredItemsCount={filteredVendorGroups.length}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          columns={vendorColumns}
+          isColumnVisible={tableCols.isColumnVisible}
+          onToggleColumn={tableCols.toggleColumn}
+          onResetColumns={tableCols.resetColumns}
+          onShowAllColumns={tableCols.showAllColumns}
+          sortState={tableCols.sortState}
+          onClearSort={tableCols.resetSort}
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.name')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.contact')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expenses.category')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.transactions')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.totalContractAmount')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('vendors.totalAmount')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                {tableCols.isColumnVisible('name') && (
+                  <SortableTh columnId="name" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('vendors.name')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('contact') && (
+                  <SortableTh columnId="contact" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('vendors.contact')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('category') && (
+                  <SortableTh columnId="category" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('expenses.category')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('transactions') && (
+                  <SortableTh columnId="transactions" align="right" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('vendors.transactions')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('totalContractAmount') && (
+                  <SortableTh columnId="totalContractAmount" align="right" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('vendors.totalContractAmount')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('totalAmount') && (
+                  <SortableTh columnId="totalAmount" align="right" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
+                    {t('vendors.totalAmount')}
+                  </SortableTh>
+                )}
+                {tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {t('common.action')}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((g) => (
                 <tr key={g.key} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${viewingKey === g.key ? 'bg-orange-50 dark:bg-orange-500/10' : ''}`}>
-                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{g.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{g.contact || '-'}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex flex-wrap gap-1">
-                      {g.categories.map(cat => (
-                        <span key={cat} className="px-2.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                          {categoryLabel(cat)}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 text-right">{g.entries.length}</td>
-                  <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">₹{g.totalContractAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                        title={t('vendors.view')}
-                      >
-                        <Eye size={18} />
-                      </button>
-                      {canEdit && (
+                  {tableCols.isColumnVisible('name') && (
+                    <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{g.name}</td>
+                  )}
+                  {tableCols.isColumnVisible('contact') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{g.contact || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('category') && (
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex flex-wrap gap-1">
+                        {g.categories.map(cat => (
+                          <span key={cat} className="px-2.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                            {categoryLabel(cat)}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('transactions') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 text-right">{g.entries.length}</td>
+                  )}
+                  {tableCols.isColumnVisible('totalContractAmount') && (
+                    <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">₹{g.totalContractAmount.toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('totalAmount') && (
+                    <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('actions') && (
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-1">
                         <button
-                          onClick={() => openEditVendor(g)}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                          title={t('common.edit')}
+                          onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                          title={t('vendors.view')}
                         >
-                          <Pencil size={16} />
+                          <Eye size={18} />
                         </button>
-                      )}
-                    </div>
-                  </td>
+                        {canEdit && (
+                          <button
+                            onClick={() => openEditVendor(g)}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            title={t('common.edit')}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

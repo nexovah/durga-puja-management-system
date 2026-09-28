@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
 import { Loan, PaidMethod, getLoanNetAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -15,6 +15,7 @@ import { ViewModal } from './ViewModal';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface LoansProps {
   loansList: Loan[];
@@ -256,7 +257,25 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     return true;
   });
 
-  const sortedLoans = [...filteredLoans].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const loanColumns: ColumnDef<Loan>[] = useMemo(() => [
+    { id: 'donorName', label: t('loans.donorName'), required: true, sortValue: l => l.donorName },
+    { id: 'amountReceived', label: t('loans.amountReceivedLabel'), align: 'left', sortValue: l => l.amountReceived },
+    { id: 'amountPaid', label: t('loans.amountPaidLabel'), align: 'left', sortValue: l => l.amountPaid || 0 },
+    { id: 'paymentMethod', label: t('loans.paymentMethod'), sortValue: l => paidMethodLabel(l.paymentMethod || 'notSelected') },
+    { id: 'date', label: t('common.date'), sortValue: l => l.date },
+    { id: 'returnDate', label: t('loans.returnDate'), sortValue: l => l.returnDate || '' },
+    { id: 'phone', label: t('common.phone'), defaultVisible: false, sortValue: l => l.phone || '' },
+    { id: 'remarks', label: t('common.remarks'), sortValue: l => l.remarks || '' },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, canEdit, canDelete]);
+
+  const tableCols = useTableColumns<Loan>({
+    tableId: 'loans',
+    columns: loanColumns,
+    defaultSort: { columnId: 'date', direction: 'desc' },
+  });
+
+  const sortedLoans = useMemo(() => tableCols.sortItems(filteredLoans), [tableCols, filteredLoans]);
   const pagination = usePagination(sortedLoans);
 
   return (
@@ -434,43 +453,98 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       </FormModal>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.donorName')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.amountReceivedLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.amountPaidLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.paymentMethod')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('loans.returnDate')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.remarks')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('donorName') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('amountReceived') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'amountReceived')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('amountPaid') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'amountPaid')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('paymentMethod') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'paymentMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('date') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('returnDate') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'returnDate')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('phone') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'phone')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('remarks') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((loan) => (
                 <tr key={loan.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 text-sm font-medium">
-                    <button
-                      type="button"
-                      onClick={() => setViewTarget(loan)}
-                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                    >
-                      {loan.donorName}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(loan.date).toLocaleDateString(locale)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString(locale) : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{loan.remarks || '-'}</td>
-                  {(canEdit || canDelete) && (
+                  {tableCols.isColumnVisible('donorName') && (
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(loan)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {loan.donorName}
+                      </button>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('amountReceived') && (
+                    <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('amountPaid') && (
+                    <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('paymentMethod') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
+                  )}
+                  {tableCols.isColumnVisible('date') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {new Date(loan.date).toLocaleDateString(locale)}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('returnDate') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString(locale) : '-'}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('phone') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{loan.phone || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('remarks') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{loan.remarks || '-'}</td>
+                  )}
+                  {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (
@@ -495,22 +569,26 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 </tr>
               ))}
             </tbody>
-            {filteredLoans.length > 0 && (
+            {filteredLoans.length > 0 && (tableCols.isColumnVisible('amountReceived') || tableCols.isColumnVisible('amountPaid')) && (
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    ₹{filteredLoans.reduce((sum, l) => sum + l.amountReceived, 0).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    ₹{filteredLoans.reduce((sum, l) => sum + (l.amountPaid || 0), 0).toLocaleString()}
-                  </td>
+                  {tableCols.isColumnVisible('amountReceived') && (
+                    <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      ₹{filteredLoans.reduce((sum, l) => sum + l.amountReceived, 0).toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('amountPaid') && (
+                    <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
+                      ₹{filteredLoans.reduce((sum, l) => sum + (l.amountPaid || 0), 0).toLocaleString()}
+                    </td>
+                  )}
                   <td colSpan={100} />
                 </tr>
               </tfoot>
             )}
           </table>
-          {loansList.length === 0 && (
+          {filteredLoans.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {t('loans.empty')}
             </div>

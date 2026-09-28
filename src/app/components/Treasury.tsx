@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { PageHeading } from './PageHeading';
@@ -7,6 +7,7 @@ import { TranslationKey } from '../i18n/translations';
 import { TreasuryReportModal } from './TreasuryReportModal';
 import { ReportPrintTable } from './ReportPrintTable';
 import { LedgerRow, buildLedger, ledgerTotals } from '../lib/reportExport';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface TreasuryProps {
   chandaList: Chanda[];
@@ -112,7 +113,33 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       .sort((a, b) => b.month.localeCompare(a.month));
   };
 
-  const monthlyData = getMonthlyData();
+  interface MonthlyReportRow {
+    month: string;
+    chanda: number;
+    donationAds: number;
+    membership: number;
+    loans: number;
+    expenses: number;
+    balance: number;
+  }
+
+  const treasuryMonthlyColumns: ColumnDef<MonthlyReportRow>[] = useMemo(() => [
+    { id: 'month', label: t('treasury.month'), required: true, sortValue: d => d.month },
+    { id: 'chanda', label: t('treasury.chanda'), align: 'right', sortValue: d => d.chanda },
+    { id: 'donationAds', label: t('treasury.donationAds'), align: 'right', sortValue: d => d.donationAds },
+    { id: 'membership', label: t('treasury.totalMembership'), align: 'right', sortValue: d => d.membership },
+    { id: 'loans', label: t('treasury.loansOutstanding'), align: 'right', sortValue: d => d.loans },
+    { id: 'expenses', label: t('treasury.expenses'), align: 'right', sortValue: d => d.expenses },
+    { id: 'balance', label: t('treasury.balance'), align: 'right', sortValue: d => d.balance },
+  ], [t]);
+
+  const tableCols = useTableColumns<MonthlyReportRow>({
+    tableId: 'treasury_monthly',
+    columns: treasuryMonthlyColumns,
+  });
+
+  const rawMonthlyData = useMemo(() => getMonthlyData(), [chandaList, donationAdsList, members, loansList, expenses, locale]);
+  const monthlyData = useMemo(() => tableCols.sortItems(rawMonthlyData), [tableCols, rawMonthlyData]);
 
   // Top donors (Chanda + Donation/Ads combined)
   const topDonors = Object.entries(
@@ -271,43 +298,85 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       </div>
 
       {/* Monthly Report */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">{t('treasury.monthlyReport')}</h3>
+      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="p-4 sm:p-6 pb-3 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">{t('treasury.monthlyReport')}</h3>
+        </div>
+        <DataTableToolbar
+          totalItems={rawMonthlyData.length}
+          startIndex={rawMonthlyData.length > 0 ? 1 : 0}
+          endIndex={rawMonthlyData.length}
+          columns={treasuryMonthlyColumns}
+          isColumnVisible={tableCols.isColumnVisible}
+          onToggleColumn={tableCols.toggleColumn}
+          onResetColumns={tableCols.resetColumns}
+          onShowAllColumns={tableCols.showAllColumns}
+          sortState={tableCols.sortState}
+          onClearSort={tableCols.resetSort}
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.month')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.chanda')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.donationAds')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.totalMembership')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.loansOutstanding')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.expenses')}</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('treasury.balance')}</th>
+                {tableCols.isColumnVisible('month') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'month')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('chanda') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'chanda')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('donationAds') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'donationAds')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('membership') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'membership')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('loans') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'loans')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('expenses') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'expenses')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('balance') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'balance')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {monthlyData.map((data, index) => (
                 <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{data.month}</td>
-                  <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">
-                    ₹{data.chanda.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-emerald-600 font-bold text-right">
-                    ₹{data.donationAds.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-violet-600 font-bold text-right">
-                    ₹{data.membership.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-sky-600 font-bold text-right">
-                    ₹{data.loans.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">
-                    ₹{data.expenses.toLocaleString()}
-                  </td>
-                  <td className={`px-6 py-4 text-sm font-bold text-right ${data.balance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
-                    ₹{data.balance.toLocaleString()}
-                  </td>
+                  {tableCols.isColumnVisible('month') && (
+                    <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{data.month}</td>
+                  )}
+                  {tableCols.isColumnVisible('chanda') && (
+                    <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">
+                      ₹{data.chanda.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('donationAds') && (
+                    <td className="px-6 py-4 text-sm text-emerald-600 font-bold text-right">
+                      ₹{data.donationAds.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('membership') && (
+                    <td className="px-6 py-4 text-sm text-violet-600 font-bold text-right">
+                      ₹{data.membership.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('loans') && (
+                    <td className="px-6 py-4 text-sm text-sky-600 font-bold text-right">
+                      ₹{data.loans.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('expenses') && (
+                    <td className="px-6 py-4 text-sm text-red-600 font-bold text-right">
+                      ₹{data.expenses.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('balance') && (
+                    <td className={`px-6 py-4 text-sm font-bold text-right ${data.balance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
+                      ₹{data.balance.toLocaleString()}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
