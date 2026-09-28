@@ -348,36 +348,14 @@ export function ColumnVisibilityDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 sm:p-3 animate-in fade-in zoom-in-95 duration-100">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-800">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+        <div className="absolute right-0 top-full mt-2 z-50 w-64 sm:w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          <div className="px-3.5 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-850/40">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
               Customize Columns
             </span>
-            <div className="flex items-center gap-1.5">
-              {hasCustomVisibility && (
-                <button
-                  type="button"
-                  onClick={resetColumns}
-                  className="flex items-center gap-1 text-[11px] font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 hover:underline"
-                  title="Reset to default columns"
-                >
-                  <RotateCcw size={11} />
-                  Reset
-                </button>
-              )}
-              {hiddenCount > 0 && (
-                <button
-                  type="button"
-                  onClick={showAllColumns}
-                  className="text-[11px] font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline ml-1"
-                >
-                  Show All
-                </button>
-              )}
-            </div>
           </div>
 
-          <div className="max-h-64 overflow-y-auto space-y-0.5 pr-1">
+          <div className="p-2 sm:p-2.5 max-h-64 overflow-y-auto space-y-0.5">
             {columns.map((col) => {
               const visible = isColumnVisible(col.id);
               const isRequired = !!col.required;
@@ -411,12 +389,34 @@ export function ColumnVisibilityDropdown({
             })}
           </div>
 
-          <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-[11px] text-gray-400 dark:text-gray-500">
-            <span>Saved in browser</span>
+          <div className="px-3 py-2 sm:px-3.5 sm:py-2.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/30 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={showAllColumns}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+              >
+                Show All
+              </button>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <button
+                type="button"
+                onClick={resetColumns}
+                className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                  hasCustomVisibility
+                    ? 'text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 hover:underline font-semibold'
+                    : 'text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400'
+                }`}
+                title="Reset to default columns"
+              >
+                <RotateCcw size={11} />
+                <span>Reset</span>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
+              className="px-2.5 py-1 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 rounded-md transition-colors shadow-xs"
             >
               Done
             </button>
