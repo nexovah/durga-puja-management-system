@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
@@ -10,6 +10,7 @@ import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface EstimationPageProps {
   estimationsList: Estimation[];
@@ -83,9 +84,22 @@ export function EstimationPage({
   const filteredEstimations = estimationsList.filter(est =>
     !searchQuery.trim() || est.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
   );
-  const sortedEstimations = [...filteredEstimations].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+
+  const estimationColumns: ColumnDef<Estimation>[] = useMemo(() => [
+    { id: 'title', label: t('estimation.titleLabel'), required: true, sortValue: e => e.title },
+    { id: 'lineItems', label: t('estimation.totalItems'), align: 'left', sortValue: e => e.lineItems.length },
+    { id: 'totalAmount', label: t('estimation.totalAmount'), align: 'left', sortValue: e => totalAmount(e) },
+    { id: 'createdAt', label: t('common.date'), sortValue: e => e.createdAt },
+    ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
+  ], [t, canEdit, canDelete]);
+
+  const tableCols = useTableColumns<Estimation>({
+    tableId: 'estimation',
+    columns: estimationColumns,
+    defaultSort: { columnId: 'createdAt', direction: 'desc' },
+  });
+
+  const sortedEstimations = useMemo(() => tableCols.sortItems(filteredEstimations), [tableCols, filteredEstimations]);
   const pagination = usePagination(sortedEstimations);
 
   const openNew = () => {
@@ -540,35 +554,72 @@ export function EstimationPage({
       </CollapsibleSearchPanel>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.titleLabel')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.totalItems')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('estimation.totalAmount')}</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
-                {(canEdit || canDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>}
+                {tableCols.isColumnVisible('title') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('lineItems') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'lineItems')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('totalAmount') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'totalAmount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {tableCols.isColumnVisible('createdAt') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'createdAt')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
+                {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((est) => (
                 <tr key={est.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 text-sm font-medium">
-                    <button
-                      type="button"
-                      onClick={() => openExisting(est)}
-                      className="text-orange-600 hover:text-orange-700 hover:underline text-left"
-                    >
-                      {est.title || '-'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{est.lineItems.length}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100">₹{totalAmount(est).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(est.createdAt).toLocaleDateString(locale)}
-                  </td>
-                  {(canEdit || canDelete) && (
+                  {tableCols.isColumnVisible('title') && (
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => openExisting(est)}
+                        className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                      >
+                        {est.title || '-'}
+                      </button>
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('lineItems') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{est.lineItems.length}</td>
+                  )}
+                  {tableCols.isColumnVisible('totalAmount') && (
+                    <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100">₹{totalAmount(est).toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('createdAt') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {new Date(est.createdAt).toLocaleDateString(locale)}
+                    </td>
+                  )}
+                  {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (

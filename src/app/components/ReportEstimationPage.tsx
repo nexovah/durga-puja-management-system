@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, MoreVertical, Download, FileText } from 'lucide-react';
 import { Estimation } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Pagination, usePagination } from './Pagination';
 import { downloadTableCSV } from '../lib/reportExport';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 interface ReportEstimationPageProps {
   estimationsList: Estimation[];
@@ -47,7 +48,22 @@ export function ReportEstimationPage({ estimationsList, companyName, companyLogo
   }, [printing]);
 
   const filtered = estimationsList.filter(e => !searchQuery.trim() || e.title.toLowerCase().includes(searchQuery.trim().toLowerCase()));
-  const pagination = usePagination(filtered);
+
+  const estimationColumns: ColumnDef<Estimation>[] = useMemo(() => [
+    { id: 'title', label: t('report.col.title'), required: true, sortValue: e => e.title },
+    { id: 'lineItems', label: t('report.col.lineItems'), align: 'right', sortValue: e => e.lineItems.length },
+    { id: 'total', label: t('report.col.total'), align: 'right', sortValue: e => totalOf(e) },
+    { id: 'createdAt', label: t('report.col.created'), sortValue: e => e.createdAt },
+  ], [t]);
+
+  const tableCols = useTableColumns<Estimation>({
+    tableId: 'report_estimation',
+    columns: estimationColumns,
+    defaultSort: { columnId: 'createdAt', direction: 'desc' },
+  });
+
+  const sortedList = useMemo(() => tableCols.sortItems(filtered), [tableCols, filtered]);
+  const pagination = usePagination(sortedList);
 
   const allChecked = filtered.length > 0 && filtered.every(e => selected.has(e.id));
   const toggleAll = () => setSelected(allChecked ? new Set() : new Set(filtered.map(e => e.id)));
@@ -57,7 +73,7 @@ export function ReportEstimationPage({ estimationsList, companyName, companyLogo
     return next;
   });
 
-  const exportTargets = () => (selected.size > 0 ? filtered.filter(e => selected.has(e.id)) : filtered);
+  const exportTargets = () => (selected.size > 0 ? sortedList.filter(e => selected.has(e.id)) : sortedList);
 
   const handleDownloadCSV = () => {
     const targets = exportTargets();
@@ -121,25 +137,61 @@ export function ReportEstimationPage({ estimationsList, companyName, companyLogo
           </div>
         </div>
 
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="w-10 px-4 py-3"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 rounded" /></th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">{t('report.col.title')}</th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">{t('report.col.lineItems')}</th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">{t('report.col.total')}</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">{t('report.col.created')}</th>
+                {tableCols.isColumnVisible('title') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} className="px-4 py-3" />
+                )}
+                {tableCols.isColumnVisible('lineItems') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'lineItems')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} align="right" className="px-4 py-3" />
+                )}
+                {tableCols.isColumnVisible('total') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'total')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} align="right" className="px-4 py-3" />
+                )}
+                {tableCols.isColumnVisible('createdAt') && (
+                  <SortableTh column={estimationColumns.find(c => c.id === 'createdAt')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} className="px-4 py-3" />
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {pagination.pageItems.map(est => (
                 <tr key={est.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${selected.has(est.id) ? 'bg-orange-50/60 dark:bg-orange-500/10' : ''}`}>
                   <td className="px-4 py-3"><input type="checkbox" checked={selected.has(est.id)} onChange={() => toggleOne(est.id)} className="w-4 h-4 rounded" /></td>
-                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 font-medium">{est.title}</td>
-                  <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{est.lineItems.length}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200">₹{totalOf(est).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(est.createdAt).toLocaleDateString(locale)}</td>
+                  {tableCols.isColumnVisible('title') && (
+                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200 font-medium">{est.title}</td>
+                  )}
+                  {tableCols.isColumnVisible('lineItems') && (
+                    <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{est.lineItems.length}</td>
+                  )}
+                  {tableCols.isColumnVisible('total') && (
+                    <td className="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200">₹{totalOf(est).toLocaleString()}</td>
+                  )}
+                  {tableCols.isColumnVisible('createdAt') && (
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(est.createdAt).toLocaleDateString(locale)}</td>
+                  )}
                 </tr>
               ))}
             </tbody>

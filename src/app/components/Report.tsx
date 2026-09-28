@@ -462,6 +462,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       <div className="flex-1 min-w-0">
         <ReportModulePage
           key={activeModule}
+          tableId={`report_${activeModule}`}
           {...moduleProps}
           companyName={committeeAssociation}
           companyLogo={committeeLogo}

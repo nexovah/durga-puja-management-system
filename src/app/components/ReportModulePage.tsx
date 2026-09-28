@@ -12,6 +12,7 @@ import { PageHeading } from './PageHeading';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
 export interface ReportColumn<T> {
   key: string;
@@ -23,6 +24,7 @@ export interface ReportColumn<T> {
   // horizontal scrolling on-screen for data most rows don't even have.
   // Table view skips them; handleDownloadCSV/PDF still use every column.
   exportOnly?: boolean;
+  sortValue?: (row: T) => string | number | Date | boolean | null | undefined;
 }
 
 export interface ReportWidget {
@@ -37,6 +39,7 @@ const PIE_COLORS = ['#f97316', '#8b5cf6', '#06b6d4', '#22c55e', '#eab308', '#ef4
 interface Option { value: string; label: string }
 
 export interface ReportModulePageProps<T extends { id: string }> {
+  tableId?: string;
   pageTitle: string;
   data: T[];
   dateOf: (row: T) => string | undefined;
@@ -68,7 +71,7 @@ export interface ReportModulePageProps<T extends { id: string }> {
 }
 
 export function ReportModulePage<T extends { id: string }>({
-  pageTitle, data, dateOf, searchOf, columns, chartType, metricOf, breakdownOf, computeWidgets, companyName, companyLogo,
+  tableId, pageTitle, data, dateOf, searchOf, columns, chartType, metricOf, breakdownOf, computeWidgets, companyName, companyLogo,
   amountOf, statusOf, statusOptions, paidMethodOf, paidMethodOptions, billVoucherOf, billVoucherLabel,
   phoneOf, inKindOf, inKindOptions, inKindLabel, designationOf, designationOptions, designationLabel,
 }: ReportModulePageProps<T>) {
@@ -161,7 +164,35 @@ export function ReportModulePage<T extends { id: string }>({
       });
   }, [filteredRows, chartType, breakdownOf, metricOf, dateOf, locale]);
 
-  const pagination = usePagination(filteredRows);
+  const resolvedTableId = tableId || ('report_' + pageTitle.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+
+  const columnDefs: ColumnDef<T>[] = useMemo(() => {
+    return tableColumns.map((c, idx) => ({
+      id: c.key,
+      label: c.label,
+      required: idx === 0,
+      align: c.align === 'right' ? 'right' : 'left',
+      sortValue: (row: T) => {
+        if (c.sortValue) return c.sortValue(row);
+        const rendered = c.render(row);
+        if (typeof rendered === 'string') {
+          const cleanNum = rendered.replace(/^[₹$\s]+/, '').replace(/,/g, '').trim();
+          if (cleanNum !== '' && !isNaN(Number(cleanNum))) {
+            return Number(cleanNum);
+          }
+        }
+        return rendered;
+      },
+    }));
+  }, [tableColumns]);
+
+  const tableCols = useTableColumns<T>({
+    tableId: resolvedTableId,
+    columns: columnDefs,
+  });
+
+  const sortedRows = useMemo(() => tableCols.sortItems(filteredRows), [tableCols, filteredRows]);
+  const pagination = usePagination(sortedRows);
 
   const allChecked = filteredRows.length > 0 && filteredRows.every(r => selected.has(r.id));
   const toggleAll = () => {
@@ -175,7 +206,7 @@ export function ReportModulePage<T extends { id: string }>({
     });
   };
 
-  const exportRows = () => (selected.size > 0 ? filteredRows.filter(r => selected.has(r.id)) : filteredRows);
+  const exportRows = () => (selected.size > 0 ? sortedRows.filter(r => selected.has(r.id)) : sortedRows);
 
   const rangeLabel = () => {
     const f = appliedFilters;
@@ -320,6 +351,25 @@ export function ReportModulePage<T extends { id: string }>({
 
       {/* Data table */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <DataTableToolbar
+          totalItems={pagination.totalItems}
+          startIndex={pagination.startIndex}
+          endIndex={pagination.endIndex}
+          activeSortLabel={tableCols.activeSortColumn?.label}
+          sortDirection={tableCols.sortState.direction}
+          onResetSort={tableCols.resetSort}
+          columnDropdown={
+            <ColumnVisibilityDropdown
+              columns={tableCols.columns}
+              isColumnVisible={tableCols.isColumnVisible}
+              toggleColumn={tableCols.toggleColumn}
+              showAllColumns={tableCols.showAllColumns}
+              resetColumns={tableCols.resetColumns}
+              hasCustomVisibility={tableCols.hasCustomVisibility}
+              hiddenCount={tableCols.hiddenCount}
+            />
+          }
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -327,9 +377,20 @@ export function ReportModulePage<T extends { id: string }>({
                 <th className="w-10 px-4 py-3">
                   <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 rounded" />
                 </th>
-                {tableColumns.map(c => (
-                  <th key={c.key} className={`px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 ${c.align === 'right' ? 'text-right' : 'text-left'}`}>{c.label}</th>
-                ))}
+                {tableColumns.map(c => {
+                  if (!tableCols.isColumnVisible(c.key)) return null;
+                  const colDef = columnDefs.find(cd => cd.id === c.key);
+                  return (
+                    <SortableTh
+                      key={c.key}
+                      column={colDef}
+                      sortState={tableCols.sortState}
+                      onSort={tableCols.toggleSort}
+                      align={c.align === 'right' ? 'right' : 'left'}
+                      className="px-4 py-3"
+                    />
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -338,9 +399,14 @@ export function ReportModulePage<T extends { id: string }>({
                   <td className="px-4 py-3">
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleOne(row.id)} className="w-4 h-4 rounded" />
                   </td>
-                  {tableColumns.map(c => (
-                    <td key={c.key} className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${c.align === 'right' ? 'text-right font-medium' : ''}`}>{c.render(row)}</td>
-                  ))}
+                  {tableColumns.map(c => {
+                    if (!tableCols.isColumnVisible(c.key)) return null;
+                    return (
+                      <td key={c.key} className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${c.align === 'right' ? 'text-right font-medium' : ''}`}>
+                        {c.render(row)}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
