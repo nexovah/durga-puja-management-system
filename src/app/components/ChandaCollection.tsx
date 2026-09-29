@@ -1,6 +1,8 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee, CheckSquare, Square, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame } from 'lucide-react';
+import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
+import { DashboardDonut } from './DashboardDonut';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -111,8 +113,36 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     if (chanda.paymentStatus === 'partial') return sum + Math.max(0, chanda.amount - (chanda.partialAmount || 0));
     return sum;
   }, 0);
+  // Grand total billed/mentioned across every entry, regardless of payment
+  // status — distinct from totalChanda (what's actually been paid so far).
+  const grandTotalAmount = chandaList.reduce((sum, chanda) => sum + chanda.amount, 0);
+  // Rejected entries' billed amount counts toward grandTotalAmount but not
+  // toward totalChanda/pendingCollection — surfaced as a 3rd donut slice so
+  // grandTotalAmount always equals the sum of all slices shown.
+  const rejectedAmount = chandaList.reduce((sum, chanda) => (chanda.paymentStatus === 'rejected' ? sum + chanda.amount : sum), 0);
+
   const totalAmount1 = chandaList.reduce((sum, chanda) => sum + (chanda.amount1 || 0), 0);
   const totalAmount2 = chandaList.reduce((sum, chanda) => sum + (chanda.amount2 || 0), 0);
+
+  // Amount 1 / Amount 2 each get their own "paid so far" figure. A fully
+  // paid entry credits each sub-amount in full; a partial entry's single
+  // blended partialAmount is split proportionally by each sub-amount's
+  // share of the entry's total (e.g. Amount 1 = 60% of the bill -> 60% of
+  // whatever was actually paid counts toward Amount 1's paid total).
+  const { paidAmount1, paidAmount2 } = chandaList.reduce((acc, chanda) => {
+    const a1 = chanda.amount1 || 0;
+    const a2 = chanda.amount2 || 0;
+    if (a1 + a2 <= 0) return acc;
+    let credited = 0;
+    if (chanda.paymentStatus === 'paid') credited = chanda.amount;
+    else if (chanda.paymentStatus === 'partial') credited = chanda.partialAmount || 0;
+    if (credited <= 0) return acc;
+    const ratio1 = a1 / (a1 + a2);
+    return {
+      paidAmount1: acc.paidAmount1 + credited * ratio1,
+      paidAmount2: acc.paidAmount2 + credited * (1 - ratio1),
+    };
+  }, { paidAmount1: 0, paidAmount2: 0 });
 
   const statusLabel = (status: PaymentStatus) => {
     const found = PAYMENT_STATUSES.find(s => s.value === status);
@@ -747,35 +777,46 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           </form>
       </FormModal>
 
-      {/* Widgets — Treasury-style summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.total')}</h3>
-            <IndianRupee className="text-green-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.pending')}</h3>
-            <HandCoins className="text-amber-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-amber-600">₹{pendingCollection.toLocaleString()}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount1')}</h3>
-            <Sparkles className="text-orange-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{totalAmount1.toLocaleString()}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-red-500 dark:border-red-500/60">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('chanda.widget.amount2')}</h3>
-            <Flame className="text-red-500" size={24} />
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold text-red-600">₹{totalAmount2.toLocaleString()}</p>
+      {/* Widgets — grand total + paid/pending/rejected donut, and a merged
+          Amount 1 / Amount 2 card each with its own paid-so-far figure. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+        <DashboardDonut
+          title={t('chanda.widget.total')}
+          icon={PieChart}
+          iconAccent="text-green-600"
+          compact
+          grandTotal={{ label: t('chanda.widget.grandTotal'), value: grandTotalAmount }}
+          slices={[
+            { name: t('chanda.widget.paid'), value: totalChanda },
+            { name: t('chanda.widget.pending'), value: pendingCollection },
+            { name: t('chanda.status.rejected'), value: rejectedAmount },
+          ]}
+          colors={['#16a34a', '#f59e0b', '#ef4444']}
+          emptyMessage={t('chanda.widget.noData')}
+        />
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <AmountMiniDonutCard
+            title={t('chanda.widget.amount1')}
+            icon={Sparkles}
+            iconAccent="text-orange-500"
+            total={totalAmount1}
+            paid={paidAmount1}
+            paidLabel={t('chanda.widget.paidCollection')}
+            remainingLabel={t('chanda.widget.remaining')}
+            valueColor="text-orange-600"
+            color="#f97316"
+          />
+          <AmountMiniDonutCard
+            title={t('chanda.widget.amount2')}
+            icon={Flame}
+            iconAccent="text-red-500"
+            total={totalAmount2}
+            paid={paidAmount2}
+            paidLabel={t('chanda.widget.paidCollection')}
+            remainingLabel={t('chanda.widget.remaining')}
+            valueColor="text-red-600"
+            color="#ef4444"
+          />
         </div>
       </div>
 
@@ -1102,6 +1143,49 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onCancel={() => setPendingSave(null)}
         onConfirm={confirmStatusChange}
       />
+    </div>
+  );
+}
+
+// Amount 01/02 widgets: half-height row cards (together matching the Total
+// Collection donut's height) with a small paid-vs-remaining donut on the
+// right of the value, one per sub-amount.
+function AmountMiniDonutCard({
+  title, icon: Icon, iconAccent, total, paid, paidLabel, remainingLabel, valueColor, color,
+}: {
+  title: string; icon: typeof Sparkles; iconAccent: string; total: number; paid: number; paidLabel: string; remainingLabel: string; valueColor: string; color: string;
+}) {
+  const remaining = Math.max(0, total - paid);
+  const data = [
+    { name: paidLabel, value: Math.round(paid) },
+    { name: remainingLabel, value: Math.round(remaining) },
+  ].filter(d => d.value > 0);
+
+  return (
+    <div className="flex-1 bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={iconAccent} size={18} />
+        <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{title}</h3>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-xl sm:text-2xl font-bold ${valueColor}`}>₹{total.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{paidLabel}: <span className="font-semibold text-gray-700 dark:text-gray-300">₹{Math.round(paid).toLocaleString()}</span></p>
+        </div>
+        {data.length > 0 && (
+          <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <RePieChart>
+                <Pie data={data} dataKey="value" nameKey="name" innerRadius="60%" outerRadius="100%" paddingAngle={2}>
+                  <Cell fill={color} />
+                  <Cell fill="#e5e7eb" />
+                </Pie>
+                <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+              </RePieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
