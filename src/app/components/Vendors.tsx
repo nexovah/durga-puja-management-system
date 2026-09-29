@@ -467,12 +467,12 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                     {t('common.total')}
                   </td>
                   {tableCols.isColumnVisible('totalContractAmount') && (
-                    <td className="px-6 py-3 text-sm font-bold text-red-600 text-right">
+                    <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">
                       ₹{filteredVendorGroups.reduce((sum, g) => sum + g.totalContractAmount, 0).toLocaleString()}
                     </td>
                   )}
                   {tableCols.isColumnVisible('totalAmount') && (
-                    <td className="px-6 py-3 text-sm font-bold text-green-600 text-right">
+                    <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">
                       ₹{filteredVendorGroups.reduce((sum, g) => sum + g.totalAmount, 0).toLocaleString()}
                     </td>
                   )}

@@ -603,7 +603,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                     </td>
                   )}
                   {tableCols.isColumnVisible('role') && (
-                    <td className="px-6 py-4 text-sm text-orange-600 font-medium">{roleLabel(member.role)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{roleLabel(member.role)}</td>
                   )}
                   {tableCols.isColumnVisible('phone') && (
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{member.phone}</td>
