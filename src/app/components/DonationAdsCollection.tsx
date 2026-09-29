@@ -482,6 +482,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 className="hidden"
               />
             )}
+            {canEdit && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} />
+                {t('donationAds.addNew')}
+              </button>
+            )}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(o => !o)}
@@ -508,15 +517,6 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
                 </div>
               )}
             </div>
-            {canEdit && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-              >
-                <Plus size={20} />
-                {t('donationAds.addNew')}
-              </button>
-            )}
           </div>
         }
       >

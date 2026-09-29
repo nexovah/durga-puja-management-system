@@ -242,6 +242,14 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+            {canEdit && (
+              <button
+                onClick={openCreateVendor}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} /> {t('vendors.addVendor')}
+              </button>
+            )}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(o => !o)}
@@ -260,14 +268,6 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                 </div>
               )}
             </div>
-            {canEdit && (
-              <button
-                onClick={openCreateVendor}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-              >
-                <Plus size={20} /> {t('vendors.addVendor')}
-              </button>
-            )}
           </div>
         }
       >

@@ -477,6 +477,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 className="hidden"
               />
             )}
+            {canEdit && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} />
+                {t('chanda.addNew')}
+              </button>
+            )}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(o => !o)}
@@ -503,15 +512,6 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 </div>
               )}
             </div>
-            {canEdit && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-              >
-                <Plus size={20} />
-                {t('chanda.addNew')}
-              </button>
-            )}
           </div>
         }
       >

@@ -240,6 +240,14 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
             {selected.size > 0 && (
               <span className="text-xs text-gray-500 dark:text-gray-400">{selected.size} {t('assets.selected')}</span>
             )}
+            {canEdit && (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus size={20} /> {t('assets.addAsset')}
+              </button>
+            )}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(o => !o)}
@@ -258,14 +266,6 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                 </div>
               )}
             </div>
-            {canEdit && (
-              <button
-                onClick={openCreate}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-              >
-                <Plus size={20} /> {t('assets.addAsset')}
-              </button>
-            )}
           </div>
         }
       >
