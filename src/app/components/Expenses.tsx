@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart } from 'lucide-react';
+import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -186,6 +188,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
+  // Grand total billed/mentioned across every expense, regardless of
+  // payment status — distinct from totalExpenses (what's actually been
+  // paid so far, credited via getExpenseCreditAmount).
+  const grandTotalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const paidStatusTotal = expenses.filter(e => e.paymentStatus === 'paid').reduce((sum, e) => sum + e.amount, 0);
+  const partialStatusTotal = expenses.filter(e => e.paymentStatus === 'partial').reduce((sum, e) => sum + getExpenseCreditAmount(e), 0);
 
   const isPartial = formData.paymentStatus === 'partial';
 
@@ -813,21 +821,57 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           </form>
       </FormModal>
 
-      {/* Category Summary — Treasury-style widgets, kept to one row */}
-      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-l-4 border-green-500 dark:border-green-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]">
-          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('expenses.widget.total')}</h3>
-          <p className="text-lg sm:text-xl font-bold text-green-600">₹{totalExpenses.toLocaleString()}</p>
-        </div>
-        {categoryTotals.map((ct) => (
-          <div
-            key={ct.category}
-            className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-l-4 border-red-500 dark:border-red-500/60 shrink-0 min-w-[140px] sm:min-w-[160px]"
-          >
-            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{ct.label}</h3>
-            <p className="text-lg sm:text-xl font-bold text-red-600">₹{ct.total.toLocaleString()}</p>
+      {/* Widgets — grand total + paid/partial/pending donut, and a
+          category-wise breakdown donut, matching Collection's widget style. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700 h-full flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <PieChart className="text-green-600" size={18} />
+            <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{t('expenses.widget.total')}</h3>
           </div>
-        ))}
+          <div className="flex items-center gap-6 flex-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('expenses.widget.grandTotal')}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">₹{grandTotalExpense.toLocaleString()}</p>
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('expenses.status.paid')}: <span className="font-semibold text-gray-700 dark:text-gray-300">₹{paidStatusTotal.toLocaleString()}</span></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('expenses.status.partial')}: <span className="font-semibold text-gray-700 dark:text-gray-300">₹{partialStatusTotal.toLocaleString()}</span></p>
+              </div>
+            </div>
+            {grandTotalExpense > 0 && (
+              <div className="w-28 h-28 sm:w-32 sm:h-32 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={[
+                        { name: t('expenses.widget.paidSoFar'), value: totalExpenses },
+                        { name: t('expenses.widget.pending'), value: Math.max(0, grandTotalExpense - totalExpenses) },
+                      ].filter(d => d.value > 0)}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius="55%"
+                      outerRadius="100%"
+                      paddingAngle={2}
+                    >
+                      <Cell fill="#16a34a" />
+                      <Cell fill="#f59e0b" />
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        </div>
+        <DashboardDonut
+          title={t('expenses.widget.byCategory')}
+          icon={PieChart}
+          iconAccent="text-red-600"
+          compact
+          slices={categoryTotals.map(ct => ({ name: ct.label, value: ct.total }))}
+          colors={DONUT_COLORS}
+          emptyMessage={t('expenses.widget.noData')}
+        />
       </div>
 
       {/* Expenses List */}

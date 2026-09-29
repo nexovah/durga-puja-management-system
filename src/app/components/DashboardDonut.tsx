@@ -1,7 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { LucideIcon } from 'lucide-react';
 
-const DONUT_COLORS = ['#f97316', '#3b82f6', '#8b5cf6', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#ec4899'];
+export const DONUT_COLORS = ['#f97316', '#3b82f6', '#8b5cf6', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#ec4899'];
 
 export interface DashboardDonutSlice {
   name: string;

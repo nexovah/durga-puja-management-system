@@ -1,5 +1,7 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart } from 'lucide-react';
+import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { DONUT_COLORS } from './DashboardDonut';
 import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -181,6 +183,27 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const total = scopedList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalDonation = scopedList.filter(item => item.category === 'donation').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalAds = scopedList.filter(item => item.category === 'ads').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
+
+  // Sponsorship-only: amount collected per Sponsorship Category (In Kind
+  // field holds the ADS_CATEGORIES value for ads entries) — feeds the
+  // category-breakdown donut widget on the Sponsorship page.
+  const adsCategoryTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    donationAdsList
+      .filter(item => item.category === 'ads')
+      .forEach(item => {
+        const key = item.inKind || '';
+        if (!key) return;
+        totals.set(key, (totals.get(key) || 0) + getDonationAdCreditAmount(item));
+      });
+    return [...totals.entries()]
+      .map(([value, value_]) => {
+        const found = ADS_CATEGORIES.find(c => c.value === value);
+        return { name: found ? t(found.labelKey) : value, value: value_ };
+      })
+      .sort((a, b) => b.value - a.value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [donationAdsList, t]);
 
   const statusLabel = (status: string) => {
     const found = PAYMENT_STATUSES.find(s => s.value === status);
@@ -810,7 +833,40 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       </FormModal>
 
       {/* Widgets — Treasury-style summary cards */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${fixedCategory ? '' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${fixedCategory !== 'donation' ? 'lg:grid-cols-3' : ''} gap-4 sm:gap-6`}>
+        {fixedCategory === 'ads' && adsCategoryTotals.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-indigo-500 dark:border-indigo-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.byCategory')}</h3>
+            <PieChart className="text-indigo-500" size={24} />
+          </div>
+          <div className="flex items-center gap-3 h-14">
+            <div className="w-14 h-14 shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie data={adsCategoryTotals} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="100%" paddingAngle={2}>
+                    {adsCategoryTotals.map((_, i) => (
+                      <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="min-w-0 flex-1 overflow-y-auto max-h-14 space-y-0.5">
+              {adsCategoryTotals.map((c, i) => (
+                <div key={c.name} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                    <span className="text-gray-600 dark:text-gray-400 truncate">{c.name}</span>
+                  </span>
+                  <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0">₹{c.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        )}
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-purple-500 dark:border-purple-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.total')}</h3>

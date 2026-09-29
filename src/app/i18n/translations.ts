@@ -279,6 +279,7 @@ export const translations = {
     // Donation/Ads Collection
     'donationAds.pageTitle': 'Donation/Sponsorship Collection',
     'donationAds.widget.total': 'Total Collection',
+    'donationAds.widget.byCategory': 'By Category',
     'donationAds.widget.totalDonors': 'Total Donors',
     'donationAds.widget.totalAdvertisers': 'Total Advertisers',
     'donationAds.widget.donation': 'Donation Collection',
@@ -353,6 +354,11 @@ export const translations = {
     // Expenses
     'expenses.pageTitle': 'Expenses',
     'expenses.widget.total': 'Total Expenses',
+    'expenses.widget.grandTotal': 'Grand Total (Billed)',
+    'expenses.widget.paidSoFar': 'Paid So Far',
+    'expenses.widget.pending': 'Pending',
+    'expenses.widget.byCategory': 'By Category',
+    'expenses.widget.noData': 'No expense data yet.',
     'expenses.searchPlaceholder': 'Search title, remarks, voucher number, vendor…',
     'expenses.addNew': 'Add New Expense',
     'expenses.editExpense': 'Edit Expense',
@@ -1272,6 +1278,7 @@ export const translations = {
     // Donation/Ads Collection
     'donationAds.pageTitle': 'দান/স্পনসরশিপ সংগ্রহ',
     'donationAds.widget.total': 'মোট সংগ্রহ',
+    'donationAds.widget.byCategory': 'বিভাগ অনুসারে',
     'donationAds.widget.totalDonors': 'মোট দাতা',
     'donationAds.widget.totalAdvertisers': 'মোট স্পনসর',
     'donationAds.widget.donation': 'দান সংগ্রহ',
@@ -1345,6 +1352,11 @@ export const translations = {
 
     'expenses.pageTitle': 'খরচ',
     'expenses.widget.total': 'মোট খরচ',
+    'expenses.widget.grandTotal': 'সর্বমোট (বিল করা)',
+    'expenses.widget.paidSoFar': 'এ পর্যন্ত প্রদত্ত',
+    'expenses.widget.pending': 'বাকি',
+    'expenses.widget.byCategory': 'বিভাগ অনুসারে',
+    'expenses.widget.noData': 'এখনও কোনো খরচের তথ্য নেই।',
     'expenses.searchPlaceholder': 'শিরোনাম, মন্তব্য, ভাউচার নম্বর, বিক্রেতা খুঁজুন…',
     'expenses.addNew': 'নতুন খরচ যোগ করুন',
     'expenses.editExpense': 'খরচ সম্পাদনা করুন',
@@ -2260,6 +2272,7 @@ export const translations = {
     // Donation/Ads Collection
     'donationAds.pageTitle': 'दान/प्रायोजन संग्रह',
     'donationAds.widget.total': 'कुल संग्रह',
+    'donationAds.widget.byCategory': 'श्रेणी अनुसार',
     'donationAds.widget.totalDonors': 'कुल दानकर्ता',
     'donationAds.widget.totalAdvertisers': 'कुल प्रायोजक',
     'donationAds.widget.donation': 'दान संग्रह',
@@ -2333,6 +2346,11 @@ export const translations = {
 
     'expenses.pageTitle': 'खर्च',
     'expenses.widget.total': 'कुल खर्च',
+    'expenses.widget.grandTotal': 'सर्वकुल (बिल की गई)',
+    'expenses.widget.paidSoFar': 'अब तक भुगतान',
+    'expenses.widget.pending': 'लंबित',
+    'expenses.widget.byCategory': 'श्रेणी अनुसार',
+    'expenses.widget.noData': 'अभी तक कोई खर्च डेटा नहीं है।',
     'expenses.searchPlaceholder': 'शीर्षक, टिप्पणी, वाउचर नंबर, विक्रेता खोजें…',
     'expenses.addNew': 'नया खर्च जोड़ें',
     'expenses.editExpense': 'खर्च संपादित करें',
