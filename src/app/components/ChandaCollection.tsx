@@ -1,5 +1,5 @@
-import { useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee } from 'lucide-react';
+import { useRef, useState, useMemo, useEffect } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload, HandCoins, Sparkles, Flame, IndianRupee, CheckSquare, Square } from 'lucide-react';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -97,6 +97,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [deleteTarget, setDeleteTarget] = useState<Chanda | null>(null);
   const [viewTarget, setViewTarget] = useState<Chanda | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Chanda, 'id'>; saveAndAddNew: boolean } | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
 
@@ -283,43 +285,56 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setEditingId(null);
   };
 
-  const handleExport = () => {
+  const chandaCsvHeader = () => [
+    t('chanda.csv.donorName'),
+    t('chanda.csv.amount'),
+    t('chanda.csv.amount1'),
+    t('chanda.csv.amount2'),
+    t('common.paidMethod'),
+    t('chanda.csv.status'),
+    t('chanda.csv.partialAmount'),
+    t('chanda.csv.date'),
+    t('chanda.csv.billNumber'),
+    t('chanda.csv.phone'),
+    t('chanda.csv.phone2'),
+    t('chanda.csv.remarks'),
+  ];
+
+  const chandaToCsvRow = (c: Chanda) => [
+    c.donorName,
+    c.amount,
+    c.amount1 ?? '',
+    c.amount2 ?? '',
+    paidMethodLabel(c.paidMethod || 'notSelected'),
+    statusLabel(c.paymentStatus || 'paid'),
+    c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
+    c.date,
+    c.billNumber || '',
+    c.phone,
+    c.phone2 || '',
+    c.remarks,
+  ];
+
+  const downloadChandaCsv = (rows: Chanda[], filenameSuffix: string) => {
     const csvContent = [
-      [
-        t('chanda.csv.donorName'),
-        t('chanda.csv.amount'),
-        t('chanda.csv.amount1'),
-        t('chanda.csv.amount2'),
-        t('common.paidMethod'),
-        t('chanda.csv.status'),
-        t('chanda.csv.partialAmount'),
-        t('chanda.csv.date'),
-        t('chanda.csv.billNumber'),
-        t('chanda.csv.phone'),
-        t('chanda.csv.phone2'),
-        t('chanda.csv.remarks'),
-      ].map(csvField).join(','),
-      ...chandaList.map(c => [
-        c.donorName,
-        c.amount,
-        c.amount1 ?? '',
-        c.amount2 ?? '',
-        paidMethodLabel(c.paidMethod || 'notSelected'),
-        statusLabel(c.paymentStatus || 'paid'),
-        c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
-        c.date,
-        c.billNumber || '',
-        c.phone,
-        c.phone2 || '',
-        c.remarks,
-      ].map(csvField).join(','))
+      chandaCsvHeader().map(csvField).join(','),
+      ...rows.map(c => chandaToCsvRow(c).map(csvField).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `chanda-collection-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `chanda-collection-${filenameSuffix}-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  };
+
+  const handleExport = () => {
+    downloadChandaCsv(chandaList, 'all');
+  };
+
+  const handleExportSelected = () => {
+    const selected = chandaList.filter(c => selectedIds.has(c.id));
+    downloadChandaCsv(selected, 'selected');
   };
 
   const handleImportClick = () => {
@@ -432,6 +447,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const sortedChanda = useMemo(() => tableCols.sortItems(filteredChanda), [tableCols, filteredChanda]);
   const pagination = usePagination(sortedChanda);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [pagination.page, selectMode]);
 
   return (
     <div className="space-y-6">
@@ -750,21 +769,70 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           sortDirection={tableCols.sortState.direction}
           onResetSort={tableCols.resetSort}
           columnDropdown={
-            <ColumnVisibilityDropdown
-              columns={tableCols.columns}
-              isColumnVisible={tableCols.isColumnVisible}
-              toggleColumn={tableCols.toggleColumn}
-              showAllColumns={tableCols.showAllColumns}
-              resetColumns={tableCols.resetColumns}
-              hasCustomVisibility={tableCols.hasCustomVisibility}
-              hiddenCount={tableCols.hiddenCount}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectMode(m => !m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                  selectMode
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+                <span>{t('table.select')}</span>
+              </button>
+              {selectMode && selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportSelected}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-all shadow-sm"
+                >
+                  <Download size={15} className="shrink-0" />
+                  <span>{t('table.exportSelected')} ({selectedIds.size})</span>
+                </button>
+              )}
+              <ColumnVisibilityDropdown
+                columns={tableCols.columns}
+                isColumnVisible={tableCols.isColumnVisible}
+                toggleColumn={tableCols.toggleColumn}
+                showAllColumns={tableCols.showAllColumns}
+                resetColumns={tableCols.resetColumns}
+                hasCustomVisibility={tableCols.hasCustomVisibility}
+                hiddenCount={tableCols.hiddenCount}
+              />
+            </div>
           }
         />
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {selectMode && (
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={pagination.pageItems.length > 0 && pagination.pageItems.every(c => selectedIds.has(c.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someChecked = pagination.pageItems.some(c => selectedIds.has(c.id));
+                          const allChecked = pagination.pageItems.length > 0 && pagination.pageItems.every(c => selectedIds.has(c.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          pagination.pageItems.forEach(c => next.add(c.id));
+                        } else {
+                          pagination.pageItems.forEach(c => next.delete(c.id));
+                        }
+                        setSelectedIds(next);
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
+                )}
                 {tableCols.isColumnVisible('donorName') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -805,6 +873,21 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 const status = chanda.paymentStatus || 'paid';
                 return (
                   <tr key={chanda.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    {selectMode && (
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(chanda.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(chanda.id);
+                            else next.delete(chanda.id);
+                            setSelectedIds(next);
+                          }}
+                          className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                        />
+                      </td>
+                    )}
                     {tableCols.isColumnVisible('donorName') && (
                       <td className="px-6 py-4 text-sm font-medium">
                         <button
@@ -901,7 +984,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td
-                    colSpan={['donorName', 'category'].filter(id => tableCols.isColumnVisible(id)).length || 1}
+                    colSpan={['donorName', 'category'].filter(id => tableCols.isColumnVisible(id)).length + (selectMode ? 1 : 0) || 1}
                     className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
                   >
                     {t('common.total')}
