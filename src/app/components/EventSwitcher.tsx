@@ -228,6 +228,16 @@ function EventForm({
   const [emoji, setEmoji] = useState<string | null>(existing?.emoji ?? null);
   const [openingCash, setOpeningCash] = useState(existing ? String(existing.openingCash) : '0');
   const [openingBank, setOpeningBank] = useState(existing ? String(existing.openingBank) : '0');
+
+  // Year and the opening Cash/Bank balance are locked once an event
+  // already exists — editing them after transactions may have already
+  // accrued is sensitive (a wrong change risks money recorded against the
+  // wrong year/balance), so both require a strong confirm-code unlock,
+  // same as switching the active event. Brand-new events (still being
+  // created) are never locked — nothing to protect yet.
+  const [yearLocked, setYearLocked] = useState(!!existing);
+  const [cashBankLocked, setCashBankLocked] = useState(!!existing);
+  const [unlockTarget, setUnlockTarget] = useState<'year' | 'cashBank' | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
@@ -349,37 +359,79 @@ function EventForm({
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
+            {yearLocked && (
+              <button
+                type="button"
+                onClick={() => setUnlockTarget('year')}
+                className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
+                aria-label="Unlock year"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
+          </div>
           <select
             value={year}
+            disabled={yearLocked}
             onChange={e => setYear(Number(e.target.value))}
-            className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
+            className={`w-full mt-1 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
+              yearLocked
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
+            }`}
           >
             {YEAR_OPTIONS.map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Cash in Hand (₹)</label>
-            <input
-              type="number"
-              min="0"
-              value={openingCash}
-              onChange={e => setOpeningCash(e.target.value)}
-              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
-            />
+        <div>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Opening Balance</label>
+            {cashBankLocked && (
+              <button
+                type="button"
+                onClick={() => setUnlockTarget('cashBank')}
+                className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
+                aria-label="Unlock opening balance"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
           </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Money in Bank (₹)</label>
-            <input
-              type="number"
-              min="0"
-              value={openingBank}
-              onChange={e => setOpeningBank(e.target.value)}
-              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
-            />
+          <div className="grid grid-cols-2 gap-2.5 mt-1">
+            <div>
+              <label className="text-[11px] text-gray-400 dark:text-gray-500">Cash in Hand (₹)</label>
+              <input
+                type="number"
+                min="0"
+                disabled={cashBankLocked}
+                value={openingCash}
+                onChange={e => setOpeningCash(e.target.value)}
+                className={`w-full mt-0.5 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
+                  cashBankLocked
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
+                }`}
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-gray-400 dark:text-gray-500">Money in Bank (₹)</label>
+              <input
+                type="number"
+                min="0"
+                disabled={cashBankLocked}
+                value={openingBank}
+                onChange={e => setOpeningBank(e.target.value)}
+                className={`w-full mt-0.5 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
+                  cashBankLocked
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
+                }`}
+              />
+            </div>
           </div>
         </div>
         <div className="relative" ref={moreRef}>
@@ -474,6 +526,25 @@ function EventForm({
           Cancel
         </button>
       </div>
+
+      <SuperAdminConfirmModal
+        open={unlockTarget !== null}
+        title={unlockTarget === 'year' ? 'Change the Year?' : 'Change the Opening Balance?'}
+        message={
+          unlockTarget === 'year'
+            ? 'This event\'s year is locked after creation to avoid an accidental mistake. Confirm to unlock it for editing.'
+            : 'The opening Cash in Hand / Money in Bank is locked after being set, since transactions may already be recorded against it. Confirm to unlock both fields for editing.'
+        }
+        confirmLabel="Unlock"
+        danger={false}
+        codeLength={12}
+        onCancel={() => setUnlockTarget(null)}
+        onConfirm={() => {
+          if (unlockTarget === 'year') setYearLocked(false);
+          if (unlockTarget === 'cashBank') setCashBankLocked(false);
+          setUnlockTarget(null);
+        }}
+      />
     </div>
   );
 }
