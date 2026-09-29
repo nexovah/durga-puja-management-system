@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon, Landmark, HandCoins } from 'lucide-react';
 import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -90,6 +90,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   };
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
+  const outstandingCount = loansList.filter(loan => getLoanNetAmount(loan) > 0).length;
 
   const paidMethodLabel = (method: PaidMethod) => {
     const found = PAID_METHODS.find(m => m.value === method);
@@ -353,10 +354,26 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
             )}
           </div>
         }
-        total={`${t('common.total')}: ₹${totalLoans.toLocaleString()}`}
       >
         {t('loans.pageTitle')}
       </PageHeading>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.loansOutstanding')}</h3>
+            <Landmark className="text-orange-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-orange-600">₹{totalLoans.toLocaleString()}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('loans.outstandingCount')}</h3>
+            <HandCoins className="text-amber-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-amber-600">{outstandingCount}</p>
+        </div>
+      </div>
 
       <CollapsibleSearchPanel open={showSearch}>
         <TableSearchBar
