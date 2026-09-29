@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Users, IndianRupee, TrendingDown, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, HourglassIcon } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
-import { EventInfo } from '../lib/db';
+import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -58,11 +58,16 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     return sum + pendingDueFor(m.membershipAmount, m.membershipPaymentStatus, m.membershipPartialAmount);
   }, 0);
 
+  const [adjustments, setAdjustments] = useState<CashBankAdjustment[]>([]);
+  useEffect(() => {
+    listCashBankAdjustmentsRequest().then(setAdjustments).catch(() => {});
+  }, [activeEvent]);
+
   const cashBank = useMemo(() => (
     activeEvent
-      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses })
+      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
       : null
-  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses]);
+  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments]);
 
   const categoryLabel = (value: string) => {
     const key = `expenses.category.${value}` as TranslationKey;

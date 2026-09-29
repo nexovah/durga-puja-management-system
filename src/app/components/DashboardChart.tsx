@@ -129,7 +129,6 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
   const { start, end } = useMemo(() => getRangeBounds(range), [range]);
   const totalIncome = sumInRange(incomeRecords, start, end);
   const totalExpense = sumInRange(expenseRecords, start, end);
-  const netBalance = totalIncome - totalExpense;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
@@ -142,9 +141,6 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs sm:text-sm">
             <span className="text-green-600 font-semibold">{t('dashboard.chart.income')}: ₹{totalIncome.toLocaleString()}</span>
             <span className="text-red-600 font-semibold">{t('dashboard.chart.expenses')}: ₹{totalExpense.toLocaleString()}</span>
-            <span className={`font-semibold ${netBalance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
-              {t('dashboard.chart.newBalance')}: ₹{netBalance.toLocaleString()}
-            </span>
           </div>
         </div>
 
