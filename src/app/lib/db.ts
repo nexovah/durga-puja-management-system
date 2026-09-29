@@ -310,6 +310,8 @@ function fromCommitteeRow(row: any): CommitteeInfo {
     address: row.address || '',
     phone: row.phone || '',
     year: row.year || '',
+    chandaAmount1Label: row.chanda_amount1_label || undefined,
+    chandaAmount2Label: row.chanda_amount2_label || undefined,
   };
 }
 function toCommitteeRow(c: CommitteeInfo) {
@@ -328,6 +330,8 @@ function toCommitteeRow(c: CommitteeInfo) {
     address: c.address,
     phone: c.phone,
     year: c.year,
+    chanda_amount1_label: c.chandaAmount1Label || null,
+    chanda_amount2_label: c.chandaAmount2Label || null,
   };
 }
 

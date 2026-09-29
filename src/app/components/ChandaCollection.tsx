@@ -1,7 +1,7 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, getChandaCreditAmount } from '../App';
+import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, getChandaCreditAmount } from '../App';
 import { DashboardDonut } from './DashboardDonut';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -28,6 +28,9 @@ interface ChandaCollectionProps {
   canDelete: boolean;
   canBulkImport: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'chanda', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
+  committeeInfo: CommitteeInfo;
+  onUpdateCommitteeInfo: (info: CommitteeInfo) => void;
+  isAdmin: boolean;
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -88,7 +91,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -103,6 +106,27 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [editingAmountLabel, setEditingAmountLabel] = useState<'amount1' | 'amount2' | null>(null);
+  const [amountLabelDraft, setAmountLabelDraft] = useState('');
+
+  // Admin-editable, tenant-wide (stored on committee_info) — falls back to
+  // the default translated label when the committee hasn't renamed it.
+  const amount1Label = committeeInfo.chandaAmount1Label?.trim() || t('chanda.widget.amount1');
+  const amount2Label = committeeInfo.chandaAmount2Label?.trim() || t('chanda.widget.amount2');
+
+  const openAmountLabelEditor = (which: 'amount1' | 'amount2') => {
+    setAmountLabelDraft(which === 'amount1' ? amount1Label : amount2Label);
+    setEditingAmountLabel(which);
+  };
+  const saveAmountLabel = () => {
+    if (!editingAmountLabel) return;
+    const value = amountLabelDraft.trim();
+    onUpdateCommitteeInfo({
+      ...committeeInfo,
+      [editingAmountLabel === 'amount1' ? 'chandaAmount1Label' : 'chandaAmount2Label']: value || undefined,
+    });
+    setEditingAmountLabel(null);
+  };
 
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
 
@@ -320,8 +344,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const chandaCsvHeader = () => [
     t('chanda.csv.donorName'),
     t('chanda.csv.amount'),
-    t('chanda.csv.amount1'),
-    t('chanda.csv.amount2'),
+    amount1Label,
+    amount2Label,
     t('common.paidMethod'),
     t('chanda.csv.status'),
     t('chanda.csv.partialAmount'),
@@ -655,7 +679,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amount1Label')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{amount1Label}</label>
                 <input
                   type="number"
                   min="0"
@@ -667,7 +691,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amount2Label')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{amount2Label}</label>
                 <input
                   type="number"
                   min="0"
@@ -796,7 +820,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         />
         <div className="flex flex-col gap-4 sm:gap-6">
           <AmountMiniDonutCard
-            title={t('chanda.widget.amount1')}
+            title={amount1Label}
             icon={Sparkles}
             iconAccent="text-orange-500"
             total={totalAmount1}
@@ -805,9 +829,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             remainingLabel={t('chanda.widget.remaining')}
             valueColor="text-orange-600"
             color="#f97316"
+            onEditTitle={isAdmin ? () => openAmountLabelEditor('amount1') : undefined}
           />
           <AmountMiniDonutCard
-            title={t('chanda.widget.amount2')}
+            title={amount2Label}
             icon={Flame}
             iconAccent="text-red-500"
             total={totalAmount2}
@@ -816,6 +841,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             remainingLabel={t('chanda.widget.remaining')}
             valueColor="text-red-600"
             color="#ef4444"
+            onEditTitle={isAdmin ? () => openAmountLabelEditor('amount2') : undefined}
           />
         </div>
       </div>
@@ -1143,6 +1169,33 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onCancel={() => setPendingSave(null)}
         onConfirm={confirmStatusChange}
       />
+
+      <FormModal
+        open={!!editingAmountLabel}
+        title={t('chanda.editAmountLabel')}
+        onClose={() => setEditingAmountLabel(null)}
+        footer={
+          <>
+            <FormModalCancelButton onClick={() => setEditingAmountLabel(null)} label={t('common.cancel')} />
+            <button
+              type="button"
+              onClick={saveAmountLabel}
+              className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+            >
+              {t('common.save')}
+            </button>
+          </>
+        }
+      >
+        <input
+          type="text"
+          autoFocus
+          value={amountLabelDraft}
+          onChange={(e) => setAmountLabelDraft(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+          placeholder={editingAmountLabel === 'amount1' ? t('chanda.widget.amount1') : t('chanda.widget.amount2')}
+        />
+      </FormModal>
     </div>
   );
 }
@@ -1151,9 +1204,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 // Collection donut's height) with a small paid-vs-remaining donut on the
 // right of the value, one per sub-amount.
 function AmountMiniDonutCard({
-  title, icon: Icon, iconAccent, total, paid, paidLabel, remainingLabel, valueColor, color,
+  title, icon: Icon, iconAccent, total, paid, paidLabel, remainingLabel, valueColor, color, onEditTitle,
 }: {
-  title: string; icon: typeof Sparkles; iconAccent: string; total: number; paid: number; paidLabel: string; remainingLabel: string; valueColor: string; color: string;
+  title: string; icon: typeof Sparkles; iconAccent: string; total: number; paid: number; paidLabel: string; remainingLabel: string; valueColor: string; color: string; onEditTitle?: () => void;
 }) {
   const remaining = Math.max(0, total - paid);
   const data = [
@@ -1166,6 +1219,16 @@ function AmountMiniDonutCard({
       <div className="flex items-center gap-2 mb-2">
         <Icon className={iconAccent} size={18} />
         <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-200">{title}</h3>
+        {onEditTitle && (
+          <button
+            type="button"
+            onClick={onEditTitle}
+            className="text-gray-400 hover:text-orange-600 dark:text-gray-500 dark:hover:text-orange-400 transition-colors"
+            title="Rename"
+          >
+            <Pencil size={13} />
+          </button>
+        )}
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">

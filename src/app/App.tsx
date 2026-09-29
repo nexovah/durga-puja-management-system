@@ -113,6 +113,8 @@ export interface CommitteeInfo {
   address: string; // Full address (kept for backward compatibility)
   phone: string; // Phone (kept for backward compatibility)
   year: string; // Year (kept for backward compatibility)
+  chandaAmount1Label?: string; // Custom name for Chanda's Amount 1 field, admin-editable, tenant-wide
+  chandaAmount2Label?: string; // Custom name for Chanda's Amount 2 field, admin-editable, tenant-wide
 }
 
 export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
@@ -1193,6 +1195,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={currentUser?.canDelete !== false}
             canBulkImport={currentUser?.canBulkImport !== false}
             onLog={handleLog}
+            committeeInfo={committeeInfo}
+            onUpdateCommitteeInfo={setCommitteeInfo}
+            isAdmin={currentUser?.isAdmin === true}
           />
         )}
         {currentPage === 'donation' && (
@@ -1271,6 +1276,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             members={members}
             loansList={loansList}
             estimationsList={estimationsList}
+            committeeInfo={committeeInfo}
             committeeAssociation={committeeInfo.association || committeeInfo.name}
             committeeLogo={committeeInfo.logo}
             activeEventLabel={(() => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale } from 'lucide-react';
 import {
-  Chanda, DonationAd, Expense, Member, Loan, Estimation,
+  Chanda, DonationAd, Expense, Member, Loan, Estimation, CommitteeInfo,
   getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
 } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -19,6 +19,7 @@ interface ReportProps {
   members: Member[];
   loansList: Loan[];
   estimationsList: Estimation[];
+  committeeInfo: CommitteeInfo;
   committeeAssociation: string;
   committeeLogo: string;
   activeEventLabel: string;
@@ -48,7 +49,7 @@ interface VendorRow {
   voucherNumbers: string;
 }
 
-export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo, activeEventLabel, activeEvent, onRefreshData }: ReportProps) {
+export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeInfo, committeeAssociation, committeeLogo, activeEventLabel, activeEvent, onRefreshData }: ReportProps) {
   const { t, locale } = useLanguage();
   const [activeModule, setActiveModuleState] = useState<ModuleKey>(() => getModuleFromPath());
 
@@ -241,8 +242,8 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       searchOf: (r: Chanda) => `${r.donorName} ${r.phone} ${r.billNumber || ''}`,
       columns: [
         { key: 'donor', label: t('report.col.donor'), render: (r: Chanda) => r.donorName },
-        { key: 'amount1', label: t('report.col.amount1'), align: 'right', render: (r: Chanda) => (r.amount1 !== undefined ? fmtAmount(r.amount1) : '') },
-        { key: 'amount2', label: t('report.col.amount2'), align: 'right', render: (r: Chanda) => (r.amount2 !== undefined ? fmtAmount(r.amount2) : '') },
+        { key: 'amount1', label: committeeInfo.chandaAmount1Label?.trim() || t('report.col.amount1'), align: 'right', render: (r: Chanda) => (r.amount1 !== undefined ? fmtAmount(r.amount1) : '') },
+        { key: 'amount2', label: committeeInfo.chandaAmount2Label?.trim() || t('report.col.amount2'), align: 'right', render: (r: Chanda) => (r.amount2 !== undefined ? fmtAmount(r.amount2) : '') },
         { key: 'amount', label: t('report.col.amount'), align: 'right', render: (r: Chanda) => fmtAmount(getChandaCreditAmount(r)) },
         { key: 'pending', label: t('report.col.pending'), align: 'right', render: (r: Chanda) => fmtAmount(pendingOf(r)) },
         { key: 'status', label: t('report.col.status'), render: (r: Chanda) => chandaStatusLabel(r.paymentStatus) },
