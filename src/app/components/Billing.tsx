@@ -169,7 +169,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
           <div>
             <p className="font-semibold">
               {expiresAt
-                ? t('billing.expiredOn', { date: expiresAt.toLocaleDateString(locale) })
+                ? t('billing.expiredOn').replace('{date}', expiresAt.toLocaleDateString(locale))
                 : t('billing.expired')}
             </p>
             <p className="text-sm text-red-100 mt-0.5">
@@ -205,9 +205,10 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       <button
                         key={p.id}
                         onClick={() => setSelectedPlanId(p.id)}
+                        disabled={p.id === activePlanId}
                         className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition ${
                           p.id === activePlanId
-                            ? 'bg-green-600 text-white'
+                            ? 'bg-green-600 text-white cursor-not-allowed opacity-90'
                             : p.id === expiredPlanId
                             ? 'bg-red-600 text-white'
                             : selectedPlanId === p.id
@@ -266,10 +267,14 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                     </ul>
                     <button
                       onClick={handlePay}
-                      disabled={paying}
-                      className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
+                      disabled={paying || plan.id === activePlanId}
+                      className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition"
                     >
-                      {paying ? t('billing.processing') : t('billing.pay', { amount: formatAmount(plan.amountPaise, plan.currency) })}
+                      {paying
+                        ? t('billing.processing')
+                        : plan.id === activePlanId
+                        ? t('billing.currentPlan')
+                        : t('billing.pay').replace('{amount}', formatAmount(plan.amountPaise, plan.currency))}
                     </button>
                   </>
                 )}
@@ -277,35 +282,37 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
             )}
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-1.5">
-              <Receipt className="w-4 h-4" /> {t('billing.history.title')}
-            </h4>
+          <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                <Receipt className="w-4 h-4" /> {t('billing.history.title')}
+              </h4>
+            </div>
             {history.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('billing.history.empty')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 px-6 py-6">{t('billing.history.empty')}</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-gray-500 dark:text-gray-400">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.plan')}</th>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.amount')}</th>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.status')}</th>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.activated')}</th>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.expires')}</th>
-                      <th className="text-left font-medium pb-2">{t('billing.history.col.source')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.plan')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.amount')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.status')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.activated')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.expires')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.source')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {history.map(item => {
                       const activated = new Date(item.date);
                       const expires = new Date(activated);
                       expires.setMonth(expires.getMonth() + item.durationMonths);
                       return (
-                        <tr key={item.id}>
-                          <td className="py-2 capitalize text-gray-700 dark:text-gray-300">{translatePeriod(item.period)}</td>
-                          <td className="py-2 font-medium">{formatAmount(item.amountPaise, item.currency)}</td>
-                          <td className="py-2">
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <td className="px-6 py-4 text-sm capitalize text-gray-700 dark:text-gray-300">{translatePeriod(item.period)}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{formatAmount(item.amountPaise, item.currency)}</td>
+                          <td className="px-6 py-4 text-sm">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               item.status === 'paid'
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -316,9 +323,9 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                               {translateStatus(item.status)}
                             </span>
                           </td>
-                          <td className="py-2 text-gray-500 dark:text-gray-400">{activated.toLocaleDateString(locale)}</td>
-                          <td className="py-2 text-gray-500 dark:text-gray-400">{expires.toLocaleDateString(locale)}</td>
-                          <td className="py-2 text-gray-500 dark:text-gray-400">
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{activated.toLocaleDateString(locale)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expires.toLocaleDateString(locale)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                             {translateSource(item.source)}
                           </td>
                         </tr>
