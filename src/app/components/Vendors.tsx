@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Download, Eye, Pencil, Plus, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Download, Eye, Pencil, Plus, X, MoreVertical } from 'lucide-react';
 import { Expense, getExpenseCreditAmount } from '../App';
 import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest } from '../lib/db';
 import { EXPENSE_CATEGORIES } from './Expenses';
@@ -93,9 +93,19 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   const [directory, setDirectory] = useState<Vendor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGroup, setEditingGroup] = useState<VendorGroup | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     listVendorsRequest().then(setDirectory).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const categoryLabel = (value: string) => {
@@ -232,13 +242,24 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
         action={
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
-            <button
-              onClick={handleExport}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold"
-            >
-              <Download size={20} />
-              {t('common.export')}
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); handleExport(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Download size={16} /> {t('common.export')}
+                  </button>
+                </div>
+              )}
+            </div>
             {canEdit && (
               <button
                 onClick={openCreateVendor}

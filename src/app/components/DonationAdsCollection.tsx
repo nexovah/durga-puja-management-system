@@ -1,5 +1,5 @@
-import { useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users } from 'lucide-react';
+import { useRef, useState, useMemo, useEffect } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical } from 'lucide-react';
 import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -130,6 +130,16 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
   const [deleteTarget, setDeleteTarget] = useState<DonationAd | null>(null);
   const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<DonationAd, 'id'>; saveAndAddNew: boolean } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
 
@@ -464,30 +474,40 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && canBulkImport && (
-              <>
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleImportFile}
-                  className="hidden"
-                />
-                <button
-                  onClick={handleImportClick}
-                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-                >
-                  <Upload size={20} />
-                  {t('common.import')}
-                </button>
-              </>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleImportFile}
+                className="hidden"
+              />
             )}
-            <button
-              onClick={handleExport}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-            >
-              <Download size={20} />
-              {t('common.export')}
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  {canEdit && canBulkImport && (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleImportClick(); }}
+                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Upload size={16} /> {t('common.import')}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setMenuOpen(false); handleExport(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Download size={16} /> {t('common.export')}
+                  </button>
+                </div>
+              )}
+            </div>
             {canEdit && (
               <button
                 onClick={() => setShowForm(true)}
