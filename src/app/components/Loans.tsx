@@ -603,7 +603,11 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                     </td>
                   )}
                   {tableCols.isColumnVisible('amountReceived') && (
-                    <td className="px-6 py-4 text-sm text-green-600 font-bold">₹{loan.amountReceived.toLocaleString()}</td>
+                    <td className={`px-6 py-4 text-sm font-bold ${
+                      getLoanNetAmount(loan) <= 0 ? 'text-amber-500 line-through' : 'text-green-600'
+                    }`}>
+                      ₹{loan.amountReceived.toLocaleString()}
+                    </td>
                   )}
                   {tableCols.isColumnVisible('amountPaid') && (
                     <td className="px-6 py-4 text-sm text-red-600 font-bold">₹{(loan.amountPaid || 0).toLocaleString()}</td>
