@@ -74,7 +74,7 @@ export function ChandaListScreen({ navigation }: any) {
               avatarBg={colorSet.bg}
               avatarColor={colorSet.text}
               title={item.donorName}
-              subtitle={formatDate(item.date)}
+              subtitle={item.numPersons !== undefined ? `${formatDate(item.date)} · ${item.numPersons} persons` : formatDate(item.date)}
               amount={formatAmount(getChandaCreditAmount(item))}
               badgeLabel={PAYMENT_STATUS_LABEL[item.paymentStatus]}
               badgeBg={colorSet.bg}

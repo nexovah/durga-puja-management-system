@@ -12,6 +12,7 @@ export interface Loan {
   paymentMethod: PaidMethod;
   date: string;
   returnDate?: string;
+  returnMethod?: PaidMethod;
   remarks: string;
 }
 
@@ -27,6 +28,7 @@ function fromLoanRow(row: any): Loan {
     paymentMethod: row.payment_method,
     date: row.date,
     returnDate: row.return_date || '',
+    returnMethod: row.return_method || undefined,
     remarks: row.remarks || '',
   };
 }
@@ -40,6 +42,7 @@ function toLoanRow(l: Partial<Loan>) {
     payment_status: 'paid',
     date: l.date,
     return_date: l.returnDate || null,
+    return_method: l.returnMethod || null,
     remarks: l.remarks || '',
   };
 }

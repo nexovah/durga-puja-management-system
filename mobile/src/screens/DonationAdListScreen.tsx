@@ -9,7 +9,7 @@ import { SummaryWidgets } from '../components/SummaryWidgets';
 import { SearchBar } from '../components/SearchBar';
 import { ListRow } from '../components/ListRow';
 import { Fab } from '../components/Fab';
-import { formatAmount, formatDate } from '../lib/labels';
+import { formatAmount, formatDate, PAYMENT_STATUS_LABEL, STATUS_COLORS } from '../lib/labels';
 
 export function DonationAdListScreen({ route, navigation }: any) {
   const category: DonationAdCategory = route.params?.category || 'donation';
@@ -56,18 +56,24 @@ export function DonationAdListScreen({ route, navigation }: any) {
         data={filtered}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingTop: 6, paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <ListRow
-            initial={(item.donorName || item.companyName || '?').charAt(0).toUpperCase()}
-            avatarBg={isAds ? colors.indigoBg : colors.greenBg}
-            avatarColor={isAds ? colors.indigoText : colors.greenText}
-            title={item.donorName || item.companyName || 'Unnamed'}
-            subtitle={formatDate(item.date)}
-            amount={formatAmount(item.amount)}
-            amountColor={isAds ? colors.indigo : colors.green}
-            onPress={() => navigation.navigate('DonationAdForm', { category, mode: 'edit', id: item.id })}
-          />
-        )}
+        renderItem={({ item }) => {
+          const colorSet = STATUS_COLORS[item.paymentStatus || 'pending'];
+          return (
+            <ListRow
+              initial={(item.donorName || item.companyName || '?').charAt(0).toUpperCase()}
+              avatarBg={isAds ? colors.indigoBg : colors.greenBg}
+              avatarColor={isAds ? colors.indigoText : colors.greenText}
+              title={item.donorName || item.companyName || 'Unnamed'}
+              subtitle={formatDate(item.date)}
+              amount={formatAmount(item.amount)}
+              amountColor={isAds ? colors.indigo : colors.green}
+              badgeLabel={PAYMENT_STATUS_LABEL[item.paymentStatus || 'pending']}
+              badgeBg={colorSet.bg}
+              badgeColor={colorSet.text}
+              onPress={() => navigation.navigate('DonationAdForm', { category, mode: 'edit', id: item.id })}
+            />
+          );
+        }}
       />
       <Fab onPress={() => navigation.navigate('DonationAdForm', { category, mode: 'add' })} />
     </View>

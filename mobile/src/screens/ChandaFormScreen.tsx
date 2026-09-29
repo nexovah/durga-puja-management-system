@@ -31,13 +31,13 @@ const CATEGORY_OPTIONS: { value: ChandaCategory; label: string }[] = [
 ];
 
 const emptyForm = {
-  donorName: '', category: '' as ChandaCategory | '', amount: '', amount1: '', amount2: '', billNumber: '', phone: '', phone2: '',
+  donorName: '', category: '' as ChandaCategory | '', numPersons: '', amount: '', amount1: '', amount2: '', billNumber: '', phone: '', phone2: '',
   paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus,
   partialAmount: '', date: todayISO(), remarks: '',
 };
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
-  donorName: "Donor's Name", category: 'Category', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  donorName: "Donor's Name", category: 'Category', numPersons: 'No. of Persons', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
   billNumber: 'Bill Number', phone: 'Phone Number', phone2: 'Phone Number 01',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', remarks: 'Remarks',
@@ -67,6 +67,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
         setForm({
           donorName: existing.donorName,
           category: existing.category || '',
+          numPersons: existing.numPersons !== undefined ? String(existing.numPersons) : '',
           amount: String(existing.amount),
           amount1: existing.amount1 !== undefined ? String(existing.amount1) : '',
           amount2: existing.amount2 !== undefined ? String(existing.amount2) : '',
@@ -114,6 +115,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
     const payload: Omit<Chanda, 'id'> = {
       donorName: form.donorName.trim(),
       category: form.category || undefined,
+      numPersons: form.numPersons.trim() !== '' ? parseInt(form.numPersons, 10) : undefined,
       amount: parseFloat(form.amount) || 0,
       amount1: form.amount1.trim() !== '' ? parseFloat(form.amount1) : undefined,
       amount2: form.amount2.trim() !== '' ? parseFloat(form.amount2) : undefined,
@@ -165,7 +167,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <ArrowLeft size={20} color={colors.inkSoft} strokeWidth={2.2} />
         </TouchableOpacity>
-        <Text style={styles.title}>{isEdit ? 'Edit Chanda' : 'Add Chanda'}</Text>
+        <Text style={styles.title}>{isEdit ? 'Edit Collection' : 'Add Collection'}</Text>
         {isEdit && (
           <View style={[styles.badge, { backgroundColor: STATUS_COLORS[form.paymentStatus].bg }]}>
             <Text style={[styles.badgeText, { color: STATUS_COLORS[form.paymentStatus].text }]}>{PAYMENT_STATUS_LABEL[form.paymentStatus]}</Text>
@@ -175,6 +177,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        <TextField label="No. of Persons" value={form.numPersons} onChangeText={v => setForm({ ...form, numPersons: v })} placeholder="Optional" keyboardType="numeric" />
         <ChipSelect label="Category" value={form.category} onChange={v => setForm({ ...form, category: v as ChandaCategory })} options={CATEGORY_OPTIONS} />
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
@@ -208,7 +211,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSaveButtonPress} disabled={saving} style={[styles.saveButton, saving && { opacity: 0.6 }]}>
-          {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update Chanda' : 'Save Chanda'}</Text>}
+          {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.saveText}>{isEdit ? 'Update Collection' : 'Save Collection'}</Text>}
         </TouchableOpacity>
       </View>
 

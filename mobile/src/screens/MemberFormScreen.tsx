@@ -42,14 +42,14 @@ const emptyForm = {
   name: '', phone: '', address: '', role: '', joinDate: todayISO(),
   membershipAmount: '', membershipPaidMethod: 'notSelected' as PaidMethod,
   membershipPaymentStatus: 'pending' as PaymentStatus, membershipPartialAmount: '',
-  membershipDate: todayISO(), membershipRemarks: '',
+  membershipDate: todayISO(), membershipBillNumber: '', membershipRemarks: '',
 };
 
 const MEMBER_FIELD_LABELS: Record<string, string> = {
   name: 'Name', phone: 'Phone Number', address: 'Address', role: 'Role / Designation',
   joinDate: 'Join Date', membershipAmount: 'Membership Amount', membershipPaidMethod: 'Paid Method',
   membershipPaymentStatus: 'Payment Status', membershipPartialAmount: 'Amount Paid So Far',
-  membershipDate: 'Membership Date', membershipRemarks: 'Remarks',
+  membershipDate: 'Membership Date', membershipBillNumber: 'Bill Number', membershipRemarks: 'Remarks',
 };
 
 export function MemberFormScreen({ route, navigation }: any) {
@@ -81,6 +81,7 @@ export function MemberFormScreen({ route, navigation }: any) {
           membershipPaymentStatus: existing.membershipPaymentStatus || 'pending',
           membershipPartialAmount: existing.membershipPartialAmount ? String(existing.membershipPartialAmount) : '',
           membershipDate: existing.membershipDate || todayISO(),
+          membershipBillNumber: existing.membershipBillNumber || '',
           membershipRemarks: existing.membershipRemarks || '',
         });
       }
@@ -113,6 +114,7 @@ export function MemberFormScreen({ route, navigation }: any) {
       membershipPaymentStatus: form.membershipAmount ? form.membershipPaymentStatus : undefined,
       membershipPartialAmount: form.membershipPaymentStatus === 'partial' ? (parseFloat(form.membershipPartialAmount) || 0) : undefined,
       membershipDate: form.membershipAmount ? form.membershipDate : undefined,
+      membershipBillNumber: form.membershipBillNumber.trim() || undefined,
       membershipRemarks: form.membershipRemarks.trim(),
     };
     setSaving(true);
@@ -165,6 +167,7 @@ export function MemberFormScreen({ route, navigation }: any) {
         {form.membershipPaymentStatus === 'partial' && (
           <TextField label="Amount Paid So Far (₹)" value={form.membershipPartialAmount} onChangeText={v => setForm({ ...form, membershipPartialAmount: v })} placeholder="0" keyboardType="numeric" />
         )}
+        <TextField label="Bill Number" value={form.membershipBillNumber} onChangeText={v => setForm({ ...form, membershipBillNumber: v })} placeholder="Optional" />
         <TextField label="Remarks" value={form.membershipRemarks} onChangeText={v => setForm({ ...form, membershipRemarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>

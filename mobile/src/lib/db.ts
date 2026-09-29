@@ -15,6 +15,7 @@ export interface Chanda {
   id: string;
   donorName: string;
   category?: ChandaCategory;
+  numPersons?: number;
   amount: number;
   amount1?: number;
   amount2?: number;
@@ -51,6 +52,7 @@ export interface DonationAd {
   companyName?: string;
   amount: number;
   paidMethod: PaidMethod;
+  paymentStatus: PaymentStatus;
   inKind: string;
   date: string;
   voucherNumber?: string;
@@ -116,6 +118,7 @@ function fromChandaRow(row: any): Chanda {
     id: row.id,
     donorName: row.donor_name,
     category: row.category || undefined,
+    numPersons: row.num_persons === null || row.num_persons === undefined ? undefined : Number(row.num_persons),
     amount: Number(row.amount) || 0,
     amount1: row.amount1 === null || row.amount1 === undefined ? undefined : Number(row.amount1),
     amount2: row.amount2 === null || row.amount2 === undefined ? undefined : Number(row.amount2),
@@ -133,6 +136,7 @@ function toChandaRow(c: Partial<Chanda>) {
   return {
     donor_name: c.donorName,
     category: c.category ?? null,
+    num_persons: c.numPersons ?? null,
     amount: c.amount,
     amount1: c.amount1 ?? null,
     amount2: c.amount2 ?? null,
@@ -189,6 +193,7 @@ function fromDonationAdRow(row: any): DonationAd {
     companyName: row.company_name || '',
     amount: Number(row.amount) || 0,
     paidMethod: row.paid_method,
+    paymentStatus: row.payment_status || 'pending',
     inKind: row.in_kind || '',
     date: row.date || '',
     voucherNumber: row.voucher_number || '',
@@ -204,6 +209,7 @@ function toDonationAdRow(d: Partial<DonationAd>) {
     company_name: d.companyName || null,
     amount: d.amount,
     paid_method: d.paidMethod,
+    payment_status: d.paymentStatus,
     in_kind: d.inKind || '',
     date: d.date || null,
     voucher_number: d.category === 'donation' ? (d.voucherNumber || null) : null,

@@ -22,13 +22,13 @@ const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
 
 const emptyForm = {
   donorName: '', amountReceived: '', amountPaid: '', phone: '',
-  paymentMethod: 'notSelected' as PaidMethod, date: todayISO(), returnDate: '', remarks: '',
+  paymentMethod: 'notSelected' as PaidMethod, date: todayISO(), returnDate: '', returnMethod: 'notSelected' as PaidMethod, remarks: '',
 };
 
 const LOAN_FIELD_LABELS: Record<string, string> = {
   donorName: "Lender's Name", amountReceived: 'Amount Received', amountPaid: 'Amount Repaid',
   phone: 'Phone Number', paymentMethod: 'Paid Method', date: 'Date', returnDate: 'Return Date',
-  remarks: 'Remarks',
+  returnMethod: 'Returned Method', remarks: 'Remarks',
 };
 
 export function LoanFormScreen({ route, navigation }: any) {
@@ -60,6 +60,7 @@ export function LoanFormScreen({ route, navigation }: any) {
           paymentMethod: existing.paymentMethod,
           date: existing.date,
           returnDate: existing.returnDate || '',
+          returnMethod: existing.returnMethod || 'notSelected',
           remarks: existing.remarks,
         });
       }
@@ -89,6 +90,7 @@ export function LoanFormScreen({ route, navigation }: any) {
       paymentMethod: form.paymentMethod,
       date: form.date,
       returnDate: form.returnDate.trim() || undefined,
+      returnMethod: form.returnDate.trim() ? form.returnMethod : undefined,
       remarks: form.remarks.trim(),
     };
     setSaving(true);
@@ -141,6 +143,7 @@ export function LoanFormScreen({ route, navigation }: any) {
         <ChipSelect label="Paid Method" value={form.paymentMethod} onChange={v => setForm({ ...form, paymentMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
         <DateField label="Date" required value={form.date} onChange={v => setForm({ ...form, date: v })} />
         <DateField label="Return Date" value={form.returnDate} onChange={v => setForm({ ...form, returnDate: v })} />
+        <ChipSelect label="Returned Method" value={form.returnMethod} onChange={v => setForm({ ...form, returnMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
         <TextField label="Remarks" value={form.remarks} onChangeText={v => setForm({ ...form, remarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>

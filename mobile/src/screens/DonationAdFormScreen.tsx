@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listDonationAds, createDonationAd, updateDonationAd, logActivity, diffFields, DonationAd, DonationAdCategory, PaidMethod } from '../lib/db';
+import { listDonationAds, createDonationAd, updateDonationAd, logActivity, diffFields, DonationAd, DonationAdCategory, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
@@ -42,11 +42,17 @@ const ADS_CATEGORY_OPTIONS = [
   { value: 'stall', label: 'Stall' },
 ];
 
-const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '' };
+const STATUS_OPTIONS: { value: PaymentStatus; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'rejected', label: 'Rejected' },
+];
+
+const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '' };
 
 const DONATION_AD_FIELD_LABELS: Record<string, string> = {
   donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount', paidMethod: 'Paid Method',
-  inKind: 'In Kind', date: 'Date', voucherNumber: 'Voucher Number', phone: 'Phone Number',
+  paymentStatus: 'Payment Status', inKind: 'In Kind', date: 'Date', voucherNumber: 'Voucher Number', phone: 'Phone Number',
   phone2: 'Phone Number 2', remarks: 'Remarks',
 };
 
@@ -76,6 +82,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
         setForm({
           donorName: existing.donorName, companyName: existing.companyName || '',
           amount: String(existing.amount), paidMethod: existing.paidMethod,
+          paymentStatus: existing.paymentStatus || 'pending',
           inKind: existing.inKind, date: existing.date, voucherNumber: existing.voucherNumber || '',
           phone: existing.phone, phone2: existing.phone2 || '', remarks: existing.remarks,
         });
@@ -86,8 +93,8 @@ export function DonationAdFormScreen({ route, navigation }: any) {
 
   const handleSaveButtonPress = () => {
     setError('');
-    if ((isAds && !form.companyName.trim()) || (!isAds && !form.donorName.trim()) || !form.amount.trim()) {
-      setError(isAds ? 'Company name and amount are required.' : 'Donor name and amount are required.');
+    if ((!isAds && !form.donorName.trim()) || !form.amount.trim()) {
+      setError(isAds ? 'Amount is required.' : 'Donor name and amount are required.');
       return;
     }
     if (isEdit) {
@@ -104,6 +111,7 @@ export function DonationAdFormScreen({ route, navigation }: any) {
       companyName: form.companyName.trim() || undefined,
       amount: parseFloat(form.amount) || 0,
       paidMethod: form.paidMethod,
+      paymentStatus: form.paymentStatus,
       inKind: form.inKind.trim(),
       date: form.date,
       voucherNumber: !isAds ? (form.voucherNumber.trim() || undefined) : undefined,
@@ -148,14 +156,15 @@ export function DonationAdFormScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        {isAds ? (
-          <TextField label="Company Name" required value={form.companyName} onChangeText={v => setForm({ ...form, companyName: v })} placeholder="Company name" />
-        ) : (
-          <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        <TextField label={`Donor's Name${!isAds ? ' *' : ''}`} required={!isAds} value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        {isAds && (
+          <TextField label="Company Name" value={form.companyName} onChangeText={v => setForm({ ...form, companyName: v })} placeholder="Company name" />
         )}
         <TextField label="Amount (₹)" required value={form.amount} onChangeText={v => setForm({ ...form, amount: v })} placeholder="0" keyboardType="numeric" />
         <TextField label="Phone Number" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
+        <TextField label="Phone Number 2" value={form.phone2} onChangeText={v => setForm({ ...form, phone2: v })} placeholder="Optional" keyboardType="phone-pad" />
         <ChipSelect label="Paid Method" value={form.paidMethod} onChange={v => setForm({ ...form, paidMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
+        <ChipSelect label="Payment Status" required value={form.paymentStatus} onChange={v => setForm({ ...form, paymentStatus: v as PaymentStatus })} options={STATUS_OPTIONS} />
         {!isAds && (
           <TextField label="Voucher Number" value={form.voucherNumber} onChangeText={v => setForm({ ...form, voucherNumber: v })} placeholder="Optional" />
         )}
