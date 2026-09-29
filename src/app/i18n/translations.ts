@@ -440,7 +440,7 @@ export const translations = {
     'loans.csv.amountPaid': 'Amount Paid',
     'loans.amountPlaceholder': 'Amount',
     'loans.paymentMethod': 'Payment Method',
-    'loans.returnMethod': 'Amount Returned Method',
+    'loans.returnMethod': 'Returned Method',
     'loans.membersSuggestLabel': 'Committee Members',
     'loans.returnDate': 'Return Date',
     'loans.phonePlaceholder': 'Phone number',
