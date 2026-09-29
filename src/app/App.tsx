@@ -922,7 +922,7 @@ export default function App() {
 
   if (loadError === 'not-configured') {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200 dark:border-red-500/30">
           <h1 className="text-xl font-bold text-red-700 mb-3">Supabase is not configured</h1>
           <p className="text-gray-700 dark:text-gray-300 mb-3">
@@ -941,7 +941,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200 dark:border-red-500/30">
           <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't load data</h1>
           <p className="text-gray-700 dark:text-gray-300">{loadError}</p>
@@ -952,7 +952,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
   if (dataLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center text-gray-500 dark:text-gray-400">
           <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           Loading…
@@ -1011,7 +1011,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 Log out
               </button>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 sm:p-6">
+            <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-4 sm:p-6">
               <Billing
                 currentUser={currentUser}
                 committeeName={committeeInfo.association || committeeInfo.name}
@@ -1046,7 +1046,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     // itself failed (e.g. a missing DB grant), so don't wrongly tell an
     // admin with real events to go create one.
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200 dark:border-red-500/30">
           <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't check your active Puja / Festival</h1>
           <p className="text-gray-700 dark:text-gray-300 mb-4">{eventsLoadError}</p>
@@ -1162,7 +1162,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             stays centered/max-width so it doesn't stretch edge to edge
             on very wide screens */}
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+        <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
         <div className="container mx-auto">
         {currentPage === 'dashboard' && (
           <Dashboard

@@ -581,7 +581,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                   {savingDev ? 'Saving…' : 'Save'}
                 </button>
 
-                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700">
                   <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">Currently live</h4>
                   <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <p><strong>Name:</strong> {devInfo.name}</p>

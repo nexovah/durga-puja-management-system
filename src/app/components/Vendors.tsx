@@ -314,7 +314,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.totalContractAmount')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">₹{viewingVendor.totalContractAmount.toLocaleString()}</p>
             </div>
@@ -328,7 +328,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                 ₹{Math.max(0, viewingVendor.totalContractAmount - viewingVendor.totalAmount).toLocaleString()}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400">{t('vendors.transactions')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{viewingVendorPaymentRows.length}</p>
             </div>
@@ -337,7 +337,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
           <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">{t('vendors.paymentHistory')}</h4>
           <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('common.date')}</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">{t('expenses.title')}</th>
@@ -382,7 +382,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
         />
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {tableCols.isColumnVisible('name') && (
                   <SortableTh columnId="name" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
@@ -477,7 +477,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
             </tbody>
             {filteredVendorGroups.length > 0 && (tableCols.isColumnVisible('totalContractAmount') || tableCols.isColumnVisible('totalAmount')) && (
               <tfoot>
-                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td
                     colSpan={
                       [tableCols.isColumnVisible('name'), tableCols.isColumnVisible('contact'), tableCols.isColumnVisible('category'), tableCols.isColumnVisible('transactions')]

@@ -202,7 +202,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
         </div>
 
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+          <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
             <div className="container mx-auto">{children}</div>
           </div>
         </main>

@@ -480,7 +480,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         />
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {tableCols.isColumnVisible('title') && (
                   <SortableTh column={taskColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />

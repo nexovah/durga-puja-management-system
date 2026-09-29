@@ -436,7 +436,7 @@ export function EstimationPage({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td colSpan={canEdit ? 5 : 4} className="px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">
                     {t('estimation.totalItems')}: {draft.lineItems.filter(i => i.title.trim() !== '' || i.amount).length}
                     {'   '}·{'   '}
@@ -576,7 +576,7 @@ export function EstimationPage({
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <tr className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
                 {tableCols.isColumnVisible('title') && (
                   <SortableTh column={estimationColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}

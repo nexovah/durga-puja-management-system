@@ -159,7 +159,7 @@ export function ReportEstimationPage({ estimationsList, companyName, companyLogo
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="w-10 px-4 py-3"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 rounded" /></th>
                 {tableCols.isColumnVisible('title') && (

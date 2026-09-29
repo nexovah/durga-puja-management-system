@@ -591,7 +591,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         />
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {tableCols.isColumnVisible('donorName') && (
                   <SortableTh column={loanColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
@@ -698,7 +698,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
             </tbody>
             {filteredLoans.length > 0 && (tableCols.isColumnVisible('amountReceived') || tableCols.isColumnVisible('amountPaid')) && (
               <tfoot>
-                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">{t('common.total')}</td>
                   {tableCols.isColumnVisible('amountReceived') && (
                     <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">

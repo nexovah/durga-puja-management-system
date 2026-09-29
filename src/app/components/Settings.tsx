@@ -369,7 +369,7 @@ export function Settings({
                 {logoUploading && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.uploadingLogo')}</p>}
                 {committeeForm.logo && (
                   <div className="mt-3 flex items-center gap-4">
-                    <div className="w-20 h-20 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                    <div className="w-20 h-20 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
                       {committeeForm.logo.startsWith('data:') || committeeForm.logo.startsWith('http') ? (
                         <img
                           src={committeeForm.logo}
@@ -882,7 +882,7 @@ export function Settings({
 
               <div className="hidden sm:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.name')}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.table.username')}</th>
@@ -1017,7 +1017,7 @@ export function Settings({
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Managed by the platform administrator.
               </p>
-              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                   <p><strong>{t('settings.label.name')}</strong> {developerInfo.name}</p>
                   <p><strong>{t('settings.label.email')}</strong> {developerInfo.email}</p>

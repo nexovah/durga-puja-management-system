@@ -805,7 +805,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
         />
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {tableCols.isColumnVisible('donorName') && (
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'donorName')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
@@ -922,7 +922,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
             </tbody>
             {filteredDonationAds.length > 0 && tableCols.isColumnVisible('amount') && (
               <tfoot>
-                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                   <td
                     colSpan={['donorName', 'companyName'].filter(id => tableCols.isColumnVisible(id)).length || 1}
                     className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"

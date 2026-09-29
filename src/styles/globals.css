@@ -42,11 +42,23 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  /* Studio Admin (studio-admin.arhamkhnz.com) style dark palette —
+     neutral near-black surfaces instead of Tailwind's default
+     blue-tinted gray. Overriding the gray-* tokens here (rather than
+     only the semantic --background/--card vars) is what actually
+     re-colors the app, since components use literal dark:bg-gray-900
+     etc. utilities, not the semantic tokens. */
+  --color-gray-950: #09090b;
+  --color-gray-900: #131316;
+  --color-gray-800: #1c1c21;
+  --color-gray-700: #27272c;
+  --color-gray-600: #37373f;
+
+  --background: var(--color-gray-950);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
+  --card: var(--color-gray-900);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
+  --popover: var(--color-gray-900);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.205 0 0);

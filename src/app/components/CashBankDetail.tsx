@@ -87,7 +87,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Source</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Cash</th>
@@ -124,7 +124,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Bucket</th>

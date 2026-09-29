@@ -51,7 +51,7 @@ export function TasksBoard({ tasks, members, canEditTask, onPriorityChange, onCa
             onDragOver={(e) => { e.preventDefault(); setDragOverColumn(p.value); }}
             onDragLeave={() => setDragOverColumn(prev => (prev === p.value ? null : prev))}
             onDrop={(e) => handleDrop(e, p.value)}
-            className={`flex flex-col w-72 shrink-0 bg-gray-50 dark:bg-gray-900 rounded-xl border transition-colors ${
+            className={`flex flex-col w-72 shrink-0 bg-gray-50 dark:bg-gray-950 rounded-xl border transition-colors ${
               dragOverColumn === p.value
                 ? 'border-orange-400 ring-2 ring-orange-200 dark:ring-orange-500/30'
                 : 'border-gray-200 dark:border-gray-700'
