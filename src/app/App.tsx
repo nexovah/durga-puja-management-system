@@ -1236,6 +1236,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Loans
             loansList={loansList}
             setLoansList={setLoansList}
+            members={members}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             canBulkImport={currentUser?.canBulkImport !== false}

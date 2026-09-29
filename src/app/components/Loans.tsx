@@ -1,6 +1,6 @@
-import { useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload } from 'lucide-react';
-import { Loan, PaidMethod, getLoanNetAmount } from '../App';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon } from 'lucide-react';
+import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -20,6 +20,7 @@ import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar
 interface LoansProps {
   loansList: Loan[];
   setLoansList: (loans: Loan[]) => void;
+  members: Member[];
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
@@ -52,7 +53,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImport, onLog }: LoansProps) {
+export function Loans({ loansList, setLoansList, members, canEdit, canDelete, canBulkImport, onLog }: LoansProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,6 +63,31 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
   const [viewTarget, setViewTarget] = useState<Loan | null>(null);
+  const [memberSuggestOpen, setMemberSuggestOpen] = useState(false);
+  const memberSuggestRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!memberSuggestOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (memberSuggestRef.current && !memberSuggestRef.current.contains(e.target as Node)) setMemberSuggestOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [memberSuggestOpen]);
+
+  // Loans are almost always from a committee member, not a third party —
+  // as the donor name is typed, suggest matching members first so the
+  // phone number can be auto-filled from Members instead of retyped.
+  const matchingMembers = useMemo(() => {
+    const q = formData.donorName.trim().toLowerCase();
+    if (!q) return [];
+    return members.filter(m => m.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [members, formData.donorName]);
+
+  const handlePickMember = (member: Member) => {
+    setFormData(prev => ({ ...prev, donorName: member.name, phone: member.phone || prev.phone }));
+    setMemberSuggestOpen(false);
+  };
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
 
@@ -369,17 +395,41 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         }
       >
           <form id="loans-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Row 1: Donor's Name | Phone Number */}
-            <div>
+            {/* Row 1: Donor's Name (with a committee-member search suggest,
+                since loans almost always come from a member) | Phone Number */}
+            <div className="relative" ref={memberSuggestRef}>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')} *</label>
               <input
                 type="text"
                 required
+                autoComplete="off"
                 value={formData.donorName}
-                onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, donorName: e.target.value }); setMemberSuggestOpen(true); }}
+                onFocus={() => setMemberSuggestOpen(true)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.donorNamePlaceholder')}
               />
+              {memberSuggestOpen && matchingMembers.length > 0 && (
+                <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+                  <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('loans.membersSuggestLabel')}</p>
+                  {matchingMembers.map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => handlePickMember(m)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                        <UserIcon size={14} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.name}</span>
+                        {m.phone && <span className="block text-xs text-gray-400 dark:text-gray-500 truncate">{m.phone}</span>}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')}</label>
