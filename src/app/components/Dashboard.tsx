@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, Banknote, HourglassIcon } from 'lucide-react';
+import { Users, IndianRupee, TrendingDown, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, HourglassIcon } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { EventInfo } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
@@ -193,24 +193,6 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
         />
       </div>
 
-      {/* Year Selector and Download */}
-      <div className="flex gap-3 items-center bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700 flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <div className="bg-orange-500 p-2 rounded-lg shrink-0">
-            <Calendar className="text-white" size={20} />
-          </div>
-          <select className="flex-1 px-3 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm">
-            <option value="2026">{t('dashboard.selectYear')}: 2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-          </select>
-        </div>
-        <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-2.5 rounded-lg font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md flex items-center gap-2 text-sm">
-          <FileText size={18} />
-          {t('dashboard.download')}
-        </button>
-      </div>
     </div>
   );
 }
