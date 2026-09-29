@@ -1,9 +1,13 @@
-import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
+import { useMemo } from 'react';
+import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, Banknote, HourglassIcon } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { EventInfo } from '../lib/db';
+import { computeCashBankTotals } from '../lib/cashBank';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 import { DashboardChart } from './DashboardChart';
 import { DashboardCategoryBars } from './DashboardCategoryBars';
+import { DashboardDonut } from './DashboardDonut';
 import { PageHeading } from './PageHeading';
 
 interface DashboardProps {
@@ -35,6 +39,45 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     if (chanda.paymentStatus === 'partial') return sum + Math.max(0, chanda.amount - (chanda.partialAmount || 0));
     return sum;
   }, 0);
+
+  // Same pending/partial-remainder pattern applied to Donation/Ads and
+  // Membership, for the Outstanding/Follow-ups donut below.
+  const pendingDueFor = (amount: number, status: string, partial?: number) => {
+    if (status === 'pending') return amount;
+    if (status === 'partial') return Math.max(0, amount - (partial || 0));
+    return 0;
+  };
+  const pendingDueDonation = donationAdsList
+    .filter(d => d.category === 'donation')
+    .reduce((sum, d) => sum + pendingDueFor(d.amount, d.paymentStatus), 0);
+  const pendingDueAds = donationAdsList
+    .filter(d => d.category === 'ads')
+    .reduce((sum, d) => sum + pendingDueFor(d.amount, d.paymentStatus), 0);
+  const pendingDueMembership = members.reduce((sum, m) => {
+    if (!m.membershipAmount || !m.membershipPaymentStatus) return sum;
+    return sum + pendingDueFor(m.membershipAmount, m.membershipPaymentStatus, m.membershipPartialAmount);
+  }, 0);
+
+  const cashBank = useMemo(() => (
+    activeEvent
+      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses })
+      : null
+  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses]);
+
+  const categoryLabel = (value: string) => {
+    const key = `expenses.category.${value}` as TranslationKey;
+    const label = t(key);
+    return label === key ? value : label;
+  };
+  const expensesByCategory = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const e of expenses) {
+      totals[e.category] = (totals[e.category] || 0) + getExpenseCreditAmount(e);
+    }
+    return Object.entries(totals)
+      .map(([category, value]) => ({ name: categoryLabel(category), value }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses]);
 
   // Key figures: same calm white-card/colored-left-border style used on
   // every other page's widgets (Treasury, Chanda, etc.) — one muted accent
@@ -98,6 +141,56 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
             </div>
           );
         })}
+      </div>
+
+      {/* Detailed breakdowns — donut widgets, added alongside (not
+          replacing) the existing chart/bars/tiles above */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DashboardDonut
+          title={t('dashboard.donut.collectionByCategory')}
+          icon={PieChartIcon}
+          iconAccent="text-green-600"
+          emptyMessage={t('dashboard.donut.noCollection')}
+          slices={[
+            { name: t('nav.chanda'), value: totalChanda },
+            { name: t('donationAds.widget.donation'), value: totalDonation },
+            { name: t('donationAds.widget.ads'), value: totalAds },
+            { name: t('dashboard.totalMembersPaid'), value: totalMembershipPayments },
+            { name: t('treasury.loansOutstanding'), value: Math.max(0, totalLoansNet) },
+          ]}
+        />
+        <DashboardDonut
+          title={t('dashboard.donut.expensesByCategory')}
+          icon={ClipboardList}
+          iconAccent="text-red-600"
+          emptyMessage={t('treasury.noExpenses')}
+          slices={expensesByCategory}
+        />
+        {cashBank && (
+          <DashboardDonut
+            title={t('dashboard.donut.cashVsBank')}
+            icon={Wallet}
+            iconAccent="text-amber-600"
+            emptyMessage={t('dashboard.donut.noBalance')}
+            colors={['#d97706', '#2563eb']}
+            slices={[
+              { name: t('dashboard.donut.cashInHand'), value: Math.max(0, cashBank.closingCash) },
+              { name: t('dashboard.donut.moneyInBank'), value: Math.max(0, cashBank.closingBank) },
+            ]}
+          />
+        )}
+        <DashboardDonut
+          title={t('dashboard.donut.outstanding')}
+          icon={HourglassIcon}
+          iconAccent="text-purple-600"
+          emptyMessage={t('dashboard.donut.noOutstanding')}
+          slices={[
+            { name: t('nav.chanda'), value: pendingDueChanda },
+            { name: t('donationAds.widget.donation'), value: pendingDueDonation },
+            { name: t('donationAds.widget.ads'), value: pendingDueAds },
+            { name: t('dashboard.totalMembers'), value: pendingDueMembership },
+          ]}
+        />
       </div>
 
       {/* Year Selector and Download */}
