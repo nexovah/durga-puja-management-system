@@ -10,6 +10,7 @@ import { ReportModulePage, ReportColumn, ReportWidget } from './ReportModulePage
 import { ReportEstimationPage } from './ReportEstimationPage';
 import { ReportBalanceSheetPage } from './ReportBalanceSheetPage';
 import { ADS_CATEGORIES } from './DonationAdsCollection';
+import { EventInfo } from '../lib/db';
 
 interface ReportProps {
   chandaList: Chanda[];
@@ -21,6 +22,7 @@ interface ReportProps {
   committeeAssociation: string;
   committeeLogo: string;
   activeEventLabel: string;
+  activeEvent: EventInfo | null;
   onRefreshData: () => Promise<void>;
 }
 
@@ -46,7 +48,7 @@ interface VendorRow {
   voucherNumbers: string;
 }
 
-export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo, activeEventLabel, onRefreshData }: ReportProps) {
+export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeAssociation, committeeLogo, activeEventLabel, activeEvent, onRefreshData }: ReportProps) {
   const { t, locale } = useLanguage();
   const [activeModule, setActiveModuleState] = useState<ModuleKey>(() => getModuleFromPath());
 
@@ -192,6 +194,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
             companyName={committeeAssociation}
             companyLogo={committeeLogo}
             eventLabel={activeEventLabel}
+            activeEvent={activeEvent}
             onRefresh={onRefreshData}
           />
         </div>

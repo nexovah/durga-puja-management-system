@@ -1169,6 +1169,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             donationAdsList={donationAdsList}
             expenses={expenses}
             loansList={loansList}
+            activeEvent={events.find(e => e.id === activeEventId) || null}
           />
         )}
         {currentPage === 'members' && (
@@ -1241,7 +1242,18 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'treasury' && (
-          <Treasury chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} committeeAssociation={committeeInfo.association || committeeInfo.name} committeeLogo={committeeInfo.logo} />
+          <Treasury
+            chandaList={chandaList}
+            donationAdsList={donationAdsList}
+            expenses={expenses}
+            loansList={loansList}
+            members={members}
+            committeeAssociation={committeeInfo.association || committeeInfo.name}
+            committeeLogo={committeeInfo.logo}
+            activeEvent={events.find(e => e.id === activeEventId) || null}
+            currentUser={currentUser}
+            onLog={handleLog}
+          />
         )}
         {currentPage === 'report' && (
           <Report
@@ -1257,6 +1269,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               const e = events.find(ev => ev.id === activeEventId);
               return e ? `${e.name} – ${e.year}` : '';
             })()}
+            activeEvent={events.find(e => e.id === activeEventId) || null}
             onRefreshData={refreshCoreData}
           />
         )}

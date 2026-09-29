@@ -7,7 +7,7 @@ import {
   Chanda, DonationAd, Member, Loan, Expense,
   getChandaCreditAmount, getDonationAdCreditAmount, getMemberCreditAmount, getExpenseCreditAmount,
 } from '../App';
-import { EventInfo } from './db';
+import { EventInfo, CashBankAdjustment } from './db';
 
 export type MoneyBucket = 'cash' | 'bank';
 
@@ -46,8 +46,9 @@ export function computeCashBankTotals(params: {
   members: Member[];
   loansList: Loan[];
   expenses: Expense[];
+  adjustments?: CashBankAdjustment[];
 }): CashBankTotals {
-  const { event, chandaList, donationAdsList, members, loansList, expenses } = params;
+  const { event, chandaList, donationAdsList, members, loansList, expenses, adjustments = [] } = params;
 
   const collection: CashBankSourceBreakdown = { key: 'collection', label: 'Collection', cash: 0, bank: 0 };
   for (const c of chandaList) {
@@ -90,10 +91,18 @@ export function computeCashBankTotals(params: {
     expenseOut[bucketForMethod(e.paidThrough)] += amount;
   }
 
-  const cashIn = collection.cash + donation.cash + sponsorship.cash + memberPayment.cash + loanReceived.cash;
-  const bankIn = collection.bank + donation.bank + sponsorship.bank + memberPayment.bank + loanReceived.bank;
-  const cashOut = loanRepayment.cash + expenseOut.cash;
-  const bankOut = loanRepayment.bank + expenseOut.bank;
+  const manualAdjustment: CashBankSourceBreakdown = { key: 'manualAdjustment', label: 'Manual Adjustments', cash: 0, bank: 0 };
+  for (const a of adjustments) {
+    const signed = a.direction === 'add' ? a.amount : -a.amount;
+    manualAdjustment[a.bucket] += signed;
+  }
+
+  const cashIn = collection.cash + donation.cash + sponsorship.cash + memberPayment.cash + loanReceived.cash
+    + Math.max(0, manualAdjustment.cash);
+  const bankIn = collection.bank + donation.bank + sponsorship.bank + memberPayment.bank + loanReceived.bank
+    + Math.max(0, manualAdjustment.bank);
+  const cashOut = loanRepayment.cash + expenseOut.cash + Math.max(0, -manualAdjustment.cash);
+  const bankOut = loanRepayment.bank + expenseOut.bank + Math.max(0, -manualAdjustment.bank);
 
   const openingCash = event.openingCash || 0;
   const openingBank = event.openingBank || 0;
@@ -110,6 +119,6 @@ export function computeCashBankTotals(params: {
     closingCash,
     closingBank,
     totalBalance: closingCash + closingBank,
-    sources: [collection, donation, sponsorship, memberPayment, loanReceived, loanRepayment, expenseOut],
+    sources: [collection, donation, sponsorship, memberPayment, loanReceived, loanRepayment, expenseOut, manualAdjustment],
   };
 }

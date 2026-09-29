@@ -492,6 +492,11 @@ export const translations = {
     'report.balanceSheet.totalIncome': 'Total Income',
     'report.balanceSheet.totalExpenditure': 'Total Expenditure',
     'report.balanceSheet.closingBalance': 'Closing Balance',
+    'report.balanceSheet.openingBalance': 'Opening Balance',
+    'report.balanceSheet.openingCash': 'Opening Cash in Hand',
+    'report.balanceSheet.openingBank': 'Opening Bank Balance',
+    'report.balanceSheet.closingCash': 'Closing Cash in Hand',
+    'report.balanceSheet.closingBank': 'Closing Bank Balance',
     'report.balanceSheet.downloadedAt': 'Downloaded at',
     'report.balanceSheet.section': 'Section',
     'report.balanceSheet.item': 'Item',
@@ -698,6 +703,7 @@ export const translations = {
     'activityLog.module.assets': 'Assets',
     'activityLog.module.documents': 'Documents',
     'activityLog.module.vendors': 'Vendors',
+    'activityLog.module.cashBank': 'Cash & Bank',
 
     // Tasks
     'tasks.pageTitle': 'Tasks',
@@ -1450,6 +1456,11 @@ export const translations = {
     'report.balanceSheet.totalIncome': 'মোট আয়',
     'report.balanceSheet.totalExpenditure': 'মোট ব্যয়',
     'report.balanceSheet.closingBalance': 'সমাপনী ব্যালেন্স',
+    'report.balanceSheet.openingBalance': 'প্রারম্ভিক ব্যালেন্স',
+    'report.balanceSheet.openingCash': 'প্রারম্ভিক নগদ',
+    'report.balanceSheet.openingBank': 'প্রারম্ভিক ব্যাংক ব্যালেন্স',
+    'report.balanceSheet.closingCash': 'সমাপনী নগদ',
+    'report.balanceSheet.closingBank': 'সমাপনী ব্যাংক ব্যালেন্স',
     'report.balanceSheet.downloadedAt': 'ডাউনলোডের সময়',
     'report.balanceSheet.section': 'বিভাগ',
     'report.balanceSheet.item': 'আইটেম',
@@ -1654,6 +1665,7 @@ export const translations = {
     'activityLog.module.assets': 'সম্পদ',
     'activityLog.module.documents': 'নথি',
     'activityLog.module.vendors': 'ভেন্ডরস',
+    'activityLog.module.cashBank': 'ক্যাশ ও ব্যাংক',
 
     // Tasks
     'tasks.pageTitle': 'টাস্ক',
@@ -2405,6 +2417,11 @@ export const translations = {
     'report.balanceSheet.totalIncome': 'कुल आय',
     'report.balanceSheet.totalExpenditure': 'कुल व्यय',
     'report.balanceSheet.closingBalance': 'अंतिम शेष (क्लोजिंग बैलेंस)',
+    'report.balanceSheet.openingBalance': 'प्रारंभिक शेष',
+    'report.balanceSheet.openingCash': 'प्रारंभिक नकद',
+    'report.balanceSheet.openingBank': 'प्रारंभिक बैंक शेष',
+    'report.balanceSheet.closingCash': 'अंतिम नकद',
+    'report.balanceSheet.closingBank': 'अंतिम बैंक शेष',
     'report.balanceSheet.downloadedAt': 'डाउनलोड का समय',
     'report.balanceSheet.section': 'खंड',
     'report.balanceSheet.item': 'मद',
@@ -2609,6 +2626,7 @@ export const translations = {
     'activityLog.module.assets': 'संपत्ति',
     'activityLog.module.documents': 'दस्तावेज़',
     'activityLog.module.vendors': 'विक्रेता',
+    'activityLog.module.cashBank': 'कैश एंड बैंक',
 
     // Tasks
     'tasks.pageTitle': 'कार्य',

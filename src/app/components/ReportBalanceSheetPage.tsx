@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Download, FileText, RefreshCw, TrendingUp, TrendingDown, Scale } from 'lucide-react';
+import { MoreVertical, Download, FileText, RefreshCw, TrendingUp, TrendingDown, Scale, Wallet, Landmark } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Loan, Member,
   getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
 } from '../App';
+import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
+import { computeCashBankTotals } from '../lib/cashBank';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ReportPrintTable } from './ReportPrintTable';
@@ -18,6 +20,7 @@ interface ReportBalanceSheetPageProps {
   companyName: string;
   companyLogo: string;
   eventLabel: string;
+  activeEvent: EventInfo | null;
   onRefresh: () => Promise<void>;
 }
 
@@ -27,13 +30,22 @@ interface ReportBalanceSheetPageProps {
 // the 7 event-scoped lists from Supabase (App.tsx's refreshCoreData) so it
 // doesn't depend on a page reload to pick up a teammate's just-added row.
 export function ReportBalanceSheetPage({
-  members, chandaList, donationAdsList, expenses, loansList, companyName, companyLogo, eventLabel, onRefresh,
+  members, chandaList, donationAdsList, expenses, loansList, companyName, companyLogo, eventLabel, activeEvent, onRefresh,
 }: ReportBalanceSheetPageProps) {
   const { t, locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [printData, setPrintData] = useState<{ downloadedAt: string } | null>(null);
+  const [adjustments, setAdjustments] = useState<CashBankAdjustment[]>([]);
+
+  useEffect(() => {
+    listCashBankAdjustmentsRequest().then(setAdjustments).catch(() => {});
+  }, []);
+
+  const cashBank = activeEvent
+    ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
+    : null;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -89,20 +101,30 @@ export function ReportBalanceSheetPage({
   ];
   const totalExpenditure = expenditureRows.reduce((s, r) => s + r.value, 0);
 
-  const closingBalance = totalIncome - totalExpenditure;
+  const openingCash = cashBank?.openingCash ?? 0;
+  const openingBank = cashBank?.openingBank ?? 0;
+  const openingTotal = openingCash + openingBank;
+  const closingCash = cashBank?.closingCash ?? openingCash;
+  const closingBank = cashBank?.closingBank ?? openingBank;
+  const closingBalance = cashBank?.totalBalance ?? (openingTotal + totalIncome - totalExpenditure);
 
   // Single source of truth for the exported table shape — a total row is
   // only shown for a section when it actually sums more than one line
   // item; with just one ("Expenses Total"), a separate "Total Expenditure"
   // row would just repeat the same number.
   const printRows: { cells: [string, string]; tone?: 'positive' | 'negative'; bold?: boolean; strongTopBorder?: boolean; emphasized?: boolean; sectionGapBefore?: boolean }[] = [
-    { cells: [t('report.balanceSheet.income'), ''], bold: true },
+    { cells: [t('report.balanceSheet.openingBalance'), ''], bold: true },
+    { cells: [t('report.balanceSheet.openingCash'), fmtAmount(openingCash)] },
+    { cells: [t('report.balanceSheet.openingBank'), fmtAmount(openingBank)] },
+    { cells: [t('report.balanceSheet.income'), ''], bold: true, sectionGapBefore: true },
     ...incomeRows.map(r => ({ cells: [r.label, fmtAmount(r.value)] as [string, string], tone: 'positive' as const })),
     ...(incomeRows.length > 1 ? [{ cells: [t('report.balanceSheet.totalIncome'), fmtAmount(totalIncome)] as [string, string], tone: 'positive' as const, bold: true, strongTopBorder: true }] : []),
     { cells: [t('report.balanceSheet.expenditure'), ''], bold: true, sectionGapBefore: true },
     ...expenditureRows.map(r => ({ cells: [r.label, fmtAmount(r.value)] as [string, string], tone: 'negative' as const })),
     ...(expenditureRows.length > 1 ? [{ cells: [t('report.balanceSheet.totalExpenditure'), fmtAmount(totalExpenditure)] as [string, string], tone: 'negative' as const, bold: true, strongTopBorder: true }] : []),
-    { cells: [t('report.balanceSheet.closingBalance'), fmtAmount(closingBalance)], tone: closingBalance >= 0 ? 'positive' as const : 'negative' as const, emphasized: true, sectionGapBefore: true },
+    { cells: [t('report.balanceSheet.closingCash'), fmtAmount(closingCash)] as [string, string], sectionGapBefore: true },
+    { cells: [t('report.balanceSheet.closingBank'), fmtAmount(closingBank)] as [string, string] },
+    { cells: [t('report.balanceSheet.closingBalance'), fmtAmount(closingBalance)], tone: closingBalance >= 0 ? 'positive' as const : 'negative' as const, emphasized: true },
   ];
 
   const handleDownloadCSV = () => {
@@ -160,6 +182,25 @@ export function ReportBalanceSheetPage({
         {t('report.nav.balanceSheet')}
       </PageHeading>
 
+      {cashBank && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-l-4 border-amber-500 dark:border-amber-500/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Wallet className="text-amber-600" size={20} />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('report.balanceSheet.openingCash')}</span>
+            </div>
+            <span className="text-lg font-bold text-amber-600">{fmtAmount(openingCash)}</span>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-l-4 border-blue-500 dark:border-blue-500/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Landmark className="text-blue-600" size={20} />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('report.balanceSheet.openingBank')}</span>
+            </div>
+            <span className="text-lg font-bold text-blue-600">{fmtAmount(openingBank)}</span>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* A. Income */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -203,6 +244,25 @@ export function ReportBalanceSheetPage({
           )}
         </div>
       </div>
+
+      {cashBank && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-l-4 border-amber-500 dark:border-amber-500/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Wallet className="text-amber-600" size={20} />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('report.balanceSheet.closingCash')}</span>
+            </div>
+            <span className="text-lg font-bold text-amber-600">{fmtAmount(closingCash)}</span>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-l-4 border-blue-500 dark:border-blue-500/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Landmark className="text-blue-600" size={20} />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('report.balanceSheet.closingBank')}</span>
+            </div>
+            <span className="text-lg font-bold text-blue-600">{fmtAmount(closingBank)}</span>
+          </div>
+        </div>
+      )}
 
       {/* C. Closing Balance */}
       <div className={`rounded-xl border p-6 flex items-center justify-between ${

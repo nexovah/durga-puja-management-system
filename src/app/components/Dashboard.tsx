@@ -1,5 +1,6 @@
 import { Users, IndianRupee, TrendingDown, Calendar, FileText, ClipboardList, Gift, HandCoins, Landmark } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { EventInfo } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DashboardChart } from './DashboardChart';
 import { DashboardCategoryBars } from './DashboardCategoryBars';
@@ -11,9 +12,10 @@ interface DashboardProps {
   donationAdsList: DonationAd[];
   expenses: Expense[];
   loansList: Loan[];
+  activeEvent?: EventInfo | null;
 }
 
-export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList }: DashboardProps) {
+export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList, activeEvent }: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
@@ -23,7 +25,8 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembershipPayments;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
-  const balance = totalCredit - totalExpenses;
+  const openingTotal = (activeEvent?.openingCash ?? 0) + (activeEvent?.openingBank ?? 0);
+  const balance = totalCredit - totalExpenses + openingTotal;
 
   // Amount still owed by donors: full amount for 'pending', the unpaid
   // remainder for 'partial'. 'rejected' is excluded (donor declined to pay).

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText, Banknote, PiggyBank, ChevronRight } from 'lucide-react';
+import { Chanda, DonationAd, Expense, Loan, Member, User, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { EventInfo, ActivityModule, ActivityFieldChange, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
+import { computeCashBankTotals } from '../lib/cashBank';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { TreasuryReportModal } from './TreasuryReportModal';
 import { ReportPrintTable } from './ReportPrintTable';
+import { CashBankDetail } from './CashBankDetail';
 import { LedgerRow, buildLedger, ledgerTotals } from '../lib/reportExport';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
@@ -17,14 +20,30 @@ interface TreasuryProps {
   members: Member[];
   committeeAssociation: string;
   committeeLogo: string;
+  activeEvent: EventInfo | null;
+  currentUser: User | null;
+  onLog: (action: 'create' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation, committeeLogo }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation, committeeLogo, activeEvent, currentUser, onLog }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [printReport, setPrintReport] = useState<{ rows: LedgerRow[]; totals: ReturnType<typeof ledgerTotals>; rangeLabel: string } | null>(null);
+  const [view, setView] = useState<'main' | 'cashBank'>('main');
+  const [adjustments, setAdjustments] = useState<CashBankAdjustment[]>([]);
+
+  const reloadAdjustments = () => {
+    listCashBankAdjustmentsRequest().then(setAdjustments).catch(() => {});
+  };
+  useEffect(() => { reloadAdjustments(); }, []);
+
+  const cashBank = useMemo(() => (
+    activeEvent
+      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
+      : null
+  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -53,7 +72,8 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
   const membersPaidCount = members.filter(m => getMemberCreditAmount(m) > 0).length;
   const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembership;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
-  const balance = totalCredit - totalExpenses;
+  const openingTotal = (activeEvent?.openingCash ?? 0) + (activeEvent?.openingBank ?? 0);
+  const balance = totalCredit - totalExpenses + openingTotal;
 
   // Monthly data
   const getMonthlyData = () => {
@@ -193,6 +213,18 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     setPrintReport({ rows, totals: ledgerTotals(rows), rangeLabel });
   };
 
+  if (view === 'cashBank' && cashBank) {
+    return (
+      <CashBankDetail
+        totals={cashBank}
+        currentUser={currentUser}
+        onLog={onLog}
+        onBack={() => setView('main')}
+        onAdjustmentsChanged={reloadAdjustments}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -296,6 +328,41 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           </p>
         </div>
       </div>
+
+      {/* Cash & Bank — full-width, opens the detail page */}
+      {cashBank && (
+        <button
+          onClick={() => setView('cashBank')}
+          className="w-full bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-500/40 transition-colors text-left"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Cash &amp; Bank</h3>
+              <ChevronRight size={18} className="text-gray-400 dark:text-gray-500" />
+            </div>
+            <div className="flex items-center gap-6 sm:gap-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+                  <Banknote className="text-amber-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cash in Hand</p>
+                  <p className="text-xl font-bold text-amber-600">₹{cashBank.closingCash.toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <PiggyBank className="text-blue-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Money in Bank</p>
+                  <p className="text-xl font-bold text-blue-600">₹{cashBank.closingBank.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+      )}
 
       {/* Monthly Report */}
       <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
