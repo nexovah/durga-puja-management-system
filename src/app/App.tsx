@@ -162,6 +162,7 @@ export interface Chanda {
   id: string;
   donorName: string;
   category?: ChandaCategory; // donor type — Owner / Tenant / Apartment or Flat / Shop
+  numPersons?: number; // how many people in the donor's household/flat
   amount: number; // Amount mentioned/committed
   amount1?: number; // Optional split of `amount` — when either amount1/amount2 is set, amount = amount1 + amount2
   amount2?: number;

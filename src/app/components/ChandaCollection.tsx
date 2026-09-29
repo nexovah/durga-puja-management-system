@@ -29,7 +29,7 @@ interface ChandaCollectionProps {
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
-  donorName: "Donor's Name", category: 'Category', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
+  donorName: "Donor's Name", category: 'Category', numPersons: 'No. of Persons', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', billNumber: 'Bill Number', phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
 };
@@ -72,6 +72,7 @@ const matches = (parts: (string | number | undefined | null)[], q: string) =>
 const emptyForm = {
   donorName: '',
   category: '' as ChandaCategory | '',
+  numPersons: '',
   amount: '',
   amount1: '',
   amount2: '',
@@ -174,6 +175,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     const payload = {
       donorName: formData.donorName,
       category: formData.category || undefined,
+      numPersons: formData.numPersons.trim() !== '' ? parseInt(formData.numPersons, 10) : undefined,
       amount: parseFloat(formData.amount),
       amount1: formData.amount1.trim() !== '' ? parseFloat(formData.amount1) : undefined,
       amount2: formData.amount2.trim() !== '' ? parseFloat(formData.amount2) : undefined,
@@ -245,6 +247,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setFormData({
       donorName: chanda.donorName,
       category: chanda.category || '',
+      numPersons: chanda.numPersons !== undefined ? String(chanda.numPersons) : '',
       amount: chanda.amount.toString(),
       amount1: chanda.amount1 !== undefined ? chanda.amount1.toString() : '',
       amount2: chanda.amount2 !== undefined ? chanda.amount2.toString() : '',
@@ -529,29 +532,43 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         }
       >
           <form id="chanda-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')} *</label>
-              <input
-                type="text"
-                required
-                value={formData.donorName}
-                onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('chanda.donorNamePlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.category')}</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as ChandaCategory | '' })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                <option value="">{t('search.any')}</option>
-                {CHANDA_CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')} *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.donorName}
+                  onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.donorNamePlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.numPersons')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.numPersons}
+                  onChange={(e) => setFormData({ ...formData, numPersons: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('chanda.numPersonsPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.category')}</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as ChandaCategory | '' })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('search.any')}</option>
+                  {CHANDA_CATEGORIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="md:col-span-2 grid grid-cols-3 gap-4">
@@ -793,10 +810,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                         <button
                           type="button"
                           onClick={() => setViewTarget(chanda)}
-                          className="text-orange-600 hover:text-orange-700 hover:underline text-left"
+                          className="text-orange-600 hover:text-orange-700 hover:underline text-left block"
                         >
                           {chanda.donorName}
                         </button>
+                        {chanda.numPersons !== undefined && (
+                          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                            {t('chanda.numPersonsShort').replace('{count}', String(chanda.numPersons))}
+                          </span>
+                        )}
                       </td>
                     )}
                     {tableCols.isColumnVisible('category') && (
@@ -929,6 +951,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onEdit={canEdit && viewTarget ? () => { const c = viewTarget; setViewTarget(null); handleEdit(c); } : undefined}
         fields={viewTarget ? [
           { label: t('chanda.donorName'), value: viewTarget.donorName },
+          { label: t('chanda.numPersons'), value: viewTarget.numPersons !== undefined ? String(viewTarget.numPersons) : '-' },
           { label: t('chanda.category'), value: chandaCategoryLabel(viewTarget.category) },
           {
             label: t('chanda.amountLabel'),
