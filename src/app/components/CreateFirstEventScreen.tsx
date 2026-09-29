@@ -3,6 +3,8 @@ import { LogOut } from 'lucide-react';
 import { EventInfo, createEventRequest } from '../lib/db';
 
 const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺', '🪘'];
+const currentYear = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
 // Hard landing-page gate — mirrors how App.tsx already gates the whole app
 // behind `!user` for the Login screen. A tenant admin cannot reach any other
@@ -18,8 +20,10 @@ export function CreateFirstEventScreen({
   onLogout: () => void;
 }) {
   const [name, setName] = useState('');
-  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [year, setYear] = useState(currentYear);
   const [emoji, setEmoji] = useState<string | null>('🪔');
+  const [openingCash, setOpeningCash] = useState('0');
+  const [openingBank, setOpeningBank] = useState('0');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,14 +48,17 @@ export function CreateFirstEventScreen({
   }
 
   const handleCreate = async () => {
-    if (!name.trim() || !year.trim()) {
-      setError('Name and year are required.');
+    if (!name.trim()) {
+      setError('Name is required.');
       return;
     }
     setSaving(true);
     setError('');
     try {
-      const event = await createEventRequest(name.trim(), Number(year), emoji, currentUserId);
+      const event = await createEventRequest(
+        name.trim(), year, emoji, currentUserId,
+        parseFloat(openingCash) || 0, parseFloat(openingBank) || 0,
+      );
       onCreated(event);
     } catch (err: any) {
       console.error('Failed to create first event', err);
@@ -85,13 +92,37 @@ export function CreateFirstEventScreen({
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
-            <input
+            <select
               value={year}
-              onChange={e => setYear(e.target.value.replace(/\D/g, ''))}
-              placeholder="2026"
-              maxLength={4}
-              className="w-full mt-1 px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
-            />
+              onChange={e => setYear(Number(e.target.value))}
+              className="w-full mt-1 px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
+            >
+              {YEAR_OPTIONS.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Cash in Hand (₹)</label>
+              <input
+                type="number"
+                min="0"
+                value={openingCash}
+                onChange={e => setOpeningCash(e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Money in Bank (₹)</label>
+              <input
+                type="number"
+                min="0"
+                value={openingBank}
+                onChange={e => setOpeningBank(e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
+              />
+            </div>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Emoji (optional)</label>

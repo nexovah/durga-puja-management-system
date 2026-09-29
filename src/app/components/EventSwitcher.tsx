@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, Plus, Pencil, X, MoreHorizontal } from 'lucide-react';
-import { EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest } from '../lib/db';
+import {
+  EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest,
+  fetchEventChanda, fetchEventDonationAds, fetchEventMembers, fetchEventLoans, fetchEventExpenses,
+  copyMembersToActiveEvent, copyChandaDonorsToActiveEvent, copyAdsDonorsToActiveEvent,
+} from '../lib/db';
+import { computeCashBankTotals } from '../lib/cashBank';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+
+const currentYear = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
 // Curated Indian-festival/puja emoji set — a static picker, not a general
 // emoji library, per the plan. Kept to 11 + a "more" tile so the grid
@@ -107,6 +115,7 @@ export function EventSwitcher({
           onBackToList={() => setMode('list')}
           onCreated={(event) => { onEventCreated(event); setMode('list'); }}
           onUpdated={(event) => { onEventUpdated(event); setMode('list'); setEditingEvent(null); }}
+          onSwitched={onEventSwitched}
         />
       )}
 
@@ -126,7 +135,7 @@ export function EventSwitcher({
 
 function EventPopover({
   events, activeEventId, mode, editingEvent, currentUserId,
-  onClose, onRowClick, onEditClick, onCreateClick, onBackToList, onCreated, onUpdated,
+  onClose, onRowClick, onEditClick, onCreateClick, onBackToList, onCreated, onUpdated, onSwitched,
 }: {
   events: EventInfo[];
   activeEventId: string | null;
@@ -140,6 +149,7 @@ function EventPopover({
   onBackToList: () => void;
   onCreated: (event: EventInfo) => void;
   onUpdated: (event: EventInfo) => void;
+  onSwitched: (eventId: string) => void;
 }) {
   return (
     <div className="absolute top-full left-0 mt-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
@@ -192,9 +202,11 @@ function EventPopover({
       {(mode === 'create' || mode === 'edit') && (
         <EventForm
           existing={editingEvent}
+          otherEvents={events.filter(e => e.id !== editingEvent?.id)}
           currentUserId={currentUserId}
           onCancel={mode === 'create' ? onClose : onBackToList}
           onSaved={mode === 'create' ? onCreated : onUpdated}
+          onSwitched={onSwitched}
         />
       )}
     </div>
@@ -202,20 +214,60 @@ function EventPopover({
 }
 
 function EventForm({
-  existing, currentUserId, onCancel, onSaved,
+  existing, otherEvents, currentUserId, onCancel, onSaved, onSwitched,
 }: {
   existing: EventInfo | null;
+  otherEvents: EventInfo[];
   currentUserId: string;
   onCancel: () => void;
   onSaved: (event: EventInfo) => void;
+  onSwitched: (eventId: string) => void;
 }) {
   const [name, setName] = useState(existing?.name || '');
-  const [year, setYear] = useState(String(existing?.year || new Date().getFullYear()));
+  const [year, setYear] = useState(existing?.year || currentYear);
   const [emoji, setEmoji] = useState<string | null>(existing?.emoji ?? null);
+  const [openingCash, setOpeningCash] = useState(existing ? String(existing.openingCash) : '0');
+  const [openingBank, setOpeningBank] = useState(existing ? String(existing.openingBank) : '0');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  // "Connect with a previous Puja/Festival" — create-mode only. Carries
+  // forward that event's closing Cash/Bank balance as this one's opening
+  // balance, and optionally bulk-copies its members/donor identities.
+  const [connectEventId, setConnectEventId] = useState('');
+  const [copyMembers, setCopyMembers] = useState(false);
+  const [copyDonors, setCopyDonors] = useState(false);
+  const [loadingConnect, setLoadingConnect] = useState(false);
+
+  const handleConnectChange = async (eventId: string) => {
+    setConnectEventId(eventId);
+    setCopyMembers(false);
+    setCopyDonors(false);
+    if (!eventId) return;
+    const source = otherEvents.find(e => e.id === eventId);
+    if (!source) return;
+    setLoadingConnect(true);
+    setError('');
+    try {
+      const [chandaList, donationAdsList, members, loansList, expenses] = await Promise.all([
+        fetchEventChanda(eventId),
+        fetchEventDonationAds(eventId),
+        fetchEventMembers(eventId),
+        fetchEventLoans(eventId),
+        fetchEventExpenses(eventId),
+      ]);
+      const totals = computeCashBankTotals({ event: source, chandaList, donationAdsList, members, loansList, expenses });
+      setOpeningCash(String(totals.closingCash));
+      setOpeningBank(String(totals.closingBank));
+    } catch (err: any) {
+      console.error('Failed to load previous event balance', err);
+      setError('Could not load that event\'s balance — please enter it manually.');
+    } finally {
+      setLoadingConnect(false);
+    }
+  };
 
   // When a "more" emoji is picked, pin it to the front of the visible row
   // so the selection is obvious without needing to reopen the more popover.
@@ -233,16 +285,39 @@ function EventForm({
   }, [moreOpen]);
 
   const handleSave = async () => {
-    if (!name.trim() || !year.trim()) {
-      setError('Name and year are required.');
+    if (!name.trim()) {
+      setError('Name is required.');
       return;
     }
     setSaving(true);
     setError('');
     try {
+      const cash = parseFloat(openingCash) || 0;
+      const bank = parseFloat(openingBank) || 0;
       const saved = existing
-        ? await updateEventRequest(existing.id, name.trim(), Number(year), emoji)
-        : await createEventRequest(name.trim(), Number(year), emoji, currentUserId);
+        ? await updateEventRequest(existing.id, name.trim(), year, emoji, cash, bank)
+        : await createEventRequest(name.trim(), year, emoji, currentUserId, cash, bank);
+
+      if (!existing && connectEventId && (copyMembers || copyDonors)) {
+        // Bulk copy inserts must land with event_id = this new event, which
+        // only happens once it's the active event (RLS scopes every insert
+        // to current_event_id()) — switch to it first.
+        await switchActiveEventRequest(saved.id);
+        onSwitched(saved.id);
+        if (copyMembers) {
+          const members = await fetchEventMembers(connectEventId);
+          await copyMembersToActiveEvent(members);
+        }
+        if (copyDonors) {
+          const [chandaList, donationAdsList] = await Promise.all([
+            fetchEventChanda(connectEventId),
+            fetchEventDonationAds(connectEventId),
+          ]);
+          await copyChandaDonorsToActiveEvent(chandaList);
+          await copyAdsDonorsToActiveEvent(donationAdsList);
+        }
+      }
+
       onSaved(saved);
     } catch (err: any) {
       console.error('Failed to save event', err);
@@ -275,13 +350,37 @@ function EventForm({
         </div>
         <div>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
-          <input
+          <select
             value={year}
-            onChange={e => setYear(e.target.value.replace(/\D/g, ''))}
-            placeholder="2026"
-            maxLength={4}
-            className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
-          />
+            onChange={e => setYear(Number(e.target.value))}
+            className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
+          >
+            {YEAR_OPTIONS.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Cash in Hand (₹)</label>
+            <input
+              type="number"
+              min="0"
+              value={openingCash}
+              onChange={e => setOpeningCash(e.target.value)}
+              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Money in Bank (₹)</label>
+            <input
+              type="number"
+              min="0"
+              value={openingBank}
+              onChange={e => setOpeningBank(e.target.value)}
+              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
+            />
+          </div>
         </div>
         <div className="relative" ref={moreRef}>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Emoji (optional)</label>
@@ -328,6 +427,35 @@ function EventForm({
             </div>
           </div>
         </div>
+        {!existing && otherEvents.length > 0 && (
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-2.5">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Connect with a previous Puja/Festival? (optional)</label>
+            <select
+              value={connectEventId}
+              onChange={e => handleConnectChange(e.target.value)}
+              disabled={loadingConnect}
+              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
+            >
+              <option value="">No, start fresh</option>
+              {otherEvents.map(e => (
+                <option key={e.id} value={e.id}>{e.name} {e.year}</option>
+              ))}
+            </select>
+            {connectEventId && (
+              <div className="mt-2 space-y-1.5">
+                {loadingConnect && <p className="text-xs text-gray-400 dark:text-gray-500">Loading balance…</p>}
+                <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input type="checkbox" checked={copyMembers} onChange={e => setCopyMembers(e.target.checked)} className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500" />
+                  Copy committee members from this event
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input type="checkbox" checked={copyDonors} onChange={e => setCopyDonors(e.target.checked)} className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500" />
+                  Copy Collection &amp; Sponsorship donor list from this event
+                </label>
+              </div>
+            )}
+          </div>
+        )}
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
 

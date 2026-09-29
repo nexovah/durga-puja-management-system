@@ -875,6 +875,75 @@ export async function deleteDocumentRequest(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// Cash & Bank manual adjustments (see supabase/080_cash_bank_adjustments.sql).
+// Event-scoped, append-only + deletable, no in-place edit.
+// ---------------------------------------------------------------------------
+
+export type CashBankBucket = 'cash' | 'bank';
+export type CashBankDirection = 'add' | 'deduct';
+
+export interface CashBankAdjustment {
+  id: string;
+  bucket: CashBankBucket;
+  direction: CashBankDirection;
+  amount: number;
+  reason: string;
+  date: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+function fromCashBankAdjustmentRow(row: any): CashBankAdjustment {
+  return {
+    id: row.id,
+    bucket: row.bucket,
+    direction: row.direction,
+    amount: Number(row.amount) || 0,
+    reason: row.reason,
+    date: row.date,
+    createdByName: row.created_by_name,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listCashBankAdjustmentsRequest(): Promise<CashBankAdjustment[]> {
+  const { data, error } = await supabase.from('cash_bank_adjustments').select('*').order('date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromCashBankAdjustmentRow);
+}
+
+export async function createCashBankAdjustmentRequest(entry: {
+  bucket: CashBankBucket;
+  direction: CashBankDirection;
+  amount: number;
+  reason: string;
+  date: string;
+  createdByUserId: string;
+  createdByName: string;
+}): Promise<CashBankAdjustment> {
+  const { data, error } = await supabase
+    .from('cash_bank_adjustments')
+    .insert({
+      bucket: entry.bucket,
+      direction: entry.direction,
+      amount: entry.amount,
+      reason: entry.reason,
+      date: entry.date,
+      created_by_user_id: entry.createdByUserId,
+      created_by_name: entry.createdByName,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromCashBankAdjustmentRow(data);
+}
+
+export async function deleteCashBankAdjustmentRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('cash_bank_adjustments').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function listMyTicketsRequest(): Promise<SupportTicket[]> {
   const { data, error } = await supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
   if (error) throw error;
@@ -1162,7 +1231,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 
@@ -1251,6 +1320,8 @@ export interface EventInfo {
   year: number;
   emoji: string | null;
   createdAt: string;
+  openingCash: number;
+  openingBank: number;
 }
 
 function toEventInfo(row: any): EventInfo {
@@ -1261,6 +1332,8 @@ function toEventInfo(row: any): EventInfo {
     year: row.year,
     emoji: row.emoji ?? null,
     createdAt: row.created_at,
+    openingCash: Number(row.opening_cash) || 0,
+    openingBank: Number(row.opening_bank) || 0,
   };
 }
 
@@ -1281,25 +1354,133 @@ export async function fetchActiveEventId(tenantId: string): Promise<string | nul
   return data?.active_event_id ?? null;
 }
 
-export async function createEventRequest(name: string, year: number, emoji: string | null, createdBy?: string): Promise<EventInfo> {
+export async function createEventRequest(
+  name: string, year: number, emoji: string | null, createdBy?: string,
+  openingCash = 0, openingBank = 0,
+): Promise<EventInfo> {
   const { data, error } = await supabase
     .from('events')
-    .insert({ name, year, emoji, created_by: createdBy ?? null })
+    .insert({ name, year, emoji, created_by: createdBy ?? null, opening_cash: openingCash, opening_bank: openingBank })
     .select()
     .single();
   if (error) throw error;
   return toEventInfo(data);
 }
 
-export async function updateEventRequest(eventId: string, name: string, year: number, emoji: string | null): Promise<EventInfo> {
+export async function updateEventRequest(
+  eventId: string, name: string, year: number, emoji: string | null,
+  openingCash: number, openingBank: number,
+): Promise<EventInfo> {
   const { data, error } = await supabase
     .from('events')
-    .update({ name, year, emoji })
+    .update({ name, year, emoji, opening_cash: openingCash, opening_bank: openingBank })
     .eq('id', eventId)
     .select()
     .single();
   if (error) throw error;
   return toEventInfo(data);
+}
+
+// ---------------------------------------------------------------------------
+// Cross-event reads — a specific (not necessarily active) event's rows
+// within the caller's own tenant, via the SECURITY DEFINER RPCs in
+// supabase/081_event_scoped_fetch_rpcs.sql. Used by the "connect with a
+// previous Puja/Festival" feature on event creation (computing that
+// event's closing Cash/Bank balance, and optionally copying its members/
+// donor list) — normal RLS only ever exposes the *active* event's rows.
+// ---------------------------------------------------------------------------
+
+export async function fetchEventChanda(eventId: string): Promise<Chanda[]> {
+  const { data, error } = await supabase.rpc('fetch_event_chanda', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromChandaRow);
+}
+
+export async function fetchEventDonationAds(eventId: string): Promise<DonationAd[]> {
+  const { data, error } = await supabase.rpc('fetch_event_donation_ads', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromDonationAdRow);
+}
+
+export async function fetchEventMembers(eventId: string): Promise<Member[]> {
+  const { data, error } = await supabase.rpc('fetch_event_members', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromMemberRow);
+}
+
+export async function fetchEventLoans(eventId: string): Promise<Loan[]> {
+  const { data, error } = await supabase.rpc('fetch_event_loans', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromLoanRow);
+}
+
+export async function fetchEventExpenses(eventId: string): Promise<Expense[]> {
+  const { data, error } = await supabase.rpc('fetch_event_expenses', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromExpenseRow);
+}
+
+// ---------------------------------------------------------------------------
+// "Connect with a previous Puja/Festival" — opt-in bulk copy of a previous
+// event's committee members / donor identities into the now-active event.
+// Copies identity only; payment/amount fields are reset (see the Cash &
+// Bank plan). Must run AFTER the new event is switched active — RLS's
+// `event_id = current_event_id()` check would otherwise reject every row.
+// ---------------------------------------------------------------------------
+
+export async function copyMembersToActiveEvent(members: Member[]): Promise<void> {
+  if (members.length === 0) return;
+  const rows = members.map(m => toMemberRow({
+    ...m,
+    id: crypto.randomUUID(),
+    membershipAmount: undefined,
+    membershipPaidMethod: undefined,
+    membershipPaymentStatus: undefined,
+    membershipPartialAmount: undefined,
+    membershipDate: undefined,
+    membershipBillNumber: '',
+    membershipRemarks: '',
+  }));
+  const { error } = await supabase.from('members').insert(rows);
+  if (error) throw error;
+}
+
+export async function copyChandaDonorsToActiveEvent(chandaList: Chanda[]): Promise<void> {
+  if (chandaList.length === 0) return;
+  const today = new Date().toISOString().split('T')[0];
+  const rows = chandaList.map(c => toChandaRow({
+    ...c,
+    id: crypto.randomUUID(),
+    amount: 0,
+    amount1: undefined,
+    amount2: undefined,
+    paymentStatus: 'pending',
+    partialAmount: undefined,
+    date: today,
+    billNumber: '',
+    remarks: '',
+  }));
+  const { error } = await supabase.from('chanda').insert(rows);
+  if (error) throw error;
+}
+
+// Sponsorship (Ads) donors only — Donation rows are intentionally excluded
+// per the confirmed scope.
+export async function copyAdsDonorsToActiveEvent(donationAdsList: DonationAd[]): Promise<void> {
+  const adsOnly = donationAdsList.filter(d => d.category === 'ads');
+  if (adsOnly.length === 0) return;
+  const today = new Date().toISOString().split('T')[0];
+  const rows = adsOnly.map(d => toDonationAdRow({
+    ...d,
+    id: crypto.randomUUID(),
+    amount: 0,
+    paymentStatus: 'pending',
+    date: today,
+    voucherNumber: '',
+    remarks: '',
+  }));
+  const { error } = await supabase.from('donation_ads').insert(rows);
+  if (error) throw error;
 }
 
 // Admin-only server-verified switch — see switch_active_event() in
