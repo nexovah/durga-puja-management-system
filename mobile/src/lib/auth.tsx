@@ -7,6 +7,27 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, setTenantAccessToken } from './supabase';
 
+// Same shape web's User['permissions'] uses (src/app/App.tsx) — donation/ads
+// used to be one combined "donationAds" permission before the menus were
+// split; kept optional here too so users saved before that split still
+// carry a value, and gating code falls back to it the same way web does.
+export interface UserPermissions {
+  members: boolean;
+  chanda: boolean;
+  donationAds?: boolean;
+  donation?: boolean;
+  ads?: boolean;
+  expenses: boolean;
+  treasury: boolean;
+  settings: boolean;
+  loans: boolean;
+  vendors: boolean;
+  tasks: boolean;
+  estimation: boolean;
+  assets?: boolean;
+  documents?: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -16,6 +37,7 @@ export interface User {
   canDelete: boolean;
   canBulkImport: boolean;
   isActive: boolean;
+  permissions: UserPermissions;
   tenantId: string;
   accessToken: string;
   subscriptionExpiresAt: string | null;
@@ -33,6 +55,7 @@ function fromUserRow(row: any): User {
     canDelete: row.can_delete !== false,
     canBulkImport: row.can_bulk_import !== false,
     isActive: row.is_active !== false,
+    permissions: row.permissions || {},
     tenantId: row.tenant_id,
     accessToken: row.access_token,
     subscriptionExpiresAt: row.subscription_expires_at,

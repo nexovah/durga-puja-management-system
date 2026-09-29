@@ -5,7 +5,7 @@ import {
   Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, HandCoins, FileText,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../lib/auth';
+import { useAuth, UserPermissions } from '../lib/auth';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   listChanda, listMembers, listDonationAds, listExpenses, getCommitteeInfo,
@@ -131,6 +131,7 @@ export function HomeScreen({ navigation }: any) {
     );
   }
 
+  const permissions: Partial<UserPermissions> = user?.permissions || {};
   const collectedPct = totals.totalCollected > 0 ? Math.min(100, (totals.totalCollected / (totals.totalCollected + totals.totalSpent || 1)) * 100) : 0;
   const spentPct = 100 - collectedPct;
 
@@ -250,16 +251,16 @@ export function HomeScreen({ navigation }: any) {
             <Text style={styles.sectionTitle}>Quick add</Text>
           </View>
           <View style={styles.grid}>
-            <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Collection" onPress={() => navigation.navigate('ChandaList')} />
-            <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />
-            <QuickTile icon={HeartHandshake} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />
-            <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Sponsorship" onPress={() => navigation.navigate('AdsList')} />
+            {!!permissions.chanda && <QuickTile icon={Wallet} color={colors.orange} bg={colors.orangeSoft} label="Collection" onPress={() => navigation.navigate('ChandaList')} />}
+            {!!permissions.members && <QuickTile icon={Users} color={colors.indigo} bg={colors.indigoBg} label="Members" onPress={() => navigation.navigate('MembersList')} />}
+            {!!(permissions.donation ?? permissions.donationAds) && <QuickTile icon={HeartHandshake} color={colors.green} bg={colors.greenBg} label="Donation" onPress={() => navigation.navigate('DonationList')} />}
+            {!!(permissions.ads ?? permissions.donationAds) && <QuickTile icon={Megaphone} color={colors.indigo} bg={colors.indigoBg} label="Sponsorship" onPress={() => navigation.navigate('AdsList')} />}
           </View>
           <View style={[styles.grid, { marginTop: 10 }]}>
-            <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />
-            <QuickTile icon={Store} color={colors.indigo} bg={colors.indigoBg} label="Vendors" onPress={() => navigation.navigate('VendorList')} />
-            <QuickTile icon={HandCoins} color={colors.amber} bg={colors.amberBg} label="Loan" onPress={() => navigation.navigate('LoanList')} />
-            <QuickTile icon={FileText} color={colors.orange} bg={colors.orangeSoft} label="Estimation" onPress={() => navigation.navigate('EstimationList')} />
+            {!!permissions.expenses && <QuickTile icon={Receipt} color={colors.red} bg={colors.redBg} label="Expenses" onPress={() => navigation.navigate('ExpensesList')} />}
+            {!!permissions.vendors && <QuickTile icon={Store} color={colors.indigo} bg={colors.indigoBg} label="Vendors" onPress={() => navigation.navigate('VendorList')} />}
+            {!!permissions.loans && <QuickTile icon={HandCoins} color={colors.amber} bg={colors.amberBg} label="Loan" onPress={() => navigation.navigate('LoanList')} />}
+            {!!permissions.estimation && <QuickTile icon={FileText} color={colors.orange} bg={colors.orangeSoft} label="Estimation" onPress={() => navigation.navigate('EstimationList')} />}
           </View>
         </View>
 
@@ -298,9 +299,13 @@ export function HomeScreen({ navigation }: any) {
             {({ pressed }) => <CheckSquare size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
           </Pressable>
           <View style={{ width: 54 }} />
-          <Pressable onPress={() => navigation.navigate('Reports')} hitSlop={10}>
-            {({ pressed }) => <BarChart3 size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
-          </Pressable>
+          {!!permissions.treasury ? (
+            <Pressable onPress={() => navigation.navigate('Reports')} hitSlop={10}>
+              {({ pressed }) => <BarChart3 size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
+            </Pressable>
+          ) : (
+            <View style={{ width: 22 }} />
+          )}
           <Pressable onPress={() => navigation.navigate('Profile')} hitSlop={10}>
             {({ pressed }) => <User size={22} color={pressed ? colors.ink : colors.mutedLight} strokeWidth={pressed ? 2.3 : 2} />}
           </Pressable>

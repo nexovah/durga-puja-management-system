@@ -10,7 +10,7 @@ import {
   X, Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, HandCoins, CheckSquare, FileText,
   Info, LifeBuoy, Shield, RotateCcw,
 } from 'lucide-react-native';
-import { useAuth } from '../lib/auth';
+import { useAuth, UserPermissions } from '../lib/auth';
 import { getCommitteeInfo, CommitteeInfo, getActiveEvent, ActiveEventInfo } from '../lib/db';
 import { colors, radius } from '../theme';
 import { SearchBar } from '../components/SearchBar';
@@ -19,6 +19,9 @@ interface MenuItem {
   icon: any;
   label: string;
   onPress: (navigation: any) => void;
+  // Matches web's Sidebar.tsx gating — omitted means always shown
+  // (e.g. Support/About items, which web doesn't gate either).
+  show?: (p: Partial<UserPermissions>) => boolean;
 }
 
 interface MenuSection {
@@ -30,25 +33,25 @@ const SECTIONS: MenuSection[] = [
   {
     label: 'Main Menu',
     items: [
-      { icon: Wallet, label: 'Collection', onPress: nav => nav.navigate('ChandaList') },
-      { icon: HeartHandshake, label: 'Donations', onPress: nav => nav.navigate('DonationList') },
-      { icon: Megaphone, label: 'Sponsorship', onPress: nav => nav.navigate('AdsList') },
-      { icon: Receipt, label: 'Expenses', onPress: nav => nav.navigate('ExpensesList') },
-      { icon: Store, label: 'Vendors', onPress: nav => nav.navigate('VendorList') },
-      { icon: Users, label: 'Members', onPress: nav => nav.navigate('MembersList') },
+      { icon: Wallet, label: 'Collection', onPress: nav => nav.navigate('ChandaList'), show: p => !!p.chanda },
+      { icon: HeartHandshake, label: 'Donations', onPress: nav => nav.navigate('DonationList'), show: p => !!(p.donation ?? p.donationAds) },
+      { icon: Megaphone, label: 'Sponsorship', onPress: nav => nav.navigate('AdsList'), show: p => !!(p.ads ?? p.donationAds) },
+      { icon: Receipt, label: 'Expenses', onPress: nav => nav.navigate('ExpensesList'), show: p => !!p.expenses },
+      { icon: Store, label: 'Vendors', onPress: nav => nav.navigate('VendorList'), show: p => !!p.vendors },
+      { icon: Users, label: 'Members', onPress: nav => nav.navigate('MembersList'), show: p => !!p.members },
     ],
   },
   {
     label: 'Accounts',
     items: [
-      { icon: HandCoins, label: 'Loans', onPress: nav => nav.navigate('LoanList') },
+      { icon: HandCoins, label: 'Loans', onPress: nav => nav.navigate('LoanList'), show: p => !!p.loans },
     ],
   },
   {
     label: 'Essential',
     items: [
-      { icon: CheckSquare, label: 'Tasks', onPress: nav => nav.navigate('TaskList') },
-      { icon: FileText, label: 'Estimations', onPress: nav => nav.navigate('EstimationList') },
+      { icon: CheckSquare, label: 'Tasks', onPress: nav => nav.navigate('TaskList'), show: p => !!p.tasks },
+      { icon: FileText, label: 'Estimations', onPress: nav => nav.navigate('EstimationList'), show: p => !!p.estimation },
     ],
   },
   {
@@ -80,12 +83,16 @@ export function MenuScreen({ navigation }: any) {
   const isProfileLogoUrl = isCommitteeLogoUrl; // profile avatar reuses the same committee logo, as on ProfileScreen
 
   const query = search.trim().toLowerCase();
+  const permissions = user?.permissions || {};
   const filteredSections = useMemo(() => {
-    if (!query) return SECTIONS;
     return SECTIONS
-      .map(section => ({ ...section, items: section.items.filter(i => i.label.toLowerCase().includes(query)) }))
+      .map(section => ({
+        ...section,
+        items: section.items.filter(i => (!i.show || i.show(permissions)) && (!query || i.label.toLowerCase().includes(query))),
+      }))
       .filter(section => section.items.length > 0);
-  }, [query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, user]);
 
   return (
     <View style={styles.container}>
