@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical } from 'lucide-react';
-import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, getDonationAdCreditAmount } from '../App';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon } from 'lucide-react';
+import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -22,6 +22,8 @@ import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
   setDonationAdsList: (list: DonationAd[]) => void;
+  members: Member[];
+  chandaList: Chanda[];
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
@@ -39,7 +41,7 @@ interface DonationAdsCollectionProps {
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
   category: 'Category', donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', inKind: 'In-Kind / Ads Category', date: 'Date', voucherNumber: 'Voucher Number',
-  phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
+  phone: 'Phone', phone2: 'Phone 2', collectedBy: 'Collected By', remarks: 'Remarks',
 };
 
 export const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
@@ -116,14 +118,17 @@ const emptyForm = {
   voucherNumber: '',
   phone: '',
   phone2: '',
+  collectedBy: '',
   remarks: '',
 };
 
-export function DonationAdsCollection({ donationAdsList, setDonationAdsList, canEdit, canDelete, canBulkImport, onLog, fixedCategory }: DonationAdsCollectionProps) {
+export function DonationAdsCollection({ donationAdsList, setDonationAdsList, members, chandaList, canEdit, canDelete, canBulkImport, onLog, fixedCategory }: DonationAdsCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(() => (fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm));
+  const [collectedBySuggestOpen, setCollectedBySuggestOpen] = useState(false);
+  const collectedBySuggestRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -140,6 +145,36 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!collectedBySuggestOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (collectedBySuggestRef.current && !collectedBySuggestRef.current.contains(e.target as Node)) setCollectedBySuggestOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [collectedBySuggestOpen]);
+
+  // "Collected by" suggestions: committee Members first (most common case),
+  // then every unique donor/company name ever entered across Collection and
+  // Donation/Sponsorship — covers the third-party-collector case too. Free
+  // text is always allowed; this list just speeds up picking a known name.
+  const collectedByPool = useMemo(() => {
+    const names = new Set<string>();
+    members.forEach(m => { if (m.name.trim()) names.add(m.name.trim()); });
+    chandaList.forEach(c => { if (c.donorName.trim()) names.add(c.donorName.trim()); });
+    donationAdsList.forEach(d => {
+      if (d.donorName.trim()) names.add(d.donorName.trim());
+      if (d.companyName?.trim()) names.add(d.companyName.trim());
+    });
+    return [...names];
+  }, [members, chandaList, donationAdsList]);
+
+  const matchingCollectedBy = useMemo(() => {
+    const q = formData.collectedBy.trim().toLowerCase();
+    if (!q) return [];
+    return collectedByPool.filter(name => name.toLowerCase().includes(q)).slice(0, 8);
+  }, [collectedByPool, formData.collectedBy]);
 
   const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
 
@@ -232,6 +267,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       voucherNumber: formData.category === 'donation' ? formData.voucherNumber : '',
       phone: formData.phone,
       phone2: formData.phone2,
+      collectedBy: formData.collectedBy.trim() || undefined,
       remarks: formData.remarks,
     };
 
@@ -295,6 +331,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
       voucherNumber: item.voucherNumber || '',
       phone: item.phone,
       phone2: item.phone2 || '',
+      collectedBy: item.collectedBy || '',
       remarks: item.remarks,
     });
     setEditingId(item.id);
@@ -728,6 +765,36 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
               />
             </div>
 
+            <div className="relative" ref={collectedBySuggestRef}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.collectedBy')}</label>
+              <input
+                type="text"
+                autoComplete="off"
+                value={formData.collectedBy}
+                onChange={(e) => { setFormData({ ...formData, collectedBy: e.target.value }); setCollectedBySuggestOpen(true); }}
+                onFocus={() => setCollectedBySuggestOpen(true)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('donationAds.collectedByPlaceholder')}
+              />
+              {collectedBySuggestOpen && matchingCollectedBy.length > 0 && (
+                <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+                  {matchingCollectedBy.map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => { setFormData({ ...formData, collectedBy: name }); setCollectedBySuggestOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                        <UserIcon size={14} />
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
@@ -983,6 +1050,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, can
           { label: t('donationAds.voucherNumber'), value: viewTarget.voucherNumber || '-' },
           { label: t('common.phone1'), value: viewTarget.phone || '-' },
           { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
+          { label: t('donationAds.collectedBy'), value: viewTarget.collectedBy || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
         ] : []}
       />

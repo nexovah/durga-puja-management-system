@@ -117,6 +117,7 @@ function fromDonationAdRow(row: any): DonationAd {
     voucherNumber: row.voucher_number || '',
     phone: row.phone || '',
     phone2: row.phone2 || '',
+    collectedBy: row.collected_by || undefined,
     remarks: row.remarks || '',
   };
 }
@@ -134,6 +135,7 @@ function toDonationAdRow(d: DonationAd) {
     voucher_number: d.category === 'donation' ? (d.voucherNumber || null) : null,
     phone: d.phone,
     phone2: d.phone2 || null,
+    collected_by: d.collectedBy || null,
     remarks: d.remarks,
   };
 }

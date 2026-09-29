@@ -224,6 +224,7 @@ export interface DonationAd {
   voucherNumber?: string; // Donation entries only
   phone: string; // Phone Number 1
   phone2?: string; // Phone Number 2 (optional)
+  collectedBy?: string; // Committee member or third party who collected this entry
   remarks: string;
 }
 
@@ -1198,6 +1199,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <DonationAdsCollection
             donationAdsList={donationAdsList}
             setDonationAdsList={setDonationAdsList}
+            members={members}
+            chandaList={chandaList}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             canBulkImport={currentUser?.canBulkImport !== false}
@@ -1209,6 +1212,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <DonationAdsCollection
             donationAdsList={donationAdsList}
             setDonationAdsList={setDonationAdsList}
+            members={members}
+            chandaList={chandaList}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             canBulkImport={currentUser?.canBulkImport !== false}
