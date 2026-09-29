@@ -276,7 +276,8 @@ export interface Loan {
   amountReceived: number; // received from the lender — credited to the committee's balance
   amountPaid: number; // repaid back to the lender so far — deducted from that credit
   phone: string;
-  paymentMethod: PaidMethod;
+  paymentMethod: PaidMethod; // method the loan was received in
+  returnMethod?: PaidMethod; // method the repayment (amountPaid) went out through — separate from paymentMethod
   paymentStatus: 'paid'; // loans are always recorded as paid out
   date: string;
   returnDate?: string;

@@ -28,7 +28,7 @@ interface LoansProps {
 
 const LOANS_FIELD_LABELS: Record<string, string> = {
   donorName: "Donor's Name", amountReceived: 'Amount Received', amountPaid: 'Amount Paid',
-  phone: 'Phone', paymentMethod: 'Paid Method', paymentStatus: 'Payment Status',
+  phone: 'Phone', paymentMethod: 'Paid Method', returnMethod: 'Amount Returned Method', paymentStatus: 'Payment Status',
   date: 'Date', returnDate: 'Return Date', remarks: 'Remarks',
 };
 
@@ -46,6 +46,7 @@ const emptyForm = {
   amountPaid: '',
   phone: '',
   paymentMethod: 'notSelected' as PaidMethod,
+  returnMethod: 'notSelected' as PaidMethod,
   date: new Date().toISOString().split('T')[0],
   returnDate: '',
   remarks: '',
@@ -91,6 +92,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       amountPaid: parseFloat(formData.amountPaid) || 0,
       phone: formData.phone,
       paymentMethod: formData.paymentMethod,
+      returnMethod: formData.returnMethod,
       paymentStatus: 'paid' as const,
       date: formData.date,
       returnDate: formData.returnDate,
@@ -128,6 +130,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
       amountPaid: (loan.amountPaid || 0).toString(),
       phone: loan.phone,
       paymentMethod: loan.paymentMethod || 'notSelected',
+      returnMethod: loan.returnMethod || 'notSelected',
       date: loan.date,
       returnDate: loan.returnDate || '',
       remarks: loan.remarks,
@@ -162,6 +165,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         t('loans.csv.amountReceived'),
         t('loans.csv.amountPaid'),
         t('loans.paymentMethod'),
+        t('loans.returnMethod'),
         t('loans.csv.date'),
         t('loans.csv.returnDate'),
         t('loans.csv.phone'),
@@ -172,6 +176,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         l.amountReceived,
         l.amountPaid || 0,
         paidMethodLabel(l.paymentMethod || 'notSelected'),
+        paidMethodLabel(l.returnMethod || 'notSelected'),
         l.date,
         l.returnDate || '',
         l.phone,
@@ -204,7 +209,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
 
       const imported: Loan[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
-        const [donorName, amountReceivedRaw, amountPaidRaw, paidMethodRaw, date, returnDate, phone, remarks] = rows[i];
+        const [donorName, amountReceivedRaw, amountPaidRaw, paidMethodRaw, returnMethodRaw, date, returnDate, phone, remarks] = rows[i];
         const amountReceived = parseFloat((amountReceivedRaw || '').replace(/,/g, ''));
         if (!donorName || isNaN(amountReceived)) continue;
 
@@ -215,6 +220,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
           amountPaid: parseFloat((amountPaidRaw || '0').replace(/,/g, '')) || 0,
           phone: (phone || '').trim(),
           paymentMethod: parsePaidMethodInput(paidMethodRaw || ''),
+          returnMethod: parsePaidMethodInput(returnMethodRaw || ''),
           paymentStatus: 'paid',
           date: (date || '').trim() || new Date().toISOString().split('T')[0],
           returnDate: (returnDate || '').trim(),
@@ -262,6 +268,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
     { id: 'amountReceived', label: t('loans.amountReceivedLabel'), align: 'left', sortValue: l => l.amountReceived },
     { id: 'amountPaid', label: t('loans.amountPaidLabel'), align: 'left', sortValue: l => l.amountPaid || 0 },
     { id: 'paymentMethod', label: t('loans.paymentMethod'), sortValue: l => paidMethodLabel(l.paymentMethod || 'notSelected') },
+    { id: 'returnMethod', label: t('loans.returnMethod'), defaultVisible: false, sortValue: l => paidMethodLabel(l.returnMethod || 'notSelected') },
     { id: 'date', label: t('common.date'), sortValue: l => l.date },
     { id: 'returnDate', label: t('loans.returnDate'), sortValue: l => l.returnDate || '' },
     { id: 'phone', label: t('common.phone'), defaultVisible: false, sortValue: l => l.phone || '' },
@@ -362,6 +369,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
         }
       >
           <form id="loans-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Row 1: Donor's Name | Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')} *</label>
               <input
@@ -374,31 +382,6 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountReceivedLabel')} *</label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                value={formData.amountReceived}
-                onChange={(e) => setFormData({ ...formData, amountReceived: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('loans.amountPlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountPaidLabel')}</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.amountPaid}
-                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('loans.amountPlaceholder')}
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')}</label>
               <input
                 type="tel"
@@ -408,37 +391,84 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 placeholder={t('loans.phonePlaceholder')}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}</label>
-              <select
-                value={formData.paymentMethod}
-                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAID_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                ))}
-              </select>
+
+            {/* Row 2: Amount Received | Date | Payment Method */}
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountReceivedLabel')} *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.amountReceived}
+                  onChange={(e) => setFormData({ ...formData, amountReceived: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('loans.amountPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}</label>
+                <select
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaidMethod })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  {PAID_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
-              <input
-                type="date"
-                required
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              />
+
+            {/* Row 3: Amount Paid/Returned | Return Date | Amount Returned Method */}
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountPaidLabel')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.amountPaid}
+                  onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  placeholder={t('loans.amountPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnDate')}</label>
+                <input
+                  type="date"
+                  value={formData.returnDate}
+                  onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnMethod')}</label>
+                <select
+                  value={formData.returnMethod}
+                  onChange={(e) => setFormData({ ...formData, returnMethod: e.target.value as PaidMethod })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  {PAID_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnDate')}</label>
-              <input
-                type="date"
-                value={formData.returnDate}
-                onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              />
-            </div>
+
+            {/* Row 4: Remarks */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
@@ -488,6 +518,9 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                 {tableCols.isColumnVisible('paymentMethod') && (
                   <SortableTh column={loanColumns.find(c => c.id === 'paymentMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
+                {tableCols.isColumnVisible('returnMethod') && (
+                  <SortableTh column={loanColumns.find(c => c.id === 'returnMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
                 {tableCols.isColumnVisible('date') && (
                   <SortableTh column={loanColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -527,6 +560,9 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
                   )}
                   {tableCols.isColumnVisible('paymentMethod') && (
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(loan.paymentMethod || 'notSelected')}</td>
+                  )}
+                  {tableCols.isColumnVisible('returnMethod') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(loan.returnMethod || 'notSelected')}</td>
                   )}
                   {tableCols.isColumnVisible('date') && (
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
@@ -628,6 +664,7 @@ export function Loans({ loansList, setLoansList, canEdit, canDelete, canBulkImpo
           { label: t('loans.amountReceivedLabel'), value: `₹${viewTarget.amountReceived.toLocaleString()}` },
           { label: t('loans.amountPaidLabel'), value: `₹${(viewTarget.amountPaid || 0).toLocaleString()}` },
           { label: t('loans.paymentMethod'), value: paidMethodLabel(viewTarget.paymentMethod || 'notSelected') },
+          { label: t('loans.returnMethod'), value: paidMethodLabel(viewTarget.returnMethod || 'notSelected') },
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
           { label: t('loans.returnDate'), value: viewTarget.returnDate ? new Date(viewTarget.returnDate).toLocaleDateString(locale) : '-' },
           { label: t('common.phone'), value: viewTarget.phone || '-' },

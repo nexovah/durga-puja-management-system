@@ -73,15 +73,14 @@ export function computeCashBankTotals(params: {
     memberPayment[bucketForMethod(m.membershipPaidMethod)] += amount;
   }
 
-  // Loans have one payment-method field covering both the money received
-  // and any repayment made — approximated with that single field for both
-  // directions (no per-transaction method on Loans today).
+  // Loan repayment (amountPaid) uses its own returnMethod when set; older
+  // records saved before that field existed fall back to the receipt's
+  // paymentMethod (the previous approximation).
   const loanReceived: CashBankSourceBreakdown = { key: 'loanReceived', label: 'Loan Received', cash: 0, bank: 0 };
   const loanRepayment: CashBankSourceBreakdown = { key: 'loanRepayment', label: 'Loan Repayment', cash: 0, bank: 0 };
   for (const l of loansList) {
-    const bucket = bucketForMethod(l.paymentMethod);
-    if (l.amountReceived > 0) loanReceived[bucket] += l.amountReceived;
-    if (l.amountPaid > 0) loanRepayment[bucket] += l.amountPaid;
+    if (l.amountReceived > 0) loanReceived[bucketForMethod(l.paymentMethod)] += l.amountReceived;
+    if (l.amountPaid > 0) loanRepayment[bucketForMethod(l.returnMethod || l.paymentMethod)] += l.amountPaid;
   }
 
   const expenseOut: CashBankSourceBreakdown = { key: 'expenses', label: 'Expenses', cash: 0, bank: 0 };
