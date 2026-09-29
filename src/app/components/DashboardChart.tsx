@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import {
   startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth,
-  subDays, subWeeks, subMonths, addDays, addWeeks, addMonths,
+  subDays, subMonths,
   eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format,
 } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
@@ -21,29 +21,27 @@ interface DashboardChartProps {
   members: Member[];
 }
 
-type RangeKey = '7d' | 'thisWeek' | 'lastWeek' | '30d' | '3m' | '6m';
+type RangeKey = 'allTime' | '7d' | '30d' | '3m' | '6m';
 type Granularity = 'day' | 'week' | 'month';
 
 const RANGES: { key: RangeKey; labelKey: TranslationKey; granularity: Granularity }[] = [
+  { key: 'allTime', labelKey: 'dashboard.chart.range.allTime', granularity: 'month' },
   { key: '7d', labelKey: 'dashboard.chart.range.7d', granularity: 'day' },
-  { key: 'thisWeek', labelKey: 'dashboard.chart.range.thisWeek', granularity: 'day' },
-  { key: 'lastWeek', labelKey: 'dashboard.chart.range.lastWeek', granularity: 'day' },
   { key: '30d', labelKey: 'dashboard.chart.range.30d', granularity: 'day' },
   { key: '3m', labelKey: 'dashboard.chart.range.3m', granularity: 'week' },
   { key: '6m', labelKey: 'dashboard.chart.range.6m', granularity: 'month' },
 ];
 
-function getRangeBounds(key: RangeKey): { start: Date; end: Date } {
+// 'allTime' has no fixed lookback — its start is the earliest record date
+// across everything shown in this chart, computed by the caller and passed
+// in (falls back to `now` when there's no data yet).
+function getRangeBounds(key: RangeKey, earliestDate: Date): { start: Date; end: Date } {
   const now = new Date();
   switch (key) {
+    case 'allTime':
+      return { start: startOfDay(earliestDate), end: endOfDay(now) };
     case '7d':
       return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) };
-    case 'thisWeek':
-      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
-    case 'lastWeek': {
-      const lastWeekDay = subWeeks(now, 1);
-      return { start: startOfWeek(lastWeekDay, { weekStartsOn: 1 }), end: endOfWeek(lastWeekDay, { weekStartsOn: 1 }) };
-    }
     case '30d':
       return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) };
     case '3m':
@@ -72,7 +70,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
   const tooltipStyle = theme === 'dark'
     ? { borderRadius: 8, border: '1px solid #3d434b', fontSize: 13, background: '#1c1f24', color: '#e5e7eb' }
     : { borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 };
-  const [range, setRange] = useState<RangeKey>('30d');
+  const [range, setRange] = useState<RangeKey>('allTime');
 
   const incomeRecords: Record_[] = useMemo(() => [
     ...chandaList.map(c => ({ date: c.date, amount: getChandaCreditAmount(c) })),
@@ -96,10 +94,19 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
     })
   ), [expenses]);
 
-  const activeRange = RANGES.find(r => r.key === range) || RANGES[3];
+  const activeRange = RANGES.find(r => r.key === range) || RANGES[0];
+
+  const earliestDate = useMemo(() => {
+    const now = new Date();
+    const allDates = [...incomeRecords, ...expenseRecords]
+      .map(r => (r.date ? new Date(r.date) : null))
+      .filter((d): d is Date => !!d && !Number.isNaN(d.getTime()));
+    if (allDates.length === 0) return now;
+    return allDates.reduce((earliest, d) => (d < earliest ? d : earliest), now);
+  }, [incomeRecords, expenseRecords]);
 
   const chartData = useMemo(() => {
-    const { start, end } = getRangeBounds(range);
+    const { start, end } = getRangeBounds(range, earliestDate);
 
     if (activeRange.granularity === 'day') {
       return eachDayOfInterval({ start, end }).map(day => {
@@ -135,9 +142,9 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, incomeRecords, expenseRecords]);
+  }, [range, incomeRecords, expenseRecords, earliestDate]);
 
-  const { start, end } = useMemo(() => getRangeBounds(range), [range]);
+  const { start, end } = useMemo(() => getRangeBounds(range, earliestDate), [range, earliestDate]);
   const totalIncome = sumInRange(incomeRecords, start, end);
   const totalExpense = sumInRange(expenseRecords, start, end);
 
