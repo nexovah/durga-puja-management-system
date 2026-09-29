@@ -454,6 +454,32 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                 </tr>
               ))}
             </tbody>
+            {filteredVendorGroups.length > 0 && (tableCols.isColumnVisible('totalContractAmount') || tableCols.isColumnVisible('totalAmount')) && (
+              <tfoot>
+                <tr className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+                  <td
+                    colSpan={
+                      [tableCols.isColumnVisible('name'), tableCols.isColumnVisible('contact'), tableCols.isColumnVisible('category'), tableCols.isColumnVisible('transactions')]
+                        .filter(Boolean).length
+                    }
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.total')}
+                  </td>
+                  {tableCols.isColumnVisible('totalContractAmount') && (
+                    <td className="px-6 py-3 text-sm font-bold text-red-600 text-right">
+                      ₹{filteredVendorGroups.reduce((sum, g) => sum + g.totalContractAmount, 0).toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('totalAmount') && (
+                    <td className="px-6 py-3 text-sm font-bold text-green-600 text-right">
+                      ₹{filteredVendorGroups.reduce((sum, g) => sum + g.totalAmount, 0).toLocaleString()}
+                    </td>
+                  )}
+                  <td colSpan={100} />
+                </tr>
+              </tfoot>
+            )}
           </table>
           {vendorGroups.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
