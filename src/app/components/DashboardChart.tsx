@@ -81,8 +81,19 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
     ...members.filter(m => m.membershipDate).map(m => ({ date: m.membershipDate as string, amount: getMemberCreditAmount(m) })),
   ], [chandaList, donationAdsList, loansList, members]);
 
+  // Partial-status expenses spread their credited amount across each
+  // installment's own date (partialPayments[].date), not the expense's
+  // single creation date — otherwise the whole partial sum piles onto one
+  // day, producing artificial spikes instead of reflecting when money
+  // actually moved. Paid/cancelled/default-status expenses have no
+  // installment dates, so they stay a single record on e.date.
   const expenseRecords: Record_[] = useMemo(() => (
-    expenses.map(e => ({ date: e.date, amount: getExpenseCreditAmount(e) }))
+    expenses.flatMap(e => {
+      if (e.paymentStatus === 'partial' && (e.partialPayments || []).length > 0) {
+        return e.partialPayments!.map(p => ({ date: p.date || e.date, amount: p.amount || 0 }));
+      }
+      return [{ date: e.date, amount: getExpenseCreditAmount(e) }];
+    })
   ), [expenses]);
 
   const activeRange = RANGES.find(r => r.key === range) || RANGES[3];
