@@ -715,7 +715,11 @@ export async function updateDeveloperInfoRequest(info: DeveloperInfo): Promise<D
 // the same way regardless of whether the username exists (see that
 // function's own comment) so this never throws for a bad username.
 export async function superAdminRequestPasswordResetRequest(username: string): Promise<void> {
-  await supabase.functions.invoke('send-super-admin-reset-email', { body: { username } });
+  await fetch('/api/auth/request-super-admin-password-reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
 }
 
 export async function superAdminResetPasswordRequest(token: string, newPassword: string): Promise<boolean> {
