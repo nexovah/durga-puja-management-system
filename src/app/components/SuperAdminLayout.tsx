@@ -5,7 +5,7 @@ import {
   ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText, Inbox, HelpCircle,
 } from 'lucide-react';
 import { useTheme } from '../i18n/ThemeContext';
-import { getPlatformSettingsRequest } from '../lib/superAdminDb';
+import { getPlatformSettingsRequest, listTenantsRequest, listOrdersRequest, listLeadsRequest, listSupportTicketsRequest } from '../lib/superAdminDb';
 
 export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'leads' | 'support' | 'cms' | 'settings';
 
@@ -29,6 +29,29 @@ const NAV_ITEMS: { key: SuperAdminPage; label: string; icon: typeof Building2 }[
 
 const COLLAPSE_STORAGE_KEY = 'puja-super-admin-sidebar-collapsed';
 
+// Which nav sections get an unread-count badge, and where their "last
+// seen" timestamp lives — a plain per-browser localStorage marker (no
+// backend read-state table needed) updated to now() the moment that
+// page is opened, so the badge only counts rows created since the last visit.
+const BADGE_KEYS: SuperAdminPage[] = ['tenants', 'orders', 'leads', 'support'];
+const lastSeenStorageKey = (key: SuperAdminPage) => `puja-super-admin-lastseen-${key}`;
+
+function getLastSeen(key: SuperAdminPage): number {
+  try {
+    return parseInt(localStorage.getItem(lastSeenStorageKey(key)) || '0', 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setLastSeen(key: SuperAdminPage, ts: number) {
+  try {
+    localStorage.setItem(lastSeenStorageKey(key), String(ts));
+  } catch {
+    // ignore — read-state is a nice-to-have, not critical
+  }
+}
+
 export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, children }: SuperAdminLayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,10 +66,45 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
   const [logoUrl, setLogoUrl] = useState('');
+  const [badgeCounts, setBadgeCounts] = useState<Partial<Record<SuperAdminPage, number>>>({});
 
   useEffect(() => {
     getPlatformSettingsRequest().then(p => setLogoUrl(p.logoUrl)).catch(() => {});
   }, []);
+
+  // Unread counts for the 4 badged sections — fetched once on mount (each
+  // list request is already used by that section's own page, so this is
+  // the same lightweight query, not new load) and recomputed whenever the
+  // active page changes, since navigating into a badged section marks it
+  // read below.
+  const refreshBadgeCounts = () => {
+    listTenantsRequest().then(rows => {
+      const seen = getLastSeen('tenants');
+      setBadgeCounts(c => ({ ...c, tenants: rows.filter(r => new Date(r.createdAt).getTime() > seen).length }));
+    }).catch(() => {});
+    listOrdersRequest().then(rows => {
+      const seen = getLastSeen('orders');
+      setBadgeCounts(c => ({ ...c, orders: rows.filter(r => new Date(r.createdAt).getTime() > seen).length }));
+    }).catch(() => {});
+    listLeadsRequest().then(rows => {
+      const seen = getLastSeen('leads');
+      setBadgeCounts(c => ({ ...c, leads: rows.filter(r => new Date(r.createdAt).getTime() > seen).length }));
+    }).catch(() => {});
+    listSupportTicketsRequest().then(rows => {
+      const seen = getLastSeen('support');
+      setBadgeCounts(c => ({ ...c, support: rows.filter(r => new Date(r.createdAt).getTime() > seen).length }));
+    }).catch(() => {});
+  };
+
+  useEffect(() => { refreshBadgeCounts(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Opening a badged section marks it read (now becomes its new "last
+  // seen"), clearing that badge — matches typical inbox/notification UX.
+  useEffect(() => {
+    if (!BADGE_KEYS.includes(page)) return;
+    setLastSeen(page, Date.now());
+    setBadgeCounts(c => ({ ...c, [page]: 0 }));
+  }, [page]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -105,6 +163,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
               label={label}
               active={page === key}
               collapsed={collapsed}
+              badgeCount={badgeCounts[key] || 0}
               onClick={() => { onNavigate(key); setMobileOpen(false); }}
               onHoverChange={rect => {
                 if (!collapsed) return;
@@ -229,6 +288,7 @@ function SuperAdminNavButton({
   label,
   active,
   collapsed,
+  badgeCount,
   onClick,
   onHoverChange,
 }: {
@@ -236,6 +296,7 @@ function SuperAdminNavButton({
   label: string;
   active: boolean;
   collapsed: boolean;
+  badgeCount: number;
   onClick: () => void;
   onHoverChange: (rect: DOMRect | null) => void;
 }) {
@@ -247,7 +308,7 @@ function SuperAdminNavButton({
       onClick={onClick}
       onMouseEnter={() => onHoverChange(buttonRef.current?.getBoundingClientRect() || null)}
       onMouseLeave={() => onHoverChange(null)}
-      className={`w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+      className={`relative w-full flex items-center gap-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
         collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
       } ${
         active
@@ -255,8 +316,20 @@ function SuperAdminNavButton({
           : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
       }`}
     >
-      <Icon size={19} className="shrink-0" />
+      <span className="relative shrink-0">
+        <Icon size={19} />
+        {collapsed && badgeCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-orange-600 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
+      </span>
       {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && badgeCount > 0 && (
+        <span className="ml-auto shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-600 text-white text-[11px] font-bold flex items-center justify-center leading-none">
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      )}
     </button>
   );
 }
