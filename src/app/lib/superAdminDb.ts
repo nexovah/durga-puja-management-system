@@ -345,12 +345,17 @@ export async function updateSelfProfileRequest(profile: Omit<SuperAdminProfile, 
   return fromSuperAdminProfileRow(data[0]);
 }
 
+export type LeadStatus = 'pending' | 'in_progress' | 'converted' | 'rejected';
+
 export interface Lead {
   id: string;
   committeeName: string;
   contactName: string;
   phone: string;
   email: string | null;
+  status: LeadStatus;
+  remarks: string;
+  archivedAt: string | null;
   createdAt: string;
 }
 
@@ -361,17 +366,45 @@ function fromLeadRow(row: any): Lead {
     contactName: row.contact_name,
     phone: row.phone,
     email: row.email,
+    status: (row.status as LeadStatus) || 'pending',
+    remarks: row.remarks || '',
+    archivedAt: row.archived_at ?? null,
     createdAt: row.created_at,
   };
 }
 
-// leads has open RLS (`using (true)`, see supabase/019_leads.sql) — the
-// landing page's anonymous lead-capture form needs to insert without any
-// auth, so reading it back here is a plain table select, no RPC needed.
+// leads' RLS now only allows public insert (see
+// supabase/099_leads_status_and_management.sql) — select/update/delete
+// go through these SECURITY DEFINER RPCs, gated by is_super_admin_request().
 export async function listLeadsRequest(): Promise<Lead[]> {
-  const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('super_admin_list_leads');
   if (error) throw error;
   return (data || []).map(fromLeadRow);
+}
+
+export async function updateLeadRequest(id: string, status: LeadStatus, remarks: string): Promise<Lead> {
+  const { data, error } = await supabase.rpc('super_admin_update_lead', {
+    p_lead_id: id,
+    p_status: status,
+    p_remarks: remarks || null,
+  });
+  if (error) throw error;
+  return fromLeadRow(data);
+}
+
+export async function archiveLeadRequest(id: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_archive_lead', { p_lead_id: id });
+  if (error) throw error;
+}
+
+export async function unarchiveLeadRequest(id: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_unarchive_lead', { p_lead_id: id });
+  if (error) throw error;
+}
+
+export async function deleteLeadRequest(id: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_delete_lead', { p_lead_id: id });
+  if (error) throw error;
 }
 
 export interface Order {
@@ -864,6 +897,43 @@ export async function updateEmailProviderSettingsRequest(settings: EmailProvider
   });
   if (error) throw error;
   return fromEmailProviderSettingsRow(data);
+}
+
+// Cloudflare Turnstile keys for the public lead form. Same no-public-select
+// posture as PaymentGatewaySettings/EmailProviderSettings for the secret
+// key — see supabase/098_bot_protection_settings.sql. The site key is not
+// secret and has its own unauthenticated getter for the landing page.
+export interface BotProtectionSettings {
+  turnstileSiteKey: string;
+  turnstileSecretKey: string;
+}
+
+function fromBotProtectionSettingsRow(row: any): BotProtectionSettings {
+  return {
+    turnstileSiteKey: row?.turnstile_site_key || '',
+    turnstileSecretKey: row?.turnstile_secret_key || '',
+  };
+}
+
+export async function getBotProtectionSettingsRequest(): Promise<BotProtectionSettings> {
+  const { data, error } = await supabase.rpc('super_admin_get_bot_protection_settings');
+  if (error) throw error;
+  return fromBotProtectionSettingsRow(data);
+}
+
+export async function updateBotProtectionSettingsRequest(settings: BotProtectionSettings): Promise<BotProtectionSettings> {
+  const { data, error } = await supabase.rpc('super_admin_update_bot_protection_settings', {
+    p_turnstile_site_key: settings.turnstileSiteKey || null,
+    p_turnstile_secret_key: settings.turnstileSecretKey || null,
+  });
+  if (error) throw error;
+  return fromBotProtectionSettingsRow(data);
+}
+
+export async function getTurnstileSiteKeyRequest(): Promise<string> {
+  const { data, error } = await supabase.rpc('get_turnstile_site_key');
+  if (error) throw error;
+  return data || '';
 }
 
 export async function sendTestEmailRequest(to: string, templateSlug?: string): Promise<void> {

@@ -1,33 +1,76 @@
-import { useEffect, useState } from 'react';
-import { X, Copy, Check, Inbox } from 'lucide-react';
-import { Lead, listLeadsRequest } from '../lib/superAdminDb';
+import { useEffect, useRef, useState } from 'react';
+import { X, Copy, Check, Inbox, MoreVertical, Trash2, Archive, ArchiveRestore, Save } from 'lucide-react';
+import {
+  Lead,
+  LeadStatus,
+  listLeadsRequest,
+  updateLeadRequest,
+  archiveLeadRequest,
+  unarchiveLeadRequest,
+  deleteLeadRequest,
+} from '../lib/superAdminDb';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
-// Read-only view of the `leads` table — rows land here automatically from
-// the public landing page's "Bring your committee online" form
-// (LandingPage.tsx's handleSubmit -> supabase.from('leads').insert(...)).
-// No edit/delete here; this is purely for Super Admin to see and follow up.
+// Rows land here automatically from the public landing page's "Bring your
+// committee online" form (LandingPage.tsx's handleSubmit -> api/leads/create.js).
+// Status/remarks/archive/delete all go through SECURITY DEFINER RPCs — see
+// supabase/099_leads_status_and_management.sql.
+const STATUS_LABELS: Record<LeadStatus, string> = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  converted: 'Converted',
+  rejected: 'Rejected',
+};
+
+const STATUS_PILL_CLASS: Record<LeadStatus, string> = {
+  pending: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+  in_progress: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  converted: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  rejected: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
+};
+
 export function SuperAdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState<Lead | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Lead | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
+  const load = async () => {
+    try {
+      setLeads(await listLeadsRequest());
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load leads');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    listLeadsRequest()
-      .then(setLeads)
-      .catch(err => setError(err?.message || 'Failed to load leads'))
-      .finally(() => setLoading(false));
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const filteredLeads = leads.filter(lead => {
+    if (Boolean(lead.archivedAt) !== showArchived) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       const inText = [lead.committeeName, lead.contactName, lead.phone, lead.email]
@@ -40,11 +83,54 @@ export function SuperAdminLeads() {
     return true;
   });
 
+  const handleArchiveConfirm = async () => {
+    if (!archiveTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (archiveTarget.archivedAt) await unarchiveLeadRequest(archiveTarget.id);
+      else await archiveLeadRequest(archiveTarget.id);
+      setArchiveTarget(null);
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update lead');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      await deleteLeadRequest(deleteTarget.id);
+      setDeleteTarget(null);
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to delete lead');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Leads</h1>
-        <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowArchived(s => !s)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+              showArchived
+                ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-700 dark:text-orange-400'
+                : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            {showArchived ? 'Showing archived' : 'Show archived'}
+          </button>
+          <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+        </div>
       </div>
 
       <CollapsibleSearchPanel open={showSearch}>
@@ -76,7 +162,9 @@ export function SuperAdminLeads() {
           <Inbox className="w-8 h-8 opacity-50" />
           {leads.length === 0
             ? 'No leads yet — submissions from the landing page\'s "Bring your committee online" form will show up here.'
-            : 'No leads match your search.'}
+            : showArchived
+              ? 'No archived leads.'
+              : 'No leads match your search.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
@@ -87,6 +175,7 @@ export function SuperAdminLeads() {
                 <th className="text-left px-4 py-2.5 font-medium">Contact</th>
                 <th className="text-left px-4 py-2.5 font-medium">Phone</th>
                 <th className="text-left px-4 py-2.5 font-medium">Email</th>
+                <th className="text-left px-4 py-2.5 font-medium">Status</th>
                 <th className="text-left px-4 py-2.5 font-medium">Submitted</th>
                 <th className="text-right px-4 py-2.5 font-medium"></th>
               </tr>
@@ -102,16 +191,50 @@ export function SuperAdminLeads() {
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{lead.contactName}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{lead.phone}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{lead.email || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_PILL_CLASS[lead.status]}`}>
+                      {STATUS_LABELS[lead.status]}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                     {new Date(lead.createdAt).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={e => { e.stopPropagation(); setViewing(lead); }}
-                      className="text-orange-600 dark:text-orange-400 hover:underline text-xs font-medium"
-                    >
-                      View
-                    </button>
+                    <div className="relative inline-block" ref={openMenuId === lead.id ? menuRef : undefined}>
+                      <button
+                        onClick={e => { e.stopPropagation(); setOpenMenuId(o => (o === lead.id ? null : lead.id)); }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {openMenuId === lead.id && (
+                        <div
+                          onClick={e => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-10"
+                        >
+                          <button
+                            onClick={() => { setOpenMenuId(null); setViewing(lead); }}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            View details
+                          </button>
+                          <button
+                            onClick={() => { setOpenMenuId(null); setArchiveTarget(lead); }}
+                            className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            {lead.archivedAt ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                            {lead.archivedAt ? 'Unarchive' : 'Archive'}
+                          </button>
+                          <button
+                            onClick={() => { setOpenMenuId(null); setDeleteTarget(lead); }}
+                            className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -120,7 +243,37 @@ export function SuperAdminLeads() {
         </div>
       )}
 
-      <LeadDetailModal lead={viewing} onClose={() => setViewing(null)} />
+      <LeadDetailModal
+        lead={viewing}
+        onClose={() => setViewing(null)}
+        onSaved={updated => { setLeads(prev => prev.map(l => (l.id === updated.id ? updated : l))); setViewing(updated); }}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!archiveTarget}
+        danger={false}
+        title={archiveTarget?.archivedAt ? 'Unarchive lead' : 'Archive lead'}
+        message={
+          archiveTarget
+            ? archiveTarget.archivedAt
+              ? `"${archiveTarget.committeeName}" will move back to the main leads list.`
+              : `"${archiveTarget.committeeName}" will be hidden from the main leads list. You can unarchive it anytime.`
+            : ''
+        }
+        confirmLabel={busy ? 'Working…' : archiveTarget?.archivedAt ? 'Unarchive' : 'Archive'}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!deleteTarget}
+        danger
+        title="Delete lead"
+        message={deleteTarget ? `"${deleteTarget.committeeName}" will be permanently deleted. This cannot be undone.` : ''}
+        confirmLabel={busy ? 'Deleting…' : 'Delete'}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
@@ -150,8 +303,37 @@ function CopyableField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LeadDetailModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
+function LeadDetailModal({ lead, onClose, onSaved }: { lead: Lead | null; onClose: () => void; onSaved: (updated: Lead) => void }) {
+  const [status, setStatus] = useState<LeadStatus>('pending');
+  const [remarks, setRemarks] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (lead) {
+      setStatus(lead.status);
+      setRemarks(lead.remarks);
+      setError('');
+    }
+  }, [lead]);
+
   if (!lead) return null;
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const updated = await updateLeadRequest(lead.id, status, remarks);
+      onSaved(updated);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500";
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
@@ -170,11 +352,38 @@ function LeadDetailModal({ lead, onClose }: { lead: Lead | null; onClose: () => 
             <p className="text-xs text-gray-500 dark:text-gray-400">Submitted</p>
             <p className="font-medium text-gray-900 dark:text-gray-100">{new Date(lead.createdAt).toLocaleString()}</p>
           </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Status</label>
+            <select value={status} onChange={e => setStatus(e.target.value as LeadStatus)} className={inputClass}>
+              {(Object.keys(STATUS_LABELS) as LeadStatus[]).map(s => (
+                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Remarks</label>
+            <textarea
+              rows={3}
+              value={remarks}
+              onChange={e => setRemarks(e.target.value)}
+              className={inputClass}
+              placeholder="Notes from follow-up calls, why rejected, etc."
+            />
+          </div>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors font-medium"
+          >
+            <Save size={16} />
+            {saving ? 'Saving…' : 'Save'}
+          </button>
           <button
             onClick={onClose}
-            className="w-full px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+            className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
           >
             Close
           </button>

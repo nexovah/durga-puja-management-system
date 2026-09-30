@@ -48,7 +48,15 @@ function IOSBadge({ className = '' }: { className?: string }) {
     </div>
   );
 }
-import { getPlatformSettingsRequest } from '../lib/superAdminDb';
+import { getPlatformSettingsRequest, getTurnstileSiteKeyRequest } from '../lib/superAdminDb';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: string | HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback'?: () => void }) => string;
+    };
+  }
+}
 import { listSubscriptionPlansRequest, SubscriptionPlan } from '../lib/billingDb';
 
 interface LandingPageProps {
@@ -127,6 +135,8 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
   const [comparisonGroups, setComparisonGroups] = useState(DEFAULT_COMPARISON_GROUPS);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   useEffect(() => {
     getPlatformSettingsRequest().then(p => {
@@ -137,7 +147,33 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
       setPlans(p);
       setSelectedPlanId(p[0]?.id ?? null);
     }).catch(() => {});
+    getTurnstileSiteKeyRequest().then(setTurnstileSiteKey).catch(() => {});
   }, []);
+
+  // Renders the widget once both the site key (fetched above) and the
+  // Turnstile script (loaded via index.html's <script>, may not be ready
+  // yet) are available — polls briefly since there's no load event hook
+  // available from a plain <script> tag added outside React's control.
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+    let cancelled = false;
+    let widgetId: string | null = null;
+    const tryRender = () => {
+      if (cancelled) return;
+      const container = document.getElementById('cf-turnstile');
+      if (window.turnstile && container && !widgetId) {
+        widgetId = window.turnstile.render(container, {
+          sitekey: turnstileSiteKey,
+          callback: token => setTurnstileToken(token),
+          'expired-callback': () => setTurnstileToken(''),
+        });
+      } else if (!widgetId) {
+        setTimeout(tryRender, 200);
+      }
+    };
+    tryRender();
+    return () => { cancelled = true; };
+  }, [turnstileSiteKey]);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
   const c = (light: string, darkCls: string) => (dark ? darkCls : light);
@@ -159,11 +195,13 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
           contactName: form.contactName,
           phone: form.phone,
           email: form.email || undefined,
+          turnstileToken: turnstileToken || undefined,
         }),
       });
       if (!res.ok) throw new Error('Failed');
       setSubmitted(true);
       setForm({ committeeName: '', contactName: '', phone: '', email: '' });
+      setTurnstileToken('');
     } catch {
       setError('Could not submit right now. Please try again in a moment.');
     } finally {
@@ -460,6 +498,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
                 />
               </div>
             </div>
+            {turnstileSiteKey && <div id="cf-turnstile" />}
             {error && <p className={`text-sm ${c('text-red-600', 'text-red-400')}`}>{error}</p>}
             <button
               type="submit"

@@ -1,8 +1,9 @@
 // POST /api/leads/create
-// Body: { committeeName, contactName, phone, email? }
+// Body: { committeeName, contactName, phone, email?, turnstileToken? }
 // Public, no auth — mirrors the openness of the previous direct client
 // insert into `leads`, but routed server-side so a lead-alert email can be
-// sent (Resend key is server-only).
+// sent (Resend key is server-only) and a Turnstile token can be verified
+// (secret key is server-only too).
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
 import { sendEmail, renderTemplate } from '../_lib/email.js';
 
@@ -12,10 +13,38 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { committeeName, contactName, phone, email } = req.body || {};
+  const { committeeName, contactName, phone, email, turnstileToken } = req.body || {};
   if (!committeeName || !contactName || !phone) {
     res.status(400).json({ error: 'committeeName, contactName and phone are required' });
     return;
+  }
+
+  const { data: botSettings } = await supabaseAdmin
+    .from('bot_protection_settings')
+    .select('turnstile_secret_key')
+    .eq('id', 1)
+    .single();
+
+  if (botSettings?.turnstile_secret_key) {
+    if (!turnstileToken) {
+      res.status(400).json({ error: 'Bot verification failed' });
+      return;
+    }
+    const remoteIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim();
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: botSettings.turnstile_secret_key,
+        response: turnstileToken,
+        remoteip: remoteIp || '',
+      }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      res.status(400).json({ error: 'Bot verification failed' });
+      return;
+    }
   }
 
   const { error: insertError } = await supabaseAdmin.from('leads').insert({
