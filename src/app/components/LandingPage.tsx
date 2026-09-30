@@ -209,11 +209,11 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
           <p className={`text-sm font-medium mb-8 ${c('text-orange-700', 'text-orange-400')}`}>
             Plan. Collect. Manage. Celebrate.
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <a href="#lead-form" className="px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition inline-flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <a href="#lead-form" className="px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition inline-flex items-center justify-center gap-2 whitespace-nowrap">
               Create Your Committee <ArrowRight className="w-4 h-4" />
             </a>
-            <a href="#features" className={`px-6 py-3 rounded-lg border font-medium transition ${c('border-gray-300 hover:bg-gray-50', 'border-gray-700 hover:bg-gray-900')}`}>
+            <a href="#features" className={`px-6 py-3 rounded-lg border font-medium transition text-center whitespace-nowrap ${c('border-gray-300 hover:bg-gray-50', 'border-gray-700 hover:bg-gray-900')}`}>
               Explore Features
             </a>
           </div>
@@ -263,66 +263,15 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Simple pricing, one plan</h2>
-        <p className={`text-center mb-8 ${c('text-gray-600', 'text-gray-400')}`}>
-          Everything included. No hidden tiers.
-        </p>
-        {plans.length === 0 ? (
-          <p className={`text-center ${c('text-gray-500', 'text-gray-400')}`}>Pricing coming soon.</p>
-        ) : (
-          <>
-            {plans.length > 1 && (
-              <div className="flex items-center justify-center mb-10">
-                <div className={`inline-flex p-1 rounded-full ${c('bg-gray-100', 'bg-gray-800')}`}>
-                  {plans.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPlanId(p.id)}
-                      className={`px-5 py-2 rounded-full text-sm font-medium transition ${
-                        selectedPlanId === p.id ? c('bg-white shadow text-gray-900', 'bg-gray-950 shadow text-gray-100') : c('text-gray-500', 'text-gray-400')
-                      }`}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {selectedPlan && (
-              <div className={`max-w-sm mx-auto p-8 rounded-2xl border text-center bg-gradient-to-br ${c('border-orange-200 from-orange-50 to-amber-50', 'border-orange-900/50 from-gray-900 to-gray-900')}`}>
-                <div className="text-4xl font-semibold mb-1">
-                  {(selectedPlan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: selectedPlan.currency })}
-                </div>
-                <p className={`text-sm mb-6 ${c('text-gray-500', 'text-gray-400')}`}>
-                  {selectedPlan.description || `Billed every ${selectedPlan.durationMonths === 1 ? 'month' : `${selectedPlan.durationMonths} months`}, cancel anytime`}
-                </p>
-                <ul className="text-left space-y-2.5 mb-8">
-                  {(selectedPlan.features ? selectedPlan.features.split('\n').filter(Boolean) : ['Unlimited members & users', 'All collection modules', 'Budgeting & estimation', 'Priority support']).map(item => (
-                    <li key={item} className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${c('text-orange-600', 'text-orange-400')}`} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <a href="#lead-form" className="block w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition">
-                  Get started
-                </a>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* Before vs After — grouped comparison table (same category
-          grouping as the Figma reference's pricing-table structure, just
-          two content columns instead of three pricing plans), with the
-          "With Durga CRM" column highlighted in the app's light-orange
-          accent all the way down. Table layout on sm:+ ; stacked
-          per-feature blocks below sm: so nothing needs horizontal scroll
-          on a phone. */}
-      <section className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
+      {/* Pricing + Before/After — merged into one section per the Figma
+          reference's structure: each column's pricing header sits directly
+          above that column's feature rows, instead of a separate pricing
+          section above a separate comparison table. "Before" has no
+          price (it's the manual/no-tool baseline); "With Durga CRM" gets
+          our actual plan card — price, monthly/yearly toggle, CTA — as
+          that column's header, then the highlight continues straight down
+          through every feature row below it. */}
+      <section id="pricing" className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-2">
             Still Managing Your Puja With Notebooks, Excel &amp; WhatsApp?
@@ -332,11 +281,55 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
           </p>
 
           <div className={`rounded-2xl border overflow-hidden ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
-            {/* Header row — hidden on mobile, where each feature becomes its own stacked block instead */}
-            <div className="hidden sm:grid grid-cols-[1.3fr_1fr_1fr]">
-              <div className={`px-6 py-4 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-400', 'border-gray-800 text-gray-500')}`} />
-              <div className={`px-6 py-4 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-400', 'border-gray-800 text-gray-500')}`}>Before</div>
-              <div className={`px-6 py-4 text-xs font-bold uppercase tracking-wide border-b ${c('border-orange-200 bg-orange-50 text-orange-700', 'border-orange-900/40 bg-orange-500/10 text-orange-400')}`}>With Durga CRM</div>
+            {/* Column headers — feature label blank, Before is a plain
+                baseline label, With Durga CRM carries the actual pricing
+                card. Stacked above the table on mobile instead of a 3rd grid column. */}
+            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr]">
+              <div className={`hidden sm:block px-6 py-6 border-b ${c('border-gray-200', 'border-gray-800')}`} />
+              <div className={`hidden sm:flex flex-col justify-end px-6 py-6 border-b ${c('border-gray-200', 'border-gray-800')}`}>
+                <h3 className={`text-sm font-semibold ${c('text-gray-500', 'text-gray-400')}`}>Before</h3>
+                <p className={`text-xs mt-1 ${c('text-gray-400', 'text-gray-500')}`}>Doing it all manually</p>
+              </div>
+              <div className={`px-5 sm:px-6 py-6 border-b ${c('border-orange-200 bg-orange-50', 'border-orange-900/40 bg-orange-500/10')}`}>
+                <h3 className={`text-sm font-bold mb-3 ${c('text-orange-700', 'text-orange-400')}`}>With Durga CRM</h3>
+                {plans.length === 0 ? (
+                  <p className={`text-sm ${c('text-gray-500', 'text-gray-400')}`}>Pricing coming soon.</p>
+                ) : (
+                  <>
+                    {plans.length > 1 && (
+                      <div className={`inline-flex p-0.5 rounded-full mb-3 ${c('bg-white', 'bg-gray-900')}`}>
+                        {plans.map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => setSelectedPlanId(p.id)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                              selectedPlanId === p.id ? 'bg-orange-600 text-white' : c('text-gray-500', 'text-gray-400')
+                            }`}
+                          >
+                            {p.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {selectedPlan && (
+                      <>
+                        <div className={`text-2xl sm:text-3xl font-bold ${c('text-gray-900', 'text-gray-100')}`}>
+                          {(selectedPlan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: selectedPlan.currency, maximumFractionDigits: 0 })}
+                          <span className={`text-xs font-normal ml-1 ${c('text-gray-500', 'text-gray-400')}`}>
+                            /{selectedPlan.durationMonths === 1 ? 'month' : `${selectedPlan.durationMonths} months`}
+                          </span>
+                        </div>
+                        <a
+                          href="#lead-form"
+                          className="mt-3 block text-center px-4 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition"
+                        >
+                          Get started
+                        </a>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {COMPARISON_GROUPS.map((group, gi) => (
