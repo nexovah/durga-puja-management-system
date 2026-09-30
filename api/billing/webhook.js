@@ -10,6 +10,7 @@
 import crypto from 'crypto';
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
 import { markTransactionPaidAndExtend } from '../_lib/billing.js';
+import { getActiveRazorpayCreds } from '../_lib/paymentGateway.js';
 
 // Vercel parses JSON bodies by default, but webhook signature verification
 // needs the exact raw bytes Razorpay signed — turn off the default parser
@@ -34,8 +35,9 @@ export default async function handler(req, res) {
   const rawBody = await readRawBody(req);
   const signature = req.headers['x-razorpay-signature'];
 
+  const { webhookSecret } = await getActiveRazorpayCreds();
   const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+    .createHmac('sha256', webhookSecret)
     .update(rawBody)
     .digest('hex');
 

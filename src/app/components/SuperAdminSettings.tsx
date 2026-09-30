@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Building2, Lock, Code, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Lock, Code, Save, CreditCard, Eye, EyeOff } from 'lucide-react';
 import {
   superAdminChangePasswordRequest,
   getDeveloperInfoRequest,
@@ -8,14 +8,17 @@ import {
   updateSelfProfileRequest,
   getPlatformSettingsRequest,
   updatePlatformSettingsRequest,
+  getPaymentGatewaySettingsRequest,
+  updatePaymentGatewaySettingsRequest,
   isPasswordStrong,
   DeveloperInfo,
   SuperAdminProfile,
   PlatformSettings,
+  PaymentGatewaySettings,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
 
-type Tab = 'general' | 'profile' | 'password' | 'developer';
+type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'developer';
 
 const EMPTY_DEV_INFO: DeveloperInfo = { name: '', email: '', phone: '', version: '', changelog: '' };
 const EMPTY_PROFILE: SuperAdminProfile = { id: '', name: '', username: '', email: '', phone: '', phone2: '', address: '', logoUrl: '' };
@@ -24,15 +27,19 @@ const EMPTY_PLATFORM: PlatformSettings = {
   showLogoOnSignin: true, showSigninBackground: false, signinBackgroundUrl: '',
   comparisonGroups: null,
 };
+const EMPTY_PAYMENT_GATEWAY: PaymentGatewaySettings = {
+  mode: 'test', testKeyId: '', testKeySecret: '', liveKeyId: '', liveKeySecret: '', webhookSecret: '',
+};
 
 const NAV_ITEMS: { key: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'general', label: 'General', icon: SettingsIcon },
   { key: 'profile', label: 'Profile', icon: Building2 },
   { key: 'password', label: 'Change Password', icon: Lock },
+  { key: 'paymentGateway', label: 'Payment Gateway', icon: CreditCard },
   { key: 'developer', label: 'Developer Info', icon: Code },
 ];
 
-const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'developer'];
+const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'paymentGateway', 'developer'];
 
 // /super-admin/settings/<tab> — see docs/URL_STATE_CONVENTION.md: every
 // list/detail/tab view in this app carries its state in the URL so a
@@ -99,6 +106,15 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
   const [devMessage, setDevMessage] = useState('');
   const [devError, setDevError] = useState('');
 
+  const [paymentGatewayForm, setPaymentGatewayForm] = useState<PaymentGatewaySettings>(EMPTY_PAYMENT_GATEWAY);
+  const [paymentGatewayLoading, setPaymentGatewayLoading] = useState(true);
+  const [savingPaymentGateway, setSavingPaymentGateway] = useState(false);
+  const [paymentGatewayMessage, setPaymentGatewayMessage] = useState('');
+  const [paymentGatewayError, setPaymentGatewayError] = useState('');
+  const [showTestSecret, setShowTestSecret] = useState(false);
+  const [showLiveSecret, setShowLiveSecret] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+
   useEffect(() => {
     getPlatformSettingsRequest()
       .then(p => { setPlatform(p); setPlatformForm(p); })
@@ -112,7 +128,27 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       .then(p => { setProfile(p); setProfileForm(p); })
       .catch(() => {})
       .finally(() => setProfileLoading(false));
+    getPaymentGatewaySettingsRequest()
+      .then(s => setPaymentGatewayForm(s))
+      .catch(() => {})
+      .finally(() => setPaymentGatewayLoading(false));
   }, []);
+
+  const handlePaymentGatewaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPaymentGatewayError('');
+    setPaymentGatewayMessage('');
+    setSavingPaymentGateway(true);
+    try {
+      const updated = await updatePaymentGatewaySettingsRequest(paymentGatewayForm);
+      setPaymentGatewayForm(updated);
+      setPaymentGatewayMessage('Saved — live on the checkout flow now.');
+    } catch (err: any) {
+      setPaymentGatewayError(err?.message || 'Failed to save');
+    } finally {
+      setSavingPaymentGateway(false);
+    }
+  };
 
   const handlePlatformSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,6 +544,131 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                 {savingPassword ? 'Saving…' : 'Change password'}
               </button>
             </form>
+          )}
+
+          {activeTab === 'paymentGateway' && (
+            paymentGatewayLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+            ) : (
+              <form onSubmit={handlePaymentGatewaySubmit} className="space-y-6 max-w-xl">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Razorpay credentials for both Test and Live mode, stored at once. Switching the
+                  active mode below takes effect immediately in the checkout/purchase flow — no
+                  redeploy needed.
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Active Mode</label>
+                  <div className={`inline-flex p-1 rounded-full bg-gray-100 dark:bg-gray-800`}>
+                    {(['test', 'live'] as const).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setPaymentGatewayForm(f => ({ ...f, mode: m }))}
+                        className={`px-5 py-2 rounded-full text-sm font-semibold capitalize transition ${
+                          paymentGatewayForm.mode === m
+                            ? m === 'live'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-orange-600 text-white'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                    Currently <span className="font-semibold">{paymentGatewayForm.mode === 'live' ? 'LIVE — real payments' : 'TEST — no real money moves'}</span>.
+                  </p>
+                </div>
+
+                <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Test Mode Keys</h3>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key ID</label>
+                    <input
+                      value={paymentGatewayForm.testKeyId}
+                      onChange={e => setPaymentGatewayForm(f => ({ ...f, testKeyId: e.target.value }))}
+                      placeholder="rzp_test_..."
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key Secret</label>
+                    <div className="relative">
+                      <input
+                        type={showTestSecret ? 'text' : 'password'}
+                        value={paymentGatewayForm.testKeySecret}
+                        onChange={e => setPaymentGatewayForm(f => ({ ...f, testKeySecret: e.target.value }))}
+                        className={`${inputClass} pr-10`}
+                        autoComplete="off"
+                      />
+                      <button type="button" onClick={() => setShowTestSecret(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        {showTestSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Live Mode Keys</h3>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key ID</label>
+                    <input
+                      value={paymentGatewayForm.liveKeyId}
+                      onChange={e => setPaymentGatewayForm(f => ({ ...f, liveKeyId: e.target.value }))}
+                      placeholder="rzp_live_..."
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Key Secret</label>
+                    <div className="relative">
+                      <input
+                        type={showLiveSecret ? 'text' : 'password'}
+                        value={paymentGatewayForm.liveKeySecret}
+                        onChange={e => setPaymentGatewayForm(f => ({ ...f, liveKeySecret: e.target.value }))}
+                        className={`${inputClass} pr-10`}
+                        autoComplete="off"
+                      />
+                      <button type="button" onClick={() => setShowLiveSecret(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        {showLiveSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Webhook Secret</label>
+                  <div className="relative">
+                    <input
+                      type={showWebhookSecret ? 'text' : 'password'}
+                      value={paymentGatewayForm.webhookSecret}
+                      onChange={e => setPaymentGatewayForm(f => ({ ...f, webhookSecret: e.target.value }))}
+                      className={`${inputClass} pr-10`}
+                      autoComplete="off"
+                    />
+                    <button type="button" onClick={() => setShowWebhookSecret(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      {showWebhookSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">From Razorpay Dashboard {'->'} Settings {'->'} Webhooks, pointing at /api/billing/webhook.</p>
+                </div>
+
+                {paymentGatewayError && <p className="text-sm text-red-600 dark:text-red-400">{paymentGatewayError}</p>}
+                {paymentGatewayMessage && <p className="text-sm text-green-600 dark:text-green-400">{paymentGatewayMessage}</p>}
+                <button
+                  type="submit"
+                  disabled={savingPaymentGateway}
+                  className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                >
+                  <Save size={20} />
+                  {savingPaymentGateway ? 'Saving…' : 'Save'}
+                </button>
+              </form>
+            )
           )}
 
           {activeTab === 'developer' && (

@@ -9,6 +9,7 @@
 import Razorpay from 'razorpay';
 import { verifyTenantToken } from '../_lib/verifyTenantToken.js';
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
+import { getActiveRazorpayCreds } from '../_lib/paymentGateway.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -41,9 +42,10 @@ export default async function handler(req, res) {
     return;
   }
 
+  const { keyId, keySecret } = await getActiveRazorpayCreds();
   const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
+    key_id: keyId,
+    key_secret: keySecret,
   });
 
   let order;
@@ -77,6 +79,6 @@ export default async function handler(req, res) {
     orderId: order.id,
     amount: plan.amount_paise,
     currency: plan.currency,
-    keyId: process.env.RAZORPAY_KEY_ID, // safe to expose — Checkout requires it client-side
+    keyId, // safe to expose — Checkout requires it client-side
   });
 }

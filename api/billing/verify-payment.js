@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import { verifyTenantToken } from '../_lib/verifyTenantToken.js';
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
 import { markTransactionPaidAndExtend } from '../_lib/billing.js';
+import { getActiveRazorpayCreds } from '../_lib/paymentGateway.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,8 +34,9 @@ export default async function handler(req, res) {
     return;
   }
 
+  const { keySecret } = await getActiveRazorpayCreds();
   const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .createHmac('sha256', keySecret)
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest('hex');
 

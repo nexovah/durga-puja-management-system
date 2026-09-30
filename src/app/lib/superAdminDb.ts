@@ -770,3 +770,47 @@ export async function upsertCmsPageRequest(page: CmsPage): Promise<CmsPage> {
   if (error) throw error;
   return fromCmsPageRow(data);
 }
+
+// Razorpay payment gateway settings — both Test and Live key pairs stored
+// at once, `mode` picks which one the checkout flow uses right now. Unlike
+// PlatformSettings this table has no public select policy (it holds live
+// payment secrets), so both read and write go through SECURITY DEFINER
+// RPCs gated by is_super_admin_request() — see supabase/089_payment_gateway_settings.sql.
+export interface PaymentGatewaySettings {
+  mode: 'test' | 'live';
+  testKeyId: string;
+  testKeySecret: string;
+  liveKeyId: string;
+  liveKeySecret: string;
+  webhookSecret: string;
+}
+
+function fromPaymentGatewaySettingsRow(row: any): PaymentGatewaySettings {
+  return {
+    mode: row?.mode === 'live' ? 'live' : 'test',
+    testKeyId: row?.test_key_id || '',
+    testKeySecret: row?.test_key_secret || '',
+    liveKeyId: row?.live_key_id || '',
+    liveKeySecret: row?.live_key_secret || '',
+    webhookSecret: row?.webhook_secret || '',
+  };
+}
+
+export async function getPaymentGatewaySettingsRequest(): Promise<PaymentGatewaySettings> {
+  const { data, error } = await supabase.rpc('super_admin_get_payment_gateway_settings');
+  if (error) throw error;
+  return fromPaymentGatewaySettingsRow(data);
+}
+
+export async function updatePaymentGatewaySettingsRequest(settings: PaymentGatewaySettings): Promise<PaymentGatewaySettings> {
+  const { data, error } = await supabase.rpc('super_admin_update_payment_gateway_settings', {
+    p_mode: settings.mode,
+    p_test_key_id: settings.testKeyId || null,
+    p_test_key_secret: settings.testKeySecret || null,
+    p_live_key_id: settings.liveKeyId || null,
+    p_live_key_secret: settings.liveKeySecret || null,
+    p_webhook_secret: settings.webhookSecret || null,
+  });
+  if (error) throw error;
+  return fromPaymentGatewaySettingsRow(data);
+}
