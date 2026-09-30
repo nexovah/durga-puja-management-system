@@ -68,26 +68,23 @@ const FEATURES = [
   { icon: Activity, title: 'Activity Log', desc: 'Full audit trail of who changed what, from which device, for complete transparency.' },
 ];
 
-const BEFORE_ITEMS = [
-  'Chanda in notebooks',
-  'Member details scattered across contacts',
-  'Sponsor information in WhatsApp',
-  'Vendor payments difficult to track',
-  'Estimates and actual expenses don’t match',
-  'Partial payments get forgotten',
-  'Loan records are unclear',
-  'Tasks get lost in group chats',
-];
-
-const AFTER_ITEMS = [
-  'Centralized committee & organized members',
-  'Collection & donation tracking',
-  'Sponsorship management',
-  'Subscription & member fees',
-  'Estimation & budgeting',
-  'Expense management & partial payments',
-  'Loan management & vendor records',
-  'Priority-based tasks & financial dashboard',
+const COMPARISON_ROWS = [
+  { feature: 'Collection', before: 'Chanda in notebooks', after: 'Digital collection tracking' },
+  { feature: 'Donation', before: 'Records scattered across chats & paper', after: 'Centralized donation management' },
+  { feature: 'Members', before: 'Scattered across contacts', after: 'Centralized member records' },
+  { feature: 'Sponsorship', before: 'Sponsor info across WhatsApp conversations', after: 'Complete sponsorship management' },
+  { feature: 'Vendor Payments', before: 'Difficult to track', after: 'Track all vendor payments in one place' },
+  { feature: 'Estimation', before: 'Estimates vs. actuals unclear', after: 'Budget and actual tracking' },
+  { feature: 'Partial Payments', before: 'Easily forgotten', after: 'Clear payment status and tracking' },
+  { feature: 'Loan Records', before: 'Difficult to maintain', after: 'Loans, dues & repayments' },
+  { feature: 'Expenses', before: 'Bills & expenses tracked manually', after: 'Organized expense management' },
+  { feature: 'Treasury', before: 'Cash flow difficult to monitor', after: 'Complete treasury overview' },
+  { feature: 'Cash in Hand & Bank', before: 'Separate records & manual reconciliation', after: 'Cash and bank balances in one view' },
+  { feature: 'Reports', before: 'Manual calculations & spreadsheets', after: 'Instant financial & collection reports' },
+  { feature: 'Documents', before: 'Files scattered across devices & chats', after: 'Centralized document management' },
+  { feature: 'Assets', before: 'Asset records maintained manually', after: 'Organized asset tracking' },
+  { feature: 'Activity Log', before: 'No clear history of changes', after: 'Complete activity & action history' },
+  { feature: 'Committee Tasks', before: 'Tasks lost in group chats', after: 'Priorities, deadlines & task tracking' },
 ];
 
 const FESTIVALS = [
@@ -303,33 +300,45 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
         )}
       </section>
 
-      {/* Before vs After */}
+      {/* Before vs After — one compact comparison table instead of two
+          loose lists, so every module lines up feature-by-feature. Table
+          layout on sm:+ ; a stacked per-feature card list below sm: so
+          nothing needs horizontal scroll on a phone. */}
       <section className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-2">
             Still Managing Your Puja With Notebooks, Excel &amp; WhatsApp?
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className={`p-6 rounded-xl border ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
-              <h3 className={`font-medium mb-4 ${c('text-gray-500', 'text-gray-400')}`}>Before</h3>
-              <ul className="space-y-2.5">
-                {BEFORE_ITEMS.map(item => (
-                  <li key={item} className={`text-sm ${c('text-gray-600', 'text-gray-400')}`}>{item}</li>
-                ))}
-              </ul>
+          <p className={`text-center mb-10 text-sm ${c('text-gray-500', 'text-gray-400')}`}>
+            Every part of running a Puja, side by side — before and with Durga CRM.
+          </p>
+
+          <div className={`rounded-xl border overflow-hidden ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
+            {/* Header row — hidden on mobile, where each feature becomes its own stacked block instead */}
+            <div className={`hidden sm:grid grid-cols-[1fr_1fr_1fr] gap-4 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-500')}`}>
+              <span>Feature</span>
+              <span>Before</span>
+              <span className="text-orange-600">With Durga CRM</span>
             </div>
-            <div className={`p-6 rounded-xl border ${c('border-orange-200 bg-orange-50', 'border-orange-900/40 bg-orange-900/10')}`}>
-              <h3 className="font-medium mb-4 text-orange-600">With Durga CRM</h3>
-              <ul className="space-y-2.5">
-                {AFTER_ITEMS.map(item => (
-                  <li key={item} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className={`w-4 h-4 shrink-0 ${c('text-orange-600', 'text-orange-400')}`} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+
+            <div className={`divide-y ${c('divide-gray-100', 'divide-gray-800')}`}>
+              {COMPARISON_ROWS.map(row => (
+                <div key={row.feature} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr] gap-1.5 sm:gap-4 px-5 py-3.5">
+                  <span className="text-sm font-medium">{row.feature}</span>
+                  <span className={`text-sm flex items-start gap-1.5 ${c('text-gray-500', 'text-gray-400')}`}>
+                    <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-14">Before</span>
+                    {row.before}
+                  </span>
+                  <span className="text-sm flex items-start gap-1.5">
+                    <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-orange-500 w-14">With CRM</span>
+                    <CheckCircle2 className={`hidden sm:block w-4 h-4 shrink-0 mt-0.5 ${c('text-orange-600', 'text-orange-400')}`} />
+                    {row.after}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
+
           <p className={`text-center mt-10 text-sm ${c('text-gray-500', 'text-gray-400')}`}>
             Less paperwork. Less confusion. More Puja.
           </p>
