@@ -325,7 +325,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         {loading ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('assets.loading')}</p>
         ) : assets.length === 0 ? (

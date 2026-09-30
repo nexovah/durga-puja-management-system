@@ -203,7 +203,7 @@ export function ReportBalanceSheetPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* A. Income */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
             <TrendingUp className="text-green-600" size={20} />
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('report.balanceSheet.income')}</h3>
@@ -223,7 +223,7 @@ export function ReportBalanceSheetPage({
         </div>
 
         {/* B. Expenditure */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
             <TrendingDown className="text-red-600" size={20} />
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('report.balanceSheet.expenditure')}</h3>

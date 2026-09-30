@@ -102,7 +102,7 @@ export function ReportEstimationPage({ estimationsList, companyName, companyLogo
     <div className="space-y-6">
       <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('report.nav.estimation')}</h1>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

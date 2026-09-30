@@ -167,7 +167,7 @@ export function SuperAdminLeads() {
               : 'No leads match your search.'}
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400">
               <tr>
@@ -210,7 +210,7 @@ export function SuperAdminLeads() {
                       {openMenuId === lead.id && (
                         <div
                           onClick={e => e.stopPropagation()}
-                          className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-10"
+                          className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30"
                         >
                           <button
                             onClick={() => { setOpenMenuId(null); setViewing(lead); }}

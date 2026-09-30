@@ -365,7 +365,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       )}
 
       {/* Monthly Report */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="p-4 sm:p-6 pb-3 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">{t('treasury.monthlyReport')}</h3>
         </div>

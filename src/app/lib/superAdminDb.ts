@@ -87,7 +87,7 @@ export async function createTenantRequest(
   adminName: string,
   adminUsername: string,
   adminPassword: string,
-  adminEmail?: string
+  adminEmail: string
 ): Promise<Tenant> {
   const { data, error } = await supabase.rpc('super_admin_create_tenant', {
     p_name: name,

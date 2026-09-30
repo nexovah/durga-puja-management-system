@@ -67,7 +67,7 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim() || !newSlug.trim() || !adminName.trim() || !adminUsername.trim() || !adminPassword) return;
+    if (!newName.trim() || !newSlug.trim() || !adminName.trim() || !adminUsername.trim() || !adminPassword || !adminEmail.trim()) return;
     setError('');
     if (!isPasswordStrong(adminPassword)) {
       setError('Admin password must be at least 8 characters and include a letter and a digit.');
@@ -76,18 +76,16 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
     setCreating(true);
     try {
       const trimmedEmail = adminEmail.trim();
-      await createTenantRequest(newName.trim(), newSlug.trim(), adminName.trim(), adminUsername.trim(), adminPassword, trimmedEmail || undefined);
-      if (trimmedEmail) {
-        // Best-effort — tenant creation has already succeeded by this
-        // point, a failed alert email must never surface as an error here.
-        sendNewAdminAlertRequest(trimmedEmail, {
-          committee_name: newName.trim(),
-          name: adminName.trim(),
-          username: adminUsername.trim(),
-          password: adminPassword,
-          login_url: window.location.origin + '/login',
-        });
-      }
+      await createTenantRequest(newName.trim(), newSlug.trim(), adminName.trim(), adminUsername.trim(), adminPassword, trimmedEmail);
+      // Best-effort — tenant creation has already succeeded by this point,
+      // a failed alert email must never surface as an error here.
+      sendNewAdminAlertRequest(trimmedEmail, {
+        committee_name: newName.trim(),
+        name: adminName.trim(),
+        username: adminUsername.trim(),
+        password: adminPassword,
+        login_url: window.location.origin + '/login',
+      });
       setNewName('');
       setNewSlug('');
       setSlugEdited(false);
@@ -203,12 +201,13 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Email (optional)</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Email *</label>
               <input
                 type="email"
+                required
                 value={adminEmail}
                 onChange={e => setAdminEmail(e.target.value)}
-                placeholder="For account-created email"
+                placeholder="Required — for welcome email & password reset"
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>

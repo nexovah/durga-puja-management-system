@@ -350,7 +350,7 @@ export function ReportModulePage<T extends { id: string }>({
       </div>
 
       {/* Data table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <DataTableToolbar
           totalItems={pagination.totalItems}
           startIndex={pagination.startIndex}

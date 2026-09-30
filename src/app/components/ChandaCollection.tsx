@@ -847,7 +847,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       </div>
 
       {/* Chanda List */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <DataTableToolbar
           totalItems={pagination.totalItems}
           startIndex={pagination.startIndex}
