@@ -1172,7 +1172,34 @@ export async function loginRequest(username: string, password: string): Promise<
   // (see supabase/020_multi_tenant.sql) — set it before returning so the
   // very next fetch (e.g. fetchAllData on login) is already tenant-scoped.
   setTenantAccessToken(row.access_token || null);
-  return fromUserRow(row);
+  const user = fromUserRow(row);
+  // Fire-and-forget "new login" notification — never blocks or fails login
+  // over it. Only attempted when the user has an email on file.
+  if (user.email) {
+    fetch('/api/email/send-login-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${row.access_token}` },
+      body: JSON.stringify({ email: user.email, name: user.name }),
+    }).catch(() => {});
+  }
+  return user;
+}
+
+export async function requestTenantPasswordResetRequest(username: string): Promise<void> {
+  await fetch('/api/auth/request-tenant-password-reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function resetTenantPasswordRequest(token: string, newPassword: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('reset_tenant_password', {
+    p_token: token,
+    p_new_password: newPassword,
+  });
+  if (error) throw error;
+  return Boolean(data);
 }
 
 export async function createUserRequest(

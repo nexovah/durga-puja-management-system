@@ -48,7 +48,6 @@ function IOSBadge({ className = '' }: { className?: string }) {
     </div>
   );
 }
-import { supabase } from '../lib/supabaseClient';
 import { getPlatformSettingsRequest } from '../lib/superAdminDb';
 import { listSubscriptionPlansRequest, SubscriptionPlan } from '../lib/billingDb';
 
@@ -152,13 +151,17 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
     }
     setSubmitting(true);
     try {
-      const { error: insertError } = await supabase.from('leads').insert({
-        committee_name: form.committeeName,
-        contact_name: form.contactName,
-        phone: form.phone,
-        email: form.email || null,
+      const res = await fetch('/api/leads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          committeeName: form.committeeName,
+          contactName: form.contactName,
+          phone: form.phone,
+          email: form.email || undefined,
+        }),
       });
-      if (insertError) throw insertError;
+      if (!res.ok) throw new Error('Failed');
       setSubmitted(true);
       setForm({ committeeName: '', contactName: '', phone: '', email: '' });
     } catch {

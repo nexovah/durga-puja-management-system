@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Building2, Lock, Code, Save, CreditCard, Eye, EyeOff } from 'lucide-react';
+import { Settings as SettingsIcon, User, Lock, Code, Save, CreditCard, Eye, EyeOff, Mail, Send } from 'lucide-react';
 import {
   superAdminChangePasswordRequest,
   getDeveloperInfoRequest,
@@ -10,15 +10,19 @@ import {
   updatePlatformSettingsRequest,
   getPaymentGatewaySettingsRequest,
   updatePaymentGatewaySettingsRequest,
+  getEmailProviderSettingsRequest,
+  updateEmailProviderSettingsRequest,
+  sendTestEmailRequest,
   isPasswordStrong,
   DeveloperInfo,
   SuperAdminProfile,
   PlatformSettings,
   PaymentGatewaySettings,
+  EmailProviderSettings,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
 
-type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'developer';
+type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'email' | 'developer';
 
 const EMPTY_DEV_INFO: DeveloperInfo = { name: '', email: '', phone: '', version: '', changelog: '' };
 const EMPTY_PROFILE: SuperAdminProfile = { id: '', name: '', username: '', email: '', phone: '', phone2: '', address: '', logoUrl: '' };
@@ -30,16 +34,18 @@ const EMPTY_PLATFORM: PlatformSettings = {
 const EMPTY_PAYMENT_GATEWAY: PaymentGatewaySettings = {
   mode: 'test', testKeyId: '', testKeySecret: '', liveKeyId: '', liveKeySecret: '', webhookSecret: '',
 };
+const EMPTY_EMAIL_PROVIDER: EmailProviderSettings = { resendApiKey: '', fromAddress: '', fromName: 'Durga CRM', internalNotifyEmail: '' };
 
 const NAV_ITEMS: { key: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'general', label: 'General', icon: SettingsIcon },
-  { key: 'profile', label: 'Profile', icon: Building2 },
+  { key: 'profile', label: 'Profile', icon: User },
   { key: 'password', label: 'Change Password', icon: Lock },
   { key: 'paymentGateway', label: 'Payment Gateway', icon: CreditCard },
+  { key: 'email', label: 'Email', icon: Mail },
   { key: 'developer', label: 'Developer Info', icon: Code },
 ];
 
-const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'paymentGateway', 'developer'];
+const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'paymentGateway', 'email', 'developer'];
 
 // /super-admin/settings/<tab> — see docs/URL_STATE_CONVENTION.md: every
 // list/detail/tab view in this app carries its state in the URL so a
@@ -115,6 +121,17 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
   const [showLiveSecret, setShowLiveSecret] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
+  const [emailProviderForm, setEmailProviderForm] = useState<EmailProviderSettings>(EMPTY_EMAIL_PROVIDER);
+  const [emailProviderLoading, setEmailProviderLoading] = useState(true);
+  const [savingEmailProvider, setSavingEmailProvider] = useState(false);
+  const [emailProviderMessage, setEmailProviderMessage] = useState('');
+  const [emailProviderError, setEmailProviderError] = useState('');
+  const [showResendApiKey, setShowResendApiKey] = useState(false);
+  const [testEmailTo, setTestEmailTo] = useState('');
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [testEmailMessage, setTestEmailMessage] = useState('');
+  const [testEmailError, setTestEmailError] = useState('');
+
   useEffect(() => {
     getPlatformSettingsRequest()
       .then(p => { setPlatform(p); setPlatformForm(p); })
@@ -132,6 +149,10 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       .then(s => setPaymentGatewayForm(s))
       .catch(() => {})
       .finally(() => setPaymentGatewayLoading(false));
+    getEmailProviderSettingsRequest()
+      .then(s => setEmailProviderForm(s))
+      .catch(() => {})
+      .finally(() => setEmailProviderLoading(false));
   }, []);
 
   const handlePaymentGatewaySubmit = async (e: React.FormEvent) => {
@@ -147,6 +168,40 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       setPaymentGatewayError(err?.message || 'Failed to save');
     } finally {
       setSavingPaymentGateway(false);
+    }
+  };
+
+  const handleEmailProviderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailProviderError('');
+    setEmailProviderMessage('');
+    setSavingEmailProvider(true);
+    try {
+      const updated = await updateEmailProviderSettingsRequest(emailProviderForm);
+      setEmailProviderForm(updated);
+      setEmailProviderMessage('Saved.');
+    } catch (err: any) {
+      setEmailProviderError(err?.message || 'Failed to save');
+    } finally {
+      setSavingEmailProvider(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setTestEmailError('');
+    setTestEmailMessage('');
+    if (!testEmailTo) {
+      setTestEmailError('Enter an email address first');
+      return;
+    }
+    setSendingTestEmail(true);
+    try {
+      await sendTestEmailRequest(testEmailTo);
+      setTestEmailMessage('Sent — check the inbox.');
+    } catch (err: any) {
+      setTestEmailError(err?.message || 'Failed to send');
+    } finally {
+      setSendingTestEmail(false);
     }
   };
 
@@ -668,6 +723,106 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                   {savingPaymentGateway ? 'Saving…' : 'Save'}
                 </button>
               </form>
+            )
+          )}
+
+          {activeTab === 'email' && (
+            emailProviderLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+            ) : (
+              <div className="space-y-8 max-w-xl">
+                <form onSubmit={handleEmailProviderSubmit} className="space-y-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Resend credentials used to send authentication, password reset, new admin
+                    account and lead alert emails. The from address must be a domain verified in
+                    your Resend account.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resend API Key</label>
+                    <div className="relative">
+                      <input
+                        type={showResendApiKey ? 'text' : 'password'}
+                        value={emailProviderForm.resendApiKey}
+                        onChange={e => setEmailProviderForm(f => ({ ...f, resendApiKey: e.target.value }))}
+                        placeholder="re_..."
+                        className={`${inputClass} pr-10`}
+                        autoComplete="off"
+                      />
+                      <button type="button" onClick={() => setShowResendApiKey(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        {showResendApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Address</label>
+                    <input
+                      type="email"
+                      value={emailProviderForm.fromAddress}
+                      onChange={e => setEmailProviderForm(f => ({ ...f, fromAddress: e.target.value }))}
+                      placeholder="no-reply@yourdomain.com"
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Name</label>
+                    <input
+                      type="text"
+                      value={emailProviderForm.fromName}
+                      onChange={e => setEmailProviderForm(f => ({ ...f, fromName: e.target.value }))}
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Internal Notification Email</label>
+                    <input
+                      type="email"
+                      value={emailProviderForm.internalNotifyEmail}
+                      onChange={e => setEmailProviderForm(f => ({ ...f, internalNotifyEmail: e.target.value }))}
+                      placeholder="you@yourdomain.com"
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Where landing page lead alerts (and future internal alerts) get sent. Leave blank to disable.</p>
+                  </div>
+                  {emailProviderError && <p className="text-sm text-red-600 dark:text-red-400">{emailProviderError}</p>}
+                  {emailProviderMessage && <p className="text-sm text-green-600 dark:text-green-400">{emailProviderMessage}</p>}
+                  <button
+                    type="submit"
+                    disabled={savingEmailProvider}
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                  >
+                    <Save size={20} />
+                    {savingEmailProvider ? 'Saving…' : 'Save'}
+                  </button>
+                </form>
+
+                <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Send Test Email</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Confirms the settings above actually work before any real trigger uses them.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={testEmailTo}
+                      onChange={e => setTestEmailTo(e.target.value)}
+                      placeholder="you@example.com"
+                      className={inputClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendTestEmail}
+                      disabled={sendingTestEmail}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-900 disabled:opacity-60 transition-colors whitespace-nowrap"
+                    >
+                      <Send size={16} />
+                      {sendingTestEmail ? 'Sending…' : 'Send'}
+                    </button>
+                  </div>
+                  {testEmailError && <p className="text-sm text-red-600 dark:text-red-400">{testEmailError}</p>}
+                  {testEmailMessage && <p className="text-sm text-green-600 dark:text-green-400">{testEmailMessage}</p>}
+                </div>
+              </div>
             )
           )}
 

@@ -5,7 +5,7 @@
 // supabaseClient.ts; a super-admin token and a committee token are never
 // live at the same time in one browser tab.
 
-import { supabase, setTenantAccessToken } from './supabaseClient';
+import { supabase, setTenantAccessToken, getTenantAccessToken } from './supabaseClient';
 
 export interface SuperAdmin {
   id: string;
@@ -86,7 +86,8 @@ export async function createTenantRequest(
   slug: string,
   adminName: string,
   adminUsername: string,
-  adminPassword: string
+  adminPassword: string,
+  adminEmail?: string
 ): Promise<Tenant> {
   const { data, error } = await supabase.rpc('super_admin_create_tenant', {
     p_name: name,
@@ -94,9 +95,19 @@ export async function createTenantRequest(
     p_admin_name: adminName,
     p_admin_username: adminUsername,
     p_admin_password: adminPassword,
+    p_admin_email: adminEmail || null,
   });
   if (error) throw error;
   return fromTenantRow(data[0]);
+}
+
+export async function sendNewAdminAlertRequest(to: string, variables: Record<string, string>): Promise<void> {
+  const token = getTenantAccessToken();
+  await fetch('/api/email/send-new-admin-alert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to, variables }),
+  }).catch(() => {});
 }
 
 export async function updateTenantRequest(
@@ -813,4 +824,110 @@ export async function updatePaymentGatewaySettingsRequest(settings: PaymentGatew
   });
   if (error) throw error;
   return fromPaymentGatewaySettingsRow(data);
+}
+
+// Resend email provider settings — same no-public-select posture as
+// PaymentGatewaySettings, holds a live API key. See
+// supabase/090_email_provider_settings.sql.
+export interface EmailProviderSettings {
+  resendApiKey: string;
+  fromAddress: string;
+  fromName: string;
+  internalNotifyEmail: string;
+}
+
+function fromEmailProviderSettingsRow(row: any): EmailProviderSettings {
+  return {
+    resendApiKey: row?.resend_api_key || '',
+    fromAddress: row?.from_address || '',
+    fromName: row?.from_name || 'Durga CRM',
+    internalNotifyEmail: row?.internal_notify_email || '',
+  };
+}
+
+export async function getEmailProviderSettingsRequest(): Promise<EmailProviderSettings> {
+  const { data, error } = await supabase.rpc('super_admin_get_email_provider_settings');
+  if (error) throw error;
+  return fromEmailProviderSettingsRow(data);
+}
+
+export async function updateEmailProviderSettingsRequest(settings: EmailProviderSettings): Promise<EmailProviderSettings> {
+  const { data, error } = await supabase.rpc('super_admin_update_email_provider_settings', {
+    p_resend_api_key: settings.resendApiKey || null,
+    p_from_address: settings.fromAddress || null,
+    p_from_name: settings.fromName || null,
+    p_internal_notify_email: settings.internalNotifyEmail || null,
+  });
+  if (error) throw error;
+  return fromEmailProviderSettingsRow(data);
+}
+
+export async function sendTestEmailRequest(to: string, templateSlug?: string): Promise<void> {
+  const token = getTenantAccessToken();
+  const res = await fetch('/api/email/send-test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to, templateSlug: templateSlug || undefined }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Failed to send test email');
+}
+
+// Email templates CMS — see supabase/091_email_templates.sql. `slug` is
+// the stable key Phase C's trigger points reference, never the row id.
+export interface EmailTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  type: 'transactional' | 'campaign';
+  status: 'active' | 'inactive';
+  isDefault: boolean;
+  previewText: string;
+  subject: string;
+  htmlBody: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function fromEmailTemplateRow(row: any): EmailTemplate {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    type: row.type === 'campaign' ? 'campaign' : 'transactional',
+    status: row.status === 'inactive' ? 'inactive' : 'active',
+    isDefault: Boolean(row.is_default),
+    previewText: row.preview_text || '',
+    subject: row.subject || '',
+    htmlBody: row.html_body || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listEmailTemplatesRequest(): Promise<EmailTemplate[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_email_templates');
+  if (error) throw error;
+  return (data || []).map(fromEmailTemplateRow);
+}
+
+export async function upsertEmailTemplateRequest(template: Partial<EmailTemplate> & { slug: string; name: string; subject: string; htmlBody: string }): Promise<EmailTemplate> {
+  const { data, error } = await supabase.rpc('super_admin_upsert_email_template', {
+    p_id: template.id || null,
+    p_slug: template.slug,
+    p_name: template.name,
+    p_type: template.type || 'transactional',
+    p_status: template.status || 'active',
+    p_is_default: Boolean(template.isDefault),
+    p_preview_text: template.previewText || null,
+    p_subject: template.subject,
+    p_html_body: template.htmlBody,
+  });
+  if (error) throw error;
+  return fromEmailTemplateRow(data);
+}
+
+export async function deleteEmailTemplateRequest(id: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_delete_email_template', { p_id: id });
+  if (error) throw error;
 }

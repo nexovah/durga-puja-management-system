@@ -2,12 +2,12 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Building2, Settings as SettingsIcon, LogOut, Moon, Sun, ShieldCheck,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText, Inbox, HelpCircle,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, Menu, X, CreditCard, ShoppingCart, FileText, Inbox, HelpCircle, Mail,
 } from 'lucide-react';
 import { useTheme } from '../i18n/ThemeContext';
 import { getPlatformSettingsRequest, listTenantsRequest, listOrdersRequest, listLeadsRequest, listSupportTicketsRequest } from '../lib/superAdminDb';
 
-export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'leads' | 'support' | 'cms' | 'settings';
+export type SuperAdminPage = 'tenants' | 'plans' | 'orders' | 'leads' | 'support' | 'emailTemplates' | 'cms' | 'settings';
 
 interface SuperAdminLayoutProps {
   adminName: string;
@@ -19,10 +19,11 @@ interface SuperAdminLayoutProps {
 
 const NAV_ITEMS: { key: SuperAdminPage; label: string; icon: typeof Building2 }[] = [
   { key: 'tenants', label: 'Tenants', icon: Building2 },
-  { key: 'plans', label: 'Subscription Plans', icon: CreditCard },
+  { key: 'plans', label: 'Subscription', icon: CreditCard },
   { key: 'orders', label: 'Orders', icon: ShoppingCart },
   { key: 'leads', label: 'Leads', icon: Inbox },
   { key: 'support', label: 'Help & Support', icon: HelpCircle },
+  { key: 'emailTemplates', label: 'Email Templates', icon: Mail },
   { key: 'cms', label: 'CMS', icon: FileText },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
 ];

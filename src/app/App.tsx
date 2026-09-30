@@ -4,6 +4,7 @@ import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
+import { TenantResetPassword } from './components/TenantResetPassword';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
@@ -975,6 +976,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           onGoToLegal={slug => {
             window.history.pushState(null, '', `/${slug}`);
             setLoggedOutPath(`/${slug}`);
+          }}
+        />
+      );
+    }
+    if (loggedOutPath === '/reset-password') {
+      return (
+        <TenantResetPassword
+          onDone={() => {
+            window.history.pushState(null, '', '/login');
+            setLoggedOutPath('/login');
           }}
         />
       );

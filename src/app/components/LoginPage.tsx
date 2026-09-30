@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest } from '../lib/superAdminDb';
+import { requestTenantPasswordResetRequest } from '../lib/db';
 
 interface LoginPageProps {
   logo: string;
@@ -21,7 +22,10 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showForgotPasswordNote, setShowForgotPasswordNote] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotUsername, setForgotUsername] = useState('');
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
   const [platformLogo, setPlatformLogo] = useState('');
 
   useEffect(() => {
@@ -42,6 +46,23 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
     setSubmitting(false);
     if (!success) {
       setError(t('login.invalidCredentials'));
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsername.trim()) return;
+    setForgotSubmitting(true);
+    setForgotMessage('');
+    try {
+      await requestTenantPasswordResetRequest(forgotUsername.trim());
+    } catch {
+      // Deliberately no error surfaced — the endpoint always resolves the
+      // same way regardless of outcome, so a network hiccup gets the same
+      // generic message rather than leaking anything about the account.
+    } finally {
+      setForgotSubmitting(false);
+      setForgotMessage('If that account exists and has an email on file, a reset link has been sent.');
     }
   };
 
@@ -139,16 +160,11 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => setShowForgotPasswordNote(true)}
+              onClick={() => { setShowForgotPassword(true); setForgotMessage(''); }}
               className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:hover:text-orange-400"
             >
               {t('login.forgotPassword')}
             </button>
-            {showForgotPasswordNote && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                {t('login.forgotPasswordComingSoon')}
-              </p>
-            )}
           </div>
         </div>
 
@@ -158,6 +174,45 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           </p>
         </div>
       </div>
+
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForgotPassword(false)}>
+          <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Reset your password</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Enter your username — if it has an email on file, we'll send a reset link there.
+            </p>
+            {forgotMessage ? (
+              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
+                {forgotMessage}
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                <input
+                  value={forgotUsername}
+                  onChange={e => setForgotUsername(e.target.value)}
+                  placeholder="Username"
+                  autoFocus
+                  className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={forgotSubmitting}
+                  className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors disabled:opacity-60"
+                >
+                  {forgotSubmitting ? 'Sending…' : 'Send reset link'}
+                </button>
+              </form>
+            )}
+            <button
+              onClick={() => setShowForgotPassword(false)}
+              className="w-full mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
