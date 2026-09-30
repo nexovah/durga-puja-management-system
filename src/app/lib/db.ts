@@ -898,6 +898,11 @@ export interface CashBankAdjustment {
   bucket: CashBankBucket;
   direction: CashBankDirection;
   amount: number;
+  // Double-entry: when true (the default), the same amount is also applied
+  // to the *other* bucket in the opposite direction — e.g. deducting from
+  // Bank credits Cash by the same amount (withdrawal), matching real
+  // cash/bank movement instead of a one-sided correction.
+  isTransfer: boolean;
   reason: string;
   date: string;
   createdByName: string;
@@ -910,6 +915,7 @@ function fromCashBankAdjustmentRow(row: any): CashBankAdjustment {
     bucket: row.bucket,
     direction: row.direction,
     amount: Number(row.amount) || 0,
+    isTransfer: row.is_transfer !== false,
     reason: row.reason,
     date: row.date,
     createdByName: row.created_by_name,
@@ -927,6 +933,7 @@ export async function createCashBankAdjustmentRequest(entry: {
   bucket: CashBankBucket;
   direction: CashBankDirection;
   amount: number;
+  isTransfer: boolean;
   reason: string;
   date: string;
   createdByUserId: string;
@@ -938,6 +945,7 @@ export async function createCashBankAdjustmentRequest(entry: {
       bucket: entry.bucket,
       direction: entry.direction,
       amount: entry.amount,
+      is_transfer: entry.isTransfer,
       reason: entry.reason,
       date: entry.date,
       created_by_user_id: entry.createdByUserId,

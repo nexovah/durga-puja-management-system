@@ -138,7 +138,14 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
                 {adjustments.map(a => (
                   <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-400">{new Date(a.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 capitalize">{a.bucket === 'cash' ? 'Cash in Hand' : 'Bank'}</td>
+                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">
+                      {a.bucket === 'cash' ? 'Cash in Hand' : 'Bank'}
+                      {a.isTransfer && (
+                        <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                          ↔ {a.bucket === 'cash' ? 'Bank' : 'Cash'}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-sm text-gray-800 dark:text-gray-200">{a.reason}</td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-400">{a.createdByName}</td>
                     <td className={`px-6 py-3 text-sm font-bold text-right ${a.direction === 'add' ? 'text-green-600' : 'text-red-600'}`}>
@@ -190,10 +197,14 @@ function AdjustmentFormModal({
   const [bucket, setBucket] = useState<CashBankBucket>('cash');
   const [direction, setDirection] = useState<CashBankDirection>('add');
   const [amount, setAmount] = useState('');
+  const [isTransfer, setIsTransfer] = useState(true);
   const [reason, setReason] = useState('');
   const [date, setDate] = useState(todayISO());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const otherBucketLabel = bucket === 'cash' ? 'Bank' : 'Cash in Hand';
+  const thisBucketLabel = bucket === 'cash' ? 'Cash in Hand' : 'Bank';
 
   const handleSave = async () => {
     if (!currentUser) return;
@@ -204,7 +215,7 @@ function AdjustmentFormModal({
     setError('');
     try {
       const adjustment = await createCashBankAdjustmentRequest({
-        bucket, direction, amount: amountNum, reason: reason.trim(), date,
+        bucket, direction, amount: amountNum, isTransfer, reason: reason.trim(), date,
         createdByUserId: currentUser.id, createdByName: currentUser.name,
       });
       onSaved(adjustment);
@@ -256,6 +267,22 @@ function AdjustmentFormModal({
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
+          <label className="flex items-start gap-2.5 px-3.5 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isTransfer}
+              onChange={e => setIsTransfer(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="text-sm">
+              <span className="block font-medium text-gray-800 dark:text-gray-200">Transfer between Cash and Bank</span>
+              <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {isTransfer
+                  ? `The same ₹ will also ${direction === 'add' ? 'move out of' : 'be added to'} ${otherBucketLabel}, so ${thisBucketLabel} and ${otherBucketLabel} stay in balance (e.g. withdrawing cash from the bank).`
+                  : `A one-sided correction — only ${thisBucketLabel} changes. Use this for a write-off or fixing a data-entry mistake, not an actual cash/bank movement.`}
+              </span>
+            </span>
+          </label>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Reason</label>
             <input

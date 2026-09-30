@@ -94,6 +94,12 @@ export function computeCashBankTotals(params: {
   for (const a of adjustments) {
     const signed = a.direction === 'add' ? a.amount : -a.amount;
     manualAdjustment[a.bucket] += signed;
+    // Double-entry: a transfer's amount also hits the other bucket in the
+    // opposite direction (deducting Bank credits Cash by the same amount).
+    if (a.isTransfer) {
+      const otherBucket: MoneyBucket = a.bucket === 'cash' ? 'bank' : 'cash';
+      manualAdjustment[otherBucket] += -signed;
+    }
   }
 
   const cashIn = collection.cash + donation.cash + sponsorship.cash + memberPayment.cash + loanReceived.cash
