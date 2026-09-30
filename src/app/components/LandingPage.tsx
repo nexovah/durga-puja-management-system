@@ -68,7 +68,9 @@ const FEATURES = [
   { icon: Activity, title: 'Activity Log', desc: 'Full audit trail of who changed what, from which device, for complete transparency.' },
 ];
 
-const COMPARISON_GROUPS = [
+// Default content — used until (or unless) a Super Admin sets custom
+// content via Settings -> Comparison Table (platform_settings.comparison_table).
+export const DEFAULT_COMPARISON_GROUPS = [
   {
     category: 'Collections & Community',
     rows: [
@@ -123,11 +125,15 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [platformLogo, setPlatformLogo] = useState('');
+  const [comparisonGroups, setComparisonGroups] = useState(DEFAULT_COMPARISON_GROUPS);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   useEffect(() => {
-    getPlatformSettingsRequest().then(p => setPlatformLogo(p.logoUrl)).catch(() => {});
+    getPlatformSettingsRequest().then(p => {
+      setPlatformLogo(p.logoUrl);
+      if (p.comparisonGroups) setComparisonGroups(p.comparisonGroups);
+    }).catch(() => {});
     listSubscriptionPlansRequest().then(p => {
       setPlans(p);
       setSelectedPlanId(p[0]?.id ?? null);
@@ -332,7 +338,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
               </div>
             </div>
 
-            {COMPARISON_GROUPS.map((group, gi) => (
+            {comparisonGroups.map((group, gi) => (
               <div key={group.category}>
                 <div className={`grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] ${gi > 0 ? `border-t ${c('border-gray-200', 'border-gray-800')}` : ''}`}>
                   <div className={`px-6 pt-5 pb-2 sm:pb-3 text-sm font-bold ${c('text-gray-900', 'text-gray-100')}`}>{group.category}</div>

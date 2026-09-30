@@ -606,6 +606,19 @@ export async function archivePlanRequest(planId: string): Promise<SubscriptionPl
   return fromPlanAdminRow(data);
 }
 
+// Landing page "Before / With Durga CRM" comparison table — editable from
+// Super Admin -> Settings -> Comparison Table. `null` (unset) means the
+// landing page falls back to its own built-in default content.
+export interface ComparisonRow {
+  feature: string;
+  before: string;
+  after: string;
+}
+export interface ComparisonGroup {
+  category: string;
+  rows: ComparisonRow[];
+}
+
 export interface PlatformSettings {
   logoUrl: string;
   faviconUrl: string;
@@ -613,6 +626,7 @@ export interface PlatformSettings {
   showLogoOnSignin: boolean;
   showSigninBackground: boolean;
   signinBackgroundUrl: string;
+  comparisonGroups: ComparisonGroup[] | null;
 }
 
 function fromPlatformSettingsRow(row: any): PlatformSettings {
@@ -623,6 +637,7 @@ function fromPlatformSettingsRow(row: any): PlatformSettings {
     showLogoOnSignin: row.show_logo_on_signin !== false,
     showSigninBackground: row.show_signin_background === true,
     signinBackgroundUrl: row.signin_background_url || '',
+    comparisonGroups: Array.isArray(row.comparison_table) && row.comparison_table.length > 0 ? row.comparison_table : null,
   };
 }
 
@@ -642,6 +657,7 @@ export async function updatePlatformSettingsRequest(settings: PlatformSettings):
     p_show_logo_on_signin: settings.showLogoOnSignin,
     p_show_signin_background: settings.showSigninBackground,
     p_signin_background_url: settings.signinBackgroundUrl || null,
+    p_comparison_table: settings.comparisonGroups && settings.comparisonGroups.length > 0 ? settings.comparisonGroups : null,
   });
   if (error) throw error;
   return fromPlatformSettingsRow(data);
