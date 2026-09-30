@@ -106,6 +106,12 @@ export function SuperAdminRoot() {
   // already points at a specific tenant (e.g. a refresh mid-detail-view),
   // load it instead of dropping back to the list.
   useEffect(() => {
+    // Skip normalization on the public reset-password screen — it's not a
+    // recognized VALID_PAGES entry, so without this guard the effect below
+    // would rewrite its token URL to /super-admin/tenants via
+    // replaceState, silently losing the token on any refresh/back nav.
+    if (window.location.pathname === '/super-admin/reset-password') return;
+
     const path = `/super-admin/${page}`;
     const tenantId = getTenantIdFromPath();
     if (tenantId) {
