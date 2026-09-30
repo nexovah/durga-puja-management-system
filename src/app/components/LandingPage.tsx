@@ -68,23 +68,38 @@ const FEATURES = [
   { icon: Activity, title: 'Activity Log', desc: 'Full audit trail of who changed what, from which device, for complete transparency.' },
 ];
 
-const COMPARISON_ROWS = [
-  { feature: 'Collection', before: 'Chanda in notebooks', after: 'Digital collection tracking' },
-  { feature: 'Donation', before: 'Records scattered across chats & paper', after: 'Centralized donation management' },
-  { feature: 'Members', before: 'Scattered across contacts', after: 'Centralized member records' },
-  { feature: 'Sponsorship', before: 'Sponsor info across WhatsApp conversations', after: 'Complete sponsorship management' },
-  { feature: 'Vendor Payments', before: 'Difficult to track', after: 'Track all vendor payments in one place' },
-  { feature: 'Estimation', before: 'Estimates vs. actuals unclear', after: 'Budget and actual tracking' },
-  { feature: 'Partial Payments', before: 'Easily forgotten', after: 'Clear payment status and tracking' },
-  { feature: 'Loan Records', before: 'Difficult to maintain', after: 'Loans, dues & repayments' },
-  { feature: 'Expenses', before: 'Bills & expenses tracked manually', after: 'Organized expense management' },
-  { feature: 'Treasury', before: 'Cash flow difficult to monitor', after: 'Complete treasury overview' },
-  { feature: 'Cash in Hand & Bank', before: 'Separate records & manual reconciliation', after: 'Cash and bank balances in one view' },
-  { feature: 'Reports', before: 'Manual calculations & spreadsheets', after: 'Instant financial & collection reports' },
-  { feature: 'Documents', before: 'Files scattered across devices & chats', after: 'Centralized document management' },
-  { feature: 'Assets', before: 'Asset records maintained manually', after: 'Organized asset tracking' },
-  { feature: 'Activity Log', before: 'No clear history of changes', after: 'Complete activity & action history' },
-  { feature: 'Committee Tasks', before: 'Tasks lost in group chats', after: 'Priorities, deadlines & task tracking' },
+const COMPARISON_GROUPS = [
+  {
+    category: 'Collections & Community',
+    rows: [
+      { feature: 'Collection', before: 'Chanda in notebooks', after: 'Digital collection tracking' },
+      { feature: 'Donation', before: 'Records scattered across chats & paper', after: 'Centralized donation management' },
+      { feature: 'Members', before: 'Scattered across contacts', after: 'Centralized member records' },
+      { feature: 'Sponsorship', before: 'Sponsor info across WhatsApp conversations', after: 'Complete sponsorship management' },
+    ],
+  },
+  {
+    category: 'Finance & Operations',
+    rows: [
+      { feature: 'Vendor Payments', before: 'Difficult to track', after: 'Track all vendor payments in one place' },
+      { feature: 'Estimation', before: 'Estimates vs. actuals unclear', after: 'Budget and actual tracking' },
+      { feature: 'Partial Payments', before: 'Easily forgotten', after: 'Clear payment status and tracking' },
+      { feature: 'Loan Records', before: 'Difficult to maintain', after: 'Loans, dues & repayments' },
+      { feature: 'Expenses', before: 'Bills & expenses tracked manually', after: 'Organized expense management' },
+      { feature: 'Treasury', before: 'Cash flow difficult to monitor', after: 'Complete treasury overview' },
+      { feature: 'Cash in Hand & Bank', before: 'Separate records & manual reconciliation', after: 'Cash and bank balances in one view' },
+    ],
+  },
+  {
+    category: 'Records & Control',
+    rows: [
+      { feature: 'Reports', before: 'Manual calculations & spreadsheets', after: 'Instant financial & collection reports' },
+      { feature: 'Documents', before: 'Files scattered across devices & chats', after: 'Centralized document management' },
+      { feature: 'Assets', before: 'Asset records maintained manually', after: 'Organized asset tracking' },
+      { feature: 'Activity Log', before: 'No clear history of changes', after: 'Complete activity & action history' },
+      { feature: 'Committee Tasks', before: 'Tasks lost in group chats', after: 'Priorities, deadlines & task tracking' },
+    ],
+  },
 ];
 
 const FESTIVALS = [
@@ -300,12 +315,15 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
         )}
       </section>
 
-      {/* Before vs After — one compact comparison table instead of two
-          loose lists, so every module lines up feature-by-feature. Table
-          layout on sm:+ ; a stacked per-feature card list below sm: so
-          nothing needs horizontal scroll on a phone. */}
+      {/* Before vs After — grouped comparison table (same category
+          grouping as the Figma reference's pricing-table structure, just
+          two content columns instead of three pricing plans), with the
+          "With Durga CRM" column highlighted in the app's light-orange
+          accent all the way down. Table layout on sm:+ ; stacked
+          per-feature blocks below sm: so nothing needs horizontal scroll
+          on a phone. */}
       <section className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-2">
             Still Managing Your Puja With Notebooks, Excel &amp; WhatsApp?
           </h2>
@@ -313,30 +331,39 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
             Every part of running a Puja, side by side — before and with Durga CRM.
           </p>
 
-          <div className={`rounded-xl border overflow-hidden ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
+          <div className={`rounded-2xl border overflow-hidden ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
             {/* Header row — hidden on mobile, where each feature becomes its own stacked block instead */}
-            <div className={`hidden sm:grid grid-cols-[1fr_1fr_1fr] gap-4 px-5 py-3 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-500')}`}>
-              <span>Feature</span>
-              <span>Before</span>
-              <span className="text-orange-600">With Durga CRM</span>
+            <div className="hidden sm:grid grid-cols-[1.3fr_1fr_1fr]">
+              <div className={`px-6 py-4 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-400', 'border-gray-800 text-gray-500')}`} />
+              <div className={`px-6 py-4 text-xs font-semibold uppercase tracking-wide border-b ${c('border-gray-200 text-gray-400', 'border-gray-800 text-gray-500')}`}>Before</div>
+              <div className={`px-6 py-4 text-xs font-bold uppercase tracking-wide border-b ${c('border-orange-200 bg-orange-50 text-orange-700', 'border-orange-900/40 bg-orange-500/10 text-orange-400')}`}>With Durga CRM</div>
             </div>
 
-            <div className={`divide-y ${c('divide-gray-100', 'divide-gray-800')}`}>
-              {COMPARISON_ROWS.map(row => (
-                <div key={row.feature} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr] gap-1.5 sm:gap-4 px-5 py-3.5">
-                  <span className="text-sm font-medium">{row.feature}</span>
-                  <span className={`text-sm flex items-start gap-1.5 ${c('text-gray-500', 'text-gray-400')}`}>
-                    <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-14">Before</span>
-                    {row.before}
-                  </span>
-                  <span className="text-sm flex items-start gap-1.5">
-                    <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-orange-500 w-14">With CRM</span>
-                    <CheckCircle2 className={`hidden sm:block w-4 h-4 shrink-0 mt-0.5 ${c('text-orange-600', 'text-orange-400')}`} />
-                    {row.after}
-                  </span>
+            {COMPARISON_GROUPS.map((group, gi) => (
+              <div key={group.category}>
+                <div className={`grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] ${gi > 0 ? `border-t ${c('border-gray-200', 'border-gray-800')}` : ''}`}>
+                  <div className={`px-6 pt-5 pb-2 sm:pb-3 text-sm font-bold ${c('text-gray-900', 'text-gray-100')}`}>{group.category}</div>
+                  <div className={`hidden sm:block ${c('bg-white', 'bg-gray-900')}`} />
+                  <div className={c('bg-orange-50/60', 'bg-orange-500/5')} />
                 </div>
-              ))}
-            </div>
+                <div className={`divide-y ${c('divide-gray-100', 'divide-gray-800')}`}>
+                  {group.rows.map(row => (
+                    <div key={row.feature} className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr]">
+                      <div className="px-6 py-3.5 text-sm font-medium">{row.feature}</div>
+                      <div className={`px-6 pb-2 sm:py-3.5 text-sm flex items-start gap-1.5 ${c('text-gray-500', 'text-gray-400')}`}>
+                        <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-16">Before</span>
+                        {row.before}
+                      </div>
+                      <div className={`px-6 pb-3.5 sm:py-3.5 text-sm font-medium flex items-start gap-1.5 ${c('bg-orange-50/60 text-gray-800', 'bg-orange-500/5 text-gray-100')}`}>
+                        <span className={`sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide w-16 ${c('text-orange-600', 'text-orange-400')}`}>With CRM</span>
+                        <CheckCircle2 className={`hidden sm:block w-4 h-4 shrink-0 mt-0.5 ${c('text-orange-600', 'text-orange-400')}`} />
+                        {row.after}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <p className={`text-center mt-10 text-sm ${c('text-gray-500', 'text-gray-400')}`}>
