@@ -808,9 +808,10 @@ export default function App() {
     permissions: User['permissions'],
     canEdit: boolean,
     canDelete: boolean,
-    canBulkImport: boolean
+    canBulkImport: boolean,
+    email?: string
   ) => {
-    const newUser = await createUserRequest(name, username, password, permissions, canEdit, canDelete, canBulkImport);
+    const newUser = await createUserRequest(name, username, password, permissions, canEdit, canDelete, canBulkImport, email);
     setUsers(prev => [...prev, newUser]);
     handleLog('create', 'users', `${name} (${username})`);
     return newUser;
@@ -823,9 +824,10 @@ export default function App() {
     canEdit: boolean,
     canDelete: boolean,
     canBulkImport: boolean,
-    newPassword?: string
+    newPassword?: string,
+    email?: string
   ) => {
-    const updated = await updateUserRequest(userId, name, permissions, canEdit, canDelete, canBulkImport, newPassword);
+    const updated = await updateUserRequest(userId, name, permissions, canEdit, canDelete, canBulkImport, newPassword, email);
     setUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
     handleLog('update', 'users', `${name} (${updated.username})`);
     return updated;

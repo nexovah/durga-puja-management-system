@@ -15,8 +15,8 @@ interface SettingsProps {
   currentUser: User | null;
   developerInfo: DeveloperInfo;
   setDeveloperInfo: (info: DeveloperInfo) => void;
-  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean) => Promise<User>;
-  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean, newPassword?: string) => Promise<User>;
+  onCreateUser: (name: string, username: string, password: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean, email?: string) => Promise<User>;
+  onUpdateUser: (userId: string, name: string, permissions: User['permissions'], canEdit: boolean, canDelete: boolean, canBulkImport: boolean, newPassword?: string, email?: string) => Promise<User>;
   onDeleteUser: (userId: string) => Promise<boolean>;
   onSetUserActive: (userId: string, isActive: boolean) => Promise<User>;
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -82,6 +82,7 @@ export function Settings({
   const [userForm, setUserForm] = useState({
     name: '',
     username: '',
+    email: '',
     password: '',
     canEdit: true,
     canDelete: true,
@@ -147,7 +148,7 @@ export function Settings({
     try {
       if (editingUserId) {
         // Edit existing user (password only changes if a new one was typed)
-        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined);
+        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined, userForm.email || undefined);
         setMessage(t('settings.msg.userUpdated'));
       } else {
         // Check if username already exists
@@ -157,7 +158,7 @@ export function Settings({
           return;
         }
 
-        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport);
+        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.email || undefined);
         setMessage(t('settings.msg.userCreated'));
       }
     } catch (err) {
@@ -170,6 +171,7 @@ export function Settings({
     setUserForm({
       name: '',
       username: '',
+      email: '',
       password: '',
       canEdit: true,
       canDelete: true,
@@ -204,6 +206,7 @@ export function Settings({
     setUserForm({
       name: user.name,
       username: user.username,
+      email: user.email || '',
       password: '', // left blank; only sent if the admin types a new one
       canEdit: user.canEdit !== false,
       canDelete: user.canDelete !== false,
@@ -588,6 +591,7 @@ export function Settings({
                     setUserForm({
                       name: '',
                       username: '',
+                      email: '',
                       password: '',
                       canEdit: true,
                       canDelete: true,
@@ -654,6 +658,16 @@ export function Settings({
                           onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                           disabled={!!editingUserId}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.email')} <span className="text-xs text-gray-400">({t('common.optional')})</span></label>
+                        <input
+                          type="email"
+                          value={userForm.email}
+                          onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                          placeholder="For password reset & login alerts"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         />
                       </div>
                       <div className="md:col-span-2">

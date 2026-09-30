@@ -1209,7 +1209,8 @@ export async function createUserRequest(
   permissions: User['permissions'],
   canEdit: boolean,
   canDelete: boolean,
-  canBulkImport: boolean
+  canBulkImport: boolean,
+  email?: string
 ): Promise<User> {
   const { data, error } = await supabase.rpc('create_app_user', {
     p_name: name,
@@ -1219,6 +1220,7 @@ export async function createUserRequest(
     p_can_edit: canEdit,
     p_can_delete: canDelete,
     p_can_bulk_import: canBulkImport,
+    p_email: email || null,
   });
   if (error) throw error;
   return fromUserRow(data[0]);
@@ -1231,7 +1233,8 @@ export async function updateUserRequest(
   canEdit: boolean,
   canDelete: boolean,
   canBulkImport: boolean,
-  newPassword?: string
+  newPassword?: string,
+  email?: string
 ): Promise<User> {
   const { data, error } = await supabase.rpc('update_app_user', {
     p_user_id: userId,
@@ -1241,6 +1244,7 @@ export async function updateUserRequest(
     p_can_edit: canEdit,
     p_can_delete: canDelete,
     p_can_bulk_import: canBulkImport,
+    p_email: email || null,
   });
   if (error) throw error;
   return fromUserRow(data[0]);

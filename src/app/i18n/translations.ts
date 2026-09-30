@@ -131,6 +131,7 @@ export const translations = {
     'import.duplicateInFile': 'duplicate of another row already in this file',
     'import.duplicateInDatabase': 'already exists in the table',
     'common.optional': 'optional',
+    'common.email': 'Email',
     'common.egPrefix': 'e.g.',
 
     // Dashboard
@@ -1134,6 +1135,7 @@ export const translations = {
     'import.duplicateInFile': 'এই ফাইলের অন্য একটি সারির সাথে ডুপ্লিকেট',
     'import.duplicateInDatabase': 'টেবিলে ইতিমধ্যে বিদ্যমান',
     'common.optional': 'ঐচ্ছিক',
+    'common.email': 'ইমেইল',
     'common.egPrefix': 'যেমন',
 
     'dashboard.totalMembers': 'মোট সদস্য',
@@ -2129,6 +2131,7 @@ export const translations = {
     'import.duplicateInFile': 'इसी फ़ाइल की किसी अन्य पंक्ति से डुप्लिकेट',
     'import.duplicateInDatabase': 'तालिका में पहले से मौजूद है',
     'common.optional': 'वैकल्पिक',
+    'common.email': 'ईमेल',
     'common.egPrefix': 'उदाहरण',
 
     'dashboard.totalMembers': 'कुल सदस्य',
