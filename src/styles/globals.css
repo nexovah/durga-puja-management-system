@@ -252,3 +252,13 @@ div:has(> input[type='time']),
 div:has(> input[type='datetime-local']) {
   min-width: 0;
 }
+
+/* Sidebar nav lists (tenant Sidebar.tsx, Super Admin SuperAdminLayout.tsx)
+   still scroll on overflow, just without a visible scrollbar track/thumb. */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, new Edge */
+}

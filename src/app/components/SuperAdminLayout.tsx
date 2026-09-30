@@ -152,7 +152,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto pt-9 pb-2 px-3">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide pt-9 pb-2 px-3">
         {!collapsed && (
           <p className="px-3 mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Platform</p>
         )}

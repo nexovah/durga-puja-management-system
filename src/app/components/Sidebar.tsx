@@ -139,7 +139,7 @@ export function Sidebar({
         />
       </div>
 
-      <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-3 space-y-5">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide pt-3 pb-2 px-3 space-y-5">
         {groups.map((group, groupIndex) => {
           const visibleItems = group.items.filter(i => i.show);
           if (visibleItems.length === 0) return null;
