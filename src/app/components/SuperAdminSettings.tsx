@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Building2, Lock, Code, Save, Table2, Plus, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Lock, Code, Save } from 'lucide-react';
 import {
   superAdminChangePasswordRequest,
   getDeveloperInfoRequest,
@@ -12,12 +12,10 @@ import {
   DeveloperInfo,
   SuperAdminProfile,
   PlatformSettings,
-  ComparisonGroup,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
-import { DEFAULT_COMPARISON_GROUPS } from './LandingPage';
 
-type Tab = 'general' | 'comparisonTable' | 'profile' | 'password' | 'developer';
+type Tab = 'general' | 'profile' | 'password' | 'developer';
 
 const EMPTY_DEV_INFO: DeveloperInfo = { name: '', email: '', phone: '', version: '', changelog: '' };
 const EMPTY_PROFILE: SuperAdminProfile = { id: '', name: '', username: '', email: '', phone: '', phone2: '', address: '', logoUrl: '' };
@@ -29,13 +27,12 @@ const EMPTY_PLATFORM: PlatformSettings = {
 
 const NAV_ITEMS: { key: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'general', label: 'General', icon: SettingsIcon },
-  { key: 'comparisonTable', label: 'Comparison Table', icon: Table2 },
   { key: 'profile', label: 'Profile', icon: Building2 },
   { key: 'password', label: 'Change Password', icon: Lock },
   { key: 'developer', label: 'Developer Info', icon: Code },
 ];
 
-const VALID_TABS: Tab[] = ['general', 'comparisonTable', 'profile', 'password', 'developer'];
+const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'developer'];
 
 // /super-admin/settings/<tab> — see docs/URL_STATE_CONVENTION.md: every
 // list/detail/tab view in this app carries its state in the URL so a
@@ -104,11 +101,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
 
   useEffect(() => {
     getPlatformSettingsRequest()
-      .then(p => {
-        const withDefault = { ...p, comparisonGroups: p.comparisonGroups || DEFAULT_COMPARISON_GROUPS };
-        setPlatform(withDefault);
-        setPlatformForm(withDefault);
-      })
+      .then(p => { setPlatform(p); setPlatformForm(p); })
       .catch(() => {})
       .finally(() => setPlatformLoading(false));
     getDeveloperInfoRequest()
@@ -370,138 +363,6 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                   <Save size={20} />
                   {savingPlatform ? 'Saving…' : 'Save'}
                 </button>
-              </form>
-            )
-          )}
-
-          {activeTab === 'comparisonTable' && (
-            platformLoading ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
-            ) : (
-              <form onSubmit={handlePlatformSubmit} className="space-y-6 max-w-3xl">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  The "Before / With Durga CRM" comparison table on the landing page, grouped by
-                  category. Changes apply to every tenant's public landing page.
-                </p>
-
-                {(platformForm.comparisonGroups || []).map((group, gi) => (
-                  <div key={gi} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={group.category}
-                        onChange={e => {
-                          const groups = [...(platformForm.comparisonGroups || [])];
-                          groups[gi] = { ...groups[gi], category: e.target.value };
-                          setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                        }}
-                        placeholder="Category name"
-                        className={`${inputClass} font-semibold`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const groups = (platformForm.comparisonGroups || []).filter((_, i) => i !== gi);
-                          setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                        }}
-                        className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
-                        title="Delete category"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {group.rows.map((row, ri) => (
-                        <div key={ri} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
-                          <input
-                            value={row.feature}
-                            onChange={e => {
-                              const groups = [...(platformForm.comparisonGroups || [])];
-                              const rows = [...groups[gi].rows];
-                              rows[ri] = { ...rows[ri], feature: e.target.value };
-                              groups[gi] = { ...groups[gi], rows };
-                              setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                            }}
-                            placeholder="Feature"
-                            className={inputClass}
-                          />
-                          <input
-                            value={row.before}
-                            onChange={e => {
-                              const groups = [...(platformForm.comparisonGroups || [])];
-                              const rows = [...groups[gi].rows];
-                              rows[ri] = { ...rows[ri], before: e.target.value };
-                              groups[gi] = { ...groups[gi], rows };
-                              setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                            }}
-                            placeholder="Before"
-                            className={inputClass}
-                          />
-                          <input
-                            value={row.after}
-                            onChange={e => {
-                              const groups = [...(platformForm.comparisonGroups || [])];
-                              const rows = [...groups[gi].rows];
-                              rows[ri] = { ...rows[ri], after: e.target.value };
-                              groups[gi] = { ...groups[gi], rows };
-                              setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                            }}
-                            placeholder="With Durga CRM"
-                            className={inputClass}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const groups = [...(platformForm.comparisonGroups || [])];
-                              groups[gi] = { ...groups[gi], rows: groups[gi].rows.filter((_, i) => i !== ri) };
-                              setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                            }}
-                            className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
-                            title="Delete row"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const groups = [...(platformForm.comparisonGroups || [])];
-                        groups[gi] = { ...groups[gi], rows: [...groups[gi].rows, { feature: '', before: '', after: '' }] };
-                        setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                      }}
-                      className="flex items-center gap-1.5 text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
-                    >
-                      <Plus size={16} /> Add row
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const groups: ComparisonGroup[] = [...(platformForm.comparisonGroups || []), { category: '', rows: [] }];
-                    setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
-                  }}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
-                >
-                  <Plus size={16} /> Add category
-                </button>
-
-                {platformError && <p className="text-sm text-red-600 dark:text-red-400">{platformError}</p>}
-                {platformMessage && <p className="text-sm text-green-600 dark:text-green-400">{platformMessage}</p>}
-                <div>
-                  <button
-                    type="submit"
-                    disabled={savingPlatform}
-                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
-                  >
-                    <Save size={20} />
-                    {savingPlatform ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
               </form>
             )
           )}

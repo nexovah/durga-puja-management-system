@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bold, FileText, Heading2, Heading3, Italic, List, Save } from 'lucide-react';
-import { CmsPage, listCmsPagesRequest, upsertCmsPageRequest } from '../lib/superAdminDb';
+import { Bold, FileText, Heading2, Heading3, Italic, List, Plus, Save, Table2, Trash2 } from 'lucide-react';
+import {
+  CmsPage, listCmsPagesRequest, upsertCmsPageRequest,
+  PlatformSettings, ComparisonGroup, getPlatformSettingsRequest, updatePlatformSettingsRequest,
+} from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
 import { MarkdownBody } from '../lib/markdown';
+import { DEFAULT_COMPARISON_GROUPS } from './LandingPage';
+
+const EMPTY_PLATFORM: PlatformSettings = {
+  logoUrl: '', faviconUrl: '', appTitle: 'Durga CRM',
+  showLogoOnSignin: true, showSigninBackground: false, signinBackgroundUrl: '',
+  comparisonGroups: null,
+};
 
 // /super-admin/cms/<slug> — see docs/URL_STATE_CONVENTION.md.
 function getSlugFromPath(): string | null {
@@ -21,6 +31,32 @@ export function SuperAdminCms() {
   const [message, setMessage] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const [platformForm, setPlatformForm] = useState<PlatformSettings>(EMPTY_PLATFORM);
+  const [savingComparison, setSavingComparison] = useState(false);
+  const [comparisonMessage, setComparisonMessage] = useState('');
+  const [comparisonError, setComparisonError] = useState('');
+
+  useEffect(() => {
+    getPlatformSettingsRequest()
+      .then(p => setPlatformForm({ ...p, comparisonGroups: p.comparisonGroups || DEFAULT_COMPARISON_GROUPS }))
+      .catch(() => {});
+  }, []);
+
+  const handleComparisonSave = async () => {
+    setSavingComparison(true);
+    setComparisonError('');
+    setComparisonMessage('');
+    try {
+      const updated = await updatePlatformSettingsRequest(platformForm);
+      setPlatformForm(updated);
+      setComparisonMessage('Saved.');
+    } catch (err: any) {
+      setComparisonError(err?.message || 'Failed to save');
+    } finally {
+      setSavingComparison(false);
+    }
+  };
 
   const setActiveSlug = (slug: string) => {
     setActiveSlugState(slug);
@@ -284,6 +320,138 @@ export function SuperAdminCms() {
                   {saving ? 'Saving…' : 'Save'}
                 </button>
               </form>
+            )}
+
+            {form && form.slug === 'home' && (
+              <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 max-w-3xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Table2 size={18} className="text-orange-600 dark:text-orange-400" />
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Comparison Table</h2>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                  The "Before / With Durga CRM" table on the landing page, grouped by category.
+                </p>
+
+                <div className="space-y-6">
+                  {(platformForm.comparisonGroups || []).map((group, gi) => (
+                    <div key={gi} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={group.category}
+                          onChange={e => {
+                            const groups = [...(platformForm.comparisonGroups || [])];
+                            groups[gi] = { ...groups[gi], category: e.target.value };
+                            setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                          }}
+                          placeholder="Category name"
+                          className={`${inputClass} font-semibold`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const groups = (platformForm.comparisonGroups || []).filter((_, i) => i !== gi);
+                            setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                          }}
+                          className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
+                          title="Delete category"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.rows.map((row, ri) => (
+                          <div key={ri} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
+                            <input
+                              value={row.feature}
+                              onChange={e => {
+                                const groups = [...(platformForm.comparisonGroups || [])];
+                                const rows = [...groups[gi].rows];
+                                rows[ri] = { ...rows[ri], feature: e.target.value };
+                                groups[gi] = { ...groups[gi], rows };
+                                setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                              }}
+                              placeholder="Feature"
+                              className={inputClass}
+                            />
+                            <input
+                              value={row.before}
+                              onChange={e => {
+                                const groups = [...(platformForm.comparisonGroups || [])];
+                                const rows = [...groups[gi].rows];
+                                rows[ri] = { ...rows[ri], before: e.target.value };
+                                groups[gi] = { ...groups[gi], rows };
+                                setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                              }}
+                              placeholder="Before"
+                              className={inputClass}
+                            />
+                            <input
+                              value={row.after}
+                              onChange={e => {
+                                const groups = [...(platformForm.comparisonGroups || [])];
+                                const rows = [...groups[gi].rows];
+                                rows[ri] = { ...rows[ri], after: e.target.value };
+                                groups[gi] = { ...groups[gi], rows };
+                                setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                              }}
+                              placeholder="With Durga CRM"
+                              className={inputClass}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const groups = [...(platformForm.comparisonGroups || [])];
+                                groups[gi] = { ...groups[gi], rows: groups[gi].rows.filter((_, i) => i !== ri) };
+                                setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                              }}
+                              className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
+                              title="Delete row"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const groups = [...(platformForm.comparisonGroups || [])];
+                          groups[gi] = { ...groups[gi], rows: [...groups[gi].rows, { feature: '', before: '', after: '' }] };
+                          setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                        }}
+                        className="flex items-center gap-1.5 text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
+                      >
+                        <Plus size={16} /> Add row
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const groups: ComparisonGroup[] = [...(platformForm.comparisonGroups || []), { category: '', rows: [] }];
+                      setPlatformForm(f => ({ ...f, comparisonGroups: groups }));
+                    }}
+                    className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
+                  >
+                    <Plus size={16} /> Add category
+                  </button>
+
+                  {comparisonError && <p className="text-sm text-red-600 dark:text-red-400">{comparisonError}</p>}
+                  {comparisonMessage && <p className="text-sm text-green-600 dark:text-green-400">{comparisonMessage}</p>}
+                  <button
+                    type="button"
+                    onClick={handleComparisonSave}
+                    disabled={savingComparison}
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                  >
+                    <Save size={20} />
+                    {savingComparison ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
