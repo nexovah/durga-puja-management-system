@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
-import { EventInfo, createEventRequest } from '../lib/db';
+import { EventInfo, createEventRequest, switchActiveEventRequest } from '../lib/db';
 
 const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺', '🪘'];
 const currentYear = new Date().getFullYear();
@@ -59,6 +59,12 @@ export function CreateFirstEventScreen({
         name.trim(), year, emoji, currentUserId,
         parseFloat(openingCash) || 0, parseFloat(openingBank) || 0,
       );
+      // Creating an event doesn't itself set it active server-side —
+      // without this, tenants.active_event_id stays null, so the very
+      // next fetchActiveEventId() call (next reload, or any other user
+      // in this tenant) sees no active event and this screen reappears
+      // even though an event already exists.
+      await switchActiveEventRequest(event.id);
       onCreated(event);
     } catch (err: any) {
       console.error('Failed to create first event', err);
