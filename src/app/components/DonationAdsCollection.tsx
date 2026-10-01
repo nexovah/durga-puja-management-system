@@ -161,16 +161,20 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   // then every unique donor/company name ever entered across Collection and
   // Donation/Sponsorship — covers the third-party-collector case too. Free
   // text is always allowed; this list just speeds up picking a known name.
-  const collectedByPool = useMemo(() => {
-    const names = new Set<string>();
-    members.forEach(m => { if (m.name.trim()) names.add(m.name.trim()); });
-    chandaList.forEach(c => { if (c.donorName.trim()) names.add(c.donorName.trim()); });
+  // Members take priority over Donor when a name matches both (e.g. a
+  // member who also donated before) — confirmed tie-break.
+  const collectedByTypeMap = useMemo(() => {
+    const map = new Map<string, 'member' | 'donor'>();
+    chandaList.forEach(c => { if (c.donorName.trim()) map.set(c.donorName.trim(), 'donor'); });
     donationAdsList.forEach(d => {
-      if (d.donorName.trim()) names.add(d.donorName.trim());
-      if (d.companyName?.trim()) names.add(d.companyName.trim());
+      if (d.donorName.trim()) map.set(d.donorName.trim(), 'donor');
+      if (d.companyName?.trim()) map.set(d.companyName.trim(), 'donor');
     });
-    return [...names];
+    members.forEach(m => { if (m.name.trim()) map.set(m.name.trim(), 'member'); });
+    return map;
   }, [members, chandaList, donationAdsList]);
+
+  const collectedByPool = useMemo(() => [...collectedByTypeMap.keys()], [collectedByTypeMap]);
 
   const matchingCollectedBy = useMemo(() => {
     const q = formData.collectedBy.trim().toLowerCase();
@@ -802,19 +806,35 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               />
               {collectedBySuggestOpen && matchingCollectedBy.length > 0 && (
                 <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
-                  {matchingCollectedBy.map(name => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => { setFormData({ ...formData, collectedBy: name }); setCollectedBySuggestOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
-                    >
-                      <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                        <UserIcon size={14} />
-                      </span>
-                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{name}</span>
-                    </button>
-                  ))}
+                  {matchingCollectedBy.map(name => {
+                    const type = collectedByTypeMap.get(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => { setFormData({ ...formData, collectedBy: name }); setCollectedBySuggestOpen(false); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
+                      >
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                          type === 'member'
+                            ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                            : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          {type === 'member' ? <UserIcon size={14} /> : <Gift size={14} />}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex-1">{name}</span>
+                        {type && (
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
+                            type === 'member'
+                              ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'
+                              : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                          }`}>
+                            {type === 'member' ? t('donationAds.collectedByMember') : t('donationAds.collectedByDonor')}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
