@@ -5,6 +5,7 @@ import { BarChart3 } from 'lucide-react';
 import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
+import { DONUT_COLORS } from './DashboardDonut';
 
 interface DashboardCategoryBarsProps {
   chandaList: Chanda[];
@@ -41,13 +42,15 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
   const totalLoan = loansList.reduce((sum, l) => sum + getLoanNetAmount(l), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
 
+  // Same palette/order as DashboardDonut's charts (DONUT_COLORS), so a
+  // category reads the same color everywhere on the dashboard.
   const data = [
-    { key: 'membership', label: t('dashboard.chart.pillar.membership'), value: totalMembership, color: '#9333ea' },
-    { key: 'chanda', label: t('dashboard.chart.pillar.chanda'), value: totalChanda, color: '#16a34a' },
-    { key: 'donation', label: t('dashboard.chart.pillar.donation'), value: totalDonation, color: '#059669' },
-    { key: 'ads', label: t('dashboard.chart.pillar.ads'), value: totalAds, color: '#0d9488' },
-    { key: 'expenses', label: t('dashboard.chart.pillar.expenses'), value: totalExpenses, color: '#dc2626' },
-    { key: 'loan', label: t('dashboard.chart.pillar.loan'), value: totalLoan, color: '#0284c7' },
+    { key: 'membership', label: t('dashboard.chart.pillar.membership'), value: totalMembership, color: DONUT_COLORS[0] },
+    { key: 'chanda', label: t('dashboard.chart.pillar.chanda'), value: totalChanda, color: DONUT_COLORS[1] },
+    { key: 'donation', label: t('dashboard.chart.pillar.donation'), value: totalDonation, color: DONUT_COLORS[2] },
+    { key: 'ads', label: t('dashboard.chart.pillar.ads'), value: totalAds, color: DONUT_COLORS[3] },
+    { key: 'expenses', label: t('dashboard.chart.pillar.expenses'), value: totalExpenses, color: DONUT_COLORS[4] },
+    { key: 'loan', label: t('dashboard.chart.pillar.loan'), value: totalLoan, color: DONUT_COLORS[5] },
   ];
 
   return (

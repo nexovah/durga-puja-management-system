@@ -12,6 +12,13 @@ import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDo
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 import { TranslationKey } from '../i18n/translations';
+import { DONUT_COLORS } from './DashboardDonut';
+
+// Same palette as DashboardDonut/DashboardCategoryBars — Income reuses the
+// Sponsorship/Ads green, Expenses reuses the Loan red, so a category reads
+// the same color everywhere on the dashboard.
+const INCOME_COLOR = DONUT_COLORS[3];
+const EXPENSE_COLOR = DONUT_COLORS[5];
 
 interface DashboardChartProps {
   chandaList: Chanda[];
@@ -184,12 +191,12 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
           <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
             <defs>
               <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#16a34a" stopOpacity={0.02} />
+                <stop offset="5%" stopColor={INCOME_COLOR} stopOpacity={0.35} />
+                <stop offset="95%" stopColor={INCOME_COLOR} stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#dc2626" stopOpacity={0.02} />
+                <stop offset="5%" stopColor={EXPENSE_COLOR} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={EXPENSE_COLOR} stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
@@ -221,7 +228,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
             <Area
               type="monotone"
               dataKey="income"
-              stroke="#16a34a"
+              stroke={INCOME_COLOR}
               strokeWidth={2}
               fill="url(#incomeGradient)"
               activeDot={{ r: 4 }}
@@ -229,7 +236,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
             <Area
               type="monotone"
               dataKey="expenses"
-              stroke="#dc2626"
+              stroke={EXPENSE_COLOR}
               strokeWidth={2}
               fill="url(#expenseGradient)"
               activeDot={{ r: 4 }}

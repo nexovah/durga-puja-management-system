@@ -184,7 +184,7 @@ export function Sidebar({
     <>
       {/* Desktop rail — flat gray (slightly darker than the page background),
           blending into the browser edge (no border/shadow) per the reference design */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen outer-bg-gradient dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen outer-bg-gradient z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
@@ -208,7 +208,7 @@ export function Sidebar({
           style={{ top: hoveredTooltip.top, left: hoveredTooltip.left + 12 }}
         >
           <div className="relative bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-lg shadow-lg border border-gray-100 dark:border-gray-800 px-3.5 py-2 whitespace-nowrap">
-            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[7px] border-r-white" />
+            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[7px] border-r-white dark:border-r-gray-900" />
             {hoveredTooltip.label}
           </div>
         </div>,
