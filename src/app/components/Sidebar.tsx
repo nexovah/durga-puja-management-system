@@ -184,7 +184,7 @@ export function Sidebar({
     <>
       {/* Desktop rail — flat gray (slightly darker than the page background),
           blending into the browser edge (no border/shadow) per the reference design */}
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen outer-bg-gradient dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {content}
       </aside>
 
@@ -245,8 +245,8 @@ function SidebarNavButton({
         collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
       } ${
         active
-          ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
-          : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
+          ? 'nav-item-active dark:bg-orange-500/10 text-white dark:text-orange-400 shadow-sm'
+          : 'nav-item-hover text-gray-700 dark:text-gray-300 hover:text-orange-900 dark:hover:text-orange-400 dark:hover:bg-orange-500/10'
       }`}
     >
       <Icon size={19} className="shrink-0" />

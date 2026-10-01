@@ -996,7 +996,7 @@ export const translations = {
     'login.tagline2': '— all from one powerful Durga CRM platform.',
 
     // Global Search
-    'search.placeholder': 'Search members, chanda, donation/advertisement, expenses…',
+    'search.placeholder': 'Search members, collection & more',
     'search.typeToSearch': 'Type to search across Members, Collection, Donation/Sponsorship Collection and Expenses — names, amounts, phone numbers, paid/pending status, and more.',
     'search.jumpHint': 'Jumps you to the right menu — to filter that menu\'s table directly, use the search bar on the page itself.',
     'search.noResults': 'No results found.',
@@ -1995,7 +1995,7 @@ export const translations = {
     'login.tagline2': '— সব একটি শক্তিশালী দুর্গা সিআরএম প্ল্যাটফর্ম থেকে।',
 
     // Global Search
-    'search.placeholder': 'সদস্য, সংগ্রহ, দান/স্পনসরশিপ, খরচ খুঁজুন…',
+    'search.placeholder': 'সদস্য, সংগ্রহ ও আরও অনুসন্ধান করুন',
     'search.typeToSearch': 'সদস্য, সংগ্রহ, দান/স্পনসরশিপ সংগ্রহ এবং খরচের মধ্যে খুঁজতে টাইপ করুন — নাম, পরিমাণ, ফোন নম্বর, পরিশোধিত/বিচারাধীন অবস্থা ইত্যাদি।',
     'search.jumpHint': 'আপনাকে সঠিক মেনুতে নিয়ে যায় — সেই মেনুর টেবিল সরাসরি ফিল্টার করতে, পৃষ্ঠায় থাকা সার্চ বার ব্যবহার করুন।',
     'search.noResults': 'কোনো ফলাফল পাওয়া যায়নি।',
@@ -2994,7 +2994,7 @@ export const translations = {
     'login.tagline2': '— सब एक शक्तिशाली दुर्गा सीआरएम प्लेटफ़ॉर्म से।',
 
     // Global Search
-    'search.placeholder': 'सदस्य, संग्रह, दान/प्रायोजन, खर्च खोजें…',
+    'search.placeholder': 'सदस्य, संग्रह और अधिक खोजें',
     'search.typeToSearch': 'सदस्य, संग्रह, दान/प्रायोजन संग्रह और खर्च में खोजने के लिए टाइप करें — नाम, राशि, फ़ोन नंबर, भुगतान/लंबित स्थिति आदि।',
     'search.jumpHint': 'आपको सही मेनू पर ले जाता है — उस मेनू की तालिका को सीधे फ़िल्टर करने के लिए, पेज पर मौजूद सर्च बार का उपयोग करें।',
     'search.noResults': 'कोई परिणाम नहीं मिला।',

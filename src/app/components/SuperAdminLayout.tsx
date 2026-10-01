@@ -178,8 +178,8 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
   );
 
   return (
-    <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
-      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen bg-[#eceef1] dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+    <div className="min-h-screen outer-bg-gradient dark:bg-gray-950 flex">
+      <aside className={`hidden lg:block shrink-0 sticky top-0 h-screen outer-bg-gradient dark:bg-gray-950 z-30 transition-all duration-200 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
         {navContent}
       </aside>
 
@@ -193,7 +193,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="sticky top-0 z-20 bg-[#eceef1] dark:bg-gray-950">
+        <div className="sticky top-0 z-20 outer-bg-gradient dark:bg-gray-950">
           <div className="px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -262,7 +262,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
         </div>
 
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-          <div className="bg-gray-50 dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+          <div className="mesh-bg-light dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
             <div className="container mx-auto">{children}</div>
           </div>
         </main>
@@ -313,8 +313,8 @@ function SuperAdminNavButton({
         collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
       } ${
         active
-          ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
-          : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
+          ? 'nav-item-active dark:bg-orange-500/10 text-white dark:text-orange-400 shadow-sm'
+          : 'nav-item-hover text-gray-700 dark:text-gray-300 hover:text-orange-900 dark:hover:text-orange-400 dark:hover:bg-orange-500/10'
       }`}
     >
       <span className="relative shrink-0">

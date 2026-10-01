@@ -28,6 +28,10 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Mac uses the Cmd glyph in the shortcut badge; every other platform
+  // shows "Ctrl J" instead — both trigger the same handler below.
+  const isMac = useMemo(() => /Mac|iPhone|iPod|iPad/.test(navigator.platform || navigator.userAgent), []);
+
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
@@ -41,11 +45,20 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    const handleShortcut = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        setOpen(true);
+        inputRef.current?.focus();
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleShortcut);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleShortcut);
     };
   }, []);
 
@@ -124,15 +137,19 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
           onFocus={() => setOpen(true)}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           placeholder={t('search.placeholder')}
-          className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+          className="w-full pl-9 pr-16 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
         />
-        {query && (
+        {query ? (
           <button
             onClick={() => { setQuery(''); setOpen(false); }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X size={15} />
           </button>
+        ) : (
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-[11px] font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none">
+            {isMac ? '⌘' : 'Ctrl'} J
+          </kbd>
         )}
       </div>
 

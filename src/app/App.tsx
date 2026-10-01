@@ -1016,7 +1016,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     // else just sees the block; they can't act on it, only their admin can.
     if (currentUser?.isAdmin) {
       return (
-        <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 p-4 sm:p-6">
+        <div className="min-h-screen outer-bg-gradient dark:bg-gray-950 p-4 sm:p-6">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <span className="font-semibold text-gray-900 dark:text-gray-100">Durga CRM</span>
@@ -1027,7 +1027,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 Log out
               </button>
             </div>
-            <div className="bg-gray-50 dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6">
+            <div className="mesh-bg-light dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6">
               <Billing
                 currentUser={currentUser}
                 committeeName={committeeInfo.association || committeeInfo.name}
@@ -1092,7 +1092,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
   }
 
   return (
-    <div className="min-h-screen bg-[#eceef1] dark:bg-gray-950 flex">
+    <div className="min-h-screen outer-bg-gradient dark:bg-gray-950 flex">
       <Sidebar
         logo={committeeInfo.logo}
         association={committeeInfo.association || committeeInfo.name}
@@ -1113,7 +1113,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar — flat, blends into the page background (no border/shadow) */}
-        <div className="sticky top-0 z-20 bg-[#eceef1] dark:bg-gray-950">
+        <div className="sticky top-0 z-20 outer-bg-gradient dark:bg-gray-950">
           <div className="px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setMobileNavOpen(true)}
@@ -1178,7 +1178,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             stays centered/max-width so it doesn't stretch edge to edge
             on very wide screens */}
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-        <div className="bg-gray-50 dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
+        <div className="mesh-bg-light dark:bg-[#0e0e12] rounded-2xl p-4 sm:p-6 min-h-[calc(100vh-5.5rem)]">
         <div className="container mx-auto">
         {currentPage === 'dashboard' && (
           <Dashboard
