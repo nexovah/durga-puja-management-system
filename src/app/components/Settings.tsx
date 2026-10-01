@@ -145,10 +145,16 @@ export function Settings({
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!userForm.email.trim()) {
+      setMessage(t('settings.msg.emailRequired'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
     try {
       if (editingUserId) {
         // Edit existing user (password only changes if a new one was typed)
-        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined, userForm.email || undefined);
+        await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined, userForm.email.trim());
         setMessage(t('settings.msg.userUpdated'));
       } else {
         // Check if username already exists
@@ -158,7 +164,7 @@ export function Settings({
           return;
         }
 
-        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.email || undefined);
+        await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.email.trim());
         setMessage(t('settings.msg.userCreated'));
       }
     } catch (err) {
@@ -661,12 +667,13 @@ export function Settings({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.email')} <span className="text-xs text-gray-400">({t('common.optional')})</span></label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.email')} *</label>
                         <input
                           type="email"
+                          required
                           value={userForm.email}
                           onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                          placeholder="For password reset & login alerts"
+                          placeholder="Required — for password reset & login alerts"
                           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         />
                       </div>
