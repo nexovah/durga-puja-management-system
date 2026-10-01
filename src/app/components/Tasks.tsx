@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, Lay
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
@@ -300,16 +301,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.priority')} *</label>
-              <select
-                required
+              <CustomSelect
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p.value} value={p.value}>{t(p.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, priority: v as TaskPriority })}
+                options={PRIORITIES.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
+              />
             </div>
 
             <div className="relative">
@@ -429,16 +425,14 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
           placeholder={t('tasks.filterByName')}
           className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 flex-1 min-w-[160px]"
         />
-        <select
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value as any)}
-          className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900"
-        >
-          <option value="all">{t('tasks.allPriorities')}</option>
-          {PRIORITIES.map(p => (
-            <option key={p.value} value={p.value}>{t(p.labelKey)}</option>
-          ))}
-        </select>
+        <div className="w-44">
+          <CustomSelect
+            value={priorityFilter}
+            onChange={(v) => setPriorityFilter(v as any)}
+            options={[{ value: 'all', label: t('tasks.allPriorities') }, ...PRIORITIES.map(p => ({ value: p.value, label: t(p.labelKey) }))]}
+            className="py-2 text-sm"
+          />
+        </div>
         <input
           type="date"
           value={dateFilter}

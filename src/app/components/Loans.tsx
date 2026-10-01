@@ -4,6 +4,7 @@ import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
@@ -520,15 +521,11 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}</label>
-                <select
+                <CustomSelect
                   value={formData.paymentMethod}
-                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaidMethod })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                >
-                  {PAID_METHODS.map((m) => (
-                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, paymentMethod: v as PaidMethod })}
+                  options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                />
               </div>
             </div>
 
@@ -557,15 +554,11 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.returnMethod')}</label>
-                <select
+                <CustomSelect
                   value={formData.returnMethod}
-                  onChange={(e) => setFormData({ ...formData, returnMethod: e.target.value as PaidMethod })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                >
-                  {PAID_METHODS.map((m) => (
-                    <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, returnMethod: v as PaidMethod })}
+                  options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                />
               </div>
             </div>
 

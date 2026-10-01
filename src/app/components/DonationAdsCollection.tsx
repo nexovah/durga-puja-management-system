@@ -6,6 +6,7 @@ import { DONUT_COLORS } from './DashboardDonut';
 import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
@@ -655,15 +656,14 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             {!fixedCategory && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')} *</label>
-              <select
-                required
+              <CustomSelect
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DonationAdCategory, inKind: '', voucherNumber: '' })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                <option value="ads">{t('donationAds.category.ads')}</option>
-                <option value="donation">{t('donationAds.category.donation')}</option>
-              </select>
+                onChange={(v) => setFormData({ ...formData, category: v as DonationAdCategory, inKind: '', voucherNumber: '' })}
+                options={[
+                  { value: 'ads', label: t('donationAds.category.ads') },
+                  { value: 'donation', label: t('donationAds.category.donation') },
+                ]}
+              />
             </div>
             )}
 
@@ -709,28 +709,20 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
-              <select
+              <CustomSelect
                 value={formData.paidMethod}
-                onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAID_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paidMethod: v as PaidMethod })}
+                options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
-              <select
+              <CustomSelect
                 value={formData.paymentStatus}
-                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus, partialAmount: '' })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAYMENT_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus, partialAmount: '' })}
+                options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+              />
             </div>
 
             {isDonation ? (
@@ -747,16 +739,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             ) : (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.adsCategory')}</label>
-                <select
+                <CustomSelect
                   value={formData.inKind}
-                  onChange={(e) => setFormData({ ...formData, inKind: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                >
-                  <option value="">{t('donationAds.selectAdsCategory')}</option>
-                  {ADS_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, inKind: v })}
+                  placeholder={t('donationAds.selectAdsCategory')}
+                  options={ADS_CATEGORIES.map((cat) => ({ value: cat.value, label: t(cat.labelKey) }))}
+                />
               </div>
             )}
 

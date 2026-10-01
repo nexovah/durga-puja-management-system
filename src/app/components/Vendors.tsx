@@ -4,6 +4,7 @@ import { Expense, getExpenseCreditAmount } from '../App';
 import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest } from '../lib/db';
 import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { csvField } from '../lib/csv';
@@ -599,16 +600,13 @@ function VendorFormModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.category')}</label>
-            <select
+            <CustomSelect
               value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-            >
-              <option value="">{t('search.any')}</option>
-              {EXPENSE_CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
-              ))}
-            </select>
+              onChange={(v) => setCategory(v)}
+              placeholder={t('search.any')}
+              options={EXPENSE_CATEGORIES.map(c => ({ value: c.value, label: t(c.labelKey) }))}
+              className="py-2.5 text-sm"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -5,6 +5,7 @@ import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
@@ -207,6 +208,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
+
+    // Category used to be a native <select required> — now CustomSelect, which
+    // doesn't participate in native form validation, so this guard replaces it.
+    if (!formData.category) return;
 
     const amount = parseFloat(formData.amount) || 0;
     const partialPayments: ExpensePartialPayment[] = formData.partialPayments
@@ -653,29 +658,20 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paymentStatus')} *</label>
-              <select
-                required
+              <CustomSelect
                 value={formData.paymentStatus}
-                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as ExpensePaymentStatus })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAYMENT_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paymentStatus: v as ExpensePaymentStatus })}
+                options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paidThrough')}</label>
-              <select
+              <CustomSelect
                 value={formData.paidThrough}
-                onChange={(e) => setFormData({ ...formData, paidThrough: e.target.value as PaidThrough })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAID_THROUGH_OPTIONS.map((m) => (
-                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paidThrough: v as PaidThrough })}
+                options={PAID_THROUGH_OPTIONS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+              />
             </div>
 
             {isPartial && (
@@ -760,17 +756,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')} *</label>
-              <select
-                required
+              <CustomSelect
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                <option value="">{t('expenses.selectCategory')}</option>
-                {EXPENSE_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{t(cat.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, category: v })}
+                placeholder={t('expenses.selectCategory')}
+                options={EXPENSE_CATEGORIES.map((cat) => ({ value: cat.value, label: t(cat.labelKey) }))}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.voucherNumber')}</label>

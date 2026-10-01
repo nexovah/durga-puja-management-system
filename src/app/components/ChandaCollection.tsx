@@ -9,6 +9,7 @@ import { ReceiptModal } from './ReceiptModal';
 import { ReceiptSettings } from '../lib/db';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
@@ -720,16 +721,12 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.category')}</label>
-                <select
+                <CustomSelect
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as ChandaCategory | '' })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                >
-                  <option value="">{t('search.any')}</option>
-                  {CHANDA_CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, category: v as ChandaCategory | '' })}
+                  placeholder={t('search.any')}
+                  options={CHANDA_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+                />
               </div>
             </div>
 
@@ -775,29 +772,20 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
-              <select
+              <CustomSelect
                 value={formData.paidMethod}
-                onChange={(e) => setFormData({ ...formData, paidMethod: e.target.value as PaidMethod })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAID_METHODS.map((m) => (
-                  <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paidMethod: v as PaidMethod })}
+                options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
-              <select
-                required
+              <CustomSelect
                 value={formData.paymentStatus}
-                onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {PAYMENT_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
-                ))}
-              </select>
+                onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus })}
+                options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+              />
             </div>
 
             {isPartial && (

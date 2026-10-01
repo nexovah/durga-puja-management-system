@@ -7,6 +7,7 @@ import {
 } from '../lib/db';
 import { CashBankTotals } from '../lib/cashBank';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { CustomSelect } from './CustomSelect';
 
 interface CashBankDetailProps {
   totals: CashBankTotals;
@@ -258,25 +259,21 @@ function AdjustmentFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bucket</label>
-              <select
+              <CustomSelect
                 value={bucket}
-                onChange={e => setBucket(e.target.value as CashBankBucket)}
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                <option value="cash">Cash in Hand</option>
-                <option value="bank">Bank</option>
-              </select>
+                onChange={(v) => setBucket(v as CashBankBucket)}
+                options={[{ value: 'cash', label: 'Cash in Hand' }, { value: 'bank', label: 'Bank' }]}
+                className="py-2.5 text-sm"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Direction</label>
-              <select
+              <CustomSelect
                 value={direction}
-                onChange={e => setDirection(e.target.value as CashBankDirection)}
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                <option value="add">Add</option>
-                <option value="deduct">Deduct</option>
-              </select>
+                onChange={(v) => setDirection(v as CashBankDirection)}
+                options={[{ value: 'add', label: 'Add' }, { value: 'deduct', label: 'Deduct' }]}
+                className="py-2.5 text-sm"
+              />
             </div>
           </div>
           <div>

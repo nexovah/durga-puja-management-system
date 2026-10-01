@@ -4,6 +4,7 @@ import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
@@ -125,6 +126,10 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
+
+    // Role used to be a native <select required> — now CustomSelect, which
+    // doesn't participate in native form validation, so this guard replaces it.
+    if (!formData.role) return;
 
     const hasMembershipAmount = formData.membershipAmount.trim() !== '';
     const membershipPayload = hasMembershipAmount
@@ -456,17 +461,12 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('members.role')} *</label>
-                <select
-                  required
+                <CustomSelect
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                >
-                  <option value="">{t('members.selectRole')}</option>
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{t(r.labelKey)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, role: v })}
+                  placeholder={t('members.selectRole')}
+                  options={ROLES.map((r) => ({ value: r.value, label: t(r.labelKey) }))}
+                />
               </div>
             </div>
 
@@ -497,27 +497,19 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
-                    <select
+                    <CustomSelect
                       value={formData.membershipPaidMethod}
-                      onChange={(e) => setFormData({ ...formData, membershipPaidMethod: e.target.value as PaidMethod })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                    >
-                      {PAID_METHODS.map((m) => (
-                        <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setFormData({ ...formData, membershipPaidMethod: v as PaidMethod })}
+                      options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}</label>
-                    <select
+                    <CustomSelect
                       value={formData.membershipPaymentStatus}
-                      onChange={(e) => setFormData({ ...formData, membershipPaymentStatus: e.target.value as PaymentStatus })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                    >
-                      {PAYMENT_STATUSES.map((s) => (
-                        <option key={s.value} value={s.value}>{t(s.labelKey)}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setFormData({ ...formData, membershipPaymentStatus: v as PaymentStatus })}
+                      options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+                    />
                   </div>
                   {isPartial && (
                     <div>

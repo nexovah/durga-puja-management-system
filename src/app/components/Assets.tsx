@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
@@ -555,13 +556,12 @@ function AssetFormModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('assets.condition')}</label>
-              <select
+              <CustomSelect
                 value={form.condition}
-                onChange={e => setForm({ ...form, condition: e.target.value as AssetCondition })}
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              >
-                {conditionOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+                onChange={(v) => setForm({ ...form, condition: v as AssetCondition })}
+                options={conditionOptions}
+                className="py-2.5 text-sm"
+              />
             </div>
           </div>
 
