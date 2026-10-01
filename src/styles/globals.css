@@ -343,3 +343,12 @@ html.dark .mesh-bg-light {
     radial-gradient(at 90% 90%, rgba(0, 0, 0, 0.3) 0, transparent 50%),
     radial-gradient(at 20% 85%, rgba(0, 0, 0, 0.2) 0, transparent 45%);
 }
+
+/* Native checkboxes/radios default to the browser's blue accent
+   everywhere in this app — override globally to the brand orange so
+   every checked box/radio matches the theme without touching each
+   component individually. */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: #ea580c; /* orange-600 */
+}
