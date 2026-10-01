@@ -509,6 +509,9 @@ export interface ReceiptSettings {
   headerSubtitle1: string;
   headerSubtitle2: string;
   headerBandTitle: string;
+  /** 'default' = gradient + header symbol + band title (as today); 'image' = a single uploaded banner image replaces the whole band. */
+  bandMode: 'default' | 'image';
+  bandImageUrl: string;
 }
 
 export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
@@ -523,6 +526,7 @@ export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
   signatureUrl: '', sealUrl: '',
   show80g: false, reg80g: '', pan: '', declarationText: 'Donations are exempt under Section 80G of the Income Tax Act.',
   headerLogoUrl: '', headerLogoSize: 'medium', headerTitle: '', headerSubtitle1: '', headerSubtitle2: '', headerBandTitle: '',
+  bandMode: 'default', bandImageUrl: '',
 };
 
 function fromReceiptSettingsRow(row: any): ReceiptSettings {
@@ -565,6 +569,8 @@ function fromReceiptSettingsRow(row: any): ReceiptSettings {
     headerSubtitle1: row.header_subtitle1 || '',
     headerSubtitle2: row.header_subtitle2 || '',
     headerBandTitle: row.header_band_title || '',
+    bandMode: row.band_mode === 'image' ? 'image' : 'default',
+    bandImageUrl: row.band_image_url || '',
   };
 }
 
@@ -604,6 +610,8 @@ function toReceiptSettingsRow(s: ReceiptSettings) {
     header_subtitle1: s.headerSubtitle1 || null,
     header_subtitle2: s.headerSubtitle2 || null,
     header_band_title: s.headerBandTitle || null,
+    band_mode: s.bandMode,
+    band_image_url: s.bandImageUrl || null,
   };
 }
 

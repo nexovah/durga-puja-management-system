@@ -71,6 +71,8 @@ export function ReceiptPublicPage({ tenantSlug, token }: ReceiptPublicPageProps)
           headerSubtitle1: row.header_subtitle1,
           headerSubtitle2: row.header_subtitle2,
           headerBandTitle: row.header_band_title,
+          bandMode: row.band_mode === 'image' ? 'image' : 'default',
+          bandImageUrl: row.band_image_url,
         });
       })
       .catch(() => setNotFound(true))

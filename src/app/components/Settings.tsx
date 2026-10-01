@@ -9,6 +9,7 @@ import { FormModal, FormModalCancelButton } from './FormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ToggleSwitch } from './ToggleSwitch';
 import { ReceiptCard, ReceiptCardData } from './ReceiptCard';
+import { Toast } from './Toast';
 
 interface SettingsProps {
   committeeInfo: CommitteeInfo;
@@ -29,6 +30,17 @@ interface SettingsProps {
 }
 
 export type SettingsTab = 'committee' | 'receipts' | 'password' | 'users' | 'developer' | 'language';
+
+const VALID_SETTINGS_TABS: SettingsTab[] = ['committee', 'receipts', 'password', 'users', 'developer', 'language'];
+
+// /settings/<tab> — refreshing or sharing a link lands back on that tab
+// instead of always resetting to 'committee'. Mirrors SuperAdminSettings.tsx's
+// getTabFromPath()/pushState/popstate pattern.
+function getSettingsTabFromPath(): SettingsTab | null {
+  const match = window.location.pathname.match(/^\/settings\/([^/]+)/);
+  const tab = match?.[1];
+  return tab && (VALID_SETTINGS_TABS as string[]).includes(tab) ? (tab as SettingsTab) : null;
+}
 
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   members: 'permission.members',
@@ -68,12 +80,41 @@ export function Settings({
   tabRequestId,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'committee');
+  const [activeTab, setActiveTabState] = useState<SettingsTab>(() => getSettingsTabFromPath() || initialTab || 'committee');
 
+  const setActiveTab = (tab: SettingsTab) => {
+    setActiveTabState(tab);
+    window.history.pushState(null, '', `/settings/${tab}`);
+  };
+
+  const skipFirstTabRequest = useRef(true);
   useEffect(() => {
+    // Skip on mount — tabRequestId's initial value would otherwise force
+    // initialTab (defaults to 'committee' in App.tsx) over whatever tab the
+    // URL itself resolved to on load. Only react to a later bump, i.e. an
+    // explicit deep-link from elsewhere in the app (onGoToSettingsTab).
+    if (skipFirstTabRequest.current) {
+      skipFirstTabRequest.current = false;
+      return;
+    }
     if (initialTab) setActiveTab(initialTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabRequestId]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const tab = getSettingsTabFromPath();
+      if (tab) setActiveTabState(tab);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    const path = `/settings/${activeTab}`;
+    if (window.location.pathname !== path) window.history.replaceState(null, '', path);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [committeeForm, setCommitteeForm] = useState(committeeInfo);
   const [receiptForm, setReceiptForm] = useState(receiptSettings);
   const [openUserMenuId, setOpenUserMenuId] = useState<string | null>(null);
@@ -90,6 +131,7 @@ export function Settings({
   const [signatureUploading, setSignatureUploading] = useState(false);
   const [sealUploading, setSealUploading] = useState(false);
   const [headerLogoUploading, setHeaderLogoUploading] = useState(false);
+  const [bandImageUploading, setBandImageUploading] = useState(false);
 
   const handleReceiptSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,11 +161,12 @@ export function Settings({
     receiptNumber: `${receiptForm.prefix}${String(receiptForm.startNumber).padStart(receiptForm.digits, '0')}`,
     donorName: 'Rohan Kulkarni',
     phone: '98765 43210',
+    billNumber: '101',
     numPersons: 4,
     amount: 2100,
     paidMethod: 'qrScan',
     date: new Date().toISOString().slice(0, 10),
-    collectedBy: 'Priya Deshpande',
+    collectedBy: null,
     colorTheme: receiptForm.colorTheme,
     customColorHex: receiptForm.customColorHex || null,
     headerSymbol: receiptForm.headerSymbol,
@@ -154,6 +197,8 @@ export function Settings({
     headerSubtitle1: receiptForm.headerSubtitle1 || null,
     headerSubtitle2: receiptForm.headerSubtitle2 || null,
     headerBandTitle: receiptForm.headerBandTitle || null,
+    bandMode: receiptForm.bandMode,
+    bandImageUrl: receiptForm.bandImageUrl || null,
   };
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -361,11 +406,7 @@ export function Settings({
     <div className="space-y-6">
       <PageHeading>{t('settings.pageTitle')}</PageHeading>
 
-      {message && (
-        <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 px-4 py-3 rounded-lg">
-          {message}
-        </div>
-      )}
+      <Toast message={message || null} onDone={() => setMessage('')} />
 
       {/* Left-nav settings shell — matches Super Admin's Settings layout */}
       <div className="flex flex-col sm:flex-row gap-6">
@@ -796,15 +837,81 @@ export function Settings({
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Banner title</label>
-                        <input
-                          value={receiptForm.headerBandTitle}
-                          onChange={e => setReceiptForm({ ...receiptForm, headerBandTitle: e.target.value })}
-                          placeholder={committeeInfo.name || 'e.g. Ganesh Utsav 2025'}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                        />
+                      {receiptForm.bandMode === 'default' && (
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Banner title</label>
+                          <input
+                            value={receiptForm.headerBandTitle}
+                            onChange={e => setReceiptForm({ ...receiptForm, headerBandTitle: e.target.value })}
+                            placeholder={committeeInfo.name || 'e.g. Ganesh Utsav 2025'}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mb-4 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Banner band</label>
+                        <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setReceiptForm({ ...receiptForm, bandMode: 'default' })}
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                              receiptForm.bandMode === 'default'
+                                ? 'bg-orange-600 text-white'
+                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            Text &amp; icon
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setReceiptForm({ ...receiptForm, bandMode: 'image' })}
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                              receiptForm.bandMode === 'image'
+                                ? 'bg-orange-600 text-white'
+                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            Custom image
+                          </button>
+                        </div>
                       </div>
+                      {receiptForm.bandMode === 'default' ? (
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          Shows the colour gradient, header symbol and banner title below. Switch to Custom image to upload your own designed banner instead.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                            Uploads your own designed banner for this band — it replaces the colour/symbol/title entirely.
+                            Recommended size <span className="font-medium">752 × 256px</span> (about 3:1), PNG or JPEG, under <span className="font-medium">150 KB</span>.
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png"
+                            disabled={bandImageUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setBandImageUploading(true);
+                              try {
+                                const url = await uploadLogo(file, receiptForm.bandImageUrl);
+                                setReceiptForm({ ...receiptForm, bandImageUrl: url });
+                              } catch (err) {
+                                console.error('Banner image upload failed', err);
+                              } finally {
+                                setBandImageUploading(false);
+                              }
+                            }}
+                            className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
+                          />
+                          {receiptForm.bandImageUrl && (
+                            <img src={receiptForm.bandImageUrl} alt="" className="w-full mt-2 rounded-lg border border-gray-200 dark:border-gray-700" />
+                          )}
+                        </>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -868,14 +975,16 @@ export function Settings({
                         </div>
                       </div>
                     </div>
-                    <div className="mb-4">
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header symbol (one glyph/emoji)</label>
-                      <input
-                        value={receiptForm.headerSymbol}
-                        onChange={e => setReceiptForm({ ...receiptForm, headerSymbol: e.target.value })}
-                        className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                      />
-                    </div>
+                    {receiptForm.bandMode === 'default' && (
+                      <div className="mb-4">
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header symbol (one glyph/emoji)</label>
+                        <input
+                          value={receiptForm.headerSymbol}
+                          onChange={e => setReceiptForm({ ...receiptForm, headerSymbol: e.target.value })}
+                          className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Colour theme</label>
                       <div className="flex flex-wrap gap-2 items-center">
@@ -944,11 +1053,6 @@ export function Settings({
                         checked={receiptForm.showPaymentMethod}
                         onChange={v => setReceiptForm({ ...receiptForm, showPaymentMethod: v })}
                         label="Payment method"
-                      />
-                      <ToggleSwitch
-                        checked={receiptForm.showCollectedBy}
-                        onChange={v => setReceiptForm({ ...receiptForm, showCollectedBy: v })}
-                        label="Collected by"
                       />
                     </div>
                   </div>

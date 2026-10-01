@@ -63,6 +63,8 @@ export function ReceiptModal({ chanda, committeeInfo, receiptSettings, tenantSlu
     headerSubtitle1: receiptSettings.headerSubtitle1 || null,
     headerSubtitle2: receiptSettings.headerSubtitle2 || null,
     headerBandTitle: receiptSettings.headerBandTitle || null,
+    bandMode: receiptSettings.bandMode,
+    bandImageUrl: receiptSettings.bandImageUrl || null,
   };
 
   const publicUrl = tenantSlug

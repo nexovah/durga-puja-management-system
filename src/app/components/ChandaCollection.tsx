@@ -1123,7 +1123,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                           <button
                             type="button"
                             onClick={() => setReceiptTarget(chanda)}
-                            className="text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                            className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium"
                           >
                             {chanda.receiptNumber}
                           </button>

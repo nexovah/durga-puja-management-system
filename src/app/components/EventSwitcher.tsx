@@ -152,7 +152,7 @@ function EventPopover({
   onSwitched: (eventId: string) => void;
 }) {
   return (
-    <div className="absolute top-full left-0 mt-2 w-72 z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+    <div className="absolute top-full left-3 mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
       {mode === 'list' && (
         <div className="rounded-xl overflow-hidden">
           <div className="py-1.5 max-h-72 overflow-y-auto">

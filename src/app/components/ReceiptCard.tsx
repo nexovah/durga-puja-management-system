@@ -55,6 +55,9 @@ export interface ReceiptCardData {
   headerSubtitle1: string | null;
   headerSubtitle2: string | null;
   headerBandTitle: string | null;
+  /** 'image' replaces the whole gradient band (symbol + band title) with bandImageUrl, uncropped. */
+  bandMode: 'default' | 'image';
+  bandImageUrl: string | null;
 }
 
 const HEADER_LOGO_PX: Record<ReceiptCardData['headerLogoSize'], number> = {
@@ -188,31 +191,35 @@ export function ReceiptCard({ data }: { data: ReceiptCardData }) {
               <p className="font-bold text-gray-900 truncate" style={{ fontFamily: "'Yatra One', cursive" }}>{effectiveTitle}</p>
               {data.showAddress && effectiveSub1 && <p className="text-xs text-gray-500 truncate">{effectiveSub1}</p>}
               {data.showContact && effectiveSub2 && <p className="text-xs text-gray-500 truncate">{effectiveSub2}</p>}
-              {data.showRegNo && data.committeeRegNo && <p className="text-[11px] text-gray-400 truncate">{labels.regNo}: {data.committeeRegNo}</p>}
+              {data.showRegNo && data.committeeRegNo && <p className="text-xs text-gray-500 truncate">{labels.regNo}: {data.committeeRegNo}</p>}
             </div>
           </div>
         )}
 
-        <div
-          className="px-5 py-5 text-center text-white relative"
-          style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
-        >
-          {data.headerSymbol && (
-            <div className="relative inline-flex items-center justify-center w-14 h-14 mb-1.5">
-              <span
-                className="absolute inset-0 rounded-full"
-                style={{ boxShadow: '0 0 0 4px rgba(255,255,255,0.18), 0 0 0 9px rgba(255,255,255,0.1), 0 0 0 15px rgba(255,255,255,0.05)' }}
-              />
-              <span className="relative text-3xl leading-none">{data.headerSymbol}</span>
-            </div>
-          )}
-          <div className="font-bold text-lg" style={{ fontFamily: "'Yatra One', cursive" }}>{effectiveBandTitle}</div>
-        </div>
+        {data.bandMode === 'image' && data.bandImageUrl ? (
+          <img src={data.bandImageUrl} alt="" className="w-full block" />
+        ) : (
+          <div
+            className="px-5 py-5 text-center text-white relative"
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+          >
+            {data.headerSymbol && (
+              <div className="relative inline-flex items-center justify-center w-14 h-14 mb-1.5">
+                <span
+                  className="absolute inset-0 rounded-full"
+                  style={{ boxShadow: '0 0 0 4px rgba(255,255,255,0.18), 0 0 0 9px rgba(255,255,255,0.1), 0 0 0 15px rgba(255,255,255,0.05)' }}
+                />
+                <span className="relative text-3xl leading-none">{data.headerSymbol}</span>
+              </div>
+            )}
+            <div className="font-bold text-lg" style={{ fontFamily: "'Yatra One', cursive" }}>{effectiveBandTitle}</div>
+          </div>
+        )}
 
         <TempleBorder color={c1} />
 
         <div className="px-5 py-5 text-center border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-400 tracking-wide uppercase">{labels.title}</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide uppercase">{labels.title}</p>
           <p className="text-3xl font-extrabold mt-1" style={{ color: c1, fontFamily: "'Yatra One', cursive" }}>
             ₹{data.amount.toLocaleString('en-IN')}
           </p>
@@ -227,7 +234,6 @@ export function ReceiptCard({ data }: { data: ReceiptCardData }) {
           {data.showPersons && data.numPersons != null && <Row label={labels.persons} value={String(data.numPersons)} />}
           {data.showPaymentMethod && <Row label={labels.payment} value={PAID_METHOD_LABEL[data.paidMethod] || data.paidMethod} />}
           <Row label={labels.date} value={new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} />
-          {data.showCollectedBy && data.collectedBy && <Row label={labels.collectedBy} value={data.collectedBy} />}
           {data.showUpiId && data.upiId && <Row label={labels.upi} value={data.upiId} />}
         </div>
 
