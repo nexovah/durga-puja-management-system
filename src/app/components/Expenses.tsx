@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
@@ -107,6 +108,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [vendorDirectory, setVendorDirectory] = useState<Vendor[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('expenses');
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
 
@@ -557,6 +559,13 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                   >
                     <Download size={16} /> {t('common.export')}
                   </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
                 </div>
               )}
             </div>
@@ -825,6 +834,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
       {/* Widgets — grand total + paid/partial/pending donut, and a
           category-wise breakdown donut, matching Collection's widget style. */}
+      {widgetsVisible && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
         <DashboardDonut
           title={t('expenses.widget.total')}
@@ -850,6 +860,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           emptyMessage={t('expenses.widget.noData')}
         />
       </div>
+      )}
 
       {/* Expenses List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">

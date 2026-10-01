@@ -1,5 +1,6 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { DONUT_COLORS } from './DashboardDonut';
 import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount } from '../App';
@@ -138,6 +139,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<DonationAd, 'id'>; saveAndAddNew: boolean } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible(fixedCategory || 'donationAds');
   const menuRef = useRef<HTMLDivElement>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
@@ -582,6 +584,13 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                   >
                     <Download size={16} /> {t('common.export')}
                   </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
                 </div>
               )}
             </div>
@@ -857,6 +866,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       </FormModal>
 
       {/* Widgets — Treasury-style summary cards */}
+      {widgetsVisible && (
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${fixedCategory !== 'donation' ? 'lg:grid-cols-3' : ''} gap-4 sm:gap-6`}>
         {fixedCategory === 'ads' && adsCategoryTotals.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-indigo-500 dark:border-indigo-500/60">
@@ -928,6 +938,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         </div>
         )}
       </div>
+      )}
 
       {/* List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">

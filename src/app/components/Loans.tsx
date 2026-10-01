@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon, Landmark, HandCoins, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon, Landmark, HandCoins, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -67,6 +68,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   const memberSuggestRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('loans');
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
 
@@ -372,6 +374,13 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                   >
                     <Download size={16} /> {t('common.export')}
                   </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
                 </div>
               )}
             </div>
@@ -381,6 +390,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         {t('loans.pageTitle')}
       </PageHeading>
 
+      {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
           <div className="flex items-center justify-between mb-2">
@@ -397,6 +407,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
           <p className="text-3xl font-bold text-amber-600">{outstandingCount}</p>
         </div>
       </div>
+      )}
 
       <CollapsibleSearchPanel open={showSearch}>
         <TableSearchBar

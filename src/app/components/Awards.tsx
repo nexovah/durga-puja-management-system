@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -43,10 +44,14 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
   const [deleteTarget, setDeleteTarget] = useState<Award | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pageMenuOpen, setPageMenuOpen] = useState(false);
+  const pageMenuRef = useRef<HTMLDivElement>(null);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('awards');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+      if (pageMenuRef.current && !pageMenuRef.current.contains(e.target as Node)) setPageMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -119,14 +124,35 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
     <div className="space-y-6">
       <PageHeading
         action={
-          canEdit ? (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
-            >
-              <Trophy size={20} /> Record a prize
-            </button>
-          ) : undefined
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {canEdit && (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
+              >
+                <Trophy size={20} /> Record a prize
+              </button>
+            )}
+            <div className="relative" ref={pageMenuRef}>
+              <button
+                onClick={() => setPageMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+              {pageMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button
+                    onClick={() => { setPageMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         }
       >
         {t('nav.awards')}
@@ -138,6 +164,7 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
         </div>
       )}
 
+      {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
           <div className="flex items-center justify-between mb-2">
@@ -154,6 +181,7 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{summary.totalPrizeMoney.toLocaleString()}</p>
         </div>
       </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>

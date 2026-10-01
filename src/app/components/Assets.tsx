@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus, Pencil, Trash2, Package, Armchair, Home, Volume2, Lightbulb, Plug, Fan, UtensilsCrossed, Drum, X,
-  Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText,
+  Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText, Eye, EyeOff,
 } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -72,6 +73,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('assets');
   const [printData, setPrintData] = useState<{ rows: (string | number)[][]; summary: SummaryLine[] } | null>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
@@ -266,6 +268,13 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                   <button onClick={handleDownloadPDF} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <FileText size={16} /> {t('assets.downloadPDF')}
                   </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
                 </div>
               )}
             </div>
@@ -302,6 +311,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
         </div>
       )}
 
+      {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
           <div className="flex items-center justify-between mb-2">
@@ -327,6 +337,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{summary.totalValue.toLocaleString()}</p>
         </div>
       </div>
+      )}
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         {loading ? (

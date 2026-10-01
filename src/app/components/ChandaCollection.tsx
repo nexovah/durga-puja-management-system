@@ -1,5 +1,6 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, Receipt } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, Receipt, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount } from '../App';
 import { User as UserIcon, Gift } from 'lucide-react';
@@ -113,6 +114,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('chanda');
   const menuRef = useRef<HTMLDivElement>(null);
   const [editingAmountLabel, setEditingAmountLabel] = useState<'amount1' | 'amount2' | null>(null);
   const [amountLabelDraft, setAmountLabelDraft] = useState('');
@@ -623,6 +625,13 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                   >
                     <Download size={16} /> {t('common.export')}
                   </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
                 </div>
               )}
             </div>
@@ -907,49 +916,53 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       </FormModal>
 
       {/* Widgets — grand total + paid/pending/rejected donut, and a merged
-          Amount 1 / Amount 2 card each with its own paid-so-far figure. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-        <DashboardDonut
-          title={t('chanda.widget.total')}
-          icon={PieChart}
-          iconAccent="text-green-600"
-          compact
-          grandTotal={{ label: t('chanda.widget.grandTotal'), value: grandTotalAmount }}
-          slices={[
-            { name: t('chanda.widget.paid'), value: totalChanda },
-            { name: t('chanda.widget.pending'), value: pendingCollection },
-            { name: t('chanda.status.rejected'), value: rejectedAmount },
-          ]}
-          colors={['#16a34a', '#f59e0b', '#ef4444']}
-          emptyMessage={t('chanda.widget.noData')}
-        />
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <AmountMiniDonutCard
-            title={amount1Label}
-            icon={Sparkles}
-            iconAccent="text-orange-500"
-            total={totalAmount1}
-            paid={paidAmount1}
-            paidLabel={t('chanda.widget.paidCollection')}
-            remainingLabel={t('chanda.widget.remaining')}
-            valueColor="text-orange-600"
-            color="#f97316"
-            onEditTitle={isAdmin ? () => openAmountLabelEditor('amount1') : undefined}
+          Amount 1 / Amount 2 card each with its own paid-so-far figure.
+          Shown/hidden via the page menu's "Hide widgets"/"View widgets"
+          toggle, persisted per-page in localStorage. */}
+      {widgetsVisible && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+          <DashboardDonut
+            title={t('chanda.widget.total')}
+            icon={PieChart}
+            iconAccent="text-green-600"
+            compact
+            grandTotal={{ label: t('chanda.widget.grandTotal'), value: grandTotalAmount }}
+            slices={[
+              { name: t('chanda.widget.paid'), value: totalChanda },
+              { name: t('chanda.widget.pending'), value: pendingCollection },
+              { name: t('chanda.status.rejected'), value: rejectedAmount },
+            ]}
+            colors={['#16a34a', '#f59e0b', '#ef4444']}
+            emptyMessage={t('chanda.widget.noData')}
           />
-          <AmountMiniDonutCard
-            title={amount2Label}
-            icon={Flame}
-            iconAccent="text-red-500"
-            total={totalAmount2}
-            paid={paidAmount2}
-            paidLabel={t('chanda.widget.paidCollection')}
-            remainingLabel={t('chanda.widget.remaining')}
-            valueColor="text-red-600"
-            color="#ef4444"
-            onEditTitle={isAdmin ? () => openAmountLabelEditor('amount2') : undefined}
-          />
+          <div className="flex flex-col gap-4 sm:gap-6">
+            <AmountMiniDonutCard
+              title={amount1Label}
+              icon={Sparkles}
+              iconAccent="text-orange-500"
+              total={totalAmount1}
+              paid={paidAmount1}
+              paidLabel={t('chanda.widget.paidCollection')}
+              remainingLabel={t('chanda.widget.remaining')}
+              valueColor="text-orange-600"
+              color="#f97316"
+              onEditTitle={isAdmin ? () => openAmountLabelEditor('amount1') : undefined}
+            />
+            <AmountMiniDonutCard
+              title={amount2Label}
+              icon={Flame}
+              iconAccent="text-red-500"
+              total={totalAmount2}
+              paid={paidAmount2}
+              paidLabel={t('chanda.widget.paidCollection')}
+              remainingLabel={t('chanda.widget.remaining')}
+              valueColor="text-red-600"
+              color="#ef4444"
+              onEditTitle={isAdmin ? () => openAmountLabelEditor('amount2') : undefined}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Chanda List */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">

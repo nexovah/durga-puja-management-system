@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -108,10 +109,14 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [pendingSave, setPendingSave] = useState<{ payload: MemberFormPayload; saveAndAddNew: boolean } | null>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [widgetsVisible, toggleWidgets] = useWidgetsVisible('members');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -320,6 +325,25 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 {t('members.addNew')}
               </button>
             )}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MoreVertical size={20} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); toggleWidgets(); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {widgetsVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {widgetsVisible ? t('common.hideWidgets') : t('common.viewWidgets')}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         }
       >
@@ -348,6 +372,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       </CollapsibleSearchPanel>
 
       {/* Widgets — Treasury-style summary cards */}
+      {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
           <div className="flex items-center justify-between mb-2">
@@ -364,6 +389,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">{members.length}</p>
         </div>
       </div>
+      )}
 
       {/* Form */}
       <FormModal
