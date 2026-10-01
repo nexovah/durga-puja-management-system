@@ -331,9 +331,9 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
             {/* Column headers — feature label blank, Before is a plain
                 baseline label, With Durga CRM carries the actual pricing
                 card. Stacked above the table on mobile instead of a 3rd grid column. */}
-            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr]">
-              <div className={`hidden sm:block px-6 py-6 border-b ${c('border-gray-200', 'border-gray-800')}`} />
-              <div className={`hidden sm:flex flex-col justify-end px-6 py-6 border-b ${c('border-gray-200', 'border-gray-800')}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] sm:items-end">
+              <div className={`hidden sm:block px-6 py-3 border-b ${c('border-gray-200', 'border-gray-800')}`} />
+              <div className={`hidden sm:flex flex-col justify-end px-6 py-3 border-b ${c('border-gray-200', 'border-gray-800')}`}>
                 <h3 className={`text-sm font-semibold ${c('text-gray-500', 'text-gray-400')}`}>Before</h3>
                 <p className={`text-xs mt-1 ${c('text-gray-400', 'text-gray-500')}`}>Doing it all manually</p>
               </div>
