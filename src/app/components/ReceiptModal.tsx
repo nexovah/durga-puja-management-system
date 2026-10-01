@@ -50,7 +50,6 @@ export function ReceiptModal({ chanda, committeeInfo, receiptSettings, tenantSlu
     upiId: receiptSettings.upiId || null,
     signatoryLabel: receiptSettings.signatoryLabel,
     signatureUrl: receiptSettings.signatureUrl || null,
-    sealUrl: receiptSettings.sealUrl || null,
     show80g: receiptSettings.show80g,
     reg80g: receiptSettings.reg80g || null,
     pan: receiptSettings.pan || null,

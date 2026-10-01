@@ -58,7 +58,6 @@ export function ReceiptPublicPage({ tenantSlug, token }: ReceiptPublicPageProps)
           upiId: row.upi_id,
           signatoryLabel: row.signatory_label || 'Authorised signatory',
           signatureUrl: row.signature_url,
-          sealUrl: row.seal_url,
           show80g: row.show_80g === true,
           reg80g: row.reg_80g,
           pan: row.pan,

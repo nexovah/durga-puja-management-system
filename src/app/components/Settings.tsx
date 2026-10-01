@@ -129,7 +129,6 @@ export function Settings({
   }, []);
   const [savingReceiptSettings, setSavingReceiptSettings] = useState(false);
   const [signatureUploading, setSignatureUploading] = useState(false);
-  const [sealUploading, setSealUploading] = useState(false);
   const [headerLogoUploading, setHeaderLogoUploading] = useState(false);
   const [bandImageUploading, setBandImageUploading] = useState(false);
 
@@ -184,7 +183,6 @@ export function Settings({
     upiId: receiptForm.upiId || null,
     signatoryLabel: receiptForm.signatoryLabel,
     signatureUrl: receiptForm.signatureUrl || null,
-    sealUrl: receiptForm.sealUrl || null,
     show80g: receiptForm.show80g,
     reg80g: receiptForm.reg80g || null,
     pan: receiptForm.pan || null,
@@ -1068,53 +1066,31 @@ export function Settings({
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                       />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signature image</label>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png"
-                          disabled={signatureUploading}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setSignatureUploading(true);
-                            try {
-                              const url = await uploadLogo(file, receiptForm.signatureUrl);
-                              setReceiptForm({ ...receiptForm, signatureUrl: url });
-                            } catch (err) {
-                              console.error('Signature upload failed', err);
-                            } finally {
-                              setSignatureUploading(false);
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
-                        />
-                        {receiptForm.signatureUrl && <img src={receiptForm.signatureUrl} alt="" className="h-10 mt-2" />}
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Seal / stamp</label>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png"
-                          disabled={sealUploading}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setSealUploading(true);
-                            try {
-                              const url = await uploadLogo(file, receiptForm.sealUrl);
-                              setReceiptForm({ ...receiptForm, sealUrl: url });
-                            } catch (err) {
-                              console.error('Seal upload failed', err);
-                            } finally {
-                              setSealUploading(false);
-                            }
-                          }}
-                          className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
-                        />
-                        {receiptForm.sealUrl && <img src={receiptForm.sealUrl} alt="" className="h-14 w-14 object-contain mt-2" />}
-                      </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signature &amp; stamp</label>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">
+                        Upload the signature and stamp together, already combined into one image — this shows right-aligned above the signatory line on the receipt.
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        disabled={signatureUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setSignatureUploading(true);
+                          try {
+                            const url = await uploadLogo(file, receiptForm.signatureUrl);
+                            setReceiptForm({ ...receiptForm, signatureUrl: url });
+                          } catch (err) {
+                            console.error('Signature upload failed', err);
+                          } finally {
+                            setSignatureUploading(false);
+                          }
+                        }}
+                        className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
+                      />
+                      {receiptForm.signatureUrl && <img src={receiptForm.signatureUrl} alt="" className="h-14 mt-2 ml-auto object-contain object-right" />}
                     </div>
                   </div>
 

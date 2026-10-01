@@ -497,8 +497,8 @@ export interface ReceiptSettings {
   upiId: string;
   paperSize: 'a5' | 'thermal80mm';
   orientation: 'portrait' | 'landscape';
+  /** Single combined signature+stamp image. */
   signatureUrl: string;
-  sealUrl: string;
   show80g: boolean;
   reg80g: string;
   pan: string;
@@ -523,7 +523,7 @@ export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
   showLogo: true, showAddress: true, showContact: true, showRegNo: false,
   showUpiId: false, upiId: '',
   paperSize: 'a5', orientation: 'portrait',
-  signatureUrl: '', sealUrl: '',
+  signatureUrl: '',
   show80g: false, reg80g: '', pan: '', declarationText: 'Donations are exempt under Section 80G of the Income Tax Act.',
   headerLogoUrl: '', headerLogoSize: 'medium', headerTitle: '', headerSubtitle1: '', headerSubtitle2: '', headerBandTitle: '',
   bandMode: 'default', bandImageUrl: '',
@@ -558,7 +558,6 @@ function fromReceiptSettingsRow(row: any): ReceiptSettings {
     paperSize: row.paper_size === 'thermal80mm' ? 'thermal80mm' : 'a5',
     orientation: row.orientation === 'landscape' ? 'landscape' : 'portrait',
     signatureUrl: row.signature_url || '',
-    sealUrl: row.seal_url || '',
     show80g: row.show_80g === true,
     reg80g: row.reg_80g || '',
     pan: row.pan || '',
@@ -599,7 +598,6 @@ function toReceiptSettingsRow(s: ReceiptSettings) {
     paper_size: s.paperSize,
     orientation: s.orientation,
     signature_url: s.signatureUrl || null,
-    seal_url: s.sealUrl || null,
     show_80g: s.show80g,
     reg_80g: s.reg80g || null,
     pan: s.pan || null,

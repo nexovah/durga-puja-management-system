@@ -40,8 +40,8 @@ export interface ReceiptCardData {
   showUpiId: boolean;
   upiId: string | null;
   signatoryLabel: string;
+  /** Single combined signature+stamp image, uploaded together — right-aligned above the signatory line. */
   signatureUrl: string | null;
-  sealUrl: string | null;
   show80g: boolean;
   reg80g: string | null;
   pan: string | null;
@@ -241,14 +241,10 @@ export function ReceiptCard({ data }: { data: ReceiptCardData }) {
           <p className="text-center text-sm font-semibold px-5 pb-3" style={{ color: c1 }}>{data.blessingLine}</p>
         )}
 
-        {(data.signatureUrl || data.sealUrl) && (
-          <div className="px-5 pb-2 flex items-center justify-center gap-6">
-            {data.signatureUrl && <img src={data.signatureUrl} alt="Signature" className="h-10 object-contain" />}
-            {data.sealUrl && <img src={data.sealUrl} alt="Seal" className="h-14 w-14 object-contain" />}
-          </div>
-        )}
-
         <div className="px-5 pb-4 pt-2 text-right">
+          {data.signatureUrl && (
+            <img src={data.signatureUrl} alt="Signature & stamp" className="h-14 object-contain object-right ml-auto mb-1" />
+          )}
           <div className="inline-block border-t border-gray-300 pt-1">
             <p className="text-xs text-gray-400">{data.signatoryLabel}</p>
           </div>
