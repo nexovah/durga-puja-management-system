@@ -817,7 +817,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                 placeholder={t('donationAds.collectedByPlaceholder')}
               />
               {collectedBySuggestOpen && matchingCollectedBy.length > 0 && (
-                <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+                <div className="absolute left-0 top-full mt-1.5 w-full z-30 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
                   {matchingCollectedBy.map(name => {
                     const type = collectedByTypeMap.get(name);
                     return (

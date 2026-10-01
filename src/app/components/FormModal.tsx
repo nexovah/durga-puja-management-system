@@ -55,7 +55,12 @@ export function FormModal({ open, title, onClose, children, footer }: FormModalP
             Cancel is icon-only below sm: (FormModalCancelButton above),
             so the footer stays compact and the form above gets more of
             the screen instead of three stacked full-width buttons. */}
-        <div className="flex flex-row items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0">
+        {/* z-10, explicitly below every in-form dropdown's z-30 — position:sticky
+            otherwise gives this footer an implicit stacking context that can
+            paint over a dropdown opened near the bottom of the form (e.g.
+            Tasks' Assign To, the various Collected By suggestion lists)
+            despite their z-index being numerically higher. */}
+        <div className="flex flex-row items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900 sticky bottom-0 z-10">
           {footer}
         </div>
       </div>

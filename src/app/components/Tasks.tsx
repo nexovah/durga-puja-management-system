@@ -327,7 +327,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                 <ChevronDown size={16} className="shrink-0 text-gray-500 dark:text-gray-400" />
               </button>
               {assigneePickerOpen && (
-                <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg shadow-lg">
+                <div className="absolute z-30 mt-1 w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg shadow-lg">
                   {members.length === 0 && (
                     <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{t('tasks.noMembers')}</p>
                   )}

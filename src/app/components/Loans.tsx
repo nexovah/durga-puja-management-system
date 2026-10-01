@@ -461,7 +461,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                 placeholder={t('loans.donorNamePlaceholder')}
               />
               {memberSuggestOpen && matchingMembers.length > 0 && (
-                <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+                <div className="absolute left-0 top-full mt-1.5 w-full z-30 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
                   <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('loans.membersSuggestLabel')}</p>
                   {matchingMembers.map(m => (
                     <button
