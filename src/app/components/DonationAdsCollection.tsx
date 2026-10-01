@@ -487,7 +487,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const filteredDonationAds = scopedList.filter(d => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      const inText = [d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.voucherNumber, d.inKind]
+      const inText = [d.donorName, d.companyName, d.phone, d.phone2, d.remarks, d.voucherNumber, d.inKind, d.collectedBy]
         .some(p => p !== undefined && p !== null && String(p).toLowerCase().includes(q));
       if (!inText) return false;
     }
@@ -514,6 +514,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), sortValue: d => inKindDisplay(d) || '' },
     { id: 'date', label: t('common.date'), sortValue: d => d.date },
     { id: 'phone', label: t('common.phone1'), sortValue: d => d.phone || '' },
+    { id: 'collectedBy', label: t('donationAds.collectedBy'), sortValue: d => d.collectedBy || '' },
     { id: 'remarks', label: t('common.remarks'), sortValue: d => d.remarks || '' },
     ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
   ], [t, fixedCategory, canEdit, canDelete]);
@@ -957,6 +958,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                 {tableCols.isColumnVisible('phone') && (
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'phone')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
+                {tableCols.isColumnVisible('collectedBy') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'collectedBy')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
                 {tableCols.isColumnVisible('remarks') && (
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -1014,6 +1018,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                   )}
                   {tableCols.isColumnVisible('phone') && (
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.phone || '-'}</td>
+                  )}
+                  {tableCols.isColumnVisible('collectedBy') && (
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.collectedBy || '-'}</td>
                   )}
                   {tableCols.isColumnVisible('remarks') && (
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.remarks || '-'}</td>
