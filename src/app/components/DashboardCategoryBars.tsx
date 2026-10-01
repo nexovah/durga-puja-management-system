@@ -49,8 +49,8 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
     { key: 'chanda', label: t('dashboard.chart.pillar.chanda'), value: totalChanda, color: DONUT_COLORS[1] },
     { key: 'donation', label: t('dashboard.chart.pillar.donation'), value: totalDonation, color: DONUT_COLORS[2] },
     { key: 'ads', label: t('dashboard.chart.pillar.ads'), value: totalAds, color: DONUT_COLORS[3] },
-    { key: 'expenses', label: t('dashboard.chart.pillar.expenses'), value: totalExpenses, color: DONUT_COLORS[4] },
-    { key: 'loan', label: t('dashboard.chart.pillar.loan'), value: totalLoan, color: DONUT_COLORS[5] },
+    { key: 'expenses', label: t('dashboard.chart.pillar.expenses'), value: totalExpenses, color: DONUT_COLORS[5] },
+    { key: 'loan', label: t('dashboard.chart.pillar.loan'), value: totalLoan, color: DONUT_COLORS[4] },
   ];
 
   return (
