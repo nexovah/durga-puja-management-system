@@ -70,8 +70,17 @@ export function ReceiptModal({ chanda, committeeInfo, receiptSettings, tenantSlu
     ? `${window.location.origin}/${tenantSlug}/receipt/${chanda.receiptToken}`
     : '';
 
+  // Same fallback rule as ReceiptCard's own header: the committee name
+  // shown in the share text follows whatever's configured in Settings ->
+  // Receipts -> Header (headerTitle), not the raw Committee Info name, so
+  // a tenant's own branding on the receipt and in the WhatsApp/email text
+  // always match.
+  const effectiveCommitteeName = receiptSettings.headerTitle || data.committeeName;
+  const amountLabel = `₹${data.amount.toLocaleString('en-IN')}`;
+  const billSuffix = data.billNumber ? ` (Bill No. ${data.billNumber})` : '';
+
   const handleWhatsApp = () => {
-    const text = `Your contribution receipt (${data.receiptNumber}) from ${data.committeeName}: ${publicUrl}`;
+    const text = `Dear ${data.donorName}, thank you for your contribution of ${amountLabel} to ${effectiveCommitteeName}. Your receipt no. ${data.receiptNumber}${billSuffix} is ready — view it here: ${publicUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -84,8 +93,8 @@ export function ReceiptModal({ chanda, committeeInfo, receiptSettings, tenantSlu
   };
 
   const handleEmail = () => {
-    const subject = `Your contribution receipt ${data.receiptNumber}`;
-    const body = `Please find your receipt here: ${publicUrl}`;
+    const subject = `Contribution Receipt ${data.receiptNumber} — ${effectiveCommitteeName}`;
+    const body = `Dear ${data.donorName},\n\nThank you for your contribution of ${amountLabel} to ${effectiveCommitteeName}.\nReceipt No: ${data.receiptNumber}${billSuffix}\n\nView/download your receipt here: ${publicUrl}\n\nRegards,\n${effectiveCommitteeName}`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
