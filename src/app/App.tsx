@@ -4,12 +4,14 @@ import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
+import { ReceiptPublicPage } from './components/ReceiptPublicPage';
 import { TenantResetPassword } from './components/TenantResetPassword';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
 import { HelpSupportPage } from './components/HelpSupportPage';
 import { Assets } from './components/Assets';
+import { Awards } from './components/Awards';
 import { Documents } from './components/Documents';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -56,6 +58,10 @@ import {
   EventInfo,
   fetchEvents,
   fetchActiveEventId,
+  fetchTenantSlug,
+  getReceiptSettingsRequest,
+  ReceiptSettings,
+  DEFAULT_RECEIPT_SETTINGS,
   fetchMyTicketActivity,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
@@ -177,6 +183,9 @@ export interface Chanda {
   phone: string; // Phone Number 1
   phone2?: string; // Phone Number 2 (optional)
   remarks: string;
+  collectedBy?: string; // who physically collected this — mirrors DonationAd's collectedBy field
+  receiptNumber: string | null; // DB-assigned on insert, read-only — see assign_chanda_receipt_number()
+  receiptToken: string; // DB-assigned random token, the public receipt link's unique id
 }
 
 // The amount actually credited toward total collection, based on payment status:
@@ -403,7 +412,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -581,6 +590,8 @@ export default function App() {
   const [events, setEvents] = useState<EventInfo[]>([]);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [eventsLoadError, setEventsLoadError] = useState<string | null>(null);
+  const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>(DEFAULT_RECEIPT_SETTINGS);
+  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
   // Load everything from Supabase once the user is logged in. Pre-login,
   // RLS has no tenant token to scope by (see supabase/020_multi_tenant.sql)
@@ -677,6 +688,12 @@ export default function App() {
     if (!isLoggedIn || !currentUser?.tenantId) return;
     fetchActiveEventId(currentUser.tenantId).then(setActiveEventId).catch(() => {});
   }, [isLoggedIn, currentPage, currentUser?.tenantId]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser?.tenantId) return;
+    fetchTenantSlug(currentUser.tenantId).then(setTenantSlug).catch(() => {});
+    getReceiptSettingsRequest().then(setReceiptSettings).catch(() => {});
+  }, [isLoggedIn, currentUser?.tenantId]);
 
   useEffect(() => {
     if (!isLoggedIn || !currentUser?.tenantId) return;
@@ -924,6 +941,15 @@ export default function App() {
   // dataLoading/isLoggedIn all belong to the committee flow only).
   if (window.location.pathname.startsWith('/super-admin')) {
     return <SuperAdminRoot />;
+  }
+
+  // Public digital receipt — /<tenant-slug>/receipt/<token>, no auth, no
+  // tenant RLS (fetched via the token-gated get_chanda_receipt_public()
+  // RPC). Must be checked before every other gate since it works fully
+  // logged-out, for any tenant, from a link shared with a donor.
+  const receiptMatch = window.location.pathname.match(/^\/([^/]+)\/receipt\/([0-9a-f-]+)$/i);
+  if (receiptMatch) {
+    return <ReceiptPublicPage tenantSlug={receiptMatch[1]} token={receiptMatch[2]} />;
   }
 
   if (loadError === 'not-configured') {
@@ -1211,6 +1237,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             committeeInfo={committeeInfo}
             onUpdateCommitteeInfo={setCommitteeInfo}
             isAdmin={currentUser?.isAdmin === true}
+            receiptSettings={receiptSettings}
+            tenantSlug={tenantSlug}
+            members={members}
+            donationAdsList={donationAdsList}
           />
         )}
         {currentPage === 'donation' && (
@@ -1304,6 +1334,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Settings
             committeeInfo={committeeInfo}
             setCommitteeInfo={setCommitteeInfo}
+            receiptSettings={receiptSettings}
+            setReceiptSettings={setReceiptSettings}
             users={users}
             currentUser={currentUser}
             developerInfo={developerInfo}
@@ -1327,6 +1359,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
             companyName={committeeInfo.association || committeeInfo.name}
             companyLogo={committeeInfo.logo}
+          />
+        )}
+        {currentPage === 'awards' && (
+          <Awards
+            canEdit={currentUser?.canEdit !== false}
+            canDelete={currentUser?.canDelete !== false}
+            onLog={handleLog}
           />
         )}
         {currentPage === 'documents' && (

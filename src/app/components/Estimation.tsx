@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer, MoreVertical } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -75,6 +75,16 @@ export function EstimationPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [rowDeleteTarget, setRowDeleteTarget] = useState<EstimationLineItem | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -553,7 +563,7 @@ export function EstimationPage({
         </div>
       </CollapsibleSearchPanel>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <DataTableToolbar
           totalItems={pagination.totalItems}
           startIndex={pagination.startIndex}
@@ -621,22 +631,26 @@ export function EstimationPage({
                   )}
                   {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {canEdit && (
-                          <button
-                            onClick={() => openExisting(est)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => handleDelete(est)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                      <div className="relative inline-block" ref={openRowMenuId === est.id ? rowMenuRef : undefined}>
+                        <button
+                          onClick={() => setOpenRowMenuId(o => (o === est.id ? null : est.id))}
+                          className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {openRowMenuId === est.id && (
+                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                            {canEdit && (
+                              <button onClick={() => { setOpenRowMenuId(null); openExisting(est); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Edit2 size={14} className="text-blue-600" /> Edit
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button onClick={() => { setOpenRowMenuId(null); handleDelete(est); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>

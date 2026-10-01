@@ -95,6 +95,8 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   const [editingGroup, setEditingGroup] = useState<VendorGroup | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     listVendorsRequest().then(setDirectory).catch(() => {});
@@ -103,6 +105,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -452,22 +455,24 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                   )}
                   {tableCols.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
-                      <div className="inline-flex items-center gap-1">
+                      <div className="relative inline-block" ref={openRowMenuId === g.key ? rowMenuRef : undefined}>
                         <button
-                          onClick={() => setViewingKey(viewingKey === g.key ? null : g.key)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                          title={t('vendors.view')}
+                          onClick={() => setOpenRowMenuId(o => (o === g.key ? null : g.key))}
+                          className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
-                          <Eye size={18} />
+                          <MoreVertical size={18} />
                         </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => openEditVendor(g)}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                            title={t('common.edit')}
-                          >
-                            <Pencil size={16} />
-                          </button>
+                        {openRowMenuId === g.key && (
+                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                            <button onClick={() => { setOpenRowMenuId(null); setViewingKey(viewingKey === g.key ? null : g.key); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                              <Eye size={14} className="text-blue-600" /> {t('vendors.view')}
+                            </button>
+                            {canEdit && (
+                              <button onClick={() => { setOpenRowMenuId(null); openEditVendor(g); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Pencil size={14} className="text-gray-500" /> {t('common.edit')}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>

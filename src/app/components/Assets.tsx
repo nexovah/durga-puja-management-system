@@ -73,6 +73,8 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [printData, setPrintData] = useState<{ rows: (string | number)[][]; summary: SummaryLine[] } | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
 
   const conditionOptions = useMemo(() => CONDITION_KEYS.map(o => ({
     value: o.value,
@@ -98,6 +100,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -361,18 +364,30 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                       <h4 className="font-bold text-gray-800 dark:text-gray-200 truncate">{asset.name}</h4>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{asset.category || t('assets.col.category')}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {canEdit && (
-                        <button onClick={() => openEdit(asset)} className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400" aria-label={t('common.edit')}>
-                          <Pencil size={16} />
+                    {(canEdit || canDelete) && (
+                      <div className="relative shrink-0" ref={openRowMenuId === asset.id ? rowMenuRef : undefined}>
+                        <button
+                          onClick={() => setOpenRowMenuId(o => (o === asset.id ? null : asset.id))}
+                          className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                          <MoreVertical size={16} />
                         </button>
-                      )}
-                      {canDelete && (
-                        <button onClick={() => setDeleteTarget(asset)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('common.delete')}>
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
+                        {openRowMenuId === asset.id && (
+                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                            {canEdit && (
+                              <button onClick={() => { setOpenRowMenuId(null); openEdit(asset); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Pencil size={14} className="text-blue-600" /> {t('common.edit')}
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button onClick={() => { setOpenRowMenuId(null); setDeleteTarget(asset); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 size={14} /> {t('common.delete')}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 mb-3">

@@ -81,8 +81,14 @@ function fromChandaRow(row: any): Chanda {
     phone: row.phone || '',
     phone2: row.phone2 || '',
     remarks: row.remarks || '',
+    collectedBy: row.collected_by || '',
+    receiptNumber: row.receipt_number ?? null,
+    receiptToken: row.receipt_token,
   };
 }
+// Deliberately omits receipt_number/receipt_token — those are DB-assigned
+// (see assign_chanda_receipt_number() trigger, supabase/100_chanda_receipts.sql)
+// and must never be written back by the client.
 function toChandaRow(c: Chanda) {
   return {
     id: c.id,
@@ -100,6 +106,7 @@ function toChandaRow(c: Chanda) {
     phone: c.phone,
     phone2: c.phone2 || null,
     remarks: c.remarks,
+    collected_by: c.collectedBy || null,
   };
 }
 
@@ -461,6 +468,163 @@ export const syncEstimations = (oldList: Estimation[], newList: Estimation[]) =>
   syncList('estimations', oldList, newList, toEstimationRow);
 
 // ---------------------------------------------------------------------------
+// Receipt settings — one row per tenant, configures Chanda digital
+// receipt numbering/content/look (see supabase/100_chanda_receipts.sql).
+// Same insert-if-missing/update-if-exists shape as committee_info below.
+// ---------------------------------------------------------------------------
+
+export interface ReceiptSettings {
+  id: string;
+  prefix: string;
+  startNumber: number;
+  digits: number;
+  colorTheme: 'saffron' | 'rose' | 'emerald' | 'indigo' | 'custom';
+  customColorHex: string;
+  headerSymbol: string;
+  blessingLine: string;
+  showAmountWords: boolean;
+  showPersons: boolean;
+  showPaymentMethod: boolean;
+  showCollectedBy: boolean;
+  signatoryLabel: string;
+  receiptStyle: 'designed' | 'printed';
+  receiptLanguage: 'en' | 'bn' | 'hi';
+  showLogo: boolean;
+  showAddress: boolean;
+  showContact: boolean;
+  showRegNo: boolean;
+  showUpiId: boolean;
+  upiId: string;
+  paperSize: 'a5' | 'thermal80mm';
+  orientation: 'portrait' | 'landscape';
+  signatureUrl: string;
+  sealUrl: string;
+  show80g: boolean;
+  reg80g: string;
+  pan: string;
+  declarationText: string;
+  headerLogoUrl: string;
+  headerLogoSize: 'small' | 'medium' | 'large';
+  headerTitle: string;
+  headerSubtitle1: string;
+  headerSubtitle2: string;
+  headerBandTitle: string;
+}
+
+export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
+  id: '', prefix: '#', startNumber: 1, digits: 4, colorTheme: 'saffron', customColorHex: '#ea580c',
+  headerSymbol: '🕉️', blessingLine: 'Thank you for your contribution!',
+  showAmountWords: true, showPersons: true, showPaymentMethod: true, showCollectedBy: true,
+  signatoryLabel: 'Authorised signatory',
+  receiptStyle: 'designed', receiptLanguage: 'en',
+  showLogo: true, showAddress: true, showContact: true, showRegNo: false,
+  showUpiId: false, upiId: '',
+  paperSize: 'a5', orientation: 'portrait',
+  signatureUrl: '', sealUrl: '',
+  show80g: false, reg80g: '', pan: '', declarationText: 'Donations are exempt under Section 80G of the Income Tax Act.',
+  headerLogoUrl: '', headerLogoSize: 'medium', headerTitle: '', headerSubtitle1: '', headerSubtitle2: '', headerBandTitle: '',
+};
+
+function fromReceiptSettingsRow(row: any): ReceiptSettings {
+  if (!row) {
+    return DEFAULT_RECEIPT_SETTINGS;
+  }
+  return {
+    id: row.id,
+    prefix: row.prefix || '#',
+    startNumber: Number(row.start_number) || 1,
+    digits: Number(row.digits) || 4,
+    colorTheme: row.color_theme || 'saffron',
+    customColorHex: row.custom_color_hex || '#ea580c',
+    headerSymbol: row.header_symbol || '🕉️',
+    blessingLine: row.blessing_line || '',
+    showAmountWords: row.show_amount_words !== false,
+    showPersons: row.show_persons !== false,
+    showPaymentMethod: row.show_payment_method !== false,
+    showCollectedBy: row.show_collected_by !== false,
+    signatoryLabel: row.signatory_label || 'Authorised signatory',
+    receiptStyle: row.receipt_style === 'printed' ? 'printed' : 'designed',
+    receiptLanguage: row.receipt_language || 'en',
+    showLogo: row.show_logo !== false,
+    showAddress: row.show_address !== false,
+    showContact: row.show_contact !== false,
+    showRegNo: row.show_reg_no === true,
+    showUpiId: row.show_upi_id === true,
+    upiId: row.upi_id || '',
+    paperSize: row.paper_size === 'thermal80mm' ? 'thermal80mm' : 'a5',
+    orientation: row.orientation === 'landscape' ? 'landscape' : 'portrait',
+    signatureUrl: row.signature_url || '',
+    sealUrl: row.seal_url || '',
+    show80g: row.show_80g === true,
+    reg80g: row.reg_80g || '',
+    pan: row.pan || '',
+    declarationText: row.declaration_text || 'Donations are exempt under Section 80G of the Income Tax Act.',
+    headerLogoUrl: row.header_logo_url || '',
+    headerLogoSize: row.header_logo_size === 'small' || row.header_logo_size === 'large' ? row.header_logo_size : 'medium',
+    headerTitle: row.header_title || '',
+    headerSubtitle1: row.header_subtitle1 || '',
+    headerSubtitle2: row.header_subtitle2 || '',
+    headerBandTitle: row.header_band_title || '',
+  };
+}
+
+function toReceiptSettingsRow(s: ReceiptSettings) {
+  return {
+    prefix: s.prefix,
+    start_number: s.startNumber,
+    digits: s.digits,
+    color_theme: s.colorTheme,
+    custom_color_hex: s.customColorHex || null,
+    header_symbol: s.headerSymbol,
+    blessing_line: s.blessingLine,
+    show_amount_words: s.showAmountWords,
+    show_persons: s.showPersons,
+    show_payment_method: s.showPaymentMethod,
+    show_collected_by: s.showCollectedBy,
+    signatory_label: s.signatoryLabel,
+    receipt_style: s.receiptStyle,
+    receipt_language: s.receiptLanguage,
+    show_logo: s.showLogo,
+    show_address: s.showAddress,
+    show_contact: s.showContact,
+    show_reg_no: s.showRegNo,
+    show_upi_id: s.showUpiId,
+    upi_id: s.upiId || null,
+    paper_size: s.paperSize,
+    orientation: s.orientation,
+    signature_url: s.signatureUrl || null,
+    seal_url: s.sealUrl || null,
+    show_80g: s.show80g,
+    reg_80g: s.reg80g || null,
+    pan: s.pan || null,
+    declaration_text: s.declarationText || null,
+    header_logo_url: s.headerLogoUrl || null,
+    header_logo_size: s.headerLogoSize,
+    header_title: s.headerTitle || null,
+    header_subtitle1: s.headerSubtitle1 || null,
+    header_subtitle2: s.headerSubtitle2 || null,
+    header_band_title: s.headerBandTitle || null,
+  };
+}
+
+export async function getReceiptSettingsRequest(): Promise<ReceiptSettings> {
+  const { data, error } = await supabase.from('receipt_settings').select('*').limit(1).maybeSingle();
+  if (error) throw error;
+  return fromReceiptSettingsRow(data);
+}
+
+export async function updateReceiptSettingsRequest(settings: ReceiptSettings): Promise<ReceiptSettings> {
+  if (!settings.id) {
+    const { data, error } = await supabase.from('receipt_settings').insert(toReceiptSettingsRow(settings)).select().single();
+    if (error) throw error;
+    return fromReceiptSettingsRow(data);
+  }
+  const { data, error } = await supabase.from('receipt_settings').update(toReceiptSettingsRow(settings)).eq('id', settings.id).select().single();
+  if (error) throw error;
+  return fromReceiptSettingsRow(data);
+}
+
+// ---------------------------------------------------------------------------
 // Singleton settings rows
 // ---------------------------------------------------------------------------
 
@@ -806,6 +970,94 @@ export async function updateAssetRequest(id: string, input: AssetInput): Promise
 
 export async function deleteAssetRequest(id: string): Promise<void> {
   const { error } = await supabase.from('assets').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Awards / Prizes — independent page (see supabase/101_awards.sql).
+// Event-scoped like Documents, not permanent like Assets — a prize was
+// won for a specific Puja/Festival. Purely informational: prize_money is
+// never folded into Treasury/Cash & Bank/dashboard financial totals.
+// ---------------------------------------------------------------------------
+
+export type AwardRank = '1st' | '2nd' | '3rd' | 'winner' | 'runner_up' | 'special_mention';
+
+export interface Award {
+  id: string;
+  title: string;
+  rank: AwardRank;
+  category: string | null;
+  awardedBy: string | null;
+  awardedDate: string;
+  prizeMoney: number;
+  receivedBy: string | null;
+  details: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+}
+
+export interface AwardInput {
+  title: string;
+  rank: AwardRank;
+  category?: string | null;
+  awardedBy?: string | null;
+  awardedDate: string;
+  prizeMoney: number;
+  receivedBy?: string | null;
+  details?: string | null;
+  photoUrl?: string | null;
+}
+
+function fromAwardRow(row: any): Award {
+  return {
+    id: row.id,
+    title: row.title,
+    rank: row.rank,
+    category: row.category,
+    awardedBy: row.awarded_by,
+    awardedDate: row.awarded_date,
+    prizeMoney: Number(row.prize_money) || 0,
+    receivedBy: row.received_by,
+    details: row.details,
+    photoUrl: row.photo_url,
+    createdAt: row.created_at,
+  };
+}
+
+function toAwardRow(a: AwardInput) {
+  return {
+    title: a.title,
+    rank: a.rank,
+    category: a.category || null,
+    awarded_by: a.awardedBy || null,
+    awarded_date: a.awardedDate,
+    prize_money: a.prizeMoney,
+    received_by: a.receivedBy || null,
+    details: a.details || null,
+    photo_url: a.photoUrl || null,
+  };
+}
+
+export async function listAwardsRequest(): Promise<Award[]> {
+  const { data, error } = await supabase.from('awards').select('*').order('awarded_date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(fromAwardRow);
+}
+
+export async function createAwardRequest(input: AwardInput): Promise<Award> {
+  const { data, error } = await supabase.from('awards').insert(toAwardRow(input)).select().single();
+  if (error) throw error;
+  return fromAwardRow(data);
+}
+
+export async function updateAwardRequest(id: string, input: AwardInput): Promise<Award> {
+  const { data, error } = await supabase.from('awards').update(toAwardRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromAwardRow(data);
+}
+
+export async function deleteAwardRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('awards').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -1280,7 +1532,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank' | 'awards';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 
@@ -1401,6 +1653,16 @@ export async function fetchActiveEventId(tenantId: string): Promise<string | nul
   const { data, error } = await supabase.from('tenants').select('active_event_id').eq('id', tenantId).single();
   if (error) throw error;
   return data?.active_event_id ?? null;
+}
+
+// The tenant's own slug — needed to build a public receipt link
+// (/<slug>/receipt/<token>). Same no-RLS-on-tenants caveat as
+// fetchActiveEventId above, so this must filter to the caller's own
+// tenant explicitly.
+export async function fetchTenantSlug(tenantId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('tenants').select('slug').eq('id', tenantId).single();
+  if (error) throw error;
+  return data?.slug ?? null;
 }
 
 export async function createEventRequest(

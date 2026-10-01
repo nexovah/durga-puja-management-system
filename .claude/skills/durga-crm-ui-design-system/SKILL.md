@@ -173,27 +173,42 @@ top-level shell:
     tenant's account. `danger` prop (default `true`) picks red vs amber
     theme — use `danger={false}` for a reversible/lighter action like
     "Archive" vs `danger={true}` for permanent "Delete".
-- **Dropdown row-action menus** (3-dot `MoreVertical` icon) — this repo's
-  convention is a **hand-rolled click-outside dropdown** (a `menuRef` +
-  `useEffect` `mousedown` listener that closes on outside click), not the
-  installed-but-unused `src/app/components/ui/dropdown-menu.tsx`
-  Radix wrapper — that file exists in the project but is not actually
-  used anywhere; don't start using it without first checking whether
-  that's changed. Copy the pattern from `SuperAdminLeads.tsx`'s row menu
-  or `SuperAdminLayout.tsx`'s profile menu.
+- **Row actions are ALWAYS a 3-dot (`MoreVertical`) dropdown menu — never
+  inline icon buttons sitting directly in the row.** This was a
+  deliberate, explicit, app-wide conversion (every tenant data table:
+  Chanda, Assets, Donation/Ads, Expenses, Loans, Members, Tasks,
+  Estimation, Documents, Cash & Bank adjustments, Vendors, and Settings'
+  User Management list) — do not reintroduce inline per-row Edit/Delete
+  buttons on any new table; always put row actions behind one 3-dot
+  button. Convention is a **hand-rolled click-outside dropdown** (an
+  `openRowMenuId`/`rowMenuRef` pair + `useEffect` `mousedown` listener
+  that closes on outside click, keyed per-row so only one row's menu is
+  open at a time), not the installed-but-unused
+  `src/app/components/ui/dropdown-menu.tsx` Radix wrapper — that file
+  exists in the project but is not actually used anywhere; don't start
+  using it without first checking whether that's changed. Copy the
+  pattern from `ChandaCollection.tsx`'s row menu (or `SuperAdminLeads.tsx`'s,
+  or `SuperAdminLayout.tsx`'s profile menu).
+  - Include every action the row already had, not just Edit/Delete — if
+    a row also has a View/Toggle-status/Mark-complete action, it goes in
+    the same menu too (see `Tasks.tsx`: View, Mark Complete, Edit,
+    Delete all in one menu).
   - **Critical gotcha**: the table wrapper div around a data table is
     typically `rounded-xl border ... overflow-hidden` (for rounded
     corners). `overflow-hidden` on that ancestor **clips any
     absolutely-positioned dropdown that extends past it, regardless of
     the dropdown's own z-index** — z-index can't escape a clipping
-    ancestor. If a table has row-level dropdowns, the wrapper must NOT
-    have `overflow-hidden` (drop it, accept slightly-less-rounded corners
-    at the very top/bottom pixel, or — not yet done anywhere in this repo
-    — use a portal). See the September 2026 fix across `Assets.tsx`,
-    `ChandaCollection.tsx`, `DonationAdsCollection.tsx`, `Expenses.tsx`,
-    `Loans.tsx`, `Vendors.tsx`, `Treasury.tsx`, `ReportModulePage.tsx`,
-    `ReportEstimationPage.tsx`, `ReportBalanceSheetPage.tsx`,
-    `SuperAdminLeads.tsx`.
+    ancestor. Any table/card with a row-level dropdown must NOT have
+    `overflow-hidden` on its wrapper (drop it, accept slightly-less-rounded
+    corners at the very top/bottom pixel — or, for a gradient header
+    block that needs its own rounded corners like `Awards.tsx`'s prize
+    cards, put `rounded-t-*`/`rounded-b-*` on that inner block instead of
+    `overflow-hidden` on the outer card). This has already been fixed
+    across every table listed above plus `Treasury.tsx`,
+    `ReportModulePage.tsx`, `ReportEstimationPage.tsx`,
+    `ReportBalanceSheetPage.tsx`, `SuperAdminLeads.tsx` — when adding a
+    new table/card with a row dropdown, check its wrapper for
+    `overflow-hidden` before shipping, every single time.
   - Dropdown menus use `z-30` by convention (Super Admin Leads was
     originally built with `z-10` and had to be bumped to match — always
     use `z-30` for a new one).

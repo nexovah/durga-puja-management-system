@@ -1,8 +1,11 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, Receipt } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, getChandaCreditAmount } from '../App';
+import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount } from '../App';
+import { User as UserIcon, Gift } from 'lucide-react';
 import { DashboardDonut } from './DashboardDonut';
+import { ReceiptModal } from './ReceiptModal';
+import { ReceiptSettings } from '../lib/db';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -31,6 +34,10 @@ interface ChandaCollectionProps {
   committeeInfo: CommitteeInfo;
   onUpdateCommitteeInfo: (info: CommitteeInfo) => void;
   isAdmin: boolean;
+  receiptSettings: ReceiptSettings;
+  tenantSlug: string | null;
+  members: Member[];
+  donationAdsList: DonationAd[];
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -89,9 +96,10 @@ const emptyForm = {
   phone: '',
   phone2: '',
   remarks: '',
+  collectedBy: '',
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -108,6 +116,49 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const menuRef = useRef<HTMLDivElement>(null);
   const [editingAmountLabel, setEditingAmountLabel] = useState<'amount1' | 'amount2' | null>(null);
   const [amountLabelDraft, setAmountLabelDraft] = useState('');
+  const [receiptTarget, setReceiptTarget] = useState<Chanda | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [collectedBySuggestOpen, setCollectedBySuggestOpen] = useState(false);
+  const collectedBySuggestRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!collectedBySuggestOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (collectedBySuggestRef.current && !collectedBySuggestRef.current.contains(e.target as Node)) setCollectedBySuggestOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [collectedBySuggestOpen]);
+
+  // Same Member/Donor-badged suggestion pool as DonationAdsCollection's
+  // Collected By field — Members take priority over Donor on a name clash.
+  const collectedByTypeMap = useMemo(() => {
+    const map = new Map<string, 'member' | 'donor'>();
+    chandaList.forEach(c => { if (c.donorName.trim()) map.set(c.donorName.trim(), 'donor'); });
+    donationAdsList.forEach(d => {
+      if (d.donorName.trim()) map.set(d.donorName.trim(), 'donor');
+      if (d.companyName?.trim()) map.set(d.companyName.trim(), 'donor');
+    });
+    members.forEach(m => { if (m.name.trim()) map.set(m.name.trim(), 'member'); });
+    return map;
+  }, [members, chandaList, donationAdsList]);
+
+  const collectedByPool = useMemo(() => [...collectedByTypeMap.keys()], [collectedByTypeMap]);
+
+  const matchingCollectedBy = useMemo(() => {
+    const q = formData.collectedBy.trim().toLowerCase();
+    if (!q) return [];
+    return collectedByPool.filter(name => name.toLowerCase().includes(q)).slice(0, 8);
+  }, [collectedByPool, formData.collectedBy]);
 
   // Admin-editable, tenant-wide (stored on committee_info) — falls back to
   // the default translated label when the committee hasn't renamed it.
@@ -245,6 +296,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       phone: formData.phone,
       phone2: formData.phone2,
       remarks: formData.remarks,
+      collectedBy: formData.collectedBy.trim() || undefined,
     };
 
     // Editing a record that's already Paid — whether changing its status
@@ -317,6 +369,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       phone: chanda.phone,
       phone2: chanda.phone2 || '',
       remarks: chanda.remarks,
+      collectedBy: chanda.collectedBy || '',
     });
     setEditingId(chanda.id);
     setShowForm(true);
@@ -354,6 +407,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     t('chanda.csv.phone'),
     t('chanda.csv.phone2'),
     t('chanda.csv.remarks'),
+    t('chanda.digitalReceipt'),
   ];
 
   const chandaToCsvRow = (c: Chanda) => [
@@ -369,6 +423,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     c.phone,
     c.phone2 || '',
     c.remarks,
+    c.receiptNumber || '',
   ];
 
   const downloadChandaCsv = (rows: Chanda[], filenameSuffix: string) => {
@@ -466,7 +521,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const filteredChanda = chandaList.filter(c => {
     const q = searchQuery.trim().toLowerCase();
-    if (q && !matches([c.donorName, c.phone, c.phone2, c.remarks, c.billNumber, c.amount], q)) return false;
+    if (q && !matches([c.donorName, c.phone, c.phone2, c.remarks, c.billNumber, c.amount, c.receiptNumber], q)) return false;
 
     const f = appliedFilters;
     if (f.amountMin && c.amount < parseFloat(f.amountMin)) return false;
@@ -482,16 +537,21 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   });
 
   const chandaColumns: ColumnDef<Chanda>[] = useMemo(() => [
+    // Default-visible set confirmed by the user: Donor's Name, Amount,
+    // Digital Receipt, Bill Number, Payment Status, Date, Phone Number.
+    // Everything else starts hidden (defaultVisible: false), toggleable
+    // via the existing column-settings panel.
     { id: 'donorName', label: t('chanda.donorName'), required: true, sortValue: c => c.donorName },
-    { id: 'category', label: t('chanda.category'), sortValue: c => chandaCategoryLabel(c.category) },
+    { id: 'category', label: t('chanda.category'), defaultVisible: false, sortValue: c => chandaCategoryLabel(c.category) },
     { id: 'amount', label: t('common.amount'), align: 'left', sortValue: c => c.amount },
-    { id: 'paidMethod', label: t('common.paidMethod'), sortValue: c => paidMethodLabel(c.paidMethod || 'notSelected') },
+    { id: 'receiptNumber', label: t('chanda.digitalReceipt'), sortValue: c => c.receiptNumber || '' },
+    { id: 'paidMethod', label: t('common.paidMethod'), defaultVisible: false, sortValue: c => paidMethodLabel(c.paidMethod || 'notSelected') },
     { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: c => c.paymentStatus || 'paid' },
     { id: 'date', label: t('common.date'), sortValue: c => c.date },
     { id: 'billNumber', label: t('chanda.billNumber'), sortValue: c => c.billNumber || '' },
     { id: 'phone1', label: t('chanda.phone1'), sortValue: c => c.phone || '' },
-    { id: 'phone2', label: t('chanda.phone2'), sortValue: c => c.phone2 || '' },
-    { id: 'remarks', label: t('common.remarks'), sortValue: c => c.remarks || '' },
+    { id: 'phone2', label: t('chanda.phone2'), defaultVisible: false, sortValue: c => c.phone2 || '' },
+    { id: 'remarks', label: t('common.remarks'), defaultVisible: false, sortValue: c => c.remarks || '' },
     ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
   ], [t, canEdit, canDelete]);
 
@@ -788,6 +848,51 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
+            <div className="relative" ref={collectedBySuggestRef}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.collectedBy')}</label>
+              <input
+                type="text"
+                autoComplete="off"
+                value={formData.collectedBy}
+                onChange={(e) => { setFormData({ ...formData, collectedBy: e.target.value }); setCollectedBySuggestOpen(true); }}
+                onFocus={() => setCollectedBySuggestOpen(true)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                placeholder={t('donationAds.collectedByPlaceholder')}
+              />
+              {collectedBySuggestOpen && matchingCollectedBy.length > 0 && (
+                <div className="absolute left-0 top-full mt-1.5 w-full z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+                  {matchingCollectedBy.map(name => {
+                    const type = collectedByTypeMap.get(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => { setFormData({ ...formData, collectedBy: name }); setCollectedBySuggestOpen(false); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
+                      >
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                          type === 'member'
+                            ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                            : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          {type === 'member' ? <UserIcon size={14} /> : <Gift size={14} />}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex-1">{name}</span>
+                        {type && (
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
+                            type === 'member'
+                              ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'
+                              : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                          }`}>
+                            {type === 'member' ? t('donationAds.collectedByMember') : t('donationAds.collectedByDonor')}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
               <textarea
@@ -929,6 +1034,9 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 {tableCols.isColumnVisible('amount') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'amount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
+                {tableCols.isColumnVisible('receiptNumber') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'receiptNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
                 {tableCols.isColumnVisible('paidMethod') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'paidMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -1009,6 +1117,19 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                           : 'text-green-600'
                       }`}>₹{chanda.amount.toLocaleString()}</td>
                     )}
+                    {tableCols.isColumnVisible('receiptNumber') && (
+                      <td className="px-6 py-4 text-sm">
+                        {chanda.receiptNumber ? (
+                          <button
+                            type="button"
+                            onClick={() => setReceiptTarget(chanda)}
+                            className="text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                          >
+                            {chanda.receiptNumber}
+                          </button>
+                        ) : '-'}
+                      </td>
+                    )}
                     {tableCols.isColumnVisible('paidMethod') && (
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
                     )}
@@ -1043,22 +1164,43 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                     )}
                     {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {canEdit && (
-                            <button
-                              onClick={() => handleEdit(chanda)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => handleDelete(chanda.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                        <div className="relative inline-block" ref={openRowMenuId === chanda.id ? rowMenuRef : undefined}>
+                          <button
+                            onClick={() => setOpenRowMenuId(o => (o === chanda.id ? null : chanda.id))}
+                            className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                          {openRowMenuId === chanda.id && (
+                            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                              {canEdit && (
+                                <button
+                                  onClick={() => { setOpenRowMenuId(null); handleEdit(chanda); }}
+                                  className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                >
+                                  <Edit2 size={15} className="text-blue-600" />
+                                  Edit Collection
+                                </button>
+                              )}
+                              {chanda.receiptNumber && (
+                                <button
+                                  onClick={() => { setOpenRowMenuId(null); setReceiptTarget(chanda); }}
+                                  className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                >
+                                  <Receipt size={15} className="text-orange-600" />
+                                  View Receipt
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => { setOpenRowMenuId(null); handleDelete(chanda.id); }}
+                                  className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                  <Trash2 size={15} />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -1196,6 +1338,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           placeholder={editingAmountLabel === 'amount1' ? t('chanda.widget.amount1') : t('chanda.widget.amount2')}
         />
       </FormModal>
+
+      {receiptTarget && (
+        <ReceiptModal
+          chanda={receiptTarget}
+          committeeInfo={committeeInfo}
+          receiptSettings={receiptSettings}
+          tenantSlug={tenantSlug}
+          onClose={() => setReceiptTarget(null)}
+        />
+      )}
     </div>
   );
 }

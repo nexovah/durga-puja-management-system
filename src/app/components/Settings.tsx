@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, Receipt, MoreVertical } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
-import { uploadLogo, generatePassword, DeveloperInfo } from '../lib/db';
+import { uploadLogo, generatePassword, DeveloperInfo, ReceiptSettings, updateReceiptSettingsRequest } from '../lib/db';
 import { FormModal, FormModalCancelButton } from './FormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { ToggleSwitch } from './ToggleSwitch';
+import { ReceiptCard, ReceiptCardData } from './ReceiptCard';
 
 interface SettingsProps {
   committeeInfo: CommitteeInfo;
   setCommitteeInfo: (info: CommitteeInfo) => void;
+  receiptSettings: ReceiptSettings;
+  setReceiptSettings: (settings: ReceiptSettings) => void;
   users: User[];
   currentUser: User | null;
   developerInfo: DeveloperInfo;
@@ -24,7 +28,7 @@ interface SettingsProps {
   tabRequestId?: number; // bumped by the caller each time it wants to force-select initialTab, even if it's the same tab as before
 }
 
-export type SettingsTab = 'committee' | 'password' | 'users' | 'developer' | 'language';
+export type SettingsTab = 'committee' | 'receipts' | 'password' | 'users' | 'developer' | 'language';
 
 const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   members: 'permission.members',
@@ -49,6 +53,8 @@ const PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
 export function Settings({
   committeeInfo,
   setCommitteeInfo,
+  receiptSettings,
+  setReceiptSettings,
   users,
   currentUser,
   developerInfo,
@@ -69,6 +75,86 @@ export function Settings({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabRequestId]);
   const [committeeForm, setCommitteeForm] = useState(committeeInfo);
+  const [receiptForm, setReceiptForm] = useState(receiptSettings);
+  const [openUserMenuId, setOpenUserMenuId] = useState<string | null>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setOpenUserMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  const [savingReceiptSettings, setSavingReceiptSettings] = useState(false);
+  const [signatureUploading, setSignatureUploading] = useState(false);
+  const [sealUploading, setSealUploading] = useState(false);
+  const [headerLogoUploading, setHeaderLogoUploading] = useState(false);
+
+  const handleReceiptSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingReceiptSettings(true);
+    try {
+      const updated = await updateReceiptSettingsRequest(receiptForm);
+      setReceiptForm(updated);
+      setReceiptSettings(updated);
+      setMessage(t('settings.msg.receiptSettingsUpdated'));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('Failed to save receipt settings', err);
+      setMessage(t('common.saveError'));
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setSavingReceiptSettings(false);
+    }
+  };
+
+  const receiptPreviewData: ReceiptCardData = {
+    committeeName: committeeInfo.name || 'Your Committee',
+    committeeAddress: committeeInfo.address || null,
+    committeeEmail: committeeInfo.email || null,
+    committeePhone: committeeInfo.mobile1 || committeeInfo.phone || null,
+    committeeLogo: committeeInfo.logo || null,
+    committeeRegNo: committeeInfo.regNumber || null,
+    receiptNumber: `${receiptForm.prefix}${String(receiptForm.startNumber).padStart(receiptForm.digits, '0')}`,
+    donorName: 'Rohan Kulkarni',
+    phone: '98765 43210',
+    numPersons: 4,
+    amount: 2100,
+    paidMethod: 'qrScan',
+    date: new Date().toISOString().slice(0, 10),
+    collectedBy: 'Priya Deshpande',
+    colorTheme: receiptForm.colorTheme,
+    customColorHex: receiptForm.customColorHex || null,
+    headerSymbol: receiptForm.headerSymbol,
+    blessingLine: receiptForm.blessingLine,
+    receiptLanguage: receiptForm.receiptLanguage,
+    showAmountWords: receiptForm.showAmountWords,
+    showPersons: receiptForm.showPersons,
+    showPaymentMethod: receiptForm.showPaymentMethod,
+    showCollectedBy: receiptForm.showCollectedBy,
+    showLogo: receiptForm.showLogo,
+    showAddress: receiptForm.showAddress,
+    showContact: receiptForm.showContact,
+    showRegNo: receiptForm.showRegNo,
+    showUpiId: receiptForm.showUpiId,
+    upiId: receiptForm.upiId || null,
+    signatoryLabel: receiptForm.signatoryLabel,
+    signatureUrl: receiptForm.signatureUrl || null,
+    sealUrl: receiptForm.sealUrl || null,
+    show80g: receiptForm.show80g,
+    reg80g: receiptForm.reg80g || null,
+    pan: receiptForm.pan || null,
+    declarationText: receiptForm.declarationText || null,
+    paperSize: receiptForm.paperSize,
+    orientation: receiptForm.orientation,
+    headerLogoUrl: receiptForm.headerLogoUrl || null,
+    headerLogoSize: receiptForm.headerLogoSize,
+    headerTitle: receiptForm.headerTitle || null,
+    headerSubtitle1: receiptForm.headerSubtitle1 || null,
+    headerSubtitle2: receiptForm.headerSubtitle2 || null,
+    headerBandTitle: receiptForm.headerBandTitle || null,
+  };
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -295,6 +381,17 @@ export function Settings({
             >
               <Building2 size={18} />
               {t('settings.tab.committee')}
+            </button>
+            <button
+              onClick={() => setActiveTab('receipts')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'receipts'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Receipt size={18} />
+              {t('settings.tab.receipts')}
             </button>
             <button
               onClick={() => setActiveTab('password')}
@@ -535,6 +632,489 @@ export function Settings({
               </button>
             </fieldset>
             </form>
+            </div>
+          )}
+
+          {/* Receipt Settings Tab */}
+          {activeTab === 'receipts' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.receipts')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  How your committee's digital receipts look and are numbered, for every Chanda collection.
+                </p>
+              </div>
+              <div className="flex flex-col lg:flex-row lg:gap-16">
+                <form onSubmit={handleReceiptSettingsSubmit} className="space-y-6 flex-1 min-w-0 max-w-xl">
+
+                  {/* Receipt style */}
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Receipt style</h4>
+                    <div className="inline-flex p-1 rounded-lg bg-gray-100 dark:bg-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => setReceiptForm({ ...receiptForm, receiptStyle: 'designed' })}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          receiptForm.receiptStyle === 'designed' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        Design a receipt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReceiptForm({ ...receiptForm, receiptStyle: 'printed' })}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          receiptForm.receiptStyle === 'printed' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        Use my printed receipt
+                      </button>
+                    </div>
+                  </div>
+
+                  {receiptForm.receiptStyle === 'printed' ? (
+                    <div className="border-t border-gray-100 dark:border-gray-800 pt-10 pb-6 text-center">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Coming soon</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm mx-auto">
+                        Uploading your own printed receipt design isn't available yet. Switch back to "Design a receipt" to configure and use the digital receipt.
+                      </p>
+                    </div>
+                  ) : (
+                  <>
+
+                  {/* Receipt language */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Receipt language <span className="text-xs font-normal text-orange-500">(every label on the receipt)</span>
+                    </h4>
+                    <div className="flex gap-2 mt-2">
+                      {LANGUAGES.map(l => (
+                        <button
+                          key={l.code}
+                          type="button"
+                          onClick={() => setReceiptForm({ ...receiptForm, receiptLanguage: l.code as ReceiptSettings['receiptLanguage'] })}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                            receiptForm.receiptLanguage === l.code
+                              ? 'border-orange-600 text-orange-700 dark:text-orange-400'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Society identity */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Society identity (printed on receipts)</h4>
+                    <div className="flex flex-wrap gap-x-6 gap-y-3 mb-4">
+                      <ToggleSwitch checked={receiptForm.showLogo} onChange={v => setReceiptForm({ ...receiptForm, showLogo: v })} label="Show logo" />
+                      <ToggleSwitch checked={receiptForm.showAddress} onChange={v => setReceiptForm({ ...receiptForm, showAddress: v })} label="Show address" />
+                      <ToggleSwitch checked={receiptForm.showContact} onChange={v => setReceiptForm({ ...receiptForm, showContact: v })} label="Show contact" />
+                      <ToggleSwitch checked={receiptForm.showRegNo} onChange={v => setReceiptForm({ ...receiptForm, showRegNo: v })} label="Show reg. no." />
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+                      These use your logo, address, contact and registration number already set in Settings → {t('settings.tab.committee')}.
+                    </p>
+                    <ToggleSwitch checked={receiptForm.showUpiId} onChange={v => setReceiptForm({ ...receiptForm, showUpiId: v })} label="Show UPI ID" />
+                    {receiptForm.showUpiId && (
+                      <input
+                        value={receiptForm.upiId}
+                        onChange={e => setReceiptForm({ ...receiptForm, upiId: e.target.value })}
+                        placeholder="e.g. committee@upi"
+                        className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      />
+                    )}
+                  </div>
+
+                  {/* Header — full customization of the top identity block
+                      + the gradient band below it. Every field here
+                      overrides the matching Committee Info value (logo/
+                      title/address/email); left blank, it falls back to
+                      Committee Info automatically. */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Header</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+                      Overrides the logo, title and text shown at the top of the receipt. Leave any field blank to fall back to Settings → {t('settings.tab.committee')}.
+                    </p>
+
+                    <div className="mb-4">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header logo</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png"
+                          disabled={headerLogoUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setHeaderLogoUploading(true);
+                            try {
+                              const url = await uploadLogo(file, receiptForm.headerLogoUrl);
+                              setReceiptForm({ ...receiptForm, headerLogoUrl: url });
+                            } catch (err) {
+                              console.error('Header logo upload failed', err);
+                            } finally {
+                              setHeaderLogoUploading(false);
+                            }
+                          }}
+                          className="flex-1 text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
+                        />
+                        {receiptForm.headerLogoUrl && <img src={receiptForm.headerLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />}
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Leave blank to use your Committee Info logo.</p>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Logo size</label>
+                      <div className="flex gap-2">
+                        {(['small', 'medium', 'large'] as const).map(sz => (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => setReceiptForm({ ...receiptForm, headerLogoSize: sz })}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize border-2 transition-colors ${
+                              receiptForm.headerLogoSize === sz
+                                ? 'border-orange-600 text-orange-700 dark:text-orange-400'
+                                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            {sz}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Title</label>
+                        <input
+                          value={receiptForm.headerTitle}
+                          onChange={e => setReceiptForm({ ...receiptForm, headerTitle: e.target.value })}
+                          placeholder={committeeInfo.name || 'Committee name'}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Banner title</label>
+                        <input
+                          value={receiptForm.headerBandTitle}
+                          onChange={e => setReceiptForm({ ...receiptForm, headerBandTitle: e.target.value })}
+                          placeholder={committeeInfo.name || 'e.g. Ganesh Utsav 2025'}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Subtitle 1 (address line)</label>
+                        <input
+                          value={receiptForm.headerSubtitle1}
+                          onChange={e => setReceiptForm({ ...receiptForm, headerSubtitle1: e.target.value })}
+                          placeholder={committeeInfo.address || 'Address'}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Subtitle 2 (contact line)</label>
+                        <input
+                          value={receiptForm.headerSubtitle2}
+                          onChange={e => setReceiptForm({ ...receiptForm, headerSubtitle2: e.target.value })}
+                          placeholder={committeeInfo.email || 'Email'}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Look */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Look</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Paper size</label>
+                        <div className="flex gap-2">
+                          {([['a5', 'A5 sheet'], ['thermal80mm', '80mm thermal']] as const).map(([v, label]) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setReceiptForm({ ...receiptForm, paperSize: v })}
+                              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                                receiptForm.paperSize === v ? 'border-orange-600 text-orange-700 dark:text-orange-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Orientation</label>
+                        <div className="flex gap-2">
+                          {([['portrait', 'Portrait'], ['landscape', 'Landscape']] as const).map(([v, label]) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setReceiptForm({ ...receiptForm, orientation: v })}
+                              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                                receiptForm.orientation === v ? 'border-orange-600 text-orange-700 dark:text-orange-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header symbol (one glyph/emoji)</label>
+                      <input
+                        value={receiptForm.headerSymbol}
+                        onChange={e => setReceiptForm({ ...receiptForm, headerSymbol: e.target.value })}
+                        className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Colour theme</label>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {(['saffron', 'rose', 'emerald', 'indigo'] as const).map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setReceiptForm({ ...receiptForm, colorTheme: c })}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize border-2 transition-colors ${
+                              receiptForm.colorTheme === c
+                                ? 'border-orange-600 text-orange-700 dark:text-orange-400'
+                                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setReceiptForm({ ...receiptForm, colorTheme: 'custom' })}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
+                            receiptForm.colorTheme === 'custom'
+                              ? 'border-orange-600 text-orange-700 dark:text-orange-400'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          Custom
+                          {receiptForm.colorTheme === 'custom' && (
+                            <input
+                              type="color"
+                              value={receiptForm.customColorHex}
+                              onChange={e => setReceiptForm({ ...receiptForm, customColorHex: e.target.value })}
+                              className="w-5 h-5 rounded border-0 p-0 cursor-pointer"
+                            />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Blessing line */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Blessing / thank-you line</label>
+                    <input
+                      value={receiptForm.blessingLine}
+                      onChange={e => setReceiptForm({ ...receiptForm, blessingLine: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    />
+                  </div>
+
+                  {/* Details shown */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Details shown</h4>
+                    <div className="flex flex-wrap gap-x-6 gap-y-3">
+                      <ToggleSwitch
+                        checked={receiptForm.showAmountWords}
+                        onChange={v => setReceiptForm({ ...receiptForm, showAmountWords: v })}
+                        label="Amount in words"
+                      />
+                      <ToggleSwitch
+                        checked={receiptForm.showPersons}
+                        onChange={v => setReceiptForm({ ...receiptForm, showPersons: v })}
+                        label="No. of persons"
+                      />
+                      <ToggleSwitch
+                        checked={receiptForm.showPaymentMethod}
+                        onChange={v => setReceiptForm({ ...receiptForm, showPaymentMethod: v })}
+                        label="Payment method"
+                      />
+                      <ToggleSwitch
+                        checked={receiptForm.showCollectedBy}
+                        onChange={v => setReceiptForm({ ...receiptForm, showCollectedBy: v })}
+                        label="Collected by"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Signatory & seal */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Signatory & seal</h4>
+                    <div className="mb-4">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signatory label</label>
+                      <input
+                        value={receiptForm.signatoryLabel}
+                        onChange={e => setReceiptForm({ ...receiptForm, signatoryLabel: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signature image</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png"
+                          disabled={signatureUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setSignatureUploading(true);
+                            try {
+                              const url = await uploadLogo(file, receiptForm.signatureUrl);
+                              setReceiptForm({ ...receiptForm, signatureUrl: url });
+                            } catch (err) {
+                              console.error('Signature upload failed', err);
+                            } finally {
+                              setSignatureUploading(false);
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
+                        />
+                        {receiptForm.signatureUrl && <img src={receiptForm.signatureUrl} alt="" className="h-10 mt-2" />}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Seal / stamp</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png"
+                          disabled={sealUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setSealUploading(true);
+                            try {
+                              const url = await uploadLogo(file, receiptForm.sealUrl);
+                              setReceiptForm({ ...receiptForm, sealUrl: url });
+                            } catch (err) {
+                              console.error('Seal upload failed', err);
+                            } finally {
+                              setSealUploading(false);
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:text-sm file:font-medium"
+                        />
+                        {receiptForm.sealUrl && <img src={receiptForm.sealUrl} alt="" className="h-14 w-14 object-contain mt-2" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tax / 80G */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">Tax / 80G receipt</h4>
+                      <ToggleSwitch checked={receiptForm.show80g} onChange={v => setReceiptForm({ ...receiptForm, show80g: v })} />
+                    </div>
+                    {receiptForm.show80g && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">80G registration no.</label>
+                            <input
+                              value={receiptForm.reg80g}
+                              onChange={e => setReceiptForm({ ...receiptForm, reg80g: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">PAN</label>
+                            <input
+                              value={receiptForm.pan}
+                              onChange={e => setReceiptForm({ ...receiptForm, pan: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Declaration text</label>
+                          <textarea
+                            rows={2}
+                            value={receiptForm.declarationText}
+                            onChange={e => setReceiptForm({ ...receiptForm, declarationText: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Receipt numbering */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Receipt numbering</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                      Continue your printed receipt-book serials. First contribution receipt will read {receiptForm.prefix}{String(receiptForm.startNumber).padStart(receiptForm.digits, '0')}.
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Prefix</label>
+                        <input
+                          value={receiptForm.prefix}
+                          onChange={e => setReceiptForm({ ...receiptForm, prefix: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start number</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={receiptForm.startNumber}
+                          onChange={e => setReceiptForm({ ...receiptForm, startNumber: parseInt(e.target.value, 10) || 1 })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Digits</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={receiptForm.digits}
+                          onChange={e => setReceiptForm({ ...receiptForm, digits: parseInt(e.target.value, 10) || 4 })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                      A collection with its own Bill Number already uses that instead, prefixed the same way.
+                    </p>
+                  </div>
+
+                  </>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={savingReceiptSettings}
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                  >
+                    <Save size={20} />
+                    {savingReceiptSettings ? 'Saving…' : t('common.save')}
+                  </button>
+                </form>
+
+                <div className="lg:w-[420px] shrink-0 mt-8 lg:mt-0 lg:ml-auto lg:sticky lg:top-24 lg:self-start">
+                  <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 uppercase tracking-wide font-medium">Live preview</p>
+                    <ReceiptCard data={receiptPreviewData} />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -830,30 +1410,27 @@ export function Settings({
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.username}</p>
                       </div>
                       {!user.isAdmin && (
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="relative shrink-0" ref={openUserMenuId === user.id ? userMenuRef : undefined}>
                           <button
-                            onClick={() => handleToggleUserActive(user)}
-                            title={user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
-                            className={`p-2 rounded-lg transition-colors ${
-                              user.isActive === false
-                                ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'
-                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
+                            onClick={() => setOpenUserMenuId(o => (o === user.id ? null : user.id))}
+                            className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                           >
-                            {user.isActive === false ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+                            <MoreVertical size={18} />
                           </button>
-                          <button
-                            onClick={() => handleEditUser(user)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {openUserMenuId === user.id && (
+                            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                              <button onClick={() => { setOpenUserMenuId(null); handleToggleUserActive(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                {user.isActive === false ? <CheckCircle2 size={14} className="text-green-600" /> : <Ban size={14} className="text-gray-500" />}
+                                {user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
+                              </button>
+                              <button onClick={() => { setOpenUserMenuId(null); handleEditUser(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Edit2 size={14} className="text-blue-600" /> Edit
+                              </button>
+                              <button onClick={() => { setOpenUserMenuId(null); handleDeleteUser(user.id); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -958,35 +1535,30 @@ export function Settings({
                             .join(', ')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {!user.isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => handleToggleUserActive(user)}
-                                  title={user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
-                                  className={`p-2 rounded-lg transition-colors ${
-                                    user.isActive === false
-                                      ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'
-                                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                  }`}
-                                >
-                                  {user.isActive === false ? <CheckCircle2 size={18} /> : <Ban size={18} />}
-                                </button>
-                                <button
-                                  onClick={() => handleEditUser(user)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                                >
-                                  <Edit2 size={18} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </>
-                            )}
-                          </div>
+                          {!user.isAdmin && (
+                            <div className="relative inline-block" ref={openUserMenuId === user.id ? userMenuRef : undefined}>
+                              <button
+                                onClick={() => setOpenUserMenuId(o => (o === user.id ? null : user.id))}
+                                className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                              >
+                                <MoreVertical size={18} />
+                              </button>
+                              {openUserMenuId === user.id && (
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                                  <button onClick={() => { setOpenUserMenuId(null); handleToggleUserActive(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    {user.isActive === false ? <CheckCircle2 size={14} className="text-green-600" /> : <Ban size={14} className="text-gray-500" />}
+                                    {user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
+                                  </button>
+                                  <button onClick={() => { setOpenUserMenuId(null); handleEditUser(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <Edit2 size={14} className="text-blue-600" /> Edit
+                                  </button>
+                                  <button onClick={() => { setOpenUserMenuId(null); handleDeleteUser(user.id); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <Trash2 size={14} /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Wallet, Landmark } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { ArrowLeft, Plus, Trash2, Wallet, Landmark, MoreVertical } from 'lucide-react';
 import { User } from '../App';
 import {
   ActivityModule, ActivityFieldChange, CashBankAdjustment, CashBankBucket, CashBankDirection,
@@ -28,6 +28,16 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CashBankAdjustment | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const reload = () => {
     setLoading(true);
@@ -107,7 +117,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="p-4 sm:p-6 pb-3 flex items-center justify-between gap-3">
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Manual adjustments</h3>
           <button
@@ -152,9 +162,21 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
                       {a.direction === 'add' ? '+' : '−'}₹{a.amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-3 text-right">
-                      <button onClick={() => setDeleteTarget(a)} className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors" aria-label="Delete">
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="relative inline-block" ref={openRowMenuId === a.id ? rowMenuRef : undefined}>
+                        <button
+                          onClick={() => setOpenRowMenuId(o => (o === a.id ? null : a.id))}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openRowMenuId === a.id && (
+                          <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                            <button onClick={() => { setOpenRowMenuId(null); setDeleteTarget(a); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, HandCoins, Gift, Megaphone, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, Calculator, MoreHorizontal, X, Package, FolderOpen,
+  FileBarChart, Calculator, MoreHorizontal, X, Package, FolderOpen, Trophy,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { EventSwitcher } from './EventSwitcher';
 import { EventInfo } from '../lib/db';
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'assets' | 'documents';
+type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'assets' | 'documents' | 'awards';
 
 interface SidebarProps {
   logo?: string;
@@ -86,6 +86,7 @@ export function Sidebar({
         { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
         { key: 'documents', icon: FolderOpen, label: t('nav.documents'), show: permissions?.documents !== false },
         { key: 'assets', icon: Package, label: t('nav.assets'), show: permissions?.assets !== false },
+        { key: 'awards', icon: Trophy, label: t('nav.awards'), show: true },
       ],
     },
     {

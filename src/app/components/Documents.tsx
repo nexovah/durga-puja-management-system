@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Plus, Trash2, Eye, X, FileUp, List, LayoutGrid, Info,
-  Shield, FlameKindling, Landmark, Users, Zap, FileSignature, LandPlot, FileText,
+  Shield, FlameKindling, Landmark, Users, Zap, FileSignature, LandPlot, FileText, MoreVertical,
 } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
@@ -174,7 +174,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         {loading ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('documents.loading')}</p>
         ) : docs.length === 0 ? (
@@ -259,16 +259,39 @@ function DocumentListRow({
           <span className="text-xs text-gray-400 dark:text-gray-500">{doc.uploadedByName} · {new Date(doc.uploadedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label={t('documents.view')}>
-          <Eye size={18} />
-        </a>
-        {canDelete && (
-          <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('documents.delete')}>
-            <Trash2 size={18} />
-          </button>
-        )}
-      </div>
+      <DocumentRowMenu doc={doc} canDelete={canDelete} onDelete={onDelete} />
+    </div>
+  );
+}
+
+function DocumentRowMenu({ doc, canDelete, onDelete }: { doc: AppDocument; canDelete: boolean; onDelete: () => void }) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button onClick={() => setOpen(o => !o)} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+        <MoreVertical size={18} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <Eye size={14} className="text-orange-500" /> {t('documents.view')}
+          </a>
+          {canDelete && (
+            <button onClick={() => { setOpen(false); onDelete(); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+              <Trash2 size={14} /> {t('documents.delete')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -284,7 +307,7 @@ function DocumentThumb({
   const { t } = useLanguage();
   const cat = categoryInfo;
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col">
       <a
         href={doc.fileUrl}
         target="_blank"
@@ -297,15 +320,8 @@ function DocumentThumb({
         <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate" title={doc.name}>{doc.name}</h4>
         <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${cat.bg} ${cat.fg}`}>{cat.label}</span>
         <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{doc.uploadedByName} · {new Date(doc.uploadedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-        <div className="flex items-center justify-end gap-3 pt-1">
-          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600" aria-label={t('documents.view')}>
-            <Eye size={16} />
-          </a>
-          {canDelete && (
-            <button onClick={onDelete} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400" aria-label={t('documents.delete')}>
-              <Trash2 size={16} />
-            </button>
-          )}
+        <div className="flex items-center justify-end pt-1">
+          <DocumentRowMenu doc={doc} canDelete={canDelete} onDelete={onDelete} />
         </div>
       </div>
     </div>

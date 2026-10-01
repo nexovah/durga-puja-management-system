@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -64,6 +64,16 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const [formData, setFormData] = useState(getEmptyForm);
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const rowMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
@@ -458,7 +468,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
 
       {/* Task List */}
       {viewMode === 'list' && (
-      <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <DataTableToolbar
           totalItems={pagination.totalItems}
           startIndex={pagination.startIndex}
@@ -554,42 +564,38 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                     )}
                     {tableCols.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="relative inline-block" ref={openRowMenuId === task.id ? rowMenuRef : undefined}>
                           <button
-                            onClick={() => setViewingTask(task)}
-                            title={t('tasks.view')}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            onClick={() => setOpenRowMenuId(o => (o === task.id ? null : task.id))}
+                            className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                           >
-                            <Eye size={18} />
+                            <MoreVertical size={18} />
                           </button>
-                          {editable && task.priority !== 'completed' && (
-                            <button
-                              onClick={() => handleMarkComplete(task)}
-                              title={t('tasks.markComplete')}
-                              className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors"
-                            >
-                              <CheckCircle2 size={18} />
-                            </button>
+                          {openRowMenuId === task.id && (
+                            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                              <button onClick={() => { setOpenRowMenuId(null); setViewingTask(task); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Eye size={14} className="text-gray-500" /> {t('tasks.view')}
+                              </button>
+                              {editable && task.priority !== 'completed' && (
+                                <button onClick={() => { setOpenRowMenuId(null); handleMarkComplete(task); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                  <CheckCircle2 size={14} className="text-green-600" /> {t('tasks.markComplete')}
+                                </button>
+                              )}
+                              {editable && (
+                                <button onClick={() => { setOpenRowMenuId(null); handleEdit(task); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                  <Edit2 size={14} className="text-blue-600" /> Edit
+                                </button>
+                              )}
+                              {deletable && (
+                                <button onClick={() => { setOpenRowMenuId(null); handleDelete(task.id); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                  <Trash2 size={14} /> Delete
+                                </button>
+                              )}
+                            </div>
                           )}
-                          {editable && (
-                            <button
-                              onClick={() => handleEdit(task)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                          )}
-                        {deletable && (
-                          <button
-                            onClick={() => handleDelete(task.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                        </div>
+                      </td>
+                    )}
                 </tr>
                 );
               })}
