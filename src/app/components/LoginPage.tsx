@@ -26,6 +26,82 @@ interface LoginPageProps {
   onModeChange?: (mode: 'login' | 'signup') => void;
 }
 
+// Renders (and self-manages) one instance of the Google Identity Services
+// button. Deliberately its own component, not inline markup sharing a ref
+// from the parent — AuthShowcaseLayout mounts its `formColumn` prop TWICE
+// simultaneously (a desktop-row copy and a mobile-stack copy, swapped via
+// CSS visibility, not actual mount/unmount), so a single shared ref in the
+// parent would only ever end up pointing at whichever copy happened to
+// mount last, leaving the other copy's container permanently empty. As a
+// real component, React gives each of those two simultaneous tree
+// positions its own independent instance (own ref, own "did I already
+// init" flag), so both copies render correctly.
+function GoogleAuthButtonSlot({
+  mode,
+  googleReady,
+  googleClientId,
+  onCredential,
+  errorMessage,
+  label,
+}: {
+  mode: 'login' | 'signup' | 'forgotPassword';
+  googleReady: boolean;
+  googleClientId: string;
+  onCredential: (response: { credential: string }) => void;
+  errorMessage: string;
+  label: string;
+}) {
+  const btnRef = useRef<HTMLDivElement | null>(null);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!googleReady || !btnRef.current) return;
+
+    if (!initializedRef.current) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: onCredential,
+        });
+        initializedRef.current = true;
+      } catch (err) {
+        // Surfaced so a misconfigured Client ID / unauthorized origin shows
+        // up in the console instead of the button just silently never
+        // appearing — check here first if the button isn't rendering.
+        console.error('Google Identity Services initialize() failed:', err);
+        return;
+      }
+    }
+
+    try {
+      btnRef.current.innerHTML = '';
+      // Fixed pixel widths overflow narrow phone screens (GIS doesn't
+      // auto-resize on its own) — size to this instance's own container,
+      // clamped to GIS's supported range (200–400px).
+      const containerWidth = Math.round(btnRef.current.getBoundingClientRect().width) || 320;
+      const width = Math.max(200, Math.min(400, containerWidth));
+      window.google.accounts.id.renderButton(btnRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width,
+        text: mode === 'signup' ? 'signup_with' : 'signin_with',
+      });
+    } catch (err) {
+      console.error('Google Identity Services renderButton() failed:', err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, googleReady]);
+
+  return (
+    <div className="mb-7">
+      <div ref={btnRef} className="w-full flex justify-center" />
+      {errorMessage && (
+        <p className="text-sm text-red-600 dark:text-red-400 mt-2 text-center">{errorMessage}</p>
+      )}
+    </div>
+  );
+}
+
 // Figma redesign (1920x1080) — decorative background rings/emblem/analytics
 // preview image are the 3 provided assets (src/assets/login/*), the right
 // column is still the same functional login form (same state, same
@@ -69,7 +145,6 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   // --- Google Identity Services button loading ---
   const [googleClientId, setGoogleClientId] = useState('');
   const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
-  const googleBtnRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     getGoogleClientIdRequest().then(id => setGoogleClientId(id)).catch(() => {});
@@ -113,45 +188,6 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   };
 
   const googleReady = googleScriptLoaded && !!googleClientId && !!window.google?.accounts?.id;
-  const googleInitializedRef = useRef(false);
-
-  useEffect(() => {
-    if (!googleReady || !googleBtnRef.current) return;
-
-    if (!googleInitializedRef.current) {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredential,
-        });
-        googleInitializedRef.current = true;
-      } catch (err) {
-        // Surfaced so a misconfigured Client ID / unauthorized origin shows
-        // up in the console instead of the button just silently never
-        // appearing — check here first if the button isn't rendering.
-        console.error('Google Identity Services initialize() failed:', err);
-        return;
-      }
-    }
-
-    try {
-      googleBtnRef.current.innerHTML = '';
-      // Fixed pixel widths overflow narrow phone screens (GIS doesn't
-      // auto-resize on its own) — size to the actual container instead,
-      // clamped to GIS's supported range (200–400px).
-      const containerWidth = Math.round(googleBtnRef.current.getBoundingClientRect().width) || 320;
-      const width = Math.max(200, Math.min(400, containerWidth));
-      window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: 'outline',
-        size: 'large',
-        width,
-        text: mode === 'signup' ? 'signup_with' : 'signin_with',
-      });
-    } catch (err) {
-      console.error('Google Identity Services renderButton() failed:', err);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, googleReady]);
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,26 +318,22 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   // and signup panels (only one is ever mounted at a time, so there's no
   // collision). A plain disabled-looking fallback shows while the script/
   // client id are still loading, so there's no broken flash.
+  // AuthShowcaseLayout renders `formColumn` TWICE simultaneously in the DOM
+  // (a desktop-row copy and a mobile-stack copy — CSS just hides whichever
+  // doesn't match the viewport, both actually exist at once). A single
+  // shared useRef here would only ever point at whichever copy mounted
+  // last, leaving the other copy's button permanently empty — this is an
+  // actual component so each of the two simultaneous copies gets its own
+  // independent ref/init state via React's normal per-position instancing.
   const googleButtonSlot = (
-    <div className="mb-7">
-      <div
-        ref={googleBtnRef}
-        className={googleReady ? 'w-full flex justify-center' : 'hidden'}
-      />
-      {!googleReady && (
-        <button
-          type="button"
-          disabled
-          className="w-full flex items-center justify-center gap-3 px-6 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 font-medium"
-        >
-          <GoogleIcon />
-          {mode === 'signup' ? t('login.signup.googleButton') : t('login.google')}
-        </button>
-      )}
-      {googleButtonError && (
-        <p className="text-sm text-red-600 dark:text-red-400 mt-2 text-center">{googleButtonError}</p>
-      )}
-    </div>
+    <GoogleAuthButtonSlot
+      mode={mode}
+      googleReady={googleReady}
+      googleClientId={googleClientId}
+      onCredential={handleGoogleCredential}
+      errorMessage={googleButtonError}
+      label={mode === 'signup' ? t('login.signup.googleButton') : t('login.google')}
+    />
   );
 
   const loginFormPanel = (
