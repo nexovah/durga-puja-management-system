@@ -5,6 +5,9 @@ dist/
 .env
 .env.local
 
+# Local instructions/session-memory/skill docs — never pushed.
+*.md
+
 # Contains DB migration SQL that has historically included live secrets
 # (JWT signing secret, bootstrap passwords) pasted directly into function
 # bodies. Never committed from here on — run these locally against
