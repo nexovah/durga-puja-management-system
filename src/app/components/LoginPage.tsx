@@ -4,7 +4,6 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest } from '../lib/superAdminDb';
 import { requestTenantPasswordResetRequest } from '../lib/db';
 import loginBackground from '../../assets/login/login-background.svg';
-import loginEmblem from '../../assets/login/login-emblem.png';
 
 // Static showcase numbers for the login card's mock stat grid — purely
 // decorative marketing content (not live data), mirrors the Figma example.
@@ -39,25 +38,27 @@ const SHOWCASE_SPLIT = [
 
 function ShowcaseSlideStats() {
   return (
-    <div className="w-full grid grid-cols-2 gap-3">
-      {SHOWCASE_TILES.map((tile) => {
-        const Icon = tile.icon;
-        return (
-          <div key={tile.label} className="bg-white rounded-2xl p-3 flex items-center gap-2.5 text-left">
-            <span className={`w-9 h-9 rounded-full ${tile.iconBg} flex items-center justify-center shrink-0`}>
-              <Icon size={16} className={tile.iconColor} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[11px] text-gray-500 truncate">{tile.label}</p>
-              <p className="text-base font-bold text-gray-900 leading-tight">{tile.value}</p>
-              <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                <span className={`w-1 h-3 rounded-full ${tile.tick}`} />
-                {tile.subLabel} <span className="font-semibold text-gray-700">{tile.subValue}</span>
-              </p>
+    <div className="w-full h-full flex flex-col justify-center">
+      <div className="w-full grid grid-cols-2 gap-3">
+        {SHOWCASE_TILES.map((tile) => {
+          const Icon = tile.icon;
+          return (
+            <div key={tile.label} className="bg-white rounded-2xl p-3 flex items-center gap-2.5 text-left">
+              <span className={`w-9 h-9 rounded-full ${tile.iconBg} flex items-center justify-center shrink-0`}>
+                <Icon size={16} className={tile.iconColor} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] text-gray-500 truncate">{tile.label}</p>
+                <p className="text-base font-bold text-gray-900 leading-tight">{tile.value}</p>
+                <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
+                  <span className={`w-1 h-3 rounded-full ${tile.tick}`} />
+                  {tile.subLabel} <span className="font-semibold text-gray-700">{tile.subValue}</span>
+                </p>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -208,12 +209,23 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   }, []);
 
   const [showcaseSlide, setShowcaseSlide] = useState(0);
+  const [showcaseFaded, setShowcaseFaded] = useState(false);
+
+  const goToShowcaseSlide = (next: number) => {
+    setShowcaseFaded(true);
+    setTimeout(() => {
+      setShowcaseSlide(next);
+      setShowcaseFaded(false);
+    }, 250);
+  };
+
   useEffect(() => {
     const id = setInterval(() => {
-      setShowcaseSlide(i => (i + 1) % SHOWCASE_SLIDES.length);
+      goToShowcaseSlide((showcaseSlide + 1) % SHOWCASE_SLIDES.length);
     }, 4000);
     return () => clearInterval(id);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showcaseSlide]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,7 +270,50 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
 
   const inputClass = 'w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 
-  const formColumn = (
+  const forgotPasswordPanel = (
+    <div className="w-full max-w-md">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">Reset your password</h1>
+      <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
+        Enter your username — if it has an email on file, we'll send a reset link there.
+      </p>
+
+      {forgotMessage ? (
+        <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
+          {forgotMessage}
+        </div>
+      ) : (
+        <form onSubmit={handleForgotSubmit} className="space-y-5">
+          <div>
+            <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Username</label>
+            <input
+              value={forgotUsername}
+              onChange={e => setForgotUsername(e.target.value)}
+              placeholder={t('login.userIdPlaceholder')}
+              autoFocus
+              className={inputClass}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={forgotSubmitting}
+            className="w-full bg-orange-600 text-white py-4 rounded-2xl font-medium text-lg hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+          >
+            {forgotSubmitting ? 'Sending…' : 'Send reset link'}
+          </button>
+        </form>
+      )}
+
+      <button
+        type="button"
+        onClick={() => { setShowForgotPassword(false); setForgotMessage(''); }}
+        className="w-full mt-6 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-center"
+      >
+        Back to login
+      </button>
+    </div>
+  );
+
+  const loginFormPanel = (
     <div className="w-full max-w-md">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {t('login.join.title')}
@@ -274,6 +329,8 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <GoogleIcon />
         {t('login.google')}
       </button>
+
+      <hr className="border-t border-gray-200 dark:border-gray-700 mt-[30px] mb-7" />
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
@@ -341,8 +398,49 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
     </div>
   );
 
+  // Same column, same position as the login fields — the reset-password
+  // panel swaps in place of the form instead of opening as a modal.
+  const formColumn = showForgotPassword ? forgotPasswordPanel : loginFormPanel;
+
+  // Shared card body — used by the desktop absolute-positioned card
+  // (overlapping emblem, fixed px size) and the mobile stacked card
+  // (plain block, no emblem overlap, rendered after the login form).
+  const cardBody = (
+    <>
+      <h2 className="text-2xl font-semibold text-white leading-snug mt-[2%] lg:mt-[2%]">
+        {t('login.showcase.heading1')}<br />{t('login.showcase.heading2')}
+      </h2>
+
+      <div className="w-full mt-6 lg:mt-[7%] h-[400px] overflow-hidden flex flex-col">
+        <div className={`flex-1 min-h-0 transition-opacity duration-[250ms] ease-in-out ${showcaseFaded ? 'opacity-0' : 'opacity-100'}`}>
+          {(() => {
+            const Slide = SHOWCASE_SLIDES[showcaseSlide];
+            return <Slide />;
+          })()}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 mt-6 lg:mt-[6%]">
+        {SHOWCASE_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => goToShowcaseSlide(i)}
+            aria-label={`Showcase slide ${i + 1}`}
+            className={`h-1 rounded-full transition-all ${i === showcaseSlide ? 'w-5 bg-orange-600' : 'w-5 bg-white/30'}`}
+          />
+        ))}
+      </div>
+
+      <h3 className="text-white font-semibold mt-4 lg:mt-[4%] text-left w-full">{t('login.showcase.helpTitle')}</h3>
+      <p className="text-sm text-gray-400 mt-2 leading-relaxed text-left w-full">
+        {t('login.showcase.helpDesc')}
+      </p>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-hidden flex items-center justify-center p-4 lg:p-10">
+    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-x-hidden flex items-center justify-center p-4 lg:p-10">
       {/* Decorative background rings — object-cover so it always fills the
           full viewport (like the Figma source's 1920x1080 frame), at any
           window size, instead of a fixed-width chunk. */}
@@ -353,89 +451,35 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         className="hidden lg:block fixed inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none"
       />
 
-      <div className="relative w-full max-w-7xl flex items-center lg:justify-start justify-center gap-16 xl:gap-24 lg:pl-[6vw]">
-        {/* Showcase card — desktop only, login form keeps top priority on any smaller screen. */}
-        <div className="hidden lg:block relative w-[520px] h-[740px] shrink-0 lg:-translate-x-[25%]">
-          {/* Emblem sits behind/outside the card, overlapping its top-left corner — must be a sibling, not a child, since the card scrolls (overflow-y-auto) and would clip it. */}
-          <img
-            src={loginEmblem}
-            alt=""
-            className="absolute -top-[243px] -left-[365px] w-[524px] h-[524px] object-contain pointer-events-none select-none z-0"
-          />
-          <div className="relative z-10 flex h-full w-full flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-10 overflow-y-auto">
-          <h2 className="text-2xl font-semibold text-white leading-snug mt-[5%]">
-            {t('login.showcase.heading1')}<br />{t('login.showcase.heading2')}
-          </h2>
-
-          <div className="w-full mt-[12%] h-[400px] overflow-hidden flex flex-col">
-            <div className="flex-1 min-h-0">
-              {(() => {
-                const Slide = SHOWCASE_SLIDES[showcaseSlide];
-                return <Slide />;
-              })()}
+      <div className="relative w-full max-w-7xl flex flex-col items-center">
+        {/*
+          Desktop/tablet row (≥1024px) — card + emblem sit to the left of the
+          form at their full Figma-matched size on large screens (≥1536px,
+          "2xl"), and scale down as one unit (`origin-top-left`) on narrower
+          desktop/tablet widths (1024–1536px) so nothing gets cropped or
+          overlaps the form instead of reflowing the whole design.
+        */}
+        <div className="hidden lg:flex w-full items-center justify-center px-[6vw] gap-[6vw]">
+          <div className="relative w-[414px] h-[640px] min-[1400px]:w-[440px] min-[1400px]:h-[700px] 2xl:w-[520px] 2xl:h-[740px] shrink-0 self-start">
+            <div className="relative z-10 flex h-full w-full flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-10 overflow-y-auto">
+              {cardBody}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 mt-[6%]">
-            {SHOWCASE_SLIDES.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setShowcaseSlide(i)}
-                aria-label={`Showcase slide ${i + 1}`}
-                className={`h-1 rounded-full transition-all ${i === showcaseSlide ? 'w-5 bg-orange-600' : 'w-5 bg-white/30'}`}
-              />
-            ))}
-          </div>
-
-          <h3 className="text-white font-semibold mt-[4%] text-left w-full">{t('login.showcase.helpTitle')}</h3>
-          <p className="text-sm text-gray-400 mt-2 leading-relaxed text-left w-full">
-            {t('login.showcase.helpDesc')}
-          </p>
-          </div>
+          {formColumn}
         </div>
 
-        {formColumn}
+        {/* Mobile/narrow layout (<1024px) — background graphics and emblem
+            vanish entirely; just the login form, with the black showcase
+            card stacked below it (not beside it). */}
+        <div className="lg:hidden w-full flex flex-col items-center gap-10">
+          {formColumn}
+          <div className="w-full max-w-md flex flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-8">
+            {cardBody}
+          </div>
+        </div>
       </div>
 
-      {showForgotPassword && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForgotPassword(false)}>
-          <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Reset your password</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Enter your username — if it has an email on file, we'll send a reset link there.
-            </p>
-            {forgotMessage ? (
-              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
-                {forgotMessage}
-              </div>
-            ) : (
-              <form onSubmit={handleForgotSubmit} className="space-y-4">
-                <input
-                  value={forgotUsername}
-                  onChange={e => setForgotUsername(e.target.value)}
-                  placeholder="Username"
-                  autoFocus
-                  className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={forgotSubmitting}
-                  className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors disabled:opacity-60"
-                >
-                  {forgotSubmitting ? 'Sending…' : 'Send reset link'}
-                </button>
-              </form>
-            )}
-            <button
-              onClick={() => setShowForgotPassword(false)}
-              className="w-full mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

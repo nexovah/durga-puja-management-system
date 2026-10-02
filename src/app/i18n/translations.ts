@@ -1050,12 +1050,12 @@ export const translations = {
     'login.tagline2': '— all from one powerful Durga CRM platform.',
     'login.join.title': 'Join the Future-Driven Puja Community',
     'login.join.subtitle': 'Connect and grow your Committee to next level with Durga CRM advance reports, analytics, and government benefit guidance.',
-    'login.google': 'Sign up with Google',
+    'login.google': 'Sign in with Google',
     'login.alreadyHaveAccount': 'Do not have an account?',
     'login.signIn': 'Sign Up',
     'login.showcase.heading1': 'One Platform. Every Puja.',
     'login.showcase.heading2': 'Everything Organized.',
-    'login.showcase.helpTitle': 'Let us help you add data, share knowledge',
+    'login.showcase.helpTitle': 'One CRM for Every Puja & Community Festival',
     'login.showcase.helpDesc': 'Everything your Puja committee needs, all in one place — chanda collection, donations, sponsorship, expenses, loans, documents, assets, awards, tasks, and reports, with complete clarity.',
 
     // Global Search
@@ -2112,12 +2112,12 @@ export const translations = {
     'login.tagline2': '— সব একটি শক্তিশালী দুর্গা সিআরএম প্ল্যাটফর্ম থেকে।',
     'login.join.title': 'ফিউচার-ড্রিভেন পূজা কমিউনিটিতে যোগ দিন',
     'login.join.subtitle': 'দুর্গা সিআরএম-এর অ্যাডভান্স রিপোর্ট, অ্যানালিটিক্স এবং সরকারি সুবিধার নির্দেশনা নিয়ে আপনার কমিটিকে পরবর্তী স্তরে নিয়ে যান।',
-    'login.google': 'গুগল দিয়ে সাইন আপ করুন',
+    'login.google': 'গুগল দিয়ে সাইন ইন করুন',
     'login.alreadyHaveAccount': 'অ্যাকাউন্ট নেই?',
     'login.signIn': 'সাইন আপ',
     'login.showcase.heading1': 'এক প্ল্যাটফর্ম। প্রতিটি পূজা।',
     'login.showcase.heading2': 'সবকিছু সংগঠিত।',
-    'login.showcase.helpTitle': 'আমরা আপনাকে ডেটা যোগ করতে ও জ্ঞান ভাগ করতে সাহায্য করি',
+    'login.showcase.helpTitle': 'প্রতিটি পূজা ও কমিউনিটি উৎসবের জন্য একক CRM',
     'login.showcase.helpDesc': 'আপনার পূজা কমিটির যা কিছু দরকার, সব এক জায়গায় — চাঁদা সংগ্রহ, অনুদান, স্পনসরশিপ, খরচ, ঋণ, নথি, সম্পদ, পুরস্কার, কাজ ও রিপোর্ট, সম্পূর্ণ স্বচ্ছতার সাথে।',
 
     // Global Search
@@ -3174,12 +3174,12 @@ export const translations = {
     'login.tagline2': '— सब एक शक्तिशाली दुर्गा सीआरएम प्लेटफ़ॉर्म से।',
     'login.join.title': 'फ्यूचर-ड्रिवन पूजा समुदाय में शामिल हों',
     'login.join.subtitle': 'दुर्गा सीआरएम की एडवांस रिपोर्ट, एनालिटिक्स और सरकारी लाभ मार्गदर्शन के साथ अपनी समिति को अगले स्तर तक ले जाएं।',
-    'login.google': 'गूगल से साइन अप करें',
+    'login.google': 'गूगल से साइन इन करें',
     'login.alreadyHaveAccount': 'खाता नहीं है?',
     'login.signIn': 'साइन अप',
     'login.showcase.heading1': 'एक प्लेटफ़ॉर्म। हर पूजा।',
     'login.showcase.heading2': 'सब कुछ व्यवस्थित।',
-    'login.showcase.helpTitle': 'हम आपको डेटा जोड़ने और जानकारी साझा करने में मदद करेंगे',
+    'login.showcase.helpTitle': 'हर पूजा और सामुदायिक उत्सव के लिए एक CRM',
     'login.showcase.helpDesc': 'आपकी पूजा समिति को जो कुछ भी चाहिए, सब एक जगह — चंदा संग्रह, दान, प्रायोजन, खर्च, ऋण, दस्तावेज़, संपत्ति, पुरस्कार, कार्य और रिपोर्ट, पूरी स्पष्टता के साथ।',
 
     // Global Search
