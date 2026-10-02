@@ -499,6 +499,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
           {...moduleProps}
           companyName={committeeAssociation}
           companyLogo={committeeLogo}
+          eventLabel={activeEventLabel}
         />
       </div>
     </div>

@@ -51,6 +51,7 @@ export interface ReportModulePageProps<T extends { id: string }> {
   computeWidgets: (rows: T[]) => ReportWidget[];
   companyName: string;
   companyLogo: string;
+  eventLabel?: string;
   // Advanced-filter field set, same TableSearchBar every other list page
   // (Chanda/Donation/Expenses/Loans/Members) already uses — which fields
   // apply depends entirely on that module's own data shape.
@@ -72,6 +73,7 @@ export interface ReportModulePageProps<T extends { id: string }> {
 
 export function ReportModulePage<T extends { id: string }>({
   tableId, pageTitle, data, dateOf, searchOf, columns, chartType, metricOf, breakdownOf, computeWidgets, companyName, companyLogo,
+  eventLabel,
   amountOf, statusOf, statusOptions, paidMethodOf, paidMethodOptions, billVoucherOf, billVoucherLabel,
   phoneOf, inKindOf, inKindOptions, inKindLabel, designationOf, designationOptions, designationLabel,
 }: ReportModulePageProps<T>) {
@@ -221,6 +223,7 @@ export function ReportModulePage<T extends { id: string }>({
     const rows = exportRows();
     downloadTableCSV(`${pageTitle.toLowerCase().replace(/\s+/g, '-')}-report.csv`, {
       companyName,
+      eventLabel,
       summary: computeWidgets(rows),
       headers: columns.map(c => c.label),
       rows: rows.map(row => columns.map(c => c.render(row))),
@@ -434,6 +437,7 @@ export function ReportModulePage<T extends { id: string }>({
           companyName={companyName}
           companyLogo={companyLogo}
           title={pageTitle}
+          eventLabel={eventLabel}
           rangeLabel={printData.rangeLabel}
           summary={printData.summary}
           columns={columns.map(c => ({ label: c.label, align: c.align }))}

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { EventInfo, createEventRequest, switchActiveEventRequest } from '../lib/db';
+import { CustomSelect } from './CustomSelect';
+import { formatFinancialYear } from './EventSwitcher';
 
 const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺', '🪘'];
 const currentYear = new Date().getFullYear();
@@ -97,16 +99,13 @@ export function CreateFirstEventScreen({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
-            <select
-              value={year}
-              onChange={e => setYear(Number(e.target.value))}
-              className="w-full mt-1 px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
-            >
-              {YEAR_OPTIONS.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year *</label>
+            <CustomSelect
+              value={String(year)}
+              onChange={v => setYear(Number(v))}
+              options={YEAR_OPTIONS.map(y => ({ value: String(y), label: formatFinancialYear(y) }))}
+              className="mt-1"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

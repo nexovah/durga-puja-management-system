@@ -12,6 +12,12 @@ import { CustomSelect } from './CustomSelect';
 const currentYear = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
+export function formatFinancialYear(year: number | string): string {
+  const y = typeof year === 'string' ? parseInt(year, 10) : year;
+  if (!y || isNaN(y)) return String(year || '');
+  return `FY ${y}-${y + 1}`;
+}
+
 // Curated Indian-festival/puja emoji set — a static picker, not a general
 // emoji library, per the plan. Kept to 11 + a "more" tile so the grid
 // stays at exactly 2 rows; MORE_EVENT_EMOJIS holds the expanded set shown
@@ -94,7 +100,7 @@ export function EventSwitcher({
           <>
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                {activeEvent ? `${activeEvent.name} ${activeEvent.year}` : 'No active Puja'}
+                {activeEvent ? `${activeEvent.name} ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
               </p>
             </div>
             {isAdmin && <ChevronsUpDown size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />}
@@ -169,7 +175,7 @@ function EventPopover({
                       {event.emoji || '🪔'}
                     </span>
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                      {event.name} {event.year}
+                      {event.name} {formatFinancialYear(event.year)}
                     </span>
                   </button>
                   <button
@@ -361,13 +367,13 @@ function EventForm({
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Year *</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year *</label>
             {yearLocked && (
               <button
                 type="button"
                 onClick={() => setUnlockTarget('year')}
                 className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
-                aria-label="Unlock year"
+                aria-label="Unlock financial year"
               >
                 <Pencil size={13} />
               </button>
@@ -377,7 +383,7 @@ function EventForm({
             value={String(year)}
             disabled={yearLocked}
             onChange={v => setYear(Number(v))}
-            options={YEAR_OPTIONS.map(y => ({ value: String(y), label: String(y) }))}
+            options={YEAR_OPTIONS.map(y => ({ value: String(y), label: formatFinancialYear(y) }))}
             className="mt-1"
           />
         </div>
@@ -482,7 +488,7 @@ function EventForm({
               onChange={v => handleConnectChange(v)}
               options={[
                 { value: '', label: 'No, start fresh' },
-                ...otherEvents.map(e => ({ value: e.id, label: `${e.name} ${e.year}` })),
+                ...otherEvents.map(e => ({ value: e.id, label: `${e.name} ${formatFinancialYear(e.year)}` })),
               ]}
               className="mt-1"
             />
@@ -522,10 +528,10 @@ function EventForm({
 
       <SuperAdminConfirmModal
         open={unlockTarget !== null}
-        title={unlockTarget === 'year' ? 'Change the Year?' : 'Change the Opening Balance?'}
+        title={unlockTarget === 'year' ? 'Change the Financial Year?' : 'Change the Opening Balance?'}
         message={
           unlockTarget === 'year'
-            ? 'This event\'s year is locked after creation to avoid an accidental mistake. Confirm to unlock it for editing.'
+            ? 'This event\'s financial year is locked after creation to avoid an accidental mistake. Confirm to unlock it for editing.'
             : 'The opening Cash in Hand / Money in Bank is locked after being set, since transactions may already be recorded against it. Confirm to unlock both fields for editing.'
         }
         confirmLabel="Unlock"

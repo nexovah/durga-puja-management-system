@@ -78,6 +78,7 @@ import {
   fromCommitteeRow,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
+import { formatFinancialYear } from './components/EventSwitcher';
 
 export interface User {
   id: string;
@@ -1386,7 +1387,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             committeeLogo={committeeInfo.logo}
             activeEventLabel={(() => {
               const e = events.find(ev => ev.id === activeEventId);
-              return e ? `${e.name} – ${e.year}` : '';
+              return e ? `${e.name} – ${formatFinancialYear(e.year)}` : '';
             })()}
             activeEvent={events.find(e => e.id === activeEventId) || null}
             onRefreshData={refreshCoreData}
@@ -1439,7 +1440,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={currentUser?.canDelete !== false}
             eventLabel={(() => {
               const e = events.find(ev => ev.id === activeEventId);
-              return e ? `${e.name} ${e.year}` : '';
+              return e ? `${e.name} ${formatFinancialYear(e.year)}` : '';
             })()}
             onLog={handleLog}
           />
