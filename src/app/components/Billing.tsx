@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Receipt } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ReceiptIndianRupee } from 'lucide-react';
 import {
   SubscriptionPlan,
   BillingHistoryItem,
@@ -285,7 +285,7 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
           <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                <Receipt className="w-4 h-4" /> {t('billing.history.title')}
+                <ReceiptIndianRupee className="w-4 h-4" /> {t('billing.history.title')}
               </h4>
             </div>
             {history.length === 0 ? (

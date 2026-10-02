@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Users, DollarSign, Gift, Megaphone, TrendingDown } from 'lucide-react';
+import { Search, X, Users, HandCoins, Gift, Megaphone, TrendingDown } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, User } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -175,7 +175,7 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 )}
 
                 {results.chanda.length > 0 && (
-                  <ResultSection icon={<DollarSign size={16} />} title={t('nav.chanda')} onSeeAll={() => handleSelect('chanda')}>
+                  <ResultSection icon={<HandCoins size={16} />} title={t('nav.chanda')} onSeeAll={() => handleSelect('chanda')}>
                     {results.chanda.map((c) => (
                       <button key={c.id} onClick={() => handleSelect('chanda')} className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">

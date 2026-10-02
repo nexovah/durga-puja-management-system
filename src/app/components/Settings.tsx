@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, Receipt, MoreVertical, Compass } from 'lucide-react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, ReceiptIndianRupee, MoreVertical, Compass, CreditCard } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
 import { uploadLogo, generatePassword, DeveloperInfo, ReceiptSettings, updateReceiptSettingsRequest } from '../lib/db';
 import { NAVIGATION_GROUPS } from '../lib/navigationConfig';
+import { Billing } from './Billing';
 import { FormModal, FormModalCancelButton } from './FormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -28,11 +29,12 @@ interface SettingsProps {
   onChangeOwnPassword: (userId: string, currentPassword: string, newPassword: string) => Promise<boolean>;
   initialTab?: SettingsTab;
   tabRequestId?: number; // bumped by the caller each time it wants to force-select initialTab, even if it's the same tab as before
+  onSubscriptionExtended?: () => void | Promise<void>;
 }
 
-export type SettingsTab = 'committee' | 'receipts' | 'navigation' | 'password' | 'users' | 'developer' | 'language';
+export type SettingsTab = 'committee' | 'receipts' | 'navigation' | 'billing' | 'password' | 'users' | 'developer' | 'language';
 
-const VALID_SETTINGS_TABS: SettingsTab[] = ['committee', 'receipts', 'navigation', 'password', 'users', 'developer', 'language'];
+const VALID_SETTINGS_TABS: SettingsTab[] = ['committee', 'receipts', 'navigation', 'billing', 'password', 'users', 'developer', 'language'];
 
 // /settings/<tab> — refreshing or sharing a link lands back on that tab
 // instead of always resetting to 'committee'. Mirrors SuperAdminSettings.tsx's
@@ -79,6 +81,7 @@ export function Settings({
   onChangeOwnPassword,
   initialTab,
   tabRequestId,
+  onSubscriptionExtended,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
   const [activeTab, setActiveTabState] = useState<SettingsTab>(() => getSettingsTabFromPath() || initialTab || 'committee');
@@ -120,6 +123,7 @@ export function Settings({
   const [receiptForm, setReceiptForm] = useState(receiptSettings);
   const [openUserMenuId, setOpenUserMenuId] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setCommitteeForm(committeeInfo);
@@ -468,7 +472,7 @@ export function Settings({
                   : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
-              <Receipt size={18} />
+              <ReceiptIndianRupee size={18} />
               {t('settings.tab.receipts')}
             </button>
             <button
@@ -482,6 +486,19 @@ export function Settings({
               <Compass size={18} />
               {t('settings.tab.navigation')}
             </button>
+            {currentUser?.isAdmin && (
+              <button
+                onClick={() => setActiveTab('billing')}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'billing'
+                    ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                <CreditCard size={18} />
+                {t('settings.tab.billing')}
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('password')}
               className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
@@ -538,11 +555,13 @@ export function Settings({
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.committee')}</h3>
               <form onSubmit={handleCommitteeSubmit} className="space-y-4">
               <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.uploadLogo')}</label>
+              <div className="pb-4 border-b border-gray-100 dark:border-gray-800">
                 <input
+                  ref={logoInputRef}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  disabled={logoUploading || currentUser?.canEdit === false}
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -556,35 +575,78 @@ export function Settings({
                       setTimeout(() => setMessage(''), 3000);
                     } finally {
                       setLogoUploading(false);
+                      if (logoInputRef.current) logoInputRef.current.value = '';
                     }
                   }}
-                  disabled={logoUploading}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:opacity-60"
                 />
-                {logoUploading && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.uploadingLogo')}</p>}
-                {committeeForm.logo && (
-                  <div className="mt-3 flex items-center gap-4">
-                    <div className="w-20 h-20 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-                      {committeeForm.logo.startsWith('data:') || committeeForm.logo.startsWith('http') ? (
+
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                  {t('settings.uploadLogo')}
+                </label>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+                  {/* Left: Avatar/Logo preview */}
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden flex items-center justify-center shrink-0 shadow-xs">
+                    {committeeForm.logo ? (
+                      committeeForm.logo.startsWith('data:') || committeeForm.logo.startsWith('http') ? (
                         <img
                           src={committeeForm.logo}
-                          alt="Logo Preview"
+                          alt="Committee Logo"
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-4xl">{committeeForm.logo}</span>
+                        <span className="text-4xl leading-none">{committeeForm.logo}</span>
+                      )
+                    ) : (
+                      <Building2 className="text-gray-400 dark:text-gray-500" size={36} />
+                    )}
+                    {logoUploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+                        <RefreshCw size={22} className="text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Actions and helper text */}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={logoUploading || currentUser?.canEdit === false}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {logoUploading ? (
+                          <>
+                            <RefreshCw size={15} className="animate-spin" />
+                            <span>{t('settings.uploadingLogo')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={16} />
+                            <span>{committeeForm.logo ? t('settings.uploadNewLogo') : t('settings.uploadNewLogo')}</span>
+                          </>
+                        )}
+                      </button>
+
+                      {committeeForm.logo && (
+                        <button
+                          type="button"
+                          onClick={() => setCommitteeForm({ ...committeeForm, logo: '' })}
+                          disabled={logoUploading || currentUser?.canEdit === false}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          <Trash2 size={15} className="text-gray-500 dark:text-gray-400" />
+                          <span>{t('settings.removeLogo')}</span>
+                        </button>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setCommitteeForm({ ...committeeForm, logo: '' })}
-                      className="text-sm text-red-600 hover:text-red-700"
-                    >
-                      {t('settings.removeLogo')}
-                    </button>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('settings.uploadLogoHint')}
+                    </p>
                   </div>
-                )}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settings.uploadLogoHint')}</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -739,12 +801,14 @@ export function Settings({
                   {/* Receipt style */}
                   <div>
                     <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Receipt style</h4>
-                    <div className="inline-flex p-1 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <div className="inline-flex p-1 rounded-lg bg-orange-50/80 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40">
                       <button
                         type="button"
                         onClick={() => setReceiptForm({ ...receiptForm, receiptStyle: 'designed' })}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          receiptForm.receiptStyle === 'designed' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'text-gray-600 dark:text-gray-400'
+                        className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                          receiptForm.receiptStyle === 'designed'
+                            ? 'bg-orange-600 text-white shadow-xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400'
                         }`}
                       >
                         Design a receipt
@@ -752,8 +816,10 @@ export function Settings({
                       <button
                         type="button"
                         onClick={() => setReceiptForm({ ...receiptForm, receiptStyle: 'printed' })}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          receiptForm.receiptStyle === 'printed' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'text-gray-600 dark:text-gray-400'
+                        className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                          receiptForm.receiptStyle === 'printed'
+                            ? 'bg-orange-600 text-white shadow-xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400'
                         }`}
                       >
                         Use my printed receipt
@@ -1225,17 +1291,16 @@ export function Settings({
                     </p>
                   </div>
 
-                  </>
-                  )}
-
                   <button
                     type="submit"
                     disabled={savingReceiptSettings}
-                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors cursor-pointer"
                   >
                     <Save size={20} />
                     {savingReceiptSettings ? 'Saving…' : t('common.save')}
                   </button>
+                  </>
+                  )}
                 </form>
 
                 <div className="lg:w-[420px] shrink-0 mt-8 lg:mt-0 lg:ml-auto lg:sticky lg:top-24 lg:self-start">
@@ -1361,6 +1426,17 @@ export function Settings({
                 <Compass size={16} className="shrink-0 mt-0.5 text-orange-600" />
                 <span>{t('settings.nav.settingsAlwaysAccessible')}</span>
               </div>
+            </div>
+          )}
+
+          {/* Billing Tab */}
+          {activeTab === 'billing' && currentUser?.isAdmin && (
+            <div className="space-y-6">
+              <Billing
+                currentUser={currentUser}
+                committeeName={committeeInfo.association || committeeInfo.name}
+                onSubscriptionExtended={onSubscriptionExtended || (() => {})}
+              />
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale, Trophy } from 'lucide-react';
+import { HandCoins, Gift, Megaphone, TrendingDown, Wallet, Users, Landmark, ClipboardList, Scale, Trophy } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Member, Loan, Estimation, CommitteeInfo,
   getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount,
@@ -126,7 +126,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     { key: 'chanda', label: t('report.nav.chanda'), icon: HandCoins },
     { key: 'donation', label: t('report.nav.donation'), icon: Gift },
     { key: 'ads', label: t('report.nav.ads'), icon: Megaphone },
-    { key: 'expenses', label: t('report.nav.expenses'), icon: Receipt },
+    { key: 'expenses', label: t('report.nav.expenses'), icon: TrendingDown },
     { key: 'vendor', label: t('report.nav.vendor'), icon: Wallet },
     { key: 'member', label: t('report.nav.member'), icon: Users },
     { key: 'loan', label: t('report.nav.loan'), icon: Landmark },

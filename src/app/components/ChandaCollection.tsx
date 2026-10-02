@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, Receipt, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, ReceiptIndianRupee, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount } from '../App';
@@ -1197,7 +1197,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                                   onClick={() => { setOpenRowMenuId(null); setReceiptTarget(chanda); }}
                                   className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                                 >
-                                  <Receipt size={15} className="text-orange-600" />
+                                  <ReceiptIndianRupee size={15} className="text-orange-600" />
                                   View Receipt
                                 </button>
                               )}

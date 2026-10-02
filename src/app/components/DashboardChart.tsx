@@ -157,6 +157,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
   const { start, end } = useMemo(() => getRangeBounds(range, earliestDate), [range, earliestDate]);
   const totalIncome = sumInRange(incomeRecords, start, end);
   const totalExpense = sumInRange(expenseRecords, start, end);
+  const incomeExpensePct = (totalIncome + totalExpense) > 0 ? (totalIncome / (totalIncome + totalExpense)) * 100 : 0;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
@@ -241,17 +242,27 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
         </ResponsiveContainer>
       </div>
 
-      {/* Custom legend — evenly spaced, label+value grouped close together */}
-      <div className="flex justify-evenly mt-3 text-xs">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1 h-4 rounded shrink-0" style={{ background: INCOME_COLOR }} />
-          <span className="text-gray-600 dark:text-gray-400">{t('dashboard.chart.income')}</span>
-          <span className="text-gray-800 dark:text-gray-200 font-semibold ml-1">₹{totalIncome.toLocaleString()}</span>
+      {/* Legend — same row style as every other Dashboard widget (Cash vs
+          Bank, category donuts): colored tick + label on the left, bold
+          value + light-gray % on the right. */}
+      <div className="mt-4 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-1 h-4 rounded shrink-0" style={{ background: INCOME_COLOR }} />
+            <span className="text-gray-600 dark:text-gray-400 truncate">{t('dashboard.chart.income')}</span>
+          </div>
+          <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0 ml-2">
+            ₹{totalIncome.toLocaleString()} <span className="text-gray-400 dark:text-gray-500 font-normal">({incomeExpensePct.toFixed(0)}%)</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1 h-4 rounded shrink-0" style={{ background: EXPENSE_COLOR }} />
-          <span className="text-gray-600 dark:text-gray-400">{t('dashboard.chart.expenses')}</span>
-          <span className="text-gray-800 dark:text-gray-200 font-semibold ml-1">₹{totalExpense.toLocaleString()}</span>
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-1 h-4 rounded shrink-0" style={{ background: EXPENSE_COLOR }} />
+            <span className="text-gray-600 dark:text-gray-400 truncate">{t('dashboard.chart.expenses')}</span>
+          </div>
+          <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0 ml-2">
+            ₹{totalExpense.toLocaleString()} <span className="text-gray-400 dark:text-gray-500 font-normal">({(100 - incomeExpensePct).toFixed(0)}%)</span>
+          </span>
         </div>
       </div>
     </div>

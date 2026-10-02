@@ -1260,7 +1260,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               logo={committeeInfo.logo}
               onLogout={handleLogout}
               onGoToSettingsTab={goToSettingsTab}
-              onGoToBilling={() => setCurrentPage('billing')}
+              onGoToBilling={() => goToSettingsTab('billing')}
               showSettings={!!currentUser?.permissions.settings}
             />
           </div>
@@ -1424,6 +1424,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onChangeOwnPassword={handleChangeOwnPassword}
             initialTab={settingsTab}
             tabRequestId={settingsTabRequestId}
+            onSubscriptionExtended={handleSubscriptionExtended}
           />
         )}
         {currentPage === 'activityLog' && (

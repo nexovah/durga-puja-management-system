@@ -332,11 +332,11 @@ export function ReportModulePage<T extends { id: string }>({
             )}
           </ResponsiveContainer>
           {chartType === 'donut' && (chartData as { name: string; value: number }[]).length > 0 && (
-            <div className="flex flex-wrap gap-3 mt-4 justify-center">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 justify-center">
               {(chartData as { name: string; value: number }[]).map((d, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  {d.name}
+                  <span className="w-1 h-3.5 rounded shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                  <span>{d.name}</span>
                 </div>
               ))}
             </div>
