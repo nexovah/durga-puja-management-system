@@ -367,7 +367,7 @@ function AwardFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Prize money (₹) <span className="text-orange-500 font-normal">(0 for a trophy only)</span>
+                Prize money (₹)
               </label>
               <input
                 type="number"
