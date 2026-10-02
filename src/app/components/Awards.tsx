@@ -2,19 +2,32 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertical, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
+import { CustomSelect } from './CustomSelect';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import {
-  Award, AwardInput, AwardRank, listAwardsRequest, createAwardRequest, updateAwardRequest, deleteAwardRequest,
+  Award, AwardInput, AwardRank, createAwardRequest, updateAwardRequest, deleteAwardRequest,
 } from '../lib/db';
 import { ActivityModule } from '../lib/db';
+import { PaidMethod } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/translations';
 
 interface AwardsProps {
+  awardsList: Award[];
+  onAwardsChanged: (list: Award[]) => void;
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: any, recordLabel?: string) => void;
 }
+
+const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
+  { value: 'notSelected', labelKey: 'common.paidMethod.notSelected' },
+  { value: 'cash', labelKey: 'common.paidMethod.cash' },
+  { value: 'qrScan', labelKey: 'common.paidMethod.qrScan' },
+  { value: 'onlineBanking', labelKey: 'common.paidMethod.onlineBanking' },
+  { value: 'check', labelKey: 'common.paidMethod.check' },
+];
 
 const RANKS: { value: AwardRank; label: string; gradient: string; badge: string }[] = [
   { value: '1st', label: '1st', gradient: 'from-yellow-400 to-amber-500', badge: '🥇' },
@@ -28,13 +41,11 @@ const rankInfo = (r: AwardRank) => RANKS.find(x => x.value === r) || RANKS[0];
 
 const EMPTY_FORM: AwardInput = {
   title: '', rank: '1st', category: '', awardedBy: '', awardedDate: new Date().toISOString().slice(0, 10),
-  prizeMoney: 0, receivedBy: '', details: '', photoUrl: '',
+  prizeMoney: 0, paidMethod: 'notSelected', receivedBy: '', details: '', photoUrl: '',
 };
 
-export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
+export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete, onLog }: AwardsProps) {
   const { t } = useLanguage();
-  const [awards, setAwards] = useState<Award[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,15 +68,6 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const reload = () => {
-    setLoading(true);
-    listAwardsRequest()
-      .then(setAwards)
-      .catch(err => setError(err?.message || 'Failed to load awards'))
-      .finally(() => setLoading(false));
-  };
-  useEffect(() => { reload(); }, []);
-
   const pagination = usePagination(awards);
 
   const summary = useMemo(() => ({
@@ -78,7 +80,7 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
     setEditingId(award.id);
     setForm({
       title: award.title, rank: award.rank, category: award.category || '', awardedBy: award.awardedBy || '',
-      awardedDate: award.awardedDate, prizeMoney: award.prizeMoney, receivedBy: award.receivedBy || '',
+      awardedDate: award.awardedDate, prizeMoney: award.prizeMoney, paidMethod: award.paidMethod, receivedBy: award.receivedBy || '',
       details: award.details || '', photoUrl: award.photoUrl || '',
     });
     setFormError('');
@@ -92,11 +94,11 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
     try {
       if (editingId) {
         const updated = await updateAwardRequest(editingId, form);
-        setAwards(prev => prev.map(a => (a.id === editingId ? updated : a)));
+        onAwardsChanged(awards.map(a => (a.id === editingId ? updated : a)));
         onLog('update', 'awards', form.title, undefined, undefined, form.title);
       } else {
         const created = await createAwardRequest(form);
-        setAwards(prev => [created, ...prev]);
+        onAwardsChanged([created, ...awards]);
         onLog('create', 'awards', form.title, undefined, undefined, form.title);
       }
       setShowForm(false);
@@ -111,7 +113,7 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
     if (!deleteTarget) return;
     try {
       await deleteAwardRequest(deleteTarget.id);
-      setAwards(prev => prev.filter(a => a.id !== deleteTarget.id));
+      onAwardsChanged(awards.filter(a => a.id !== deleteTarget.id));
       onLog('delete', 'awards', deleteTarget.title, undefined, undefined, deleteTarget.title);
     } catch (err: any) {
       setError(err?.message || 'Failed to delete');
@@ -183,9 +185,7 @@ export function Awards({ canEdit, canDelete, onLog }: AwardsProps) {
       </div>
       )}
 
-      {loading ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">Loading…</p>
-      ) : awards.length === 0 ? (
+      {awards.length === 0 ? (
         <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
           <Trophy className="w-8 h-8 mx-auto mb-2 opacity-60" />
           <p className="text-sm">No prizes recorded yet.</p>
@@ -297,6 +297,7 @@ function AwardFormModal({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const { t } = useLanguage();
   const inputClass = "w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none";
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
@@ -363,17 +364,27 @@ function AwardFormModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Prize money (₹) <span className="text-orange-500 font-normal">(0 for a trophy only)</span>
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={form.prizeMoney}
-              onChange={e => setForm({ ...form, prizeMoney: Number(e.target.value) || 0 })}
-              className={inputClass}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Prize money (₹) <span className="text-orange-500 font-normal">(0 for a trophy only)</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.prizeMoney}
+                onChange={e => setForm({ ...form, prizeMoney: Number(e.target.value) || 0 })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('common.paidMethod')}</label>
+              <CustomSelect
+                value={form.paidMethod}
+                onChange={(v) => setForm({ ...form, paidMethod: v as PaidMethod })}
+                options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+              />
+            </div>
           </div>
 
           <div>

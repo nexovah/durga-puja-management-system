@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText, Banknote, PiggyBank, ChevronRight } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, User, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
-import { EventInfo, ActivityModule, ActivityFieldChange, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
+import { TrendingUp, TrendingDown, Wallet, Gift, Landmark, Users, Megaphone, MoreVertical, Download, FileText, Banknote, PiggyBank, ChevronRight, Trophy } from 'lucide-react';
+import { Chanda, DonationAd, Expense, Loan, Member, User, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount } from '../App';
+import { EventInfo, ActivityModule, ActivityFieldChange, CashBankAdjustment, listCashBankAdjustmentsRequest, Award } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -18,6 +18,7 @@ interface TreasuryProps {
   expenses: Expense[];
   loansList: Loan[];
   members: Member[];
+  awardsList: Award[];
   committeeAssociation: string;
   committeeLogo: string;
   activeEvent: EventInfo | null;
@@ -25,7 +26,7 @@ interface TreasuryProps {
   onLog: (action: 'create' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
-export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, committeeAssociation, committeeLogo, activeEvent, currentUser, onLog }: TreasuryProps) {
+export function Treasury({ chandaList, donationAdsList, expenses, loansList, members, awardsList, committeeAssociation, committeeLogo, activeEvent, currentUser, onLog }: TreasuryProps) {
   const { t, locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,9 +42,9 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
   const cashBank = useMemo(() => (
     activeEvent
-      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
+      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, awardsList, adjustments })
       : null
-  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments]);
+  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, awardsList, adjustments]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -70,19 +71,20 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
   const membersPaidCount = members.filter(m => getMemberCreditAmount(m) > 0).length;
-  const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembership;
+  const totalAwards = awardsList.reduce((sum, a) => sum + getAwardCreditAmount(a), 0);
+  const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembership + totalAwards;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const openingTotal = (activeEvent?.openingCash ?? 0) + (activeEvent?.openingBank ?? 0);
   const balance = totalCredit - totalExpenses + openingTotal;
 
   // Monthly data
   const getMonthlyData = () => {
-    const monthlyData: { [key: string]: { chanda: number; donationAds: number; membership: number; loans: number; expenses: number } } = {};
+    const monthlyData: { [key: string]: { chanda: number; donationAds: number; membership: number; loans: number; awards: number; expenses: number } } = {};
 
     chandaList.forEach(c => {
       const month = new Date(c.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
       }
       monthlyData[month].chanda += getChandaCreditAmount(c);
     });
@@ -90,7 +92,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     donationAdsList.forEach(d => {
       const month = new Date(d.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
       }
       monthlyData[month].donationAds += getDonationAdCreditAmount(d);
     });
@@ -99,7 +101,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       if (!m.membershipDate) return;
       const month = new Date(m.membershipDate).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
       }
       monthlyData[month].membership += getMemberCreditAmount(m);
     });
@@ -107,15 +109,23 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     loansList.forEach(l => {
       const month = new Date(l.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
       }
       monthlyData[month].loans += getLoanNetAmount(l);
+    });
+
+    awardsList.forEach(a => {
+      const month = new Date(a.awardedDate).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
+      if (!monthlyData[month]) {
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
+      }
+      monthlyData[month].awards += getAwardCreditAmount(a);
     });
 
     expenses.forEach(e => {
       const month = new Date(e.date).toLocaleDateString(locale, { year: 'numeric', month: 'long' });
       if (!monthlyData[month]) {
-        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, expenses: 0 };
+        monthlyData[month] = { chanda: 0, donationAds: 0, membership: 0, loans: 0, awards: 0, expenses: 0 };
       }
       monthlyData[month].expenses += getExpenseCreditAmount(e);
     });
@@ -127,8 +137,9 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
         donationAds: data.donationAds,
         membership: data.membership,
         loans: data.loans,
+        awards: data.awards,
         expenses: data.expenses,
-        balance: data.chanda + data.donationAds + data.membership + data.loans - data.expenses,
+        balance: data.chanda + data.donationAds + data.membership + data.loans + data.awards - data.expenses,
       }))
       .sort((a, b) => b.month.localeCompare(a.month));
   };
@@ -139,6 +150,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     donationAds: number;
     membership: number;
     loans: number;
+    awards: number;
     expenses: number;
     balance: number;
   }
@@ -149,6 +161,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     { id: 'donationAds', label: t('treasury.donationAds'), align: 'right', sortValue: d => d.donationAds },
     { id: 'membership', label: t('treasury.totalMembership'), align: 'right', sortValue: d => d.membership },
     { id: 'loans', label: t('treasury.loansOutstanding'), align: 'right', sortValue: d => d.loans },
+    { id: 'awards', label: t('nav.awards'), align: 'right', sortValue: d => d.awards },
     { id: 'expenses', label: t('treasury.expenses'), align: 'right', sortValue: d => d.expenses },
     { id: 'balance', label: t('treasury.balance'), align: 'right', sortValue: d => d.balance },
   ], [t]);
@@ -158,7 +171,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
     columns: treasuryMonthlyColumns,
   });
 
-  const rawMonthlyData = useMemo(() => getMonthlyData(), [chandaList, donationAdsList, members, loansList, expenses, locale]);
+  const rawMonthlyData = useMemo(() => getMonthlyData(), [chandaList, donationAdsList, members, loansList, awardsList, expenses, locale]);
   const monthlyData = useMemo(() => tableCols.sortItems(rawMonthlyData), [tableCols, rawMonthlyData]);
 
   // Top donors (Chanda + Donation/Ads combined)
@@ -260,7 +273,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
       </PageHeading>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8 gap-4">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-green-500 dark:border-green-500/60">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalChanda')}</h3>
@@ -304,6 +317,15 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           </div>
           <p className="text-3xl font-bold text-sky-600">₹{totalLoansNet.toLocaleString()}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{loansList.length} {t('treasury.transactions')}</p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-cyan-500 dark:border-cyan-500/60">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('nav.awards')}</h3>
+            <Trophy className="text-cyan-500" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-cyan-600">₹{totalAwards.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{awardsList.length} {t('treasury.transactions')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-red-500 dark:border-red-500/60">
@@ -400,6 +422,9 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                 {tableCols.isColumnVisible('loans') && (
                   <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'loans')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
+                {tableCols.isColumnVisible('awards') && (
+                  <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'awards')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
                 {tableCols.isColumnVisible('expenses') && (
                   <SortableTh column={treasuryMonthlyColumns.find(c => c.id === 'expenses')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -432,6 +457,11 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                   {tableCols.isColumnVisible('loans') && (
                     <td className="px-6 py-4 text-sm text-sky-600 font-bold text-right">
                       ₹{data.loans.toLocaleString()}
+                    </td>
+                  )}
+                  {tableCols.isColumnVisible('awards') && (
+                    <td className="px-6 py-4 text-sm text-cyan-600 font-bold text-right">
+                      ₹{data.awards.toLocaleString()}
                     </td>
                   )}
                   {tableCols.isColumnVisible('expenses') && (

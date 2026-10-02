@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale } from 'lucide-react';
+import { HandCoins, Gift, Megaphone, Receipt, Wallet, Users, Landmark, ClipboardList, Scale, Trophy } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Member, Loan, Estimation, CommitteeInfo,
-  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
+  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount,
 } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -10,7 +10,7 @@ import { ReportModulePage, ReportColumn, ReportWidget } from './ReportModulePage
 import { ReportEstimationPage } from './ReportEstimationPage';
 import { ReportBalanceSheetPage } from './ReportBalanceSheetPage';
 import { ADS_CATEGORIES } from './DonationAdsCollection';
-import { EventInfo } from '../lib/db';
+import { EventInfo, Award } from '../lib/db';
 
 interface ReportProps {
   chandaList: Chanda[];
@@ -18,6 +18,7 @@ interface ReportProps {
   expenses: Expense[];
   members: Member[];
   loansList: Loan[];
+  awardsList: Award[];
   estimationsList: Estimation[];
   committeeInfo: CommitteeInfo;
   committeeAssociation: string;
@@ -27,8 +28,8 @@ interface ReportProps {
   onRefreshData: () => Promise<void>;
 }
 
-type ModuleKey = 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendor' | 'member' | 'loan' | 'estimation' | 'balanceSheet';
-const VALID_MODULES: ModuleKey[] = ['chanda', 'donation', 'ads', 'expenses', 'vendor', 'member', 'loan', 'estimation', 'balanceSheet'];
+type ModuleKey = 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendor' | 'member' | 'loan' | 'awards' | 'estimation' | 'balanceSheet';
+const VALID_MODULES: ModuleKey[] = ['chanda', 'donation', 'ads', 'expenses', 'vendor', 'member', 'loan', 'awards', 'estimation', 'balanceSheet'];
 
 // /report/<module> — see docs/URL_STATE_CONVENTION.md; same pattern as
 // SuperAdminCms.tsx's left-nav (URL-backed, not the tenant Settings
@@ -49,7 +50,7 @@ interface VendorRow {
   voucherNumbers: string;
 }
 
-export function Report({ chandaList, donationAdsList, expenses, members, loansList, estimationsList, committeeInfo, committeeAssociation, committeeLogo, activeEventLabel, activeEvent, onRefreshData }: ReportProps) {
+export function Report({ chandaList, donationAdsList, expenses, members, loansList, awardsList, estimationsList, committeeInfo, committeeAssociation, committeeLogo, activeEventLabel, activeEvent, onRefreshData }: ReportProps) {
   const { t, locale } = useLanguage();
   const [activeModule, setActiveModuleState] = useState<ModuleKey>(() => getModuleFromPath());
 
@@ -129,6 +130,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
     { key: 'vendor', label: t('report.nav.vendor'), icon: Wallet },
     { key: 'member', label: t('report.nav.member'), icon: Users },
     { key: 'loan', label: t('report.nav.loan'), icon: Landmark },
+    { key: 'awards', label: t('nav.awards'), icon: Trophy },
     { key: 'estimation', label: t('report.nav.estimation'), icon: ClipboardList },
     { key: 'balanceSheet', label: t('report.nav.balanceSheet'), icon: Scale },
   ];
@@ -192,6 +194,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
             donationAdsList={donationAdsList}
             expenses={expenses}
             loansList={loansList}
+            awardsList={awardsList}
             companyName={committeeAssociation}
             companyLogo={committeeLogo}
             eventLabel={activeEventLabel}
@@ -429,8 +432,7 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       designationOptions: ROLE_OPTIONS,
       designationLabel: t('report.col.role'),
     };
-  } else {
-    // loan
+  } else if (activeModule === 'loan') {
     moduleProps = {
       pageTitle: t('report.nav.loan'),
       data: loansList,
@@ -457,6 +459,33 @@ export function Report({ chandaList, donationAdsList, expenses, members, loansLi
       paidMethodOf: (r: Loan) => r.paymentMethod,
       paidMethodOptions: PAID_METHOD_OPTIONS,
       phoneOf: (r: Loan) => r.phone,
+    };
+  } else {
+    // awards
+    moduleProps = {
+      pageTitle: t('nav.awards'),
+      data: awardsList,
+      dateOf: (r: Award) => r.awardedDate,
+      searchOf: (r: Award) => `${r.title} ${r.awardedBy || ''} ${r.receivedBy || ''}`,
+      columns: [
+        { key: 'title', label: t('report.col.title'), render: (r: Award) => r.title },
+        { key: 'rank', label: t('report.col.rank'), render: (r: Award) => r.rank },
+        { key: 'category', label: t('report.col.category'), render: (r: Award) => r.category || '' },
+        { key: 'awardedBy', label: t('report.col.awardedBy'), render: (r: Award) => r.awardedBy || '' },
+        { key: 'prizeMoney', label: t('report.col.amount'), align: 'right', render: (r: Award) => fmtAmount(getAwardCreditAmount(r)) },
+        { key: 'method', label: t('report.col.method'), render: (r: Award) => paidMethodLabel(r.paidMethod) },
+        { key: 'receivedBy', label: t('report.col.receivedBy'), render: (r: Award) => r.receivedBy || '' },
+        { key: 'date', label: t('report.col.date'), render: (r: Award) => fmtDate(r.awardedDate) },
+      ],
+      chartType: 'bar',
+      metricOf: (r: Award) => getAwardCreditAmount(r),
+      computeWidgets: (rows: Award[]) => [
+        { label: t('report.widget.totalCollected'), value: fmtAmount(rows.reduce((s, r) => s + getAwardCreditAmount(r), 0)) },
+        { label: t('report.widget.awardCount'), value: String(rows.length) },
+      ],
+      amountOf: (r: Award) => getAwardCreditAmount(r),
+      paidMethodOf: (r: Award) => r.paidMethod,
+      paidMethodOptions: PAID_METHOD_OPTIONS,
     };
   }
 

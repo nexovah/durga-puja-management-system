@@ -24,7 +24,7 @@ existing one already does the job.
    '#eab308' yellow, '#ef4444' red, '#06b6d4' cyan, '#ec4899' pink]
   ```
   Used in order for: Membership(0), Collection/Chanda(1), Donation(2),
-  Sponsorship/Ads(3), Expenses(4), Loan(5). **Every chart/widget that shows
+  Sponsorship/Ads(3), Expenses(4), Loan(5), Awards(6). **Every chart/widget that shows
   these categories (bar charts, line/area charts, donuts) must reuse this
   exact palette and index order** — see `DashboardCategoryBars.tsx` and
   `DashboardChart.tsx` for the pattern (`import { DONUT_COLORS } from

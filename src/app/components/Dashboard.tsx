@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Users, IndianRupee, TrendingDown, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, HourglassIcon } from 'lucide-react';
-import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
-import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
+import { Users, IndianRupee, TrendingDown, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, Wallet, HourglassIcon, Trophy } from 'lucide-react';
+import { Member, Chanda, DonationAd, Expense, Loan, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount } from '../App';
+import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest, Award } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { DashboardChart } from './DashboardChart';
 import { DashboardCategoryBars } from './DashboardCategoryBars';
-import { DashboardDonut } from './DashboardDonut';
+import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { PageHeading } from './PageHeading';
 
 interface DashboardProps {
@@ -16,10 +16,11 @@ interface DashboardProps {
   donationAdsList: DonationAd[];
   expenses: Expense[];
   loansList: Loan[];
+  awardsList: Award[];
   activeEvent?: EventInfo | null;
 }
 
-export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList, activeEvent }: DashboardProps) {
+export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList, awardsList, activeEvent }: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
@@ -27,7 +28,8 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   const totalAds = donationAdsList.filter(item => item.category === 'ads').reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
   const totalLoansNet = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
-  const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembershipPayments;
+  const totalAwards = awardsList.reduce((sum, a) => sum + getAwardCreditAmount(a), 0);
+  const totalCredit = totalChanda + totalDonationAds + totalLoansNet + totalMembershipPayments + totalAwards;
   const totalExpenses = expenses.reduce((sum, expense) => sum + getExpenseCreditAmount(expense), 0);
   const openingTotal = (activeEvent?.openingCash ?? 0) + (activeEvent?.openingBank ?? 0);
   const balance = totalCredit - totalExpenses + openingTotal;
@@ -65,9 +67,9 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
 
   const cashBank = useMemo(() => (
     activeEvent
-      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
+      ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, awardsList, adjustments })
       : null
-  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments]);
+  ), [activeEvent, chandaList, donationAdsList, members, loansList, expenses, awardsList, adjustments]);
 
   const categoryLabel = (value: string) => {
     const key = `expenses.category.${value}` as TranslationKey;
@@ -94,6 +96,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     { title: t('dashboard.donationTotal'), value: `₹${totalDonation.toLocaleString()}`, icon: Gift, accent: 'emerald' },
     { title: t('dashboard.adsTotal'), value: `₹${totalAds.toLocaleString()}`, icon: Gift, accent: 'emerald' },
     { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, accent: 'sky' },
+    { title: t('nav.awards'), value: `₹${totalAwards.toLocaleString()}`, icon: Trophy, accent: 'cyan' },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, icon: TrendingDown, accent: 'red' },
     { title: t('dashboard.expenses'), value: expenses.length.toString(), icon: ClipboardList, accent: 'orange' },
   ];
@@ -107,6 +110,7 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     amber: { border: 'border-amber-500 dark:border-amber-500/60', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10' },
     red: { border: 'border-red-500 dark:border-red-500/60', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10' },
     orange: { border: 'border-orange-500 dark:border-orange-500/60', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
+    cyan: { border: 'border-cyan-500 dark:border-cyan-500/60', icon: 'text-cyan-600', iconBg: 'bg-cyan-50 dark:bg-cyan-500/10' },
   };
 
   return (
@@ -116,10 +120,10 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
       {/* Collections vs Expenses chart (3) + category totals bar chart (1) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="lg:col-span-3">
-          <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} />
+          <DashboardChart chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} awardsList={awardsList} />
         </div>
         <div className="lg:col-span-1">
-          <DashboardCategoryBars chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} />
+          <DashboardCategoryBars chandaList={chandaList} donationAdsList={donationAdsList} expenses={expenses} loansList={loansList} members={members} awardsList={awardsList} />
         </div>
       </div>
 
@@ -162,7 +166,9 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
             { name: t('donationAds.widget.ads'), value: totalAds },
             { name: t('dashboard.totalMembersPaid'), value: totalMembershipPayments },
             { name: t('treasury.loansOutstanding'), value: Math.max(0, totalLoansNet) },
+            { name: t('nav.awards'), value: totalAwards },
           ]}
+          colors={[DONUT_COLORS[0], DONUT_COLORS[1], DONUT_COLORS[2], DONUT_COLORS[3], DONUT_COLORS[4], DONUT_COLORS[6]]}
         />
         <DashboardDonut
           title={t('dashboard.donut.expensesByCategory')}

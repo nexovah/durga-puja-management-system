@@ -8,7 +8,8 @@ import {
   eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format,
 } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount } from '../App';
+import { Award } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 import { TranslationKey } from '../i18n/translations';
@@ -26,6 +27,7 @@ interface DashboardChartProps {
   expenses: Expense[];
   loansList: Loan[];
   members: Member[];
+  awardsList: Award[];
 }
 
 type RangeKey = 'allTime' | '7d' | '30d' | '3m' | '6m';
@@ -68,7 +70,7 @@ function sumInRange(records: Record_[], start: Date, end: Date): number {
   }, 0);
 }
 
-export function DashboardChart({ chandaList, donationAdsList, expenses, loansList, members }: DashboardChartProps) {
+export function DashboardChart({ chandaList, donationAdsList, expenses, loansList, members, awardsList }: DashboardChartProps) {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const gridStroke = theme === 'dark' ? '#2d3138' : '#f0f0f0';
@@ -84,7 +86,8 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
     ...donationAdsList.map(d => ({ date: d.date, amount: getDonationAdCreditAmount(d) })),
     ...loansList.map(l => ({ date: l.date, amount: getLoanNetAmount(l) })),
     ...members.filter(m => m.membershipDate).map(m => ({ date: m.membershipDate as string, amount: getMemberCreditAmount(m) })),
-  ], [chandaList, donationAdsList, loansList, members]);
+    ...awardsList.map(a => ({ date: a.awardedDate, amount: getAwardCreditAmount(a) })),
+  ], [chandaList, donationAdsList, loansList, members, awardsList]);
 
   // Partial-status expenses spread their credited amount across each
   // installment's own date (partialPayments[].date), not the expense's

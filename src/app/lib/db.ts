@@ -15,6 +15,7 @@ import {
   Loan,
   Task,
   Estimation,
+  PaidMethod,
 } from '../App';
 
 export interface DeveloperInfo {
@@ -376,7 +377,7 @@ function fromUserRow(row: any): User {
 // ---------------------------------------------------------------------------
 
 export async function fetchAllData() {
-  const [membersRes, chandaRes, donationAdsRes, expensesRes, loansRes, tasksRes, estimationsRes, committeeRes, developerRes, usersRes] =
+  const [membersRes, chandaRes, donationAdsRes, expensesRes, loansRes, tasksRes, estimationsRes, committeeRes, developerRes, usersRes, awardsRes] =
     await Promise.all([
       supabase.from('members').select('*').order('join_date', { ascending: false }),
       supabase.from('chanda').select('*').order('date', { ascending: false }),
@@ -392,11 +393,12 @@ export async function fetchAllData() {
       supabase.from('committee_info').select('*').limit(1).maybeSingle(),
       supabase.from('developer_info').select('*').eq('id', 1).single(),
       supabase.from('app_users').select('*').order('created_at', { ascending: true }),
+      supabase.from('awards').select('*').order('awarded_date', { ascending: false }),
     ]);
 
   const firstError =
     membersRes.error || chandaRes.error || donationAdsRes.error || expensesRes.error || loansRes.error ||
-    tasksRes.error || estimationsRes.error || committeeRes.error || developerRes.error || usersRes.error;
+    tasksRes.error || estimationsRes.error || committeeRes.error || developerRes.error || usersRes.error || awardsRes.error;
   if (firstError) throw firstError;
 
   return {
@@ -410,6 +412,7 @@ export async function fetchAllData() {
     committeeInfo: fromCommitteeRow(committeeRes.data),
     developerInfo: fromDeveloperRow(developerRes.data),
     users: (usersRes.data || []).map(fromUserRow),
+    awardsList: (awardsRes.data || []).map(fromAwardRow),
   };
 }
 
@@ -982,8 +985,10 @@ export async function deleteAssetRequest(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 // Awards / Prizes — independent page (see supabase/101_awards.sql).
 // Event-scoped like Documents, not permanent like Assets — a prize was
-// won for a specific Puja/Festival. Purely informational: prize_money is
-// never folded into Treasury/Cash & Bank/dashboard financial totals.
+// won for a specific Puja/Festival. prize_money counts as real committee
+// income — folded into Dashboard/Treasury/Report/Balance Sheet/Cash & Bank
+// totals via getAwardCreditAmount() in App.tsx, same as every other
+// income-producing module.
 // ---------------------------------------------------------------------------
 
 export type AwardRank = '1st' | '2nd' | '3rd' | 'winner' | 'runner_up' | 'special_mention';
@@ -996,6 +1001,7 @@ export interface Award {
   awardedBy: string | null;
   awardedDate: string;
   prizeMoney: number;
+  paidMethod: PaidMethod;
   receivedBy: string | null;
   details: string | null;
   photoUrl: string | null;
@@ -1009,6 +1015,7 @@ export interface AwardInput {
   awardedBy?: string | null;
   awardedDate: string;
   prizeMoney: number;
+  paidMethod: PaidMethod;
   receivedBy?: string | null;
   details?: string | null;
   photoUrl?: string | null;
@@ -1023,6 +1030,7 @@ function fromAwardRow(row: any): Award {
     awardedBy: row.awarded_by,
     awardedDate: row.awarded_date,
     prizeMoney: Number(row.prize_money) || 0,
+    paidMethod: row.paid_method || 'notSelected',
     receivedBy: row.received_by,
     details: row.details,
     photoUrl: row.photo_url,
@@ -1038,6 +1046,7 @@ function toAwardRow(a: AwardInput) {
     awarded_by: a.awardedBy || null,
     awarded_date: a.awardedDate,
     prize_money: a.prizeMoney,
+    paid_method: a.paidMethod,
     received_by: a.receivedBy || null,
     details: a.details || null,
     photo_url: a.photoUrl || null,

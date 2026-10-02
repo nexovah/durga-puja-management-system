@@ -2,7 +2,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
-import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount } from '../App';
+import { Chanda, DonationAd, Expense, Loan, Member, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount } from '../App';
+import { Award } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../i18n/ThemeContext';
 import { DONUT_COLORS } from './DashboardDonut';
@@ -13,6 +14,7 @@ interface DashboardCategoryBarsProps {
   expenses: Expense[];
   loansList: Loan[];
   members: Member[];
+  awardsList: Award[];
 }
 
 // All-time category totals as 6 pillars: Chanda (paid/credited), Donation
@@ -21,7 +23,7 @@ interface DashboardCategoryBarsProps {
 // credited). Not tied to the collections-vs-expenses chart's date-range
 // selector — these are running totals from the data already loaded into
 // the other pages, no new query/DB change needed.
-export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, loansList, members }: DashboardCategoryBarsProps) {
+export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, loansList, members, awardsList }: DashboardCategoryBarsProps) {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const axisStroke = theme === 'dark' ? '#3d434b' : '#e5e7eb';
@@ -41,6 +43,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
   const totalExpenses = expenses.reduce((sum, e) => sum + getExpenseCreditAmount(e), 0);
   const totalLoan = loansList.reduce((sum, l) => sum + getLoanNetAmount(l), 0);
   const totalMembership = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
+  const totalAwards = awardsList.reduce((sum, a) => sum + getAwardCreditAmount(a), 0);
 
   // Same palette/order as DashboardDonut's charts (DONUT_COLORS), so a
   // category reads the same color everywhere on the dashboard.
@@ -51,6 +54,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
     { key: 'ads', label: t('dashboard.chart.pillar.ads'), value: totalAds, color: DONUT_COLORS[3] },
     { key: 'expenses', label: t('dashboard.chart.pillar.expenses'), value: totalExpenses, color: DONUT_COLORS[5] },
     { key: 'loan', label: t('dashboard.chart.pillar.loan'), value: totalLoan, color: DONUT_COLORS[4] },
+    { key: 'awards', label: t('nav.awards'), value: totalAwards, color: DONUT_COLORS[6] },
   ];
 
   return (

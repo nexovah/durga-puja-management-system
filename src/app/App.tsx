@@ -63,6 +63,7 @@ import {
   ReceiptSettings,
   DEFAULT_RECEIPT_SETTINGS,
   fetchMyTicketActivity,
+  Award,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 
@@ -303,6 +304,13 @@ export interface Loan {
 // credit — fully repaid nets to zero.
 export function getLoanNetAmount(loan: Loan): number {
   return loan.amountReceived - (loan.amountPaid || 0);
+}
+
+// Unlike Chanda/Expenses there's no pending/partial concept for an award —
+// a recorded award represents prize money already received, so it always
+// counts in full as committee income.
+export function getAwardCreditAmount(award: Award): number {
+  return award.prizeMoney || 0;
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'note' | 'completed';
@@ -587,6 +595,7 @@ export default function App() {
   const [loansList, setLoansListState] = useState<Loan[]>([]);
   const [tasksList, setTasksListState] = useState<Task[]>([]);
   const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
+  const [awardsList, setAwardsListState] = useState<Award[]>([]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
   const [events, setEvents] = useState<EventInfo[]>([]);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
@@ -619,6 +628,7 @@ export default function App() {
         setLoansListState(data.loansList);
         setTasksListState(data.tasksList);
         setEstimationsListState(data.estimationsList);
+        setAwardsListState(data.awardsList);
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
@@ -649,7 +659,7 @@ export default function App() {
     })();
   }, [isLoggedIn]);
 
-  // The 7 event-scoped tables are RLS-filtered live by current_event_id() —
+  // The 8 event-scoped tables are RLS-filtered live by current_event_id() —
   // once the active event actually changes (an admin switched it, here or
   // for a teammate mid-session, picked up by the polling/route-change
   // refetch below), the in-memory lists must be reloaded so the UI reflects
@@ -666,7 +676,7 @@ export default function App() {
     refreshCoreData().catch(err => console.error('Failed to reload data after event switch', err));
   }, [activeEventId, isLoggedIn]);
 
-  // Refetch the 7 event-scoped lists on demand — used by the event-switch
+  // Refetch the 8 event-scoped lists on demand — used by the event-switch
   // reload above, and exposed to the Report page's Balance Sheet refresh
   // button, so it always reflects the latest entry in every module without
   // requiring a full page reload.
@@ -679,6 +689,7 @@ export default function App() {
     setLoansListState(data.loansList);
     setTasksListState(data.tasksList);
     setEstimationsListState(data.estimationsList);
+    setAwardsListState(data.awardsList);
   };
 
   // Keep the active-event display fresh: if a teammate's admin switches
@@ -1214,6 +1225,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             donationAdsList={donationAdsList}
             expenses={expenses}
             loansList={loansList}
+            awardsList={awardsList}
             activeEvent={events.find(e => e.id === activeEventId) || null}
           />
         )}
@@ -1305,6 +1317,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             expenses={expenses}
             loansList={loansList}
             members={members}
+            awardsList={awardsList}
             committeeAssociation={committeeInfo.association || committeeInfo.name}
             committeeLogo={committeeInfo.logo}
             activeEvent={events.find(e => e.id === activeEventId) || null}
@@ -1319,6 +1332,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             expenses={expenses}
             members={members}
             loansList={loansList}
+            awardsList={awardsList}
             estimationsList={estimationsList}
             committeeInfo={committeeInfo}
             committeeAssociation={committeeInfo.association || committeeInfo.name}
@@ -1364,6 +1378,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'awards' && (
           <Awards
+            awardsList={awardsList}
+            onAwardsChanged={setAwardsListState}
             canEdit={currentUser?.canEdit !== false}
             canDelete={currentUser?.canDelete !== false}
             onLog={handleLog}

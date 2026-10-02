@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { MoreVertical, Download, FileText, RefreshCw, TrendingUp, TrendingDown, Scale, Wallet, Landmark } from 'lucide-react';
 import {
   Chanda, DonationAd, Expense, Loan, Member,
-  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount,
+  getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount,
 } from '../App';
-import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest } from '../lib/db';
+import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest, Award } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -17,6 +17,7 @@ interface ReportBalanceSheetPageProps {
   donationAdsList: DonationAd[];
   expenses: Expense[];
   loansList: Loan[];
+  awardsList: Award[];
   companyName: string;
   companyLogo: string;
   eventLabel: string;
@@ -30,7 +31,7 @@ interface ReportBalanceSheetPageProps {
 // the 7 event-scoped lists from Supabase (App.tsx's refreshCoreData) so it
 // doesn't depend on a page reload to pick up a teammate's just-added row.
 export function ReportBalanceSheetPage({
-  members, chandaList, donationAdsList, expenses, loansList, companyName, companyLogo, eventLabel, activeEvent, onRefresh,
+  members, chandaList, donationAdsList, expenses, loansList, awardsList, companyName, companyLogo, eventLabel, activeEvent, onRefresh,
 }: ReportBalanceSheetPageProps) {
   const { t, locale } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -44,7 +45,7 @@ export function ReportBalanceSheetPage({
   }, []);
 
   const cashBank = activeEvent
-    ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, adjustments })
+    ? computeCashBankTotals({ event: activeEvent, chandaList, donationAdsList, members, loansList, expenses, awardsList, adjustments })
     : null;
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export function ReportBalanceSheetPage({
   const totalDonation = donationAdsList.filter(d => d.category === 'donation').reduce((s, d) => s + getDonationAdCreditAmount(d), 0);
   const totalAds = donationAdsList.filter(d => d.category === 'ads').reduce((s, d) => s + getDonationAdCreditAmount(d), 0);
   const totalLoans = loansList.reduce((s, l) => s + getLoanNetAmount(l), 0);
+  const totalAwards = awardsList.reduce((s, a) => s + getAwardCreditAmount(a), 0);
   const totalExpenses = expenses.reduce((s, e) => s + getExpenseCreditAmount(e), 0);
 
   const incomeRows = [
@@ -93,6 +95,7 @@ export function ReportBalanceSheetPage({
     { label: t('report.balanceSheet.donationCollection'), value: totalDonation },
     { label: t('report.balanceSheet.adsPayment'), value: totalAds },
     { label: t('report.balanceSheet.loanPayment'), value: totalLoans },
+    { label: t('report.balanceSheet.awardsPrizeMoney'), value: totalAwards },
   ];
   const totalIncome = incomeRows.reduce((s, r) => s + r.value, 0);
 

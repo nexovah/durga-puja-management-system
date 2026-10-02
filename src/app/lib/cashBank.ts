@@ -5,9 +5,9 @@
 
 import {
   Chanda, DonationAd, Member, Loan, Expense,
-  getChandaCreditAmount, getDonationAdCreditAmount, getMemberCreditAmount, getExpenseCreditAmount,
+  getChandaCreditAmount, getDonationAdCreditAmount, getMemberCreditAmount, getExpenseCreditAmount, getAwardCreditAmount,
 } from '../App';
-import { EventInfo, CashBankAdjustment } from './db';
+import { EventInfo, CashBankAdjustment, Award } from './db';
 
 export type MoneyBucket = 'cash' | 'bank';
 
@@ -46,9 +46,10 @@ export function computeCashBankTotals(params: {
   members: Member[];
   loansList: Loan[];
   expenses: Expense[];
+  awardsList?: Award[];
   adjustments?: CashBankAdjustment[];
 }): CashBankTotals {
-  const { event, chandaList, donationAdsList, members, loansList, expenses, adjustments = [] } = params;
+  const { event, chandaList, donationAdsList, members, loansList, expenses, awardsList = [], adjustments = [] } = params;
 
   const collection: CashBankSourceBreakdown = { key: 'collection', label: 'Collection', cash: 0, bank: 0 };
   for (const c of chandaList) {
@@ -83,6 +84,13 @@ export function computeCashBankTotals(params: {
     if (l.amountPaid > 0) loanRepayment[bucketForMethod(l.returnMethod || l.paymentMethod)] += l.amountPaid;
   }
 
+  const awardPrizeMoney: CashBankSourceBreakdown = { key: 'awardPrizeMoney', label: 'Awards / Prize Money', cash: 0, bank: 0 };
+  for (const a of awardsList) {
+    const amount = getAwardCreditAmount(a);
+    if (amount <= 0) continue;
+    awardPrizeMoney[bucketForMethod(a.paidMethod)] += amount;
+  }
+
   const expenseOut: CashBankSourceBreakdown = { key: 'expenses', label: 'Expenses', cash: 0, bank: 0 };
   for (const e of expenses) {
     const amount = getExpenseCreditAmount(e);
@@ -103,9 +111,9 @@ export function computeCashBankTotals(params: {
   }
 
   const cashIn = collection.cash + donation.cash + sponsorship.cash + memberPayment.cash + loanReceived.cash
-    + Math.max(0, manualAdjustment.cash);
+    + awardPrizeMoney.cash + Math.max(0, manualAdjustment.cash);
   const bankIn = collection.bank + donation.bank + sponsorship.bank + memberPayment.bank + loanReceived.bank
-    + Math.max(0, manualAdjustment.bank);
+    + awardPrizeMoney.bank + Math.max(0, manualAdjustment.bank);
   const cashOut = loanRepayment.cash + expenseOut.cash + Math.max(0, -manualAdjustment.cash);
   const bankOut = loanRepayment.bank + expenseOut.bank + Math.max(0, -manualAdjustment.bank);
 
@@ -124,6 +132,6 @@ export function computeCashBankTotals(params: {
     closingCash,
     closingBank,
     totalBalance: closingCash + closingBank,
-    sources: [collection, donation, sponsorship, memberPayment, loanReceived, loanRepayment, expenseOut, manualAdjustment],
+    sources: [collection, donation, sponsorship, memberPayment, loanReceived, loanRepayment, awardPrizeMoney, expenseOut, manualAdjustment],
   };
 }
