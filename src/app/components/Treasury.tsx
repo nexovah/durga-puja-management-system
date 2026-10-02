@@ -274,78 +274,78 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalChanda')}</h3>
-            <TrendingUp className="text-green-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('treasury.totalChanda')}</h3>
+            <TrendingUp className="text-green-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-green-600">₹{totalChanda.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-green-600 tracking-tight truncate" title={`₹${totalChanda.toLocaleString()}`}>₹{totalChanda.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{chandaList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
-            <Gift className="text-emerald-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('donationAds.widget.donation')}</h3>
+            <Gift className="text-emerald-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-emerald-600">₹{totalDonation.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'donation').length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-600 tracking-tight truncate" title={`₹${totalDonation.toLocaleString()}`}>₹{totalDonation.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{donationAdsList.filter(d => d.category === 'donation').length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
-            <Megaphone className="text-blue-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('donationAds.widget.ads')}</h3>
+            <Megaphone className="text-blue-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-blue-600">₹{totalAds.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'ads').length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 tracking-tight truncate" title={`₹${totalAds.toLocaleString()}`}>₹{totalAds.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{donationAdsList.filter(d => d.category === 'ads').length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalMembership')}</h3>
-            <Users className="text-violet-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('treasury.totalMembership')}</h3>
+            <Users className="text-violet-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-violet-600">₹{totalMembership.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{membersPaidCount} {t('treasury.membersPaid')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-violet-600 tracking-tight truncate" title={`₹${totalMembership.toLocaleString()}`}>₹{totalMembership.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{membersPaidCount} {t('treasury.membersPaid')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.loansOutstanding')}</h3>
-            <Landmark className="text-sky-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('treasury.loansOutstanding')}</h3>
+            <Landmark className="text-sky-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-sky-600">₹{totalLoansNet.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{loansList.length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-sky-600 tracking-tight truncate" title={`₹${totalLoansNet.toLocaleString()}`}>₹{totalLoansNet.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{loansList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('nav.awards')}</h3>
-            <Trophy className="text-cyan-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('nav.awards')}</h3>
+            <Trophy className="text-cyan-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-cyan-600">₹{totalAwards.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{awardsList.length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-cyan-600 tracking-tight truncate" title={`₹${totalAwards.toLocaleString()}`}>₹{totalAwards.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{awardsList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalExpenses')}</h3>
-            <TrendingDown className="text-red-500" size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('treasury.totalExpenses')}</h3>
+            <TrendingDown className="text-red-500 shrink-0" size={20} />
           </div>
-          <p className="text-3xl font-bold text-red-600">₹{totalExpenses.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{expenses.length} {t('treasury.transactions')}</p>
+          <p className="text-xl sm:text-2xl font-bold text-red-600 tracking-tight truncate" title={`₹${totalExpenses.toLocaleString()}`}>₹{totalExpenses.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{expenses.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.currentBalance')}</h3>
-            <Wallet className={balance >= 0 ? 'text-green-500' : 'text-red-500'} size={24} />
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{t('treasury.currentBalance')}</h3>
+            <Wallet className={`${balance >= 0 ? 'text-green-500' : 'text-red-500'} shrink-0`} size={20} />
           </div>
-          <p className={`text-3xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-xl sm:text-2xl font-bold tracking-tight truncate ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`} title={`₹${balance.toLocaleString()}`}>
             ₹{balance.toLocaleString()}
           </p>
-          <p className={`text-sm mt-1 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-xs sm:text-sm mt-1 truncate ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {balance >= 0 ? t('treasury.surplus') : t('treasury.deficit')}
           </p>
         </div>
