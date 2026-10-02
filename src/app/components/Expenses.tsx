@@ -6,6 +6,7 @@ import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getE
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
+import { AutocompleteInput } from './AutocompleteInput';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
@@ -775,20 +776,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorName')}</label>
-              <input
-                type="text"
+              <AutocompleteInput
                 value={formData.vendorName}
-                onChange={(e) => handleVendorNameChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                onChange={handleVendorNameChange}
+                suggestions={knownVendorNames}
                 placeholder={t('expenses.vendorNamePlaceholder')}
-                list="vendor-name-suggestions"
-                autoComplete="off"
               />
-              <datalist id="vendor-name-suggestions">
-                {knownVendorNames.map((name) => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorContact')}</label>
