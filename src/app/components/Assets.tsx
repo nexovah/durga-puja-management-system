@@ -316,14 +316,14 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
 
       {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.distinctAssets')}</h3>
             <Layers className="text-blue-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">{summary.distinct}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.unitsOwnedOut')}</h3>
             <Boxes className="text-amber-500" size={24} />
@@ -332,7 +332,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
             {summary.unitsOwned} <span className="text-base font-medium text-gray-400 dark:text-gray-500">· {summary.unitsOut} {t('assets.out')}</span>
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-green-500 dark:border-green-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('assets.assetValue')}</h3>
             <IndianRupee className="text-green-500" size={24} />
