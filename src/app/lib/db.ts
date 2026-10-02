@@ -30,7 +30,7 @@ export interface DeveloperInfo {
 // Row <-> object mapping
 // ---------------------------------------------------------------------------
 
-function fromMemberRow(row: any): Member {
+export function fromMemberRow(row: any): Member {
   return {
     id: row.id,
     name: row.name,
@@ -65,7 +65,7 @@ function toMemberRow(m: Member) {
   };
 }
 
-function fromChandaRow(row: any): Chanda {
+export function fromChandaRow(row: any): Chanda {
   return {
     id: row.id,
     donorName: row.donor_name,
@@ -111,7 +111,7 @@ function toChandaRow(c: Chanda) {
   };
 }
 
-function fromDonationAdRow(row: any): DonationAd {
+export function fromDonationAdRow(row: any): DonationAd {
   return {
     id: row.id,
     category: row.category,
@@ -148,7 +148,7 @@ function toDonationAdRow(d: DonationAd) {
   };
 }
 
-function fromExpenseRow(row: any): Expense {
+export function fromExpenseRow(row: any): Expense {
   const partialPayments: ExpensePartialPayment[] | undefined = Array.isArray(row.partial_payments)
     ? row.partial_payments.map((p: any) => ({
         amount: Number(p.amount) || 0,
@@ -190,7 +190,7 @@ function toExpenseRow(e: Expense) {
   };
 }
 
-function fromLoanRow(row: any): Loan {
+export function fromLoanRow(row: any): Loan {
   return {
     id: row.id,
     donorName: row.donor_name,
@@ -221,7 +221,7 @@ function toLoanRow(l: Loan) {
   };
 }
 
-function fromTaskRow(row: any): Task {
+export function fromTaskRow(row: any): Task {
   return {
     id: row.id,
     title: row.title,
@@ -256,7 +256,7 @@ const DEFAULT_ESTIMATION_COLUMN_LABELS = {
   amount: 'Amount',
 };
 
-function fromEstimationRow(row: any): Estimation {
+export function fromEstimationRow(row: any): Estimation {
   return {
     id: row.id,
     title: row.title || '',
@@ -279,7 +279,7 @@ function toEstimationRow(estimation: Estimation) {
   };
 }
 
-function fromCommitteeRow(row: any): CommitteeInfo {
+export function fromCommitteeRow(row: any): CommitteeInfo {
   // A brand-new tenant (e.g. created via Super Admin) has no committee_info
   // row yet until the committee fills in Settings — fall back to empty
   // defaults instead of crashing on a null row.
@@ -353,7 +353,7 @@ function fromDeveloperRow(row: any): DeveloperInfo {
   };
 }
 
-function fromUserRow(row: any): User {
+export function fromUserRow(row: any): User {
   return {
     id: row.id,
     name: row.name,
@@ -844,7 +844,7 @@ export interface Asset {
   createdAt: string;
 }
 
-function fromAssetRow(row: any): Asset {
+export function fromAssetRow(row: any): Asset {
   return {
     id: row.id,
     name: row.name,
@@ -918,7 +918,7 @@ export interface VendorInput {
   category?: string | null;
 }
 
-function fromVendorRow(row: any): Vendor {
+export function fromVendorRow(row: any): Vendor {
   return {
     id: row.id,
     name: row.name,
@@ -1021,7 +1021,7 @@ export interface AwardInput {
   photoUrl?: string | null;
 }
 
-function fromAwardRow(row: any): Award {
+export function fromAwardRow(row: any): Award {
   return {
     id: row.id,
     title: row.title,
@@ -1094,7 +1094,7 @@ export interface AppDocument {
   uploadedAt: string;
 }
 
-function fromDocumentRow(row: any): AppDocument {
+export function fromDocumentRow(row: any): AppDocument {
   return {
     id: row.id,
     name: row.name,
@@ -1176,7 +1176,7 @@ export interface CashBankAdjustment {
   createdAt: string;
 }
 
-function fromCashBankAdjustmentRow(row: any): CashBankAdjustment {
+export function fromCashBankAdjustmentRow(row: any): CashBankAdjustment {
   return {
     id: row.id,
     bucket: row.bucket,

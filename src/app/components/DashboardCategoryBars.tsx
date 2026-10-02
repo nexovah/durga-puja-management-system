@@ -68,7 +68,7 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
           <BarChart data={data} margin={{ top: 24, right: 8, left: -12, bottom: 0 }}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10, fill: axisTick }}
+              tick={<CategoryInitialTick fill={axisTick} />}
               tickLine={false}
               axisLine={{ stroke: axisStroke }}
               interval={0}
@@ -99,5 +99,21 @@ export function DashboardCategoryBars({ chandaList, donationAdsList, expenses, l
         </ResponsiveContainer>
       </div>
     </div>
+  );
+}
+
+// 7 category labels in a narrow column overlap each other at any readable
+// font size — show just the first letter, with the full name on hover via
+// a native SVG <title> (shows as the browser's own tooltip, no extra
+// libraries needed for something this small).
+function CategoryInitialTick({ x, y, payload, fill }: any) {
+  const label: string = payload?.value || '';
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text dy={12} textAnchor="middle" fontSize={11} fill={fill}>
+        {label.charAt(0)}
+        <title>{label}</title>
+      </text>
+    </g>
   );
 }

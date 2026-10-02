@@ -14,7 +14,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { ReportPrintTable } from './ReportPrintTable';
 import { downloadTableCSV, SummaryLine } from '../lib/reportExport';
 import {
-  Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest,
+  Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest, fromAssetRow,
 } from '../lib/db';
 import { ActivityModule } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -129,6 +129,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
   };
 
   useEffect(() => { reload(); }, []);
+  useRealtimeSync(true, 'assets', setAssets, fromAssetRow);
 
   const filteredAssets = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

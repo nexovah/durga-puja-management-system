@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
+import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
 import { ReceiptPublicPage } from './components/ReceiptPublicPage';
@@ -31,7 +32,7 @@ import { GlobalSearch } from './components/GlobalSearch';
 import { ConnectivityPill } from './components/ConnectivityPill';
 import { useLanguage } from './i18n/LanguageContext';
 import { useTheme } from './i18n/ThemeContext';
-import { isSupabaseConfigured } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
 import {
   fetchAllData,
   syncMembers,
@@ -65,6 +66,16 @@ import {
   DEFAULT_RECEIPT_SETTINGS,
   fetchMyTicketActivity,
   Award,
+  fromMemberRow,
+  fromChandaRow,
+  fromDonationAdRow,
+  fromExpenseRow,
+  fromLoanRow,
+  fromTaskRow,
+  fromEstimationRow,
+  fromAwardRow,
+  fromUserRow,
+  fromCommitteeRow,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 
@@ -597,6 +608,33 @@ export default function App() {
   const [tasksList, setTasksListState] = useState<Task[]>([]);
   const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
   const [awardsList, setAwardsListState] = useState<Award[]>([]);
+
+  // Live cross-session sync — once the socket is authorized with this
+  // tenant's JWT (setTenantAccessToken -> supabase.realtime.setAuth, see
+  // supabaseClient.ts), RLS scopes postgres_changes the same way it scopes
+  // every REST call, so another logged-in user's add/edit/delete shows up
+  // here within a second or two, no refresh/polling needed.
+  const realtimeEnabled = isLoggedIn && !!currentUser?.tenantId;
+  useRealtimeSync(realtimeEnabled, 'members', setMembersState, fromMemberRow);
+  useRealtimeSync(realtimeEnabled, 'chanda', setChandaListState, fromChandaRow);
+  useRealtimeSync(realtimeEnabled, 'donation_ads', setDonationAdsListState, fromDonationAdRow);
+  useRealtimeSync(realtimeEnabled, 'expenses', setExpensesState, fromExpenseRow);
+  useRealtimeSync(realtimeEnabled, 'loans', setLoansListState, fromLoanRow);
+  useRealtimeSync(realtimeEnabled, 'tasks', setTasksListState, fromTaskRow);
+  useRealtimeSync(realtimeEnabled, 'estimations', setEstimationsListState, fromEstimationRow);
+  useRealtimeSync(realtimeEnabled, 'awards', setAwardsListState, fromAwardRow);
+  useRealtimeSync(realtimeEnabled, 'app_users', setUsers, fromUserRow);
+  useEffect(() => {
+    if (!realtimeEnabled) return;
+    const channel = supabase
+      .channel('sync:committee_info')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'committee_info' }, (payload) => {
+        if (payload.eventType === 'DELETE') return;
+        setCommitteeInfoState(fromCommitteeRow(payload.new));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [realtimeEnabled]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
   const [events, setEvents] = useState<EventInfo[]>([]);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);

@@ -5,6 +5,7 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule, ActivityDevice } from '../lib/db';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { Pagination, usePagination } from './Pagination';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 
@@ -79,6 +80,21 @@ export function ActivityLog() {
       .catch(err => console.error('Failed to load activity log', err))
       .finally(() => setLoading(false));
   };
+
+  useRealtimeSync(true, 'activity_log', setEntries, (row: any): ActivityLogEntry => ({
+    id: row.id,
+    userId: row.user_id,
+    username: row.username,
+    userName: row.user_name,
+    action: row.action,
+    module: row.module,
+    summary: row.summary,
+    recordCount: row.record_count,
+    device: row.device ?? null,
+    changes: row.changes ?? null,
+    recordLabel: row.record_label ?? null,
+    createdAt: row.created_at,
+  }));
 
   useEffect(() => {
     load();

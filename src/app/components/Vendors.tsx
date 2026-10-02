@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Eye, Pencil, Plus, X, MoreVertical } from 'lucide-react';
 import { Expense, getExpenseCreditAmount } from '../App';
-import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest } from '../lib/db';
+import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRequest, createVendorRequest, updateVendorRequest, fromVendorRow } from '../lib/db';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
@@ -102,6 +103,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   useEffect(() => {
     listVendorsRequest().then(setDirectory).catch(() => {});
   }, []);
+  useRealtimeSync(true, 'vendors', setDirectory, fromVendorRow);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

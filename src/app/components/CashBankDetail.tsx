@@ -3,11 +3,12 @@ import { ArrowLeft, Plus, Trash2, Wallet, Landmark, MoreVertical } from 'lucide-
 import { User } from '../App';
 import {
   ActivityModule, ActivityFieldChange, CashBankAdjustment, CashBankBucket, CashBankDirection,
-  listCashBankAdjustmentsRequest, createCashBankAdjustmentRequest, deleteCashBankAdjustmentRequest,
+  listCashBankAdjustmentsRequest, createCashBankAdjustmentRequest, deleteCashBankAdjustmentRequest, fromCashBankAdjustmentRow,
 } from '../lib/db';
 import { CashBankTotals } from '../lib/cashBank';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { CustomSelect } from './CustomSelect';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 interface CashBankDetailProps {
   totals: CashBankTotals;
@@ -49,6 +50,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
   };
 
   useEffect(() => { reload(); }, []);
+  useRealtimeSync(true, 'cash_bank_adjustments', setAdjustments, fromCashBankAdjustmentRow);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

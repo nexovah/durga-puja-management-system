@@ -25,6 +25,10 @@ let tenantAccessToken: string | null = null;
 
 export function setTenantAccessToken(token: string | null) {
   tenantAccessToken = token;
+  // Authorizes the Realtime websocket with the same tenant JWT REST
+  // already uses via tenantAwareFetch — RLS then scopes postgres_changes
+  // the same way it scopes .select(), no extra filtering needed.
+  supabase.realtime.setAuth(token);
 }
 
 export function getTenantAccessToken(): string | null {

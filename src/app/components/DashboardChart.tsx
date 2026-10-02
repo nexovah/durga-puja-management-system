@@ -166,10 +166,6 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
             <TrendingUp size={20} className="text-orange-600" />
             {t('dashboard.chart.title')}
           </h3>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs sm:text-sm">
-            <span className="text-green-600 font-semibold">{t('dashboard.chart.income')}: ₹{totalIncome.toLocaleString()}</span>
-            <span className="text-red-600 font-semibold">{t('dashboard.chart.expenses')}: ₹{totalExpense.toLocaleString()}</span>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -191,7 +187,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
 
       <div className="h-56 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={INCOME_COLOR} stopOpacity={0.35} />
@@ -202,7 +198,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
                 <stop offset="95%" stopColor={EXPENSE_COLOR} stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+            <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: axisTick }}
@@ -215,7 +211,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
               tickFormatter={(v) => `₹${Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(0)}k` : v}`}
               tickLine={false}
               axisLine={false}
-              width={44}
+              width={56}
             />
             <Tooltip
               formatter={(value: number, name: string) => [

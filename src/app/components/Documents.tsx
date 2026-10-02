@@ -11,9 +11,10 @@ import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import {
   AppDocument, DocumentCategory, ActivityModule,
-  listDocumentsRequest, uploadDocumentFile, createDocumentRequest, deleteDocumentRequest,
+  listDocumentsRequest, uploadDocumentFile, createDocumentRequest, deleteDocumentRequest, fromDocumentRow,
 } from '../lib/db';
 import { User } from '../App';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
@@ -74,6 +75,7 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
   };
 
   useEffect(() => { reload(); }, []);
+  useRealtimeSync(true, 'documents', setDocs, fromDocumentRow);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
