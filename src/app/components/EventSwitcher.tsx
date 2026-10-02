@@ -7,6 +7,7 @@ import {
 } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+import { CustomSelect } from './CustomSelect';
 
 const currentYear = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -372,20 +373,13 @@ function EventForm({
               </button>
             )}
           </div>
-          <select
-            value={year}
+          <CustomSelect
+            value={String(year)}
             disabled={yearLocked}
-            onChange={e => setYear(Number(e.target.value))}
-            className={`w-full mt-1 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
-              yearLocked
-                ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
-            }`}
-          >
-            {YEAR_OPTIONS.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+            onChange={v => setYear(Number(v))}
+            options={YEAR_OPTIONS.map(y => ({ value: String(y), label: String(y) }))}
+            className="mt-1"
+          />
         </div>
         <div>
           <div className="flex items-center justify-between">
@@ -482,17 +476,16 @@ function EventForm({
         {!existing && otherEvents.length > 0 && (
           <div className="border-t border-gray-100 dark:border-gray-800 pt-2.5">
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Connect with a previous Puja/Festival? (optional)</label>
-            <select
+            <CustomSelect
               value={connectEventId}
-              onChange={e => handleConnectChange(e.target.value)}
               disabled={loadingConnect}
-              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500 bg-white dark:bg-gray-900"
-            >
-              <option value="">No, start fresh</option>
-              {otherEvents.map(e => (
-                <option key={e.id} value={e.id}>{e.name} {e.year}</option>
-              ))}
-            </select>
+              onChange={v => handleConnectChange(v)}
+              options={[
+                { value: '', label: 'No, start fresh' },
+                ...otherEvents.map(e => ({ value: e.id, label: `${e.name} ${e.year}` })),
+              ]}
+              className="mt-1"
+            />
             {connectEventId && (
               <div className="mt-2 space-y-1.5">
                 {loadingConnect && <p className="text-xs text-gray-400 dark:text-gray-500">Loading balance…</p>}

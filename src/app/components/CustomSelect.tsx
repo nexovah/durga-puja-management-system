@@ -40,7 +40,7 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
   const selected = options.find(o => o.value === value);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative ${open ? 'z-50' : ''}`} ref={ref}>
       <button
         type="button"
         id={id}
