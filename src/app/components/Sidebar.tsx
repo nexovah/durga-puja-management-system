@@ -1,15 +1,12 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  LayoutDashboard, Users, HandCoins, Gift, Megaphone, TrendingDown, Wallet,
-  Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, Calculator, MoreHorizontal, X, Package, FolderOpen, Trophy,
-} from 'lucide-react';
+import { MoreHorizontal, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { EventSwitcher } from './EventSwitcher';
 import { EventInfo } from '../lib/db';
+import { NAVIGATION_GROUPS, NavPageKey } from '../lib/navigationConfig';
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'tasks' | 'estimation' | 'assets' | 'documents' | 'awards';
+type PageKey = NavPageKey;
 
 interface SidebarProps {
   logo?: string;
@@ -32,6 +29,7 @@ interface SidebarProps {
     documents?: boolean;
     settings?: boolean;
   };
+  hiddenNavKeys?: string[];
   collapsed: boolean;
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -52,51 +50,21 @@ type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; classN
 // Foldable to an icon-only rail on desktop (`collapsed`); becomes a
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
-  logo, association, currentPage, onNavigate, permissions, collapsed, mobileOpen, onCloseMobile,
+  logo, association, currentPage, onNavigate, permissions, hiddenNavKeys, collapsed, mobileOpen, onCloseMobile,
   events, activeEventId, isAdmin, currentUserId, onEventCreated, onEventUpdated, onEventSwitched,
 }: SidebarProps) {
   const { t } = useLanguage();
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
 
-  const groups: { label: string; items: NavItem[] }[] = [
-    {
-      label: t('sidebar.groupMain'),
-      items: [
-        { key: 'dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), show: true },
-        { key: 'chanda', icon: HandCoins, label: t('nav.chanda'), show: !!permissions?.chanda },
-        { key: 'donation', icon: Gift, label: t('nav.donation'), show: !!(permissions?.donation ?? permissions?.donationAds) },
-        { key: 'ads', icon: Megaphone, label: t('nav.ads'), show: !!(permissions?.ads ?? permissions?.donationAds) },
-        { key: 'expenses', icon: TrendingDown, label: t('nav.expenses'), show: !!permissions?.expenses },
-        { key: 'vendors', icon: Truck, label: t('nav.vendors'), show: !!permissions?.vendors },
-        { key: 'members', icon: Users, label: t('nav.members'), show: !!permissions?.members },
-      ],
-    },
-    {
-      label: t('sidebar.groupAccounts'),
-      items: [
-        { key: 'treasury', icon: Wallet, label: t('nav.treasury'), show: !!permissions?.treasury },
-        { key: 'report', icon: FileBarChart, label: t('nav.report'), show: !!permissions?.treasury },
-        { key: 'loans', icon: Landmark, label: t('nav.loans'), show: !!permissions?.loans },
-        { key: 'estimation', icon: Calculator, label: t('nav.estimation'), show: !!permissions?.estimation },
-      ],
-    },
-    {
-      label: t('sidebar.groupEssential'),
-      items: [
-        { key: 'tasks', icon: CheckSquare, label: t('nav.tasks'), show: !!permissions?.tasks },
-        { key: 'documents', icon: FolderOpen, label: t('nav.documents'), show: permissions?.documents !== false },
-        { key: 'assets', icon: Package, label: t('nav.assets'), show: permissions?.assets !== false },
-        { key: 'awards', icon: Trophy, label: t('nav.awards'), show: true },
-      ],
-    },
-    {
-      label: t('sidebar.groupAdmin'),
-      items: [
-        { key: 'activityLog', icon: ScrollText, label: t('nav.activityLog'), show: !!permissions?.settings },
-        { key: 'settings', icon: SettingsIcon, label: t('nav.settings'), show: !!permissions?.settings },
-      ],
-    },
-  ];
+  const groups: { label: string; items: NavItem[] }[] = NAVIGATION_GROUPS.map(group => ({
+    label: t(group.labelKey),
+    items: group.items.map(item => ({
+      key: item.key,
+      icon: item.icon,
+      label: t(item.labelKey),
+      show: item.checkPermission(permissions),
+    })),
+  }));
 
   const handleSelect = (page: PageKey) => {
     onNavigate(page);
@@ -142,7 +110,7 @@ export function Sidebar({
 
       <nav className="flex-1 overflow-y-auto scrollbar-hide pt-3 pb-2 px-3 space-y-5">
         {groups.map((group, groupIndex) => {
-          const visibleItems = group.items.filter(i => i.show);
+          const visibleItems = group.items.filter(i => i.show && !hiddenNavKeys?.includes(i.key));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>

@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, Receipt, MoreVertical } from 'lucide-react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, Receipt, MoreVertical, Compass } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
 import { uploadLogo, generatePassword, DeveloperInfo, ReceiptSettings, updateReceiptSettingsRequest } from '../lib/db';
+import { NAVIGATION_GROUPS } from '../lib/navigationConfig';
 import { FormModal, FormModalCancelButton } from './FormModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -29,9 +30,9 @@ interface SettingsProps {
   tabRequestId?: number; // bumped by the caller each time it wants to force-select initialTab, even if it's the same tab as before
 }
 
-export type SettingsTab = 'committee' | 'receipts' | 'password' | 'users' | 'developer' | 'language';
+export type SettingsTab = 'committee' | 'receipts' | 'navigation' | 'password' | 'users' | 'developer' | 'language';
 
-const VALID_SETTINGS_TABS: SettingsTab[] = ['committee', 'receipts', 'password', 'users', 'developer', 'language'];
+const VALID_SETTINGS_TABS: SettingsTab[] = ['committee', 'receipts', 'navigation', 'password', 'users', 'developer', 'language'];
 
 // /settings/<tab> — refreshing or sharing a link lands back on that tab
 // instead of always resetting to 'committee'. Mirrors SuperAdminSettings.tsx's
@@ -119,6 +120,43 @@ export function Settings({
   const [receiptForm, setReceiptForm] = useState(receiptSettings);
   const [openUserMenuId, setOpenUserMenuId] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCommitteeForm(committeeInfo);
+  }, [committeeInfo]);
+
+  const handleToggleNav = async (key: string, visible: boolean) => {
+    const currentHidden = committeeInfo.hiddenNavKeys || [];
+    const nextHidden = visible
+      ? currentHidden.filter(k => k !== key)
+      : (currentHidden.includes(key) ? currentHidden : [...currentHidden, key]);
+
+    const updated = { ...committeeInfo, hiddenNavKeys: nextHidden };
+    setCommitteeForm(updated);
+    try {
+      await setCommitteeInfo(updated);
+      setMessage(t('settings.nav.saved'));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('Failed to update navigation visibility', err);
+      setMessage(t('common.saveError'));
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handleShowAllNav = async () => {
+    const updated = { ...committeeInfo, hiddenNavKeys: [] };
+    setCommitteeForm(updated);
+    try {
+      await setCommitteeInfo(updated);
+      setMessage(t('settings.nav.saved'));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('Failed to reset navigation visibility', err);
+      setMessage(t('common.saveError'));
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -432,6 +470,17 @@ export function Settings({
             >
               <Receipt size={18} />
               {t('settings.tab.receipts')}
+            </button>
+            <button
+              onClick={() => setActiveTab('navigation')}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'navigation'
+                  ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Compass size={18} />
+              {t('settings.tab.navigation')}
             </button>
             <button
               onClick={() => setActiveTab('password')}
@@ -1195,6 +1244,122 @@ export function Settings({
                     <ReceiptCard data={receiptPreviewData} />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Tab */}
+          {activeTab === 'navigation' && (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-gray-100 dark:border-gray-800">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600">
+                      <Compass size={20} />
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('settings.nav.title')}</h2>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
+                    {t('settings.nav.desc')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleShowAllNav}
+                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors"
+                  >
+                    {t('settings.nav.showAll')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShowAllNav}
+                    className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {t('settings.nav.reset')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {NAVIGATION_GROUPS.map((group) => {
+                  const currentHidden = committeeInfo.hiddenNavKeys || [];
+                  const activeCount = group.items.filter(item => !currentHidden.includes(item.key)).length;
+                  return (
+                    <div key={group.id} className="space-y-3">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                          {t(group.labelKey)}
+                        </span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                          {t('settings.nav.activeCount').replace('{active}', String(activeCount)).replace('{total}', String(group.items.length))}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const isHidden = currentHidden.includes(item.key);
+                          const isVisible = !isHidden;
+                          return (
+                            <div
+                              key={item.key}
+                              className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                                isVisible
+                                  ? 'bg-gray-50/60 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700/80 hover:border-orange-300 dark:hover:border-orange-500/40 shadow-xs'
+                                  : 'bg-gray-100/60 dark:bg-gray-900/60 border-dashed border-gray-300 dark:border-gray-700 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0 pr-3">
+                                <div
+                                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                                    isVisible
+                                      ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                                      : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+                                  }`}
+                                >
+                                  <Icon size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                    {t(item.labelKey)}
+                                  </p>
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                                      isVisible
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : 'text-gray-400 dark:text-gray-500'
+                                    }`}
+                                  >
+                                    {isVisible ? (
+                                      <>
+                                        <CheckCircle2 size={11} /> {t('settings.nav.visible')}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <EyeOff size={11} /> {t('settings.nav.hidden')}
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <ToggleSwitch
+                                checked={isVisible}
+                                onChange={(checked) => handleToggleNav(item.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-orange-50/60 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 flex items-start gap-2.5 text-xs text-orange-800 dark:text-orange-300">
+                <Compass size={16} className="shrink-0 mt-0.5 text-orange-600" />
+                <span>{t('settings.nav.settingsAlwaysAccessible')}</span>
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -136,6 +136,7 @@ export interface CommitteeInfo {
   year: string; // Year (kept for backward compatibility)
   chandaAmount1Label?: string; // Custom name for Chanda's Amount 1 field, admin-editable, tenant-wide
   chandaAmount2Label?: string; // Custom name for Chanda's Amount 2 field, admin-editable, tenant-wide
+  hiddenNavKeys?: string[]; // Array of navigation keys hidden from the sidebar by tenant admin
 }
 
 export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'rejected';
@@ -381,6 +382,7 @@ const EMPTY_COMMITTEE_INFO: CommitteeInfo = {
   address: '',
   phone: '',
   year: '',
+  hiddenNavKeys: [],
 };
 
 const EMPTY_DEVELOPER_INFO: DeveloperInfo = {
@@ -1183,6 +1185,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         permissions={currentUser?.permissions}
+        hiddenNavKeys={committeeInfo.hiddenNavKeys}
         collapsed={sidebarCollapsed}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
@@ -1589,6 +1592,13 @@ function ProfileMenu({
                 >
                   <Building2 size={18} />
                   {t('settings.tab.committee')}
+                </button>
+                <button
+                  onClick={() => goTo('navigation')}
+                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  <Compass size={18} />
+                  {t('settings.tab.navigation')}
                 </button>
                 <button
                   onClick={() => goTo('password')}

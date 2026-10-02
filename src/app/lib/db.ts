@@ -320,10 +320,11 @@ export function fromCommitteeRow(row: any): CommitteeInfo {
     year: row.year || '',
     chandaAmount1Label: row.chanda_amount1_label || undefined,
     chandaAmount2Label: row.chanda_amount2_label || undefined,
+    hiddenNavKeys: Array.isArray(row.hidden_nav_items) ? row.hidden_nav_items : [],
   };
 }
 function toCommitteeRow(c: CommitteeInfo) {
-  return {
+  const row: any = {
     name: c.name,
     logo_url: c.logo,
     established: c.established,
@@ -341,6 +342,10 @@ function toCommitteeRow(c: CommitteeInfo) {
     chanda_amount1_label: c.chandaAmount1Label || null,
     chanda_amount2_label: c.chandaAmount2Label || null,
   };
+  if (c.hiddenNavKeys !== undefined) {
+    row.hidden_nav_items = c.hiddenNavKeys;
+  }
+  return row;
 }
 
 function fromDeveloperRow(row: any): DeveloperInfo {
@@ -639,11 +644,18 @@ export async function updateReceiptSettingsRequest(settings: ReceiptSettings): P
 
 export async function updateCommitteeInfo(info: CommitteeInfo): Promise<CommitteeInfo> {
   let saved: CommitteeInfo;
+  const payload = toCommitteeRow(info);
   // A brand-new tenant has no committee_info row yet (see fromCommitteeRow's
   // null fallback) — insert one on first save instead of updating a
   // nonexistent id.
   if (!info.id) {
-    const { data, error } = await supabase.from('committee_info').insert(toCommitteeRow(info)).select().single();
+    let { data, error } = await supabase.from('committee_info').insert(payload).select().single();
+    if (error && error.message?.includes('hidden_nav_items')) {
+      const { hidden_nav_items, ...fallbackPayload } = payload;
+      const res = await supabase.from('committee_info').insert(fallbackPayload).select().single();
+      data = res.data;
+      error = res.error;
+    }
     if (error) throw error;
     saved = fromCommitteeRow(data);
   } else {
@@ -651,10 +663,18 @@ export async function updateCommitteeInfo(info: CommitteeInfo): Promise<Committe
     // the caller's tenant's single committee_info row (see
     // supabase/020_multi_tenant.sql). PostgREST requires *some* filter to
     // avoid a full-table update, so match on the primary key it just read.
-    const { error } = await supabase.from('committee_info').update(toCommitteeRow(info)).eq('id', info.id);
+    let { error } = await supabase.from('committee_info').update(payload).eq('id', info.id);
+    if (error && error.message?.includes('hidden_nav_items')) {
+      const { hidden_nav_items, ...fallbackPayload } = payload;
+      const fallbackRes = await supabase.from('committee_info').update(fallbackPayload).eq('id', info.id);
+      error = fallbackRes.error;
+    }
     if (error) throw error;
     saved = info;
   }
+  try {
+    localStorage.setItem(`puja_hidden_nav_items_${saved.id || 'default'}`, JSON.stringify(saved.hiddenNavKeys || []));
+  } catch (_) {}
   // Mirror the shared fields back into `tenants` so Super Admin's Tenant
   // Detail page reflects the tenant's own edits too — same fields
   // super_admin_update_tenant mirrors the other way (see
