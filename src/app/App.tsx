@@ -596,6 +596,12 @@ export default function App() {
     setCurrentPage('settings');
   };
 
+  const [chandaAddRequestId, setChandaAddRequestId] = useState(0);
+  const goToAddDonor = () => {
+    setChandaAddRequestId(id => id + 1);
+    setCurrentPage('chanda');
+  };
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -1142,7 +1148,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
         <div className="max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-red-200 dark:border-red-500/30">
-          <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't check your active Puja / Festival</h1>
+          <h1 className="text-xl font-bold text-red-700 mb-3">Couldn't check your active 'Puja, Festival or Event'</h1>
           <p className="text-gray-700 dark:text-gray-300 mb-4">{eventsLoadError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -1275,6 +1281,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             awardsList={awardsList}
             tasksList={tasksList}
             activeEvent={events.find(e => e.id === activeEventId) || null}
+            receiptSettings={receiptSettings}
+            onNavigateToReceiptSettings={() => goToSettingsTab('receipt')}
+            onNavigateToAddDonor={goToAddDonor}
+            onNavigateToCollection={() => setCurrentPage('chanda')}
           />
         )}
         {currentPage === 'members' && (
@@ -1302,6 +1312,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             tenantSlug={tenantSlug}
             members={members}
             donationAdsList={donationAdsList}
+            initialAddRequestId={chandaAddRequestId}
           />
         )}
         {currentPage === 'donation' && (

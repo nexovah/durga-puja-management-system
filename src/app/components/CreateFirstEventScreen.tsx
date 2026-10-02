@@ -36,7 +36,7 @@ export function CreateFirstEventScreen({
           <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">🪔</div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Waiting for your admin</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Your committee hasn't set up this year's Puja / Festival yet. Ask your admin to create one — you'll get access as soon as it's ready.
+            Your committee hasn't set up this year's 'Puja, Festival or Event' yet. Ask your admin to create one — you'll get access as soon as it's ready.
           </p>
           <button
             onClick={onLogout}
@@ -82,9 +82,9 @@ export function CreateFirstEventScreen({
         <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">
           {emoji || '🪔'}
         </div>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 text-center">Puja / Festival to Manage CRM</h1>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 text-center">Add 'Puja, Festival or Event'</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-          Create your first Puja or Festival before adding any data — Chanda, Expenses, Donations, and everything else stay scoped to it.
+          Create your first 'Puja, Festival or Event' before adding any data — Chanda, Expenses, Donations, and everything else stay scoped to it.
         </p>
 
         <div className="space-y-3">

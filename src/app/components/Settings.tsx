@@ -139,6 +139,7 @@ export function Settings({
       const updated = await updateReceiptSettingsRequest(receiptForm);
       setReceiptForm(updated);
       setReceiptSettings(updated);
+      try { localStorage.setItem('puja_receipt_designed', 'true'); } catch {}
       setMessage(t('settings.msg.receiptSettingsUpdated'));
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {

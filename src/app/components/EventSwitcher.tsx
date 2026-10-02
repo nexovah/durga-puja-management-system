@@ -128,7 +128,7 @@ export function EventSwitcher({
 
       <SuperAdminConfirmModal
         open={pendingSwitchId !== null}
-        title="Switch Puja / Festival?"
+        title="Switch 'Puja, Festival or Event'?"
         message="Every user in this tenant will immediately move to this event — all data they view and add from now on will belong to it. This cannot be undone by simply switching back and forth without care."
         confirmLabel="Switch Everyone"
         danger
@@ -199,7 +199,7 @@ function EventPopover({
               <Plus size={14} className="text-gray-500 dark:text-gray-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Create Puja or Festival</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Create 'Puja, Festival or Event'</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Collaborate with your entire committee to take full management under control.</p>
             </div>
           </button>
@@ -348,7 +348,7 @@ function EventForm({
     <div className="p-3.5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-          {existing ? 'Edit Puja/Festival' : 'Add Puja/Festival'}
+          {existing ? "Edit 'Puja, Festival or Event'" : "Add 'Puja, Festival or Event'"}
         </p>
         <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
           <X size={16} />
@@ -481,7 +481,7 @@ function EventForm({
         </div>
         {!existing && otherEvents.length > 0 && (
           <div className="border-t border-gray-100 dark:border-gray-800 pt-2.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Connect with a previous Puja/Festival? (optional)</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Connect with a previous 'Puja, Festival or Event'? (optional)</label>
             <CustomSelect
               value={connectEventId}
               disabled={loadingConnect}

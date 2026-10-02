@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Users, IndianRupee, TrendingDown, ClipboardList, Gift, HandCoins, Landmark, PieChart as PieChartIcon, HourglassIcon, Trophy, CheckSquare } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, Loan, Task, getChandaCreditAmount, getDonationAdCreditAmount, getExpenseCreditAmount, getLoanNetAmount, getMemberCreditAmount, getAwardCreditAmount } from '../App';
-import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest, Award } from '../lib/db';
+import { EventInfo, CashBankAdjustment, listCashBankAdjustmentsRequest, Award, ReceiptSettings } from '../lib/db';
 import { computeCashBankTotals } from '../lib/cashBank';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -10,6 +10,7 @@ import { DashboardCategoryBars } from './DashboardCategoryBars';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { SegmentedProgressBar } from './SegmentedProgressBar';
 import { PageHeading } from './PageHeading';
+import { DashboardOnboardingWidget } from './DashboardOnboardingWidget';
 
 interface DashboardProps {
   members: Member[];
@@ -20,9 +21,16 @@ interface DashboardProps {
   awardsList: Award[];
   tasksList: Task[];
   activeEvent?: EventInfo | null;
+  receiptSettings?: ReceiptSettings;
+  onNavigateToReceiptSettings?: () => void;
+  onNavigateToAddDonor?: () => void;
+  onNavigateToCollection?: () => void;
 }
 
-export function Dashboard({ members, chandaList, donationAdsList, expenses, loansList, awardsList, tasksList, activeEvent }: DashboardProps) {
+export function Dashboard({
+  members, chandaList, donationAdsList, expenses, loansList, awardsList, tasksList, activeEvent,
+  receiptSettings, onNavigateToReceiptSettings, onNavigateToAddDonor, onNavigateToCollection,
+}: DashboardProps) {
   const { t } = useLanguage();
   const totalChanda = chandaList.reduce((sum, chanda) => sum + getChandaCreditAmount(chanda), 0);
   const totalDonationAds = donationAdsList.reduce((sum, item) => sum + getDonationAdCreditAmount(item), 0);
@@ -116,6 +124,15 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   return (
     <div className="space-y-4 pb-6">
       <PageHeading>{t('nav.dashboard')}</PageHeading>
+
+      <DashboardOnboardingWidget
+        activeEvent={activeEvent}
+        chandaList={chandaList}
+        receiptSettings={receiptSettings}
+        onNavigateToReceiptSettings={onNavigateToReceiptSettings}
+        onNavigateToAddDonor={onNavigateToAddDonor}
+        onNavigateToCollection={onNavigateToCollection}
+      />
 
       {/* Collections vs Expenses chart (3) + category totals bar chart (1) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

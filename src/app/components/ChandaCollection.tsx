@@ -40,6 +40,7 @@ interface ChandaCollectionProps {
   tenantSlug: string | null;
   members: Member[];
   donationAdsList: DonationAd[];
+  initialAddRequestId?: number;
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -101,11 +102,19 @@ const emptyForm = {
   collectedBy: '',
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+
+  useEffect(() => {
+    if (initialAddRequestId && initialAddRequestId > 0) {
+      setEditingId(null);
+      setFormData(emptyForm);
+      setShowForm(true);
+    }
+  }, [initialAddRequestId]);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
