@@ -1,26 +1,27 @@
-import { useEffect, useState } from 'react';
-import { Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
-import { getPlatformSettingsRequest, PlatformSettings, superAdminRequestPasswordResetRequest } from '../lib/superAdminDb';
+import { useState } from 'react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { superAdminRequestPasswordResetRequest } from '../lib/superAdminDb';
+import { AuthShowcaseLayout } from './AuthShowcaseLayout';
 
 interface SuperAdminLoginProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
 }
 
+// Same visual shell as the tenant login screen (AuthShowcaseLayout) — same
+// background, same showcase card, same input/button sizing — just Super
+// Admin's own form content in the right-hand column. No Google sign-in, no
+// signup; the forgot-password panel swaps in place of the login fields
+// instead of opening as a modal, matching LoginPage.tsx's convention.
 export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [platform, setPlatform] = useState<PlatformSettings | null>(null);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [mode, setMode] = useState<'login' | 'forgotPassword'>('login');
   const [forgotUsername, setForgotUsername] = useState('');
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
   const [forgotMessage, setForgotMessage] = useState('');
-
-  useEffect(() => {
-    getPlatformSettingsRequest().then(setPlatform).catch(() => {});
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,144 +53,136 @@ export function SuperAdminLogin({ onLogin }: SuperAdminLoginProps) {
     }
   };
 
-  const showLogo = platform?.showLogoOnSignin !== false;
-  const bgImage = platform?.showSigninBackground && platform.signinBackgroundUrl ? platform.signinBackgroundUrl : null;
+  const inputClass = 'w-full px-5 py-3 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 
-  return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 bg-cover bg-center"
-      style={bgImage ? { backgroundImage: `url(${bgImage})` } : undefined}
-    >
-      <div className="w-full max-w-md">
-        {showLogo && (
-          <div className="text-center mb-6">
-            <div className="inline-block relative mb-4">
-              <div className="w-32 h-32 sm:w-[11.2rem] sm:h-[11.2rem] mx-auto bg-white dark:bg-gray-900 rounded-full shadow-2xl flex items-center justify-center border-4 border-orange-600 relative overflow-hidden">
-                <div className="w-[7.2rem] h-[7.2rem] sm:w-[10.4rem] sm:h-[10.4rem] bg-gradient-to-br from-orange-100 to-amber-50 dark:from-gray-800 dark:to-gray-900 rounded-full flex items-center justify-center overflow-hidden">
-                  {platform?.logoUrl ? (
-                    <img src={platform.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 text-orange-600" />
-                  )}
-                </div>
-              </div>
-            </div>
-            <h1 className="text-xl font-bold text-orange-600">Super Admin</h1>
+  const forgotPasswordPanel = (
+    <div className="w-full max-w-md">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">Reset your password</h1>
+      <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
+        Enter your Super Admin username — if it has an email on file, we'll send a reset link there.
+      </p>
+
+      {forgotMessage ? (
+        <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
+          {forgotMessage}
+        </div>
+      ) : (
+        <form onSubmit={handleForgotSubmit} className="space-y-5">
+          <div>
+            <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Username</label>
+            <input
+              value={forgotUsername}
+              onChange={e => setForgotUsername(e.target.value)}
+              placeholder="Enter your username"
+              autoFocus
+              className={inputClass}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={forgotSubmitting}
+            className="w-full bg-orange-600 text-white py-3 rounded-2xl font-medium text-base hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+          >
+            {forgotSubmitting ? 'Sending…' : 'Send reset link'}
+          </button>
+        </form>
+      )}
+
+      <button
+        type="button"
+        onClick={() => { setMode('login'); setForgotMessage(''); }}
+        className="w-full mt-6 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-center"
+      >
+        Back to login
+      </button>
+    </div>
+  );
+
+  const loginFormPanel = (
+    <div className="w-full max-w-md">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
+        Super Admin
+      </h1>
+      <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
+        Durga CRM platform administration.
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Username</label>
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            className={inputClass}
+            placeholder="Enter your username"
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Password</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className={`${inputClass} pr-12`}
+              placeholder="Enter your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(s => !s)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 px-4 py-3 rounded-xl text-sm text-center">
+            {error}
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-950 rounded-3xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">Username</label>
-              <input
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                placeholder="Enter your username"
-                autoFocus
-              />
-            </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-orange-600 text-white py-3 rounded-2xl font-medium text-base hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+        >
+          {submitting ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
 
-            <div>
-              <label className="block text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 px-4 py-3 rounded-xl text-sm text-center">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Signing in…' : 'Sign in'}
-            </button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => { setShowForgotPassword(true); setForgotMessage(''); }}
-                className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              Durga CRM platform administration
-            </p>
-            <a
-              href="/login"
-              onClick={e => { e.preventDefault(); window.history.pushState(null, '', '/login'); window.location.reload(); }}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
-            >
-              Login as tenant
-              <ArrowRight size={15} />
-            </a>
-          </div>
-        </div>
+      <div className="flex items-center justify-between mt-6 text-base">
+        <a
+          href="/login"
+          onClick={e => { e.preventDefault(); window.history.pushState(null, '', '/login'); window.location.reload(); }}
+          className="inline-flex items-center gap-1.5 font-medium text-gray-800 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-500 hover:underline"
+        >
+          Login as tenant
+          <ArrowRight size={15} />
+        </a>
+        <button
+          type="button"
+          onClick={() => { setMode('forgotPassword'); setForgotMessage(''); }}
+          className="font-medium text-red-500 hover:text-red-600 hover:underline"
+        >
+          Forgot password?
+        </button>
       </div>
-
-      {showForgotPassword && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForgotPassword(false)}>
-          <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Reset your password</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Enter your Super Admin username — if it has an email on file, we'll send a reset link there.
-            </p>
-            {forgotMessage ? (
-              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl text-sm">
-                {forgotMessage}
-              </div>
-            ) : (
-              <form onSubmit={handleForgotSubmit} className="space-y-4">
-                <input
-                  value={forgotUsername}
-                  onChange={e => setForgotUsername(e.target.value)}
-                  placeholder="Username"
-                  autoFocus
-                  className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={forgotSubmitting}
-                  className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors disabled:opacity-60"
-                >
-                  {forgotSubmitting ? 'Sending…' : 'Send reset link'}
-                </button>
-              </form>
-            )}
-            <button
-              onClick={() => setShowForgotPassword(false)}
-              className="w-full mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
+  );
+
+  const formColumn = mode === 'forgotPassword' ? forgotPasswordPanel : loginFormPanel;
+
+  return (
+    <AuthShowcaseLayout
+      heading1="One Platform. Every Puja."
+      heading2="Everything Organized."
+      helpTitle="Platform Administration"
+      helpDesc="Manage tenants, subscriptions, settings, and every committee on Durga CRM from one place."
+      formColumn={formColumn}
+    />
   );
 }

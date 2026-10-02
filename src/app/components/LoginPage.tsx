@@ -1,188 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Users, IndianRupee, Gift, Landmark, Clock, Award as AwardIcon, TrendingDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { getPlatformSettingsRequest } from '../lib/superAdminDb';
-import { requestTenantPasswordResetRequest } from '../lib/db';
-import loginBackground from '../../assets/login/login-background.svg';
+import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
+import { requestTenantPasswordResetRequest, signupTenantRequest } from '../lib/db';
+import { AuthShowcaseLayout } from './AuthShowcaseLayout';
 
-// Static showcase numbers for the login card's mock stat grid — purely
-// decorative marketing content (not live data), mirrors the Figma example.
-const SHOWCASE_TILES = [
-  { icon: Users, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', label: 'Total Members', value: '25', subLabel: 'Paid', subValue: '₹0', tick: 'bg-blue-500' },
-  { icon: IndianRupee, iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'Total Collection', value: '₹108,338', subLabel: 'Collections', subValue: '149', tick: 'bg-green-600' },
-  { icon: Gift, iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'Sponsorship Collection', value: '₹49,800', subLabel: 'Sponsorships', subValue: '32', tick: 'bg-green-600' },
-  { icon: Landmark, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', label: 'Loans Outstanding', value: '₹40,000', subLabel: 'Loans', subValue: '1', tick: 'bg-blue-500' },
-  { icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-500', label: 'Outstanding Collection', value: '₹337,904', subLabel: 'Outstanding', subValue: '556', tick: 'bg-orange-500' },
-  { icon: Gift, iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'Donation Collection', value: '₹20,000', subLabel: 'Donations', subValue: '1', tick: 'bg-green-600' },
-  { icon: AwardIcon, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', label: 'Awards', value: '₹0', subLabel: 'Awards', subValue: '0', tick: 'bg-blue-500' },
-  { icon: TrendingDown, iconBg: 'bg-red-50', iconColor: 'text-red-500', label: 'Total Expenses', value: '₹156,435', subLabel: 'Expenses', subValue: '26', tick: 'bg-red-500' },
-] as const;
-
-// Static decorative category-bar data for showcase slide 2 — mirrors the
-// app's own DONUT_COLORS category order (Membership, Collection, Donation,
-// Sponsorship, Expenses, Loan).
-const SHOWCASE_BARS = [
-  { label: 'Membership', value: '₹25,000', pct: 62, color: '#f97316' },
-  { label: 'Collection', value: '₹108,338', pct: 95, color: '#3b82f6' },
-  { label: 'Donation', value: '₹20,000', pct: 48, color: '#8b5cf6' },
-  { label: 'Sponsorship', value: '₹49,800', pct: 70, color: '#22c55e' },
-  { label: 'Expenses', value: '₹156,435', pct: 88, color: '#eab308' },
-  { label: 'Loan', value: '₹40,000', pct: 35, color: '#ef4444' },
-] as const;
-
-// Static decorative Cash vs Bank split segments for showcase slide 4.
-const SHOWCASE_SPLIT = [
-  { label: 'Cash', pct: 38, value: '₹62,000', color: '#f97316' },
-  { label: 'Bank', pct: 62, value: '₹101,000', color: '#3b82f6' },
-] as const;
-
-function ShowcaseSlideStats() {
-  return (
-    <div className="w-full h-full flex flex-col justify-center">
-      <div className="w-full grid grid-cols-2 gap-3">
-        {SHOWCASE_TILES.map((tile) => {
-          const Icon = tile.icon;
-          return (
-            <div key={tile.label} className="bg-white rounded-2xl p-3 flex items-center gap-2.5 text-left">
-              <span className={`w-9 h-9 rounded-full ${tile.iconBg} flex items-center justify-center shrink-0`}>
-                <Icon size={16} className={tile.iconColor} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-500 truncate">{tile.label}</p>
-                <p className="text-base font-bold text-gray-900 leading-tight">{tile.value}</p>
-                <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                  <span className={`w-1 h-3 rounded-full ${tile.tick}`} />
-                  {tile.subLabel} <span className="font-semibold text-gray-700">{tile.subValue}</span>
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+declare global {
+  interface Window {
+    google?: any;
+  }
 }
 
-function ShowcaseSlideDonut() {
-  // Static conic-gradient ring — purely decorative, fixed angles.
-  const gradient = 'conic-gradient(#f97316 0% 22%, #3b82f6 22% 58%, #8b5cf6 58% 72%, #22c55e 72% 100%)';
-  return (
-    <div className="w-full h-full flex flex-col gap-3">
-      <div className="w-full bg-white rounded-2xl p-6 text-left flex-1 flex flex-col justify-center">
-        <p className="text-sm font-bold text-gray-800 mb-5">Collection Breakdown</p>
-        <div className="flex items-center gap-6">
-          <div className="relative w-36 h-36 shrink-0 rounded-full" style={{ background: gradient }}>
-            <div className="absolute inset-[16px] bg-white rounded-full flex flex-col items-center justify-center">
-              <span className="text-[11px] text-gray-400">Total</span>
-              <span className="text-lg font-bold text-gray-900">₹203,138</span>
-            </div>
-          </div>
-          <div className="flex-1 space-y-4">
-            {[
-              { label: 'Collection', value: '₹108,338', color: '#3b82f6' },
-              { label: 'Sponsorship', value: '₹49,800', color: '#8b5cf6' },
-              { label: 'Membership', value: '₹25,000', color: '#f97316' },
-              { label: 'Donation', value: '₹20,000', color: '#22c55e' },
-            ].map((row) => (
-              <div key={row.label} className="flex items-center gap-2">
-                <span className="w-1 h-4 rounded shrink-0" style={{ background: row.color }} />
-                <span className="text-[13px] text-gray-500 flex-1 truncate">{row.label}</span>
-                <span className="text-[13px] font-semibold text-gray-800">{row.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="w-full bg-white rounded-2xl p-4 flex items-center justify-around text-center">
-        {[
-          { label: 'Members', value: '25' },
-          { label: 'Awards', value: '0' },
-          { label: 'Expenses', value: '26' },
-        ].map((stat) => (
-          <div key={stat.label}>
-            <p className="text-base font-bold text-gray-900">{stat.value}</p>
-            <p className="text-[11px] text-gray-500">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+type GoogleAuthResult = { success: boolean; error?: string };
 
-function ShowcaseSlideBars() {
-  return (
-    <div className="w-full h-full bg-white rounded-2xl p-6 text-left flex flex-col">
-      <p className="text-sm font-bold text-gray-800">Category-wise Summary</p>
-      <div className="flex-1 flex flex-col justify-center gap-5 py-2">
-        {SHOWCASE_BARS.map((bar) => (
-          <div key={bar.label}>
-            <div className="flex items-center justify-between text-[12px] mb-1.5">
-              <span className="text-gray-500">{bar.label}</span>
-              <span className="font-semibold text-gray-800">{bar.value}</span>
-            </div>
-            <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${bar.pct}%`, background: bar.color }} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <span className="text-[12px] text-gray-500">Total Income</span>
-        <span className="text-sm font-bold text-gray-900">₹203,138</span>
-      </div>
-    </div>
-  );
-}
-
-function ShowcaseSlideProgress() {
-  return (
-    <div className="w-full h-full flex flex-col gap-3">
-      <div className="bg-white rounded-2xl p-6 text-left flex-1 flex flex-col justify-center">
-        <p className="text-sm font-bold text-gray-800 mb-5">Task Completion Rate</p>
-        <div className="flex items-center gap-6">
-          <div className="relative w-24 h-24 shrink-0 rounded-full" style={{ background: 'conic-gradient(#16a34a 0% 72%, #e5e7eb 72% 100%)' }}>
-            <div className="absolute inset-[9px] bg-white rounded-full flex items-center justify-center">
-              <span className="text-base font-bold text-gray-900">72%</span>
-            </div>
-          </div>
-          <div className="flex-1">
-            <p className="text-[13px] text-gray-500">18 of 25 tasks completed</p>
-            <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden mt-3">
-              <div className="h-full rounded-full bg-green-600" style={{ width: '72%' }} />
-            </div>
-            <div className="flex items-center justify-between mt-4 text-[12px]">
-              <span className="text-gray-500">Pending</span>
-              <span className="font-semibold text-gray-800">7 tasks</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="bg-white rounded-2xl p-6 text-left flex-1 flex flex-col justify-center">
-        <p className="text-sm font-bold text-gray-800 mb-5">Cash vs Bank Split</p>
-        <div className="h-3 rounded-full overflow-hidden flex bg-gray-100">
-          {SHOWCASE_SPLIT.map((seg) => (
-            <div key={seg.label} style={{ width: `${seg.pct}%`, background: seg.color }} />
-          ))}
-        </div>
-        <div className="flex items-center justify-between mt-4">
-          {SHOWCASE_SPLIT.map((seg) => (
-            <div key={seg.label} className="flex items-center gap-1.5">
-              <span className="w-1 h-4 rounded-full shrink-0" style={{ background: seg.color }} />
-              <span className="text-[13px] text-gray-500">{seg.label}</span>
-              <span className="text-[13px] font-semibold text-gray-800">{seg.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const SHOWCASE_SLIDES = [ShowcaseSlideStats, ShowcaseSlideDonut, ShowcaseSlideBars, ShowcaseSlideProgress];
+type LoginMode = 'login' | 'signup' | 'forgotPassword';
 
 interface LoginPageProps {
   logo: string;
   onLogin: (username: string, password: string) => Promise<boolean>;
+  onGoogleAuth: (idToken: string) => Promise<GoogleAuthResult>;
+  initialMode?: LoginMode;
+  // Called only for the two modes that have their own URL (/login,
+  // /signup) — forgotPassword stays a transient in-page sub-state, same as
+  // before, no route of its own.
+  onModeChange?: (mode: 'login' | 'signup') => void;
 }
 
 // Figma redesign (1920x1080) — decorative background rings/emblem/analytics
@@ -191,14 +32,18 @@ interface LoginPageProps {
 // onLogin/forgot-password wiring, no backend change) just restyled to
 // match the new design. Google sign-in is intentionally static/non-wired
 // per explicit instruction — no auth provider integration exists yet.
-export function LoginPage({ logo, onLogin }: LoginPageProps) {
+export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChange }: LoginPageProps) {
   const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [mode, setModeState] = useState<LoginMode>(initialMode || 'login');
+  const goToMode = (next: LoginMode) => {
+    setModeState(next);
+    if (next === 'login' || next === 'signup') onModeChange?.(next);
+  };
   const [forgotUsername, setForgotUsername] = useState('');
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
   const [forgotMessage, setForgotMessage] = useState('');
@@ -208,24 +53,139 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
     getPlatformSettingsRequest().then(p => setPlatformLogo(p.logoUrl)).catch(() => {});
   }, []);
 
-  const [showcaseSlide, setShowcaseSlide] = useState(0);
-  const [showcaseFaded, setShowcaseFaded] = useState(false);
+  // --- Traditional signup state (email + password + confirm only — no
+  //     committee name; the tenant gets an auto-derived placeholder name,
+  //     renamed later from Settings) ---
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupShowPassword, setSignupShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [signupSubmitting, setSignupSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState('');
 
-  const goToShowcaseSlide = (next: number) => {
-    setShowcaseFaded(true);
-    setTimeout(() => {
-      setShowcaseSlide(next);
-      setShowcaseFaded(false);
-    }, 250);
-  };
+  const [googleButtonError, setGoogleButtonError] = useState('');
+
+  // --- Google Identity Services button loading ---
+  const [googleClientId, setGoogleClientId] = useState('');
+  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      goToShowcaseSlide((showcaseSlide + 1) % SHOWCASE_SLIDES.length);
-    }, 4000);
-    return () => clearInterval(id);
+    getGoogleClientIdRequest().then(id => setGoogleClientId(id)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (window.google?.accounts?.id) {
+      setGoogleScriptLoaded(true);
+      return;
+    }
+    if (document.getElementById('google-identity-script')) {
+      // Script tag already exists from an earlier mount (e.g. a Vite HMR
+      // reload during dev) but window.google isn't populated yet — its own
+      // onload already fired/will fire on that original element, which
+      // this new mount never gets notified of. Poll instead of waiting on
+      // an event we can't attach to, so the button doesn't get stuck
+      // permanently unrendered.
+      const id = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          setGoogleScriptLoaded(true);
+          clearInterval(id);
+        }
+      }, 100);
+      const timeout = setTimeout(() => clearInterval(id), 10000);
+      return () => { clearInterval(id); clearTimeout(timeout); };
+    }
+    const script = document.createElement('script');
+    script.id = 'google-identity-script';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleScriptLoaded(true);
+    document.head.appendChild(script);
+  }, []);
+
+  const handleGoogleCredential = async (response: { credential: string }) => {
+    setGoogleButtonError('');
+    const result = await onGoogleAuth(response.credential);
+    if (result.success) return; // App.tsx already logged the user in (signup or sign-in, one click either way).
+    setGoogleButtonError(result.error || 'Google sign-in failed');
+  };
+
+  const googleReady = googleScriptLoaded && !!googleClientId && !!window.google?.accounts?.id;
+  const googleInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!googleReady || !googleBtnRef.current) return;
+
+    if (!googleInitializedRef.current) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleCredential,
+        });
+        googleInitializedRef.current = true;
+      } catch (err) {
+        // Surfaced so a misconfigured Client ID / unauthorized origin shows
+        // up in the console instead of the button just silently never
+        // appearing — check here first if the button isn't rendering.
+        console.error('Google Identity Services initialize() failed:', err);
+        return;
+      }
+    }
+
+    try {
+      googleBtnRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 320,
+        text: mode === 'signup' ? 'signup_with' : 'signin_with',
+      });
+    } catch (err) {
+      console.error('Google Identity Services renderButton() failed:', err);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showcaseSlide]);
+  }, [mode, googleReady]);
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError('');
+
+    if (!signupEmail.trim() || !signupPassword) {
+      setSignupError(t('login.enterCredentials'));
+      return;
+    }
+    if (!isPasswordStrong(signupPassword)) {
+      setSignupError(t('login.signup.passwordTooWeak'));
+      return;
+    }
+    if (signupPassword !== signupConfirmPassword) {
+      setSignupError(t('login.signup.passwordMismatch'));
+      return;
+    }
+    if (!agreedToTerms) {
+      setSignupError(t('login.signup.agreeTermsRequired'));
+      return;
+    }
+
+    setSignupSubmitting(true);
+    try {
+      await signupTenantRequest(signupEmail.trim(), signupPassword);
+      // Tenant now exists with username = email — log straight in through
+      // the same prop/flow a normal login uses (App.tsx's handleLogin),
+      // so session state ends up identical either way.
+      const success = await onLogin(signupEmail.trim(), signupPassword);
+      if (!success) {
+        setSignupError('Account created — please sign in.');
+        goToMode('login');
+      }
+    } catch (err: any) {
+      setSignupError(err?.message || 'Could not create account — please try again.');
+    } finally {
+      setSignupSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,7 +228,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
   const effectiveLogo = logo === '🕉️' && platformLogo ? platformLogo : logo;
   void effectiveLogo;
 
-  const inputClass = 'w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
+  const inputClass = 'w-full px-5 py-3 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 
   const forgotPasswordPanel = (
     <div className="w-full max-w-md">
@@ -296,7 +256,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
           <button
             type="submit"
             disabled={forgotSubmitting}
-            className="w-full bg-orange-600 text-white py-4 rounded-2xl font-medium text-lg hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full bg-orange-600 text-white py-3 rounded-2xl font-medium text-base hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
           >
             {forgotSubmitting ? 'Sending…' : 'Send reset link'}
           </button>
@@ -305,11 +265,41 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
 
       <button
         type="button"
-        onClick={() => { setShowForgotPassword(false); setForgotMessage(''); }}
+        onClick={() => { goToMode('login'); setForgotMessage(''); }}
         className="w-full mt-6 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-center"
       >
         Back to login
       </button>
+    </div>
+  );
+
+  // The GIS button renders into this div — shared markup between the login
+  // and signup panels (only one is ever mounted at a time, so there's no
+  // collision). A plain disabled-looking fallback shows while the script/
+  // client id are still loading, so there's no broken flash.
+  const googleButtonSlot = (
+    <div className="mb-7">
+      <div
+        ref={googleBtnRef}
+        className={
+          googleReady
+            ? 'flex justify-center rounded-2xl overflow-hidden hover:opacity-90 hover:shadow-md active:scale-[0.98] transition-all cursor-pointer'
+            : 'hidden'
+        }
+      />
+      {!googleReady && (
+        <button
+          type="button"
+          disabled
+          className="w-full flex items-center justify-center gap-3 px-6 py-2.5 rounded-2xl border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 font-medium"
+        >
+          <GoogleIcon />
+          {mode === 'signup' ? t('login.signup.googleButton') : t('login.google')}
+        </button>
+      )}
+      {googleButtonError && (
+        <p className="text-sm text-red-600 dark:text-red-400 mt-2 text-center">{googleButtonError}</p>
+      )}
     </div>
   );
 
@@ -322,13 +312,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         {t('login.join.subtitle')}
       </p>
 
-      <button
-        type="button"
-        className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors mb-7"
-      >
-        <GoogleIcon />
-        {t('login.google')}
-      </button>
+      {googleButtonSlot}
 
       <hr className="border-t border-gray-200 dark:border-gray-700 mt-[30px] mb-7" />
 
@@ -377,7 +361,7 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-orange-600 text-white py-4 rounded-2xl font-medium text-lg hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+          className="w-full bg-orange-600 text-white py-3 rounded-2xl font-medium text-base hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
         >
           {submitting ? t('login.submitting') : t('login.submit')}
         </button>
@@ -385,12 +369,19 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
 
       <div className="flex items-center justify-between mt-6 text-base">
         <span className="text-gray-400 dark:text-gray-500">
-          {t('login.alreadyHaveAccount')} <span className="font-medium text-gray-800 dark:text-gray-200">{t('login.signIn')}</span>
+          {t('login.alreadyHaveAccount')}{' '}
+          <button
+            type="button"
+            onClick={() => { goToMode('signup'); setSignupError(''); }}
+            className="font-medium text-gray-800 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-500 hover:underline"
+          >
+            {t('login.signIn')}
+          </button>
         </span>
         <button
           type="button"
-          onClick={() => { setShowForgotPassword(true); setForgotMessage(''); }}
-          className="font-medium text-red-500 hover:text-red-600"
+          onClick={() => { goToMode('forgotPassword'); setForgotMessage(''); }}
+          className="font-medium text-red-500 hover:text-red-600 hover:underline"
         >
           {t('login.forgotPassword')}
         </button>
@@ -398,89 +389,128 @@ export function LoginPage({ logo, onLogin }: LoginPageProps) {
     </div>
   );
 
-  // Same column, same position as the login fields — the reset-password
-  // panel swaps in place of the form instead of opening as a modal.
-  const formColumn = showForgotPassword ? forgotPasswordPanel : loginFormPanel;
-
-  // Shared card body — used by the desktop absolute-positioned card
-  // (overlapping emblem, fixed px size) and the mobile stacked card
-  // (plain block, no emblem overlap, rendered after the login form).
-  const cardBody = (
-    <>
-      <h2 className="text-2xl font-semibold text-white leading-snug mt-[2%] lg:mt-[2%]">
-        {t('login.showcase.heading1')}<br />{t('login.showcase.heading2')}
-      </h2>
-
-      <div className="w-full mt-6 lg:mt-[7%] h-[400px] overflow-hidden flex flex-col">
-        <div className={`flex-1 min-h-0 transition-opacity duration-[250ms] ease-in-out ${showcaseFaded ? 'opacity-0' : 'opacity-100'}`}>
-          {(() => {
-            const Slide = SHOWCASE_SLIDES[showcaseSlide];
-            return <Slide />;
-          })()}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1.5 mt-6 lg:mt-[6%]">
-        {SHOWCASE_SLIDES.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => goToShowcaseSlide(i)}
-            aria-label={`Showcase slide ${i + 1}`}
-            className={`h-1 rounded-full transition-all ${i === showcaseSlide ? 'w-5 bg-orange-600' : 'w-5 bg-white/30'}`}
-          />
-        ))}
-      </div>
-
-      <h3 className="text-white font-semibold mt-4 lg:mt-[4%] text-left w-full">{t('login.showcase.helpTitle')}</h3>
-      <p className="text-sm text-gray-400 mt-2 leading-relaxed text-left w-full">
-        {t('login.showcase.helpDesc')}
+  const signupPanel = (
+    <div className="w-full max-w-md">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
+        {t('login.signup.title')}
+      </h1>
+      <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
+        {t('login.signup.subtitle')}
       </p>
-    </>
+
+      {googleButtonSlot}
+
+      <hr className="border-t border-gray-200 dark:border-gray-700 mt-[30px] mb-7" />
+
+      <form onSubmit={handleSignupSubmit} className="space-y-5">
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
+            {t('login.signup.email')}
+          </label>
+          <input
+            type="email"
+            value={signupEmail}
+            onChange={(e) => setSignupEmail(e.target.value)}
+            className={inputClass}
+            placeholder={t('login.signup.emailPlaceholder')}
+          />
+        </div>
+
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
+            {t('login.password')}
+          </label>
+          <div className="relative">
+            <input
+              type={signupShowPassword ? 'text' : 'password'}
+              value={signupPassword}
+              onChange={(e) => setSignupPassword(e.target.value)}
+              className={`${inputClass} pr-12`}
+              placeholder={t('login.passwordPlaceholder')}
+            />
+            <button
+              type="button"
+              onClick={() => setSignupShowPassword(!signupShowPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              {signupShowPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
+            {t('login.signup.confirmPassword')}
+          </label>
+          <input
+            type={signupShowPassword ? 'text' : 'password'}
+            value={signupConfirmPassword}
+            onChange={(e) => setSignupConfirmPassword(e.target.value)}
+            className={inputClass}
+            placeholder={t('login.signup.confirmPasswordPlaceholder')}
+          />
+        </div>
+
+        <label className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            {t('login.signup.terms')} —{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">
+              Terms & Conditions
+            </a>
+          </span>
+        </label>
+
+        {signupError && (
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 px-4 py-3 rounded-xl text-sm text-center">
+            {signupError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={signupSubmitting}
+          className="w-full bg-orange-600 text-white py-3 rounded-2xl font-medium text-base hover:bg-orange-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+        >
+          {signupSubmitting ? t('login.signup.submitting') : t('login.signup.submit')}
+        </button>
+      </form>
+
+      <div className="mt-6 text-base text-center">
+        <span className="text-gray-400 dark:text-gray-500">
+          {t('login.signup.haveAccount')}{' '}
+          <button
+            type="button"
+            onClick={() => { goToMode('login'); setError(''); }}
+            className="font-medium text-gray-800 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-500 hover:underline"
+          >
+            {t('login.signup.signInCta')}
+          </button>
+        </span>
+      </div>
+    </div>
   );
 
+  // Same column, same position as the login fields — every other mode
+  // swaps in place of the form instead of opening as a modal/separate page.
+  const formColumn =
+    mode === 'forgotPassword' ? forgotPasswordPanel :
+    mode === 'signup' ? signupPanel :
+    loginFormPanel;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-x-hidden flex items-center justify-center p-4 lg:p-10">
-      {/* Decorative background rings — object-cover so it always fills the
-          full viewport (like the Figma source's 1920x1080 frame), at any
-          window size, instead of a fixed-width chunk. */}
-      <img
-        src={loginBackground}
-        alt=""
-        aria-hidden="true"
-        className="hidden lg:block fixed inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none"
-      />
-
-      <div className="relative w-full max-w-7xl flex flex-col items-center">
-        {/*
-          Desktop/tablet row (≥1024px) — card + emblem sit to the left of the
-          form at their full Figma-matched size on large screens (≥1536px,
-          "2xl"), and scale down as one unit (`origin-top-left`) on narrower
-          desktop/tablet widths (1024–1536px) so nothing gets cropped or
-          overlaps the form instead of reflowing the whole design.
-        */}
-        <div className="hidden lg:flex w-full items-center justify-center px-[6vw] gap-[6vw]">
-          <div className="relative w-[414px] h-[640px] min-[1400px]:w-[440px] min-[1400px]:h-[700px] 2xl:w-[520px] 2xl:h-[740px] shrink-0 self-start">
-            <div className="relative z-10 flex h-full w-full flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-10 overflow-y-auto">
-              {cardBody}
-            </div>
-          </div>
-
-          {formColumn}
-        </div>
-
-        {/* Mobile/narrow layout (<1024px) — background graphics and emblem
-            vanish entirely; just the login form, with the black showcase
-            card stacked below it (not beside it). */}
-        <div className="lg:hidden w-full flex flex-col items-center gap-10">
-          {formColumn}
-          <div className="w-full max-w-md flex flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-8">
-            {cardBody}
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <AuthShowcaseLayout
+      heading1={t('login.showcase.heading1')}
+      heading2={t('login.showcase.heading2')}
+      helpTitle={t('login.showcase.helpTitle')}
+      helpDesc={t('login.showcase.helpDesc')}
+      formColumn={formColumn}
+    />
   );
 }
 

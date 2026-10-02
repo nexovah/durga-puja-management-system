@@ -1472,6 +1472,35 @@ export async function loginRequest(username: string, password: string): Promise<
   return user;
 }
 
+// Traditional self-serve signup — just email + password (no committee name
+// up front; the tenant gets an auto-derived placeholder name, see
+// supabase/112_signup_no_committee_name.sql, renamed later from Settings).
+// Auto-active, 1-month free trial granted atomically by signup_tenant().
+// Deliberately does NOT establish a session itself (no
+// setTenantAccessToken/saveSession here) — the caller (LoginPage) calls the
+// existing onLogin prop right after this resolves, which already carries
+// that whole flow through App.tsx's handleLogin, so a signed-up account
+// ends up in the exact same App-level logged-in state a normal login
+// produces, with no parallel/duplicate session-setup path.
+export async function signupTenantRequest(email: string, password: string): Promise<void> {
+  const { data, error } = await supabase.rpc('signup_tenant', {
+    p_email: email,
+    p_password: password,
+  });
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Could not create account');
+  const tenantName = data[0].name as string;
+
+  fetch('/api/email/send-signup-welcome', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      variables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
+    }),
+  }).catch(() => {});
+}
+
 export async function requestTenantPasswordResetRequest(username: string): Promise<void> {
   await fetch('/api/auth/request-tenant-password-reset', {
     method: 'POST',

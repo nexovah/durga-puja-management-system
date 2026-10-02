@@ -101,6 +101,34 @@ export async function createTenantRequest(
   return fromTenantRow(data[0]);
 }
 
+export interface GoogleOAuthSettings {
+  clientId: string;
+}
+
+function fromGoogleOAuthSettingsRow(row: any): GoogleOAuthSettings {
+  return { clientId: row?.client_id || '' };
+}
+
+// Public — called from the (unauthenticated) login page to know which
+// Client ID to render Google's Sign-in button against.
+export async function getGoogleClientIdRequest(): Promise<string> {
+  const { data, error } = await supabase.rpc('get_google_client_id');
+  if (error) throw error;
+  return data || '';
+}
+
+export async function getGoogleOAuthSettingsRequest(): Promise<GoogleOAuthSettings> {
+  const { data, error } = await supabase.rpc('super_admin_get_google_oauth_settings');
+  if (error) throw error;
+  return fromGoogleOAuthSettingsRow(data);
+}
+
+export async function updateGoogleOAuthSettingsRequest(clientId: string): Promise<GoogleOAuthSettings> {
+  const { data, error } = await supabase.rpc('super_admin_update_google_oauth_settings', { p_client_id: clientId || null });
+  if (error) throw error;
+  return fromGoogleOAuthSettingsRow(data);
+}
+
 export async function sendNewAdminAlertRequest(to: string, variables: Record<string, string>): Promise<void> {
   const token = getTenantAccessToken();
   await fetch('/api/email/send-new-admin-alert', {

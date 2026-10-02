@@ -970,6 +970,38 @@ export default function App() {
     }
   };
 
+  // Handles both steps of the Google login/signup flow (see
+  // src/app/components/LoginPage.tsx and api/auth/google-verify.js):
+  // single round trip — either logs an existing Google-linked user straight
+  // in, or (no account found) creates the tenant (auto-derived placeholder
+  // name, no second "pick a committee name" screen) and logs that new
+  // account straight in too. Same session-establishing steps as
+  // handleLogin, except the access token/row came back from this route
+  // rather than directly from supabase.rpc('login', ...).
+  const handleGoogleAuth = async (idToken: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/google-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        return { success: false, error: body?.error || 'Google sign-in failed' };
+      }
+      const row = body.user;
+      setTenantAccessToken(row.access_token || null);
+      const user = fromUserRow(row);
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      saveSession(user);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Google auth failed', err);
+      return { success: false, error: err?.message || 'Google sign-in failed' };
+    }
+  };
+
   const handleSubscriptionExtended = async () => {
     if (!currentUser?.tenantId) return;
     try {
@@ -1089,7 +1121,21 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         />
       );
     }
-    return <LoginPage logo={committeeInfo.logo} onLogin={handleLogin} />;
+    return (
+      <LoginPage
+        logo={committeeInfo.logo}
+        onLogin={handleLogin}
+        onGoogleAuth={handleGoogleAuth}
+        initialMode={loggedOutPath === '/signup' ? 'signup' : 'login'}
+        onModeChange={newMode => {
+          const newPath = newMode === 'signup' ? '/signup' : '/login';
+          if (window.location.pathname !== newPath) {
+            window.history.pushState(null, '', newPath);
+          }
+          setLoggedOutPath(newPath);
+        }}
+      />
+    );
   }
 
   const subscriptionExpired =

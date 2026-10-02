@@ -62,7 +62,7 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
               </div>
               <button
                 onClick={onDone}
-                className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition-colors"
+                className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-bold hover:bg-orange-700 transition-colors"
               >
                 Back to sign in
               </button>
@@ -76,7 +76,7 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 pr-12 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                     autoFocus
                   />
                   <button
@@ -94,7 +94,7 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                 />
               </div>
               {error && (
@@ -105,7 +105,7 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg disabled:opacity-60"
+                className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-base hover:bg-orange-700 transition-colors shadow-lg disabled:opacity-60"
               >
                 {submitting ? 'Saving…' : 'Set new password'}
               </button>

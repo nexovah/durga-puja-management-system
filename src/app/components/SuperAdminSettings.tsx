@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, User, Lock, Code, Save, CreditCard, Eye, EyeOff, Mail, Send, ShieldCheck } from 'lucide-react';
+import { Settings as SettingsIcon, User, Lock, Code, Save, CreditCard, Eye, EyeOff, Mail, Send, ShieldCheck, KeyRound } from 'lucide-react';
 import {
   superAdminChangePasswordRequest,
   getDeveloperInfoRequest,
@@ -15,6 +15,8 @@ import {
   sendTestEmailRequest,
   getBotProtectionSettingsRequest,
   updateBotProtectionSettingsRequest,
+  getGoogleOAuthSettingsRequest,
+  updateGoogleOAuthSettingsRequest,
   isPasswordStrong,
   DeveloperInfo,
   SuperAdminProfile,
@@ -22,10 +24,11 @@ import {
   PaymentGatewaySettings,
   EmailProviderSettings,
   BotProtectionSettings,
+  GoogleOAuthSettings,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
 
-type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'email' | 'botProtection' | 'developer';
+type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'email' | 'botProtection' | 'googleOAuth' | 'developer';
 
 const EMPTY_DEV_INFO: DeveloperInfo = { name: '', email: '', phone: '', version: '', changelog: '' };
 const EMPTY_PROFILE: SuperAdminProfile = { id: '', name: '', username: '', email: '', phone: '', phone2: '', address: '', logoUrl: '' };
@@ -39,6 +42,7 @@ const EMPTY_PAYMENT_GATEWAY: PaymentGatewaySettings = {
 };
 const EMPTY_EMAIL_PROVIDER: EmailProviderSettings = { resendApiKey: '', fromAddress: '', fromName: 'Durga CRM', internalNotifyEmail: '' };
 const EMPTY_BOT_PROTECTION: BotProtectionSettings = { turnstileSiteKey: '', turnstileSecretKey: '' };
+const EMPTY_GOOGLE_OAUTH: GoogleOAuthSettings = { clientId: '' };
 
 const NAV_ITEMS: { key: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'general', label: 'General', icon: SettingsIcon },
@@ -47,10 +51,11 @@ const NAV_ITEMS: { key: Tab; label: string; icon: typeof SettingsIcon }[] = [
   { key: 'paymentGateway', label: 'Payment Gateway', icon: CreditCard },
   { key: 'email', label: 'Email', icon: Mail },
   { key: 'botProtection', label: 'Bot Protection', icon: ShieldCheck },
+  { key: 'googleOAuth', label: 'Google OAuth', icon: KeyRound },
   { key: 'developer', label: 'Developer Info', icon: Code },
 ];
 
-const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'paymentGateway', 'email', 'botProtection', 'developer'];
+const VALID_TABS: Tab[] = ['general', 'profile', 'password', 'paymentGateway', 'email', 'botProtection', 'googleOAuth', 'developer'];
 
 // /super-admin/settings/<tab> — see docs/URL_STATE_CONVENTION.md: every
 // list/detail/tab view in this app carries its state in the URL so a
@@ -144,6 +149,12 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
   const [botProtectionError, setBotProtectionError] = useState('');
   const [showTurnstileSecret, setShowTurnstileSecret] = useState(false);
 
+  const [googleOAuthForm, setGoogleOAuthForm] = useState<GoogleOAuthSettings>(EMPTY_GOOGLE_OAUTH);
+  const [googleOAuthLoading, setGoogleOAuthLoading] = useState(true);
+  const [savingGoogleOAuth, setSavingGoogleOAuth] = useState(false);
+  const [googleOAuthMessage, setGoogleOAuthMessage] = useState('');
+  const [googleOAuthError, setGoogleOAuthError] = useState('');
+
   useEffect(() => {
     getPlatformSettingsRequest()
       .then(p => { setPlatform(p); setPlatformForm(p); })
@@ -169,6 +180,10 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       .then(s => setBotProtectionForm(s))
       .catch(() => {})
       .finally(() => setBotProtectionLoading(false));
+    getGoogleOAuthSettingsRequest()
+      .then(s => setGoogleOAuthForm(s))
+      .catch(() => {})
+      .finally(() => setGoogleOAuthLoading(false));
   }, []);
 
   const handlePaymentGatewaySubmit = async (e: React.FormEvent) => {
@@ -234,6 +249,22 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       setBotProtectionError(err?.message || 'Failed to save');
     } finally {
       setSavingBotProtection(false);
+    }
+  };
+
+  const handleGoogleOAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGoogleOAuthError('');
+    setGoogleOAuthMessage('');
+    setSavingGoogleOAuth(true);
+    try {
+      const updated = await updateGoogleOAuthSettingsRequest(googleOAuthForm.clientId);
+      setGoogleOAuthForm(updated);
+      setGoogleOAuthMessage('Saved.');
+    } catch (err: any) {
+      setGoogleOAuthError(err?.message || 'Failed to save');
+    } finally {
+      setSavingGoogleOAuth(false);
     }
   };
 
@@ -903,6 +934,42 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                 >
                   <Save size={20} />
                   {savingBotProtection ? 'Saving…' : 'Save'}
+                </button>
+              </form>
+            )
+          )}
+
+          {activeTab === 'googleOAuth' && (
+            googleOAuthLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+            ) : (
+              <form onSubmit={handleGoogleOAuthSubmit} className="space-y-4 max-w-xl">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Powers "Sign in / Sign up with Google" on the committee login screen (Google
+                  Identity Services button flow — no client secret needed, verification happens
+                  server-side against Google's own public keys). From Google Cloud Console {'->'}
+                  {' '}APIs & Services {'->'} Credentials, create an OAuth 2.0 Client ID (type "Web
+                  application") and paste it below.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Client ID</label>
+                  <input
+                    value={googleOAuthForm.clientId}
+                    onChange={e => setGoogleOAuthForm(f => ({ ...f, clientId: e.target.value }))}
+                    placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                    className={inputClass}
+                    autoComplete="off"
+                  />
+                </div>
+                {googleOAuthError && <p className="text-sm text-red-600 dark:text-red-400">{googleOAuthError}</p>}
+                {googleOAuthMessage && <p className="text-sm text-green-600 dark:text-green-400">{googleOAuthMessage}</p>}
+                <button
+                  type="submit"
+                  disabled={savingGoogleOAuth}
+                  className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                >
+                  <Save size={20} />
+                  {savingGoogleOAuth ? 'Saving…' : 'Save'}
                 </button>
               </form>
             )
