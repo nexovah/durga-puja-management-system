@@ -85,15 +85,19 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
   // every other page's widgets (Treasury, Chanda, etc.) — one muted accent
   // color per card instead of a full gradient background.
   const paidMembersCount = members.filter(m => getMemberCreditAmount(m) > 0).length;
+  const collectionsReceivedCount = chandaList.filter(c => getChandaCreditAmount(c) > 0).length;
+  const totalDonationCount = donationAdsList.filter(item => item.category === 'donation').length;
+  const totalAdsCount = donationAdsList.filter(item => item.category === 'ads').length;
+  const outstandingLoansCount = loansList.filter(loan => getLoanNetAmount(loan) > 0).length;
 
   const statTiles = [
     { title: t('dashboard.totalMembers'), value: members.length.toString(), subLabel: t('dashboard.totalMembersPaid'), subValue: `₹${totalMembershipPayments.toLocaleString()}`, icon: Users, accent: 'blue', ring: members.length > 0 ? paidMembersCount / members.length : 0 },
-    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, icon: IndianRupee, accent: 'green' },
-    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, icon: HandCoins, accent: 'amber' },
-    { title: t('dashboard.donationTotal'), value: `₹${totalDonation.toLocaleString()}`, icon: Gift, accent: 'emerald' },
-    { title: t('dashboard.adsTotal'), value: `₹${totalAds.toLocaleString()}`, icon: Gift, accent: 'emerald' },
-    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, icon: Landmark, accent: 'sky' },
-    { title: t('nav.awards'), value: `₹${totalAwards.toLocaleString()}`, icon: Trophy, accent: 'cyan' },
+    { title: t('dashboard.totalChanda'), value: `₹${totalChanda.toLocaleString()}`, subLabel: t('dashboard.collections'), subValue: collectionsReceivedCount.toString(), icon: IndianRupee, accent: 'green' },
+    { title: t('dashboard.pendingDueChanda'), value: `₹${pendingDueChanda.toLocaleString()}`, subLabel: t('dashboard.outstanding'), subValue: pendingCountChanda.toString(), icon: HandCoins, accent: 'amber' },
+    { title: t('dashboard.donationTotal'), value: `₹${totalDonation.toLocaleString()}`, subLabel: t('dashboard.donations'), subValue: totalDonationCount.toString(), icon: Gift, accent: 'emerald' },
+    { title: t('dashboard.adsTotal'), value: `₹${totalAds.toLocaleString()}`, subLabel: t('dashboard.sponsorships'), subValue: totalAdsCount.toString(), icon: Gift, accent: 'emerald' },
+    { title: t('dashboard.loansOutstanding'), value: `₹${totalLoansNet.toLocaleString()}`, subLabel: t('dashboard.loans'), subValue: outstandingLoansCount.toString(), icon: Landmark, accent: 'sky' },
+    { title: t('nav.awards'), value: `₹${totalAwards.toLocaleString()}`, subLabel: t('dashboard.awards'), subValue: awardsList.length.toString(), icon: Trophy, accent: 'cyan' },
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, subLabel: t('dashboard.expenses'), subValue: expenses.length.toString(), icon: TrendingDown, accent: 'red' },
   ];
 
