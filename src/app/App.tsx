@@ -1229,7 +1229,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             </button>
 
             <button
-              onClick={() => setCurrentPage('helpSupport')}
+              onClick={() => {
+                if (window.location.pathname !== '/help-support') {
+                  window.history.pushState(null, '', '/help-support');
+                }
+                setCurrentPage('helpSupport');
+              }}
               className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
               aria-label={t('nav.helpSupport')}
               title={t('nav.helpSupport')}
@@ -1618,7 +1623,7 @@ function ProfileMenu({
             </>
           )}
 
-          <div className="border-t border-gray-100 dark:border-gray-800" />
+
           <button
             onClick={() => { onLogout(); setOpen(false); }}
             className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-3"

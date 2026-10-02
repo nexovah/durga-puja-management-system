@@ -97,16 +97,16 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
     { title: t('dashboard.totalExpenses'), value: `₹${totalExpenses.toLocaleString()}`, subLabel: t('dashboard.expenses'), subValue: expenses.length.toString(), icon: TrendingDown, accent: 'red' },
   ];
 
-  const ACCENT_CLASSES: Record<string, { border: string; icon: string; iconBg: string }> = {
-    blue: { border: 'border-blue-500 dark:border-blue-500/60', icon: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-500/10' },
-    green: { border: 'border-green-500 dark:border-green-500/60', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10' },
-    emerald: { border: 'border-emerald-500 dark:border-emerald-500/60', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-    sky: { border: 'border-sky-500 dark:border-sky-500/60', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10' },
-    purple: { border: 'border-purple-500 dark:border-purple-500/60', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10' },
-    amber: { border: 'border-amber-500 dark:border-amber-500/60', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10' },
-    red: { border: 'border-red-500 dark:border-red-500/60', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10' },
-    orange: { border: 'border-orange-500 dark:border-orange-500/60', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10' },
-    cyan: { border: 'border-cyan-500 dark:border-cyan-500/60', icon: 'text-cyan-600', iconBg: 'bg-cyan-50 dark:bg-cyan-500/10' },
+  const ACCENT_CLASSES: Record<string, { border: string; icon: string; iconBg: string; bar: string }> = {
+    blue: { border: 'border-blue-500 dark:border-blue-500/60', icon: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-500/10', bar: 'bg-blue-500' },
+    green: { border: 'border-green-500 dark:border-green-500/60', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10', bar: 'bg-green-500' },
+    emerald: { border: 'border-emerald-500 dark:border-emerald-500/60', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10', bar: 'bg-emerald-500' },
+    sky: { border: 'border-sky-500 dark:border-sky-500/60', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10', bar: 'bg-sky-500' },
+    purple: { border: 'border-purple-500 dark:border-purple-500/60', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10', bar: 'bg-purple-500' },
+    amber: { border: 'border-amber-500 dark:border-amber-500/60', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10', bar: 'bg-amber-500' },
+    red: { border: 'border-red-500 dark:border-red-500/60', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10', bar: 'bg-red-500' },
+    orange: { border: 'border-orange-500 dark:border-orange-500/60', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10', bar: 'bg-orange-500' },
+    cyan: { border: 'border-cyan-500 dark:border-cyan-500/60', icon: 'text-cyan-600', iconBg: 'bg-cyan-50 dark:bg-cyan-500/10', bar: 'bg-cyan-500' },
   };
 
   return (
@@ -156,7 +156,11 @@ export function Dashboard({ members, chandaList, donationAdsList, expenses, loan
                 <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium leading-tight truncate">{tile.title}</p>
                 <p className="text-gray-900 dark:text-gray-100 text-lg sm:text-2xl font-bold leading-tight truncate">{tile.value}</p>
                 {'subValue' in tile && (
-                  <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5 truncate">{tile.subLabel}: <span className="text-gray-600 dark:text-gray-400 font-semibold">{tile.subValue}</span></p>
+                  <div className="flex items-center gap-1.5 mt-1 text-xs truncate">
+                    <span className={`w-1 h-3.5 rounded shrink-0 ${accent.bar}`} />
+                    <span className="text-gray-600 dark:text-gray-400">{tile.subLabel}</span>
+                    <span className="text-gray-800 dark:text-gray-200 font-semibold ml-0.5">{tile.subValue}</span>
+                  </div>
                 )}
               </div>
             </div>

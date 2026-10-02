@@ -30,8 +30,73 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<Tab>('open');
-  const [view, setView] = useState<View>('list');
+  const [view, setView] = useState<View>(() => {
+    const path = window.location.pathname;
+    if (path === '/help-support/new' || path === '/help-support/create') return 'create';
+    const match = path.match(/^\/help-support\/([^/]+)$/);
+    if (match && match[1] && match[1] !== 'new' && match[1] !== 'create') {
+      return { ticket: { id: match[1] } as SupportTicket };
+    }
+    return 'list';
+  });
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  const handleGoToCreate = () => {
+    if (window.location.pathname !== '/help-support/new') {
+      window.history.pushState(null, '', '/help-support/new');
+    }
+    setView('create');
+  };
+
+  const handleOpenTicket = (ticket: SupportTicket) => {
+    if (window.location.pathname !== `/help-support/${ticket.id}`) {
+      window.history.pushState(null, '', `/help-support/${ticket.id}`);
+    }
+    setView({ ticket });
+    if (currentUser) {
+      markTicketRead(ticket.id, currentUser.id)
+        .then(reloadActivity)
+        .catch(() => {});
+    }
+  };
+
+  const handleBackToList = () => {
+    if (window.location.pathname !== '/help-support') {
+      window.history.pushState(null, '', '/help-support');
+    }
+    setView('list');
+  };
+
+  // Handle browser back and forward button
+  useEffect(() => {
+    const onPop = () => {
+      const path = window.location.pathname;
+      if (path === '/help-support/new' || path === '/help-support/create') {
+        setView('create');
+      } else {
+        const match = path.match(/^\/help-support\/([^/]+)$/);
+        if (match && match[1] && match[1] !== 'new' && match[1] !== 'create') {
+          const ticketId = match[1];
+          const found = tickets.find(t => t.id === ticketId);
+          setView({ ticket: found || ({ id: ticketId } as SupportTicket) });
+        } else {
+          setView('list');
+        }
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [tickets]);
+
+  // When tickets load, resolve any partial ticket from URL
+  useEffect(() => {
+    if (typeof view === 'object' && tickets.length > 0) {
+      const full = tickets.find(t => t.id === view.ticket.id);
+      if (full && (!view.ticket.title || view.ticket !== full)) {
+        setView({ ticket: full });
+      }
+    }
+  }, [tickets]);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -68,16 +133,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
   const resolvedTickets = tickets.filter(t => t.status === 'resolved');
   const visibleTickets = tab === 'open' ? openTickets : resolvedTickets;
 
-  const selectedTicket = typeof view === 'object' ? tickets.find(t => t.id === view.ticket.id) || view.ticket : null;
-
-  const handleOpenTicket = (ticket: SupportTicket) => {
-    setView({ ticket });
-    if (currentUser) {
-      markTicketRead(ticket.id, currentUser.id)
-        .then(reloadActivity)
-        .catch(() => {});
-    }
-  };
+  const selectedTicket = typeof view === 'object' ? tickets.find(t => t.id === view.ticket.id) || (view.ticket.title ? view.ticket : null) : null;
 
   return (
     <div className="space-y-6">
@@ -85,7 +141,7 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
         action={
           view === 'list' && (
             <button
-              onClick={() => setView('create')}
+              onClick={handleGoToCreate}
               className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
             >
               <Plus size={20} /> {t('helpSupport.postQuery')}
@@ -183,19 +239,27 @@ export function HelpSupportPage({ currentUser, committeeName, onUnreadChange }: 
       )}
 
       {view === 'create' && (
-        <CreateTicketForm
-          currentUser={currentUser}
-          committeeName={committeeName}
-          onCancel={() => setView('list')}
-          onCreated={() => { setView('list'); reload(); }}
-        />
+        <div className="space-y-4">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          >
+            <ArrowLeft size={16} /> {t('helpSupport.thread.back')}
+          </button>
+          <CreateTicketForm
+            currentUser={currentUser}
+            committeeName={committeeName}
+            onCancel={handleBackToList}
+            onCreated={() => { handleBackToList(); reload(); }}
+          />
+        </div>
       )}
 
       {selectedTicket && (
         <TicketThread
           ticket={selectedTicket}
           currentUser={currentUser}
-          onBack={() => setView('list')}
+          onBack={handleBackToList}
           onOpenImage={setLightboxUrl}
           onTicketRepliedOrChanged={reload}
         />

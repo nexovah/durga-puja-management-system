@@ -145,7 +145,7 @@ export const translations = {
     'dashboard.donationTotal': 'Donation Collection',
     'dashboard.adsTotal': 'Sponsorship Collection',
     'dashboard.recentChanda': 'Recent Collection',
-    'dashboard.pendingDueChanda': 'Pending / Due Collection',
+    'dashboard.pendingDueChanda': 'Outstanding Collection',
     'dashboard.loansOutstanding': 'Loans Outstanding',
     'dashboard.chart.title': 'Collections vs Expenses',
     'dashboard.chart.income': 'Income',
@@ -553,7 +553,7 @@ export const translations = {
     'report.selected': 'selected',
     'report.noData': 'No data for this range.',
     'report.widget.totalCollected': 'Total Collected',
-    'report.widget.pendingDue': 'Pending / Due',
+    'report.widget.pendingDue': 'Outstanding',
     'report.widget.totalDonations': 'Total Donations',
     'report.widget.totalAds': 'Total Sponsorship',
     'report.widget.transactions': 'Transactions',
@@ -960,7 +960,7 @@ export const translations = {
 
     // Help & Support
     'helpSupport.title': 'Help & Support',
-    'helpSupport.postQuery': 'Post a New Query',
+    'helpSupport.postQuery': 'Post a Support Ticket',
     'helpSupport.openTickets': 'Open Tickets',
     'helpSupport.resolvedTickets': 'Resolved Tickets',
     'helpSupport.loading': 'Loading…',
@@ -984,7 +984,7 @@ export const translations = {
     'helpSupport.create.submit': 'Submit',
     'helpSupport.create.submitting': 'Submitting…',
     'helpSupport.create.failed': 'Failed to submit — please try again.',
-    'helpSupport.thread.back': 'Back to tickets',
+    'helpSupport.thread.back': 'Back to Help & Support',
     'helpSupport.thread.loadingReplies': 'Loading replies…',
     'helpSupport.thread.supportBadge': '(Support)',
     'helpSupport.thread.replyPlaceholder': 'Write a reply…',
@@ -1976,7 +1976,7 @@ export const translations = {
 
     // Help & Support
     'helpSupport.title': 'সাহায্য ও সহায়তা',
-    'helpSupport.postQuery': 'নতুন প্রশ্ন পোস্ট করুন',
+    'helpSupport.postQuery': 'সাপোর্ট টিকিট পোস্ট করুন',
     'helpSupport.openTickets': 'উন্মুক্ত টিকিট',
     'helpSupport.resolvedTickets': 'সমাধানকৃত টিকিট',
     'helpSupport.loading': 'লোড হচ্ছে…',
@@ -2000,7 +2000,7 @@ export const translations = {
     'helpSupport.create.submit': 'জমা দিন',
     'helpSupport.create.submitting': 'জমা দেওয়া হচ্ছে…',
     'helpSupport.create.failed': 'জমা দিতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন।',
-    'helpSupport.thread.back': 'টিকিটে ফিরে যান',
+    'helpSupport.thread.back': 'সাহায্য ও সহায়তা-য় ফিরে যান',
     'helpSupport.thread.loadingReplies': 'উত্তর লোড হচ্ছে…',
     'helpSupport.thread.supportBadge': '(সাপোর্ট)',
     'helpSupport.thread.replyPlaceholder': 'একটি উত্তর লিখুন…',
@@ -2991,7 +2991,7 @@ export const translations = {
 
     // Help & Support
     'helpSupport.title': 'मदद और सहायता',
-    'helpSupport.postQuery': 'नया प्रश्न पोस्ट करें',
+    'helpSupport.postQuery': 'सपोर्ट टिकट पोस्ट करें',
     'helpSupport.openTickets': 'ओपन टिकट',
     'helpSupport.resolvedTickets': 'हल किए गए टिकट',
     'helpSupport.loading': 'लोड हो रहा है…',
@@ -3015,7 +3015,7 @@ export const translations = {
     'helpSupport.create.submit': 'सबमिट करें',
     'helpSupport.create.submitting': 'सबमिट हो रहा है…',
     'helpSupport.create.failed': 'सबमिट करने में विफल — कृपया पुन: प्रयास करें।',
-    'helpSupport.thread.back': 'टिकटों पर वापस जाएं',
+    'helpSupport.thread.back': 'सहायता और समर्थन पर वापस जाएं',
     'helpSupport.thread.loadingReplies': 'जवाब लोड हो रहे हैं…',
     'helpSupport.thread.supportBadge': '(सपोर्ट)',
     'helpSupport.thread.replyPlaceholder': 'एक जवाब लिखें…',
