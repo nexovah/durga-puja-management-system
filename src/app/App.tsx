@@ -28,6 +28,7 @@ import { ActivityLog } from './components/ActivityLog';
 import { Tasks } from './components/Tasks';
 import { EstimationPage } from './components/Estimation';
 import { GlobalSearch } from './components/GlobalSearch';
+import { ConnectivityPill } from './components/ConnectivityPill';
 import { useLanguage } from './i18n/LanguageContext';
 import { useTheme } from './i18n/ThemeContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -1178,6 +1179,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 onNavigate={setCurrentPage}
               />
             </div>
+
+            <ConnectivityPill />
 
             <button
               onClick={toggleTheme}
