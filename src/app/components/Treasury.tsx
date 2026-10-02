@@ -274,7 +274,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-8 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-green-500 dark:border-green-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalChanda')}</h3>
             <TrendingUp className="text-green-500" size={24} />
@@ -283,7 +283,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{chandaList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-emerald-500 dark:border-emerald-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
             <Gift className="text-emerald-500" size={24} />
@@ -292,7 +292,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'donation').length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
             <Megaphone className="text-blue-500" size={24} />
@@ -301,7 +301,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{donationAdsList.filter(d => d.category === 'ads').length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-violet-500 dark:border-violet-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalMembership')}</h3>
             <Users className="text-violet-500" size={24} />
@@ -310,7 +310,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{membersPaidCount} {t('treasury.membersPaid')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-sky-500 dark:border-sky-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.loansOutstanding')}</h3>
             <Landmark className="text-sky-500" size={24} />
@@ -319,7 +319,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{loansList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-cyan-500 dark:border-cyan-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('nav.awards')}</h3>
             <Trophy className="text-cyan-500" size={24} />
@@ -328,7 +328,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{awardsList.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-red-500 dark:border-red-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.totalExpenses')}</h3>
             <TrendingDown className="text-red-500" size={24} />
@@ -337,7 +337,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{expenses.length} {t('treasury.transactions')}</p>
         </div>
 
-        <div className={`bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 ${balance >= 0 ? 'border-green-500 dark:border-green-500/60' : 'border-red-500 dark:border-red-500/60'}`}>
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.currentBalance')}</h3>
             <Wallet className={balance >= 0 ? 'text-green-500' : 'text-red-500'} size={24} />

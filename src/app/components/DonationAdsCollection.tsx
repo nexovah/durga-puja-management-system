@@ -857,7 +857,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       {widgetsVisible && (
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${fixedCategory !== 'donation' ? 'lg:grid-cols-3' : ''} gap-4 sm:gap-6`}>
         {fixedCategory === 'ads' && adsCategoryTotals.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-indigo-500 dark:border-indigo-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.byCategory')}</h3>
             <PieChart className="text-indigo-500" size={24} />
@@ -879,7 +879,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               {adsCategoryTotals.map((c, i) => (
                 <div key={c.name} className="flex items-center justify-between gap-2 text-xs">
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                    <span className="w-1 h-4 rounded shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
                     <span className="text-gray-600 dark:text-gray-400 truncate">{c.name}</span>
                   </span>
                   <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0">₹{c.value.toLocaleString()}</span>
@@ -889,7 +889,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           </div>
         </div>
         )}
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-purple-500 dark:border-purple-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.total')}</h3>
             <Wallet className="text-purple-500" size={24} />
@@ -897,7 +897,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
         </div>
         {fixedCategory && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
               {fixedCategory === 'donation' ? t('donationAds.widget.totalDonors') : t('donationAds.widget.totalAdvertisers')}
@@ -908,7 +908,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         </div>
         )}
         {!fixedCategory && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-emerald-500 dark:border-emerald-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.donation')}</h3>
             <Gift className="text-emerald-500" size={24} />
@@ -917,7 +917,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         </div>
         )}
         {!fixedCategory && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.ads')}</h3>
             <Megaphone className="text-blue-500" size={24} />

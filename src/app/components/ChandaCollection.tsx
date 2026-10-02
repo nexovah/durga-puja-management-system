@@ -1383,11 +1383,8 @@ function AmountMiniDonutCard({
           </button>
         )}
       </div>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`text-xl sm:text-2xl font-bold ${valueColor}`}>₹{total.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{paidLabel}: <span className="font-semibold text-gray-700 dark:text-gray-300">₹{Math.round(paid).toLocaleString()}</span></p>
-        </div>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className={`text-xl sm:text-2xl font-bold ${valueColor}`}>₹{total.toLocaleString()}</p>
         {data.length > 0 && (
           <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -1399,6 +1396,28 @@ function AmountMiniDonutCard({
                 <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
               </RePieChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-1 h-4 rounded shrink-0" style={{ background: color }} />
+            <span className="text-gray-600 dark:text-gray-400 truncate">{paidLabel}</span>
+          </div>
+          <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0 ml-2">
+            ₹{Math.round(paid).toLocaleString()} <span className="text-gray-400 dark:text-gray-500 font-normal">({total > 0 ? Math.round((paid / total) * 100) : 0}%)</span>
+          </span>
+        </div>
+        {remaining > 0 && (
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-1 h-4 rounded shrink-0 bg-gray-300 dark:bg-gray-600" />
+              <span className="text-gray-600 dark:text-gray-400 truncate">{remainingLabel}</span>
+            </div>
+            <span className="text-gray-800 dark:text-gray-200 font-semibold shrink-0 ml-2">
+              ₹{Math.round(remaining).toLocaleString()} <span className="text-gray-400 dark:text-gray-500 font-normal">({total > 0 ? Math.round((remaining / total) * 100) : 0}%)</span>
+            </span>
           </div>
         )}
       </div>

@@ -393,14 +393,14 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
 
       {widgetsVisible && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-orange-500 dark:border-orange-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('treasury.loansOutstanding')}</h3>
             <Landmark className="text-orange-500" size={24} />
           </div>
           <p className="text-3xl font-bold text-orange-600">₹{totalLoans.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('loans.outstandingCount')}</h3>
             <HandCoins className="text-amber-500" size={24} />

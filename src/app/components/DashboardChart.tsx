@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
   startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth,
@@ -220,10 +220,7 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
               ]}
               contentStyle={tooltipStyle}
             />
-            <Legend
-              formatter={(value) => (value === 'income' ? t('dashboard.chart.income') : t('dashboard.chart.expenses'))}
-              wrapperStyle={{ fontSize: 12 }}
-            />
+
             <Area
               type="monotone"
               dataKey="income"
@@ -242,6 +239,20 @@ export function DashboardChart({ chandaList, donationAdsList, expenses, loansLis
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Custom legend — evenly spaced, label+value grouped close together */}
+      <div className="flex justify-evenly mt-3 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1 h-4 rounded shrink-0" style={{ background: INCOME_COLOR }} />
+          <span className="text-gray-600 dark:text-gray-400">{t('dashboard.chart.income')}</span>
+          <span className="text-gray-800 dark:text-gray-200 font-semibold ml-1">₹{totalIncome.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1 h-4 rounded shrink-0" style={{ background: EXPENSE_COLOR }} />
+          <span className="text-gray-600 dark:text-gray-400">{t('dashboard.chart.expenses')}</span>
+          <span className="text-gray-800 dark:text-gray-200 font-semibold ml-1">₹{totalExpense.toLocaleString()}</span>
+        </div>
       </div>
     </div>
   );

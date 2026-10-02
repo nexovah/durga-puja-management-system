@@ -79,6 +79,7 @@ export function ReportModulePage<T extends { id: string }>({
   const { theme } = useTheme();
   const gridStroke = theme === 'dark' ? '#2d3138' : '#f0f0f0';
   const axisStroke = theme === 'dark' ? '#3d434b' : '#e5e7eb';
+  const axisTick  = theme === 'dark' ? '#9aa1ae' : '#6b7280';
 
   // On-screen table skips exportOnly columns (e.g. per-installment partial
   // payment detail) so it doesn't force horizontal scrolling; CSV/PDF below
@@ -311,17 +312,17 @@ export function ReportModulePage<T extends { id: string }>({
               </PieChart>
             ) : chartType === 'area' ? (
               <AreaChart data={chartData as { label: string; value: number }[]}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-                <XAxis dataKey="label" stroke={axisStroke} fontSize={12} tickLine={false} />
-                <YAxis stroke={axisStroke} fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: axisTick }} tickLine={false} axisLine={{ stroke: axisStroke }} />
+                <YAxis tick={{ fontSize: 12, fill: axisTick }} tickLine={false} axisLine={false} />
                 <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
                 <Area type="monotone" dataKey="value" stroke="#f97316" fill="#fed7aa" strokeWidth={2} />
               </AreaChart>
             ) : (
               <BarChart data={chartData as { label: string; value: number }[]}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-                <XAxis dataKey="label" stroke={axisStroke} fontSize={12} tickLine={false} />
-                <YAxis stroke={axisStroke} fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: axisTick }} tickLine={false} axisLine={{ stroke: axisStroke }} />
+                <YAxis tick={{ fontSize: 12, fill: axisTick }} tickLine={false} axisLine={false} />
                 <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
                 <Bar dataKey="value" fill="#f97316" radius={[6, 6, 0, 0]} />
               </BarChart>

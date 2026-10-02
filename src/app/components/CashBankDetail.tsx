@@ -76,7 +76,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-amber-500 dark:border-amber-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Closing Cash in Hand</h3>
             <Wallet className="text-amber-500" size={24} />
@@ -84,7 +84,7 @@ export function CashBankDetail({ totals, currentUser, onLog, onBack, onAdjustmen
           <p className="text-3xl font-bold text-amber-600">₹{totals.closingCash.toLocaleString()}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Opening ₹{totals.openingCash.toLocaleString()} + In ₹{totals.cashIn.toLocaleString()} − Out ₹{totals.cashOut.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-l-4 border-blue-500 dark:border-blue-500/60">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Closing Bank Balance</h3>
             <Landmark className="text-blue-500" size={24} />
