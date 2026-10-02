@@ -1229,6 +1229,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             expenses={expenses}
             loansList={loansList}
             awardsList={awardsList}
+            tasksList={tasksList}
             activeEvent={events.find(e => e.id === activeEventId) || null}
           />
         )}
