@@ -4,6 +4,7 @@ import {
   Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText, Eye, EyeOff,
 } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { Pagination, usePagination } from './Pagination';
