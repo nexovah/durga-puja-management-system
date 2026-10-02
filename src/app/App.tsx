@@ -428,6 +428,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   settings: '/settings',
   activityLog: '/activity-log',
   assets: '/assets',
+  awards: '/awards',
   documents: '/documents',
   tasks: '/tasks',
   estimation: '/estimation',

@@ -29,4 +29,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src/app'),
     },
   },
+  build: {
+    // Vite's default build output directory for hashed JS/CSS chunks is
+    // "assets" (dist/assets/*) — this app also has its own page route at
+    // /assets (the Assets inventory module). On a hard refresh at that
+    // route, a static host resolves /assets against the build's own
+    // assets directory before falling back to index.html, so the browser
+    // gets back a raw .js chunk's source instead of the app shell. Renamed
+    // to avoid the collision; the page's own URL (/assets) is unaffected.
+    assetsDir: 'build-assets',
+  },
 })
