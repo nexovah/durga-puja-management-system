@@ -136,10 +136,15 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
     try {
       googleBtnRef.current.innerHTML = '';
+      // Fixed pixel widths overflow narrow phone screens (GIS doesn't
+      // auto-resize on its own) — size to the actual container instead,
+      // clamped to GIS's supported range (200–400px).
+      const containerWidth = Math.round(googleBtnRef.current.getBoundingClientRect().width) || 320;
+      const width = Math.max(200, Math.min(400, containerWidth));
       window.google.accounts.id.renderButton(googleBtnRef.current, {
         theme: 'outline',
         size: 'large',
-        width: 320,
+        width,
         text: mode === 'signup' ? 'signup_with' : 'signin_with',
       });
     } catch (err) {
@@ -281,11 +286,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
     <div className="mb-7">
       <div
         ref={googleBtnRef}
-        className={
-          googleReady
-            ? 'flex justify-center rounded-2xl overflow-hidden hover:opacity-90 hover:shadow-md active:scale-[0.98] transition-all cursor-pointer'
-            : 'hidden'
-        }
+        className={googleReady ? 'w-full flex justify-center' : 'hidden'}
       />
       {!googleReady && (
         <button
