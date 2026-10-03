@@ -177,6 +177,21 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
     return () => { cancelled = true; };
   }, [turnstileSiteKey]);
 
+  // Past ~30% scroll depth, swap the sticky top header for a sticky
+  // bottom CTA bar — keeps the two primary actions reachable without the
+  // header competing for the same strip of screen.
+  const [scrolledPast, setScrolledPast] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
+      setScrolledPast(ratio >= 0.3);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
   const c = (light: string, darkCls: string) => (dark ? darkCls : light);
 
@@ -217,8 +232,9 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
 
   return (
     <div className={`min-h-screen ${c('bg-white text-gray-900', 'bg-gray-950 text-gray-100')}`}>
-      {/* Top bar */}
-      <header className={`sticky top-0 z-30 backdrop-blur border-b ${c('bg-white/80 border-gray-200', 'bg-gray-950/80 border-gray-800')}`}>
+      {/* Top bar — hidden past ~30% scroll depth, replaced by the sticky
+          bottom CTA bar below. */}
+      <header className={`sticky top-0 z-30 backdrop-blur border-b transition-transform duration-300 ${scrolledPast ? '-translate-y-full' : 'translate-y-0'} ${c('bg-white/80 border-gray-200', 'bg-gray-950/80 border-gray-800')}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-lg overflow-hidden">
@@ -535,6 +551,29 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
         </div>
         © {new Date().getFullYear()} Durga CRM. All rights reserved.
       </footer>
+
+      {/* Sticky bottom CTA bar — takes over from the top header past ~30%
+          scroll depth, keeping both primary actions reachable. */}
+      <div
+        className={`fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur transition-transform duration-300 ${scrolledPast ? 'translate-y-0' : 'translate-y-full'} ${c('bg-white/90 border-gray-200', 'bg-gray-950/90 border-gray-800')}`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onGoToSignup}
+            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg bg-orange-600 hover:bg-orange-700 transition flex flex-col items-center justify-center"
+          >
+            <span className="text-white font-medium truncate leading-tight">Create Your Committee</span>
+            <span className="text-[11px] text-orange-100 mt-px leading-tight">Avail 1 Month FREE</span>
+          </button>
+          <a
+            href="#lead-form"
+            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg font-medium transition truncate text-gray-900 bg-[#feeda9] hover:bg-[#fde48a] flex items-center justify-center"
+          >
+            Request Access and Demo
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
