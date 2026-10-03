@@ -75,15 +75,16 @@ function GoogleAuthButtonSlot({
 
     try {
       btnRef.current.innerHTML = '';
-      // Fixed pixel widths overflow narrow phone screens (GIS doesn't
-      // auto-resize on its own) — size to this instance's own container,
-      // clamped to GIS's supported range (200–400px).
-      const containerWidth = Math.round(btnRef.current.getBoundingClientRect().width) || 320;
-      const width = Math.max(200, Math.min(400, containerWidth));
+      // No dynamic width measurement, no resize listener, no scaling —
+      // GIS hard-caps its own rendered button at 400px internally no
+      // matter what's requested, so there's nothing to gain from matching
+      // the container size here. This button's own width has no effect
+      // on the surrounding form column's width (that's set independently
+      // by the panel's own max-w-* class) — fixed at Google's real max.
       window.google.accounts.id.renderButton(btnRef.current, {
         theme: 'outline',
         size: 'large',
-        width,
+        width: 400,
         text: mode === 'signup' ? 'signup_with' : 'signin_with',
       });
     } catch (err) {
@@ -272,7 +273,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   const inputClass = 'w-full px-5 py-3 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 
   const forgotPasswordPanel = (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md min-[2400px]:max-w-xl">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">Reset your password</h1>
       <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
         Enter your username — if it has an email on file, we'll send a reset link there.
@@ -337,7 +338,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   );
 
   const loginFormPanel = (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md min-[2400px]:max-w-xl">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {t('login.join.title')}
       </h1>
@@ -423,7 +424,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   );
 
   const signupPanel = (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md min-[2400px]:max-w-xl">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {t('login.signup.title')}
       </h1>

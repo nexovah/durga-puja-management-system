@@ -247,7 +247,7 @@ export function AuthShowcaseLayout({ heading1, heading2, helpTitle, helpDesc, fo
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-x-hidden flex items-center justify-center p-4 lg:p-10">
+    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-x-hidden flex items-center justify-center px-4 pt-[5vh] pb-4 lg:p-10">
       {/* Decorative background rings — object-cover so it always fills the
           full viewport (like the Figma source's 1920x1080 frame), at any
           window size, instead of a fixed-width chunk. */}
