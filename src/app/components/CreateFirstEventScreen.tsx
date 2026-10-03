@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react';
 import { EventInfo, createEventRequest, switchActiveEventRequest } from '../lib/db';
 import { CustomSelect } from './CustomSelect';
 import { formatFinancialYear } from './EventSwitcher';
+import { RequiredMark } from './RequiredMark';
 
 const EVENT_EMOJIS = ['🪔', '🕉️', '🙏', '🎉', '🌸', '💥', '🐘', '🎆', '⛩️', '🔱', '🌺', '🪘'];
 const currentYear = new Date().getFullYear();
@@ -89,7 +90,7 @@ export function CreateFirstEventScreen({
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name *</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name<RequiredMark /></label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -99,7 +100,7 @@ export function CreateFirstEventScreen({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year *</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year<RequiredMark /></label>
             <CustomSelect
               value={String(year)}
               onChange={v => setYear(Number(v))}

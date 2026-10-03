@@ -5,6 +5,7 @@ import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRe
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
+import { RequiredMark } from './RequiredMark';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -14,6 +15,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface VendorsProps {
   expenses: Expense[];
@@ -559,6 +561,7 @@ function VendorFormModal({
 
   const handleSave = async () => {
     if (!name.trim()) { setError(t('vendors.nameRequired')); return; }
+    if (!isPhoneValid(phone, false) || !isPhoneValid(phone2, false)) { setError(t('validation.phoneMinDigits')); return; }
     setSaving(true);
     setError('');
     try {
@@ -584,7 +587,7 @@ function VendorFormModal({
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.name')} *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('vendors.name')}<RequiredMark /></label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -616,7 +619,7 @@ function VendorFormModal({
               <input
                 type="tel"
                 value={phone}
-                onChange={e => setPhone(e.target.value)}
+                onChange={e => setPhone(onlyDigits(e.target.value))}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>
@@ -625,7 +628,7 @@ function VendorFormModal({
               <input
                 type="tel"
                 value={phone2}
-                onChange={e => setPhone2(e.target.value)}
+                onChange={e => setPhone2(onlyDigits(e.target.value))}
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
             </div>

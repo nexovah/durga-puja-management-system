@@ -17,6 +17,7 @@ import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
@@ -25,6 +26,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -283,6 +285,11 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
+
+    if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
+      alert(t('validation.phoneMinDigits'));
+      return;
+    }
 
     const billKey = normalizeKey(formData.billNumber);
     if (billKey) {
@@ -706,7 +713,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           <form id="chanda-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')}<RequiredMark /></label>
                 <input
                   type="text"
                   required
@@ -719,11 +726,11 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.numPersons')}</label>
                 <input
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.numPersons}
-                  onChange={(e) => setFormData({ ...formData, numPersons: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, numPersons: onlyDigits(e.target.value) })}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('chanda.numPersonsPlaceholder')}
                 />
@@ -741,7 +748,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
             <div className="md:col-span-2 grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amountLabel')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.amountLabel')}<RequiredMark /></label>
                 <input
                   type="number"
                   required
@@ -789,7 +796,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.paymentStatus}
                 onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus })}
@@ -799,7 +806,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
             {isPartial && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.partialAmountLabel')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.partialAmountLabel')}<RequiredMark /></label>
                 <input
                   type="number"
                   required
@@ -815,7 +822,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
               <input
                 type="date"
                 required
@@ -828,8 +835,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.billNumber')}</label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.billNumber}
-                onChange={(e) => setFormData({ ...formData, billNumber: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, billNumber: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.billNumberPlaceholder')}
               />
@@ -839,7 +848,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.phonePlaceholder')}
               />
@@ -849,7 +858,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
               <input
                 type="tel"
                 value={formData.phone2}
-                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone2: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('chanda.phonePlaceholder')}
               />

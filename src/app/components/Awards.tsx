@@ -29,13 +29,13 @@ const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
   { value: 'check', labelKey: 'common.paidMethod.check' },
 ];
 
-const RANKS: { value: AwardRank; label: string; gradient: string; badge: string }[] = [
-  { value: '1st', label: '1st', gradient: 'from-yellow-400 to-amber-500', badge: '🥇' },
-  { value: '2nd', label: '2nd', gradient: 'from-gray-300 to-gray-400', badge: '🥈' },
-  { value: '3rd', label: '3rd', gradient: 'from-amber-600 to-amber-700', badge: '🥉' },
-  { value: 'winner', label: 'Winner', gradient: 'from-orange-500 to-red-500', badge: '🏆' },
-  { value: 'runner_up', label: 'Runner-up', gradient: 'from-blue-500 to-indigo-500', badge: '🎖️' },
-  { value: 'special_mention', label: 'Special mention', gradient: 'from-purple-500 to-pink-500', badge: '⭐' },
+const RANKS: { value: AwardRank; labelKey: TranslationKey; gradient: string; badge: string }[] = [
+  { value: '1st', labelKey: 'awards.rank.first', gradient: 'from-yellow-400 to-amber-500', badge: '🥇' },
+  { value: '2nd', labelKey: 'awards.rank.second', gradient: 'from-gray-300 to-gray-400', badge: '🥈' },
+  { value: '3rd', labelKey: 'awards.rank.third', gradient: 'from-amber-600 to-amber-700', badge: '🥉' },
+  { value: 'winner', labelKey: 'awards.rank.winner', gradient: 'from-orange-500 to-red-500', badge: '🏆' },
+  { value: 'runner_up', labelKey: 'awards.rank.runnerUp', gradient: 'from-blue-500 to-indigo-500', badge: '🎖️' },
+  { value: 'special_mention', labelKey: 'awards.rank.specialMention', gradient: 'from-purple-500 to-pink-500', badge: '⭐' },
 ];
 const rankInfo = (r: AwardRank) => RANKS.find(x => x.value === r) || RANKS[0];
 
@@ -88,7 +88,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) { setFormError('Prize/award name is required.'); return; }
+    if (!form.title.trim()) { setFormError(t('awards.titleRequired')); return; }
     setSaving(true);
     setFormError('');
     try {
@@ -103,7 +103,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
       }
       setShowForm(false);
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to save');
+      setFormError(err?.message || t('awards.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -116,7 +116,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
       onAwardsChanged(awards.filter(a => a.id !== deleteTarget.id));
       onLog('delete', 'awards', deleteTarget.title, undefined, undefined, deleteTarget.title);
     } catch (err: any) {
-      setError(err?.message || 'Failed to delete');
+      setError(err?.message || t('awards.deleteFailed'));
     } finally {
       setDeleteTarget(null);
     }
@@ -132,7 +132,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
                 onClick={openCreate}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
-                <Trophy size={20} /> Record a prize
+                <Trophy size={20} /> {t('awards.recordPrize')}
               </button>
             )}
             <div className="relative" ref={pageMenuRef}>
@@ -170,14 +170,14 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Prizes won</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('awards.prizesWon')}</h3>
             <Medal className="text-amber-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-amber-600">{summary.count}</p>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Prize money</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('awards.prizeMoney')}</h3>
             <AwardIcon className="text-green-500" size={24} />
           </div>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{summary.totalPrizeMoney.toLocaleString()}</p>
@@ -188,7 +188,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
       {awards.length === 0 ? (
         <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
           <Trophy className="w-8 h-8 mx-auto mb-2 opacity-60" />
-          <p className="text-sm">No prizes recorded yet.</p>
+          <p className="text-sm">{t('awards.noPrizes')}</p>
         </div>
       ) : (
         <>
@@ -202,7 +202,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
                       <span className="text-2xl shrink-0">{rank.badge}</span>
                       <div className="min-w-0">
                         <p className="font-bold truncate">{award.title}</p>
-                        <p className="text-xs opacity-90">{rank.label}</p>
+                        <p className="text-xs opacity-90">{t(rank.labelKey)}</p>
                       </div>
                     </div>
                     {award.prizeMoney > 0 && (
@@ -230,7 +230,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
                                 onClick={() => { setOpenMenuId(null); openEdit(award); }}
                                 className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                               >
-                                <Pencil size={14} className="text-blue-600" /> Edit
+                                <Pencil size={14} className="text-blue-600" /> {t('awards.edit')}
                               </button>
                             )}
                             {canDelete && (
@@ -238,7 +238,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
                                 onClick={() => { setOpenMenuId(null); setDeleteTarget(award); }}
                                 className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                               >
-                                <Trash2 size={14} /> Delete
+                                <Trash2 size={14} /> {t('awards.delete')}
                               </button>
                             )}
                           </div>
@@ -306,7 +306,7 @@ function AwardFormModal({
           <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
             <Trophy size={20} />
           </div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex-1">{editing ? 'Edit prize' : 'Record a prize'}</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex-1">{editing ? t('awards.editPrize') : t('awards.recordPrize')}</h3>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <X size={20} />
           </button>
@@ -314,12 +314,12 @@ function AwardFormModal({
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Prize / award</label>
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Best Eco-friendly Ganpati" className={inputClass} />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('awards.prizeAward')}</label>
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder={t('awards.prizeAwardPlaceholder')} className={inputClass} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rank</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('awards.rankLabel')}</label>
             <div className="flex flex-wrap gap-2">
               {RANKS.map(r => (
                 <button
@@ -330,7 +330,7 @@ function AwardFormModal({
                     form.rank === r.value ? 'border-orange-600 text-orange-700 dark:text-orange-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
                 >
-                  {r.label}
+                  {t(r.labelKey)}
                 </button>
               ))}
             </div>
@@ -339,12 +339,12 @@ function AwardFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Category / competition <span className="text-orange-500 font-normal">(optional)</span>
+                {t('awards.categoryCompetition')} <span className="text-orange-500 font-normal">({t('common.optional')})</span>
               </label>
-              <input value={form.category || ''} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Decoration" className={inputClass} />
+              <input value={form.category || ''} onChange={e => setForm({ ...form, category: e.target.value })} placeholder={t('awards.categoryCompetitionPlaceholder')} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('awards.date')}</label>
               <input type="date" value={form.awardedDate} onChange={e => setForm({ ...form, awardedDate: e.target.value })} className={inputClass} />
             </div>
           </div>
@@ -352,22 +352,22 @@ function AwardFormModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Awarded by <span className="text-orange-500 font-normal">(optional)</span>
+                {t('awards.awardedBy')} <span className="text-orange-500 font-normal">({t('common.optional')})</span>
               </label>
-              <input value={form.awardedBy || ''} onChange={e => setForm({ ...form, awardedBy: e.target.value })} placeholder="e.g. Pune Municipal Corporation" className={inputClass} />
+              <input value={form.awardedBy || ''} onChange={e => setForm({ ...form, awardedBy: e.target.value })} placeholder={t('awards.awardedByPlaceholder')} className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Received by <span className="text-orange-500 font-normal">(optional)</span>
+                {t('awards.receivedBy')} <span className="text-orange-500 font-normal">({t('common.optional')})</span>
               </label>
-              <input value={form.receivedBy || ''} onChange={e => setForm({ ...form, receivedBy: e.target.value })} placeholder="Who accepted it" className={inputClass} />
+              <input value={form.receivedBy || ''} onChange={e => setForm({ ...form, receivedBy: e.target.value })} placeholder={t('awards.receivedByPlaceholder')} className={inputClass} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Prize money (₹)
+                {t('awards.prizeMoneyLabel')}
               </label>
               <input
                 type="number"
@@ -389,13 +389,13 @@ function AwardFormModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Details <span className="text-orange-500 font-normal">(optional)</span>
+              {t('awards.details')} <span className="text-orange-500 font-normal">({t('common.optional')})</span>
             </label>
             <textarea
               rows={2}
               value={form.details || ''}
               onChange={e => setForm({ ...form, details: e.target.value })}
-              placeholder="Anything worth remembering about this win"
+              placeholder={t('awards.detailsPlaceholder')}
               className={inputClass}
             />
           </div>
@@ -408,14 +408,14 @@ function AwardFormModal({
             onClick={onCancel}
             className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('awards.cancel')}
           </button>
           <button
             onClick={onSave}
             disabled={saving}
             className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-60 transition-colors"
           >
-            {saving ? 'Saving…' : editing ? 'Save changes' : 'Record prize'}
+            {saving ? t('awards.saving') : editing ? t('awards.saveChanges') : t('awards.recordPrizeButton')}
           </button>
         </div>
       </div>

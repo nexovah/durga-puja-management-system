@@ -11,6 +11,7 @@ import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ViewModal } from './ViewModal';
@@ -18,6 +19,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface LoansProps {
   loansList: Loan[];
@@ -128,6 +130,11 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isPhoneValid(formData.phone, false)) {
+      alert(t('validation.phoneMinDigits'));
+      return;
+    }
 
     const payload = {
       donorName: formData.donorName,
@@ -450,7 +457,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
             {/* Row 1: Donor's Name (with a committee-member search suggest,
                 since loans almost always come from a member) | Phone Number */}
             <div className="relative" ref={memberSuggestRef}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')}<RequiredMark /></label>
               <input
                 type="text"
                 required
@@ -488,7 +495,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.phonePlaceholder')}
               />
@@ -497,7 +504,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
             {/* Row 2: Amount Received | Date | Payment Method */}
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountReceivedLabel')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.amountReceivedLabel')}<RequiredMark /></label>
                 <input
                   type="number"
                   required
@@ -510,7 +517,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
                 <input
                   type="date"
                   required

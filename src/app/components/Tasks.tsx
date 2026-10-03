@@ -8,6 +8,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { TasksBoard } from './TasksBoard';
@@ -278,7 +279,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       >
           <form id="tasks-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.title')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.title')}<RequiredMark /></label>
               <input
                 type="text"
                 required
@@ -300,7 +301,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.priority')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.priority')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.priority}
                 onChange={(v) => setFormData({ ...formData, priority: v as TaskPriority })}

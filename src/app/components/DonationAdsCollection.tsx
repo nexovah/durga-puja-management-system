@@ -14,6 +14,7 @@ import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
@@ -22,6 +23,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -278,6 +280,11 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
+
+    if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
+      alert(t('validation.phoneMinDigits'));
+      return;
+    }
 
     const voucherKey = formData.category === 'donation' ? normalizeKey(formData.voucherNumber) : '';
     if (voucherKey) {
@@ -655,7 +662,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           <form id="donation-ads-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!fixedCategory && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.category}
                 onChange={(v) => setFormData({ ...formData, category: v as DonationAdCategory, inKind: '', voucherNumber: '' })}
@@ -669,11 +676,11 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('donationAds.donorName')} {isDonation ? '*' : ''}
+                {t('donationAds.donorName')}<RequiredMark />
               </label>
               <input
                 type="text"
-                required={isDonation}
+                required
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -717,7 +724,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.paymentStatus}
                 onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus, partialAmount: '' })}
@@ -776,7 +783,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.phonePlaceholder')}
               />
@@ -787,7 +794,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               <input
                 type="tel"
                 value={formData.phone2}
-                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone2: onlyDigits(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.phonePlaceholder')}
               />

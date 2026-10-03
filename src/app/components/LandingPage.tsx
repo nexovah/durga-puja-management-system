@@ -58,6 +58,7 @@ declare global {
   }
 }
 import { listSubscriptionPlansRequest, SubscriptionPlan } from '../lib/billingDb';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface LandingPageProps {
   onGoToLogin: () => void;
@@ -183,6 +184,10 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
     setError('');
     if (!form.committeeName || !form.contactName || !form.phone) {
       setError('Committee name, contact name and phone are required.');
+      return;
+    }
+    if (!isPhoneValid(form.phone, true)) {
+      setError('Phone number must be at least 10 digits');
       return;
     }
     setSubmitting(true);
@@ -482,7 +487,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
                 <label className="block text-sm font-medium mb-1.5">Phone *</label>
                 <input
                   value={form.phone}
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, phone: onlyDigits(e.target.value) }))}
                   className={`w-full px-3.5 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 ${c('border-gray-300 bg-white', 'border-gray-700 bg-gray-900')}`}
                   placeholder="10-digit mobile number"
                 />

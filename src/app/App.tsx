@@ -127,7 +127,8 @@ export interface CommitteeInfo {
   association: string; // Association/Committee name
   email: string; // Committee contact email — seeded from Super Admin's tenant creation/edit
   post: string; // Post office
-  districtPS: string; // District and Police Station
+  districtPS: string; // District
+  policeStation: string; // Police Station
   pinCode: string; // Pin code
   mobile1: string; // Primary mobile number
   mobile2?: string; // Secondary mobile number (optional)

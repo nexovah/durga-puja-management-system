@@ -9,6 +9,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 import { Pagination, usePagination } from './Pagination';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
@@ -17,6 +18,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface MembersProps {
   members: Member[];
@@ -130,6 +132,11 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     // Role used to be a native <select required> — now CustomSelect, which
     // doesn't participate in native form validation, so this guard replaces it.
     if (!formData.role) return;
+
+    if (!isPhoneValid(formData.phone, true)) {
+      alert(t('validation.phoneMinDigits'));
+      return;
+    }
 
     const hasMembershipAmount = formData.membershipAmount.trim() !== '';
     const membershipPayload = hasMembershipAmount
@@ -427,7 +434,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           <form id="members-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')}<RequiredMark /></label>
                 <input
                   type="text"
                   required
@@ -438,18 +445,18 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')}<RequiredMark /></label>
                 <input
                   type="tel"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                   placeholder={t('members.phonePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.address')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.address')}<RequiredMark /></label>
                 <input
                   type="text"
                   required
@@ -460,7 +467,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('members.role')} *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('members.role')}<RequiredMark /></label>
                 <CustomSelect
                   value={formData.role}
                   onChange={(v) => setFormData({ ...formData, role: v })}

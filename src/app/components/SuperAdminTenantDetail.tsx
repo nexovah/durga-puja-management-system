@@ -22,6 +22,7 @@ import {
   isPasswordStrong,
 } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface SuperAdminTenantDetailProps {
   tenant: Tenant;
@@ -109,6 +110,10 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPhoneValid(phone, false)) {
+      setError('Phone number must be at least 10 digits');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -327,8 +332,9 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone</label>
               <input
+                type="tel"
                 value={phone}
-                onChange={e => setPhone(e.target.value)}
+                onChange={e => setPhone(onlyDigits(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>

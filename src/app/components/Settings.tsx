@@ -5,6 +5,8 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LANGUAGES, TranslationKey } from '../i18n/translations';
 import { uploadLogo, generatePassword, DeveloperInfo, ReceiptSettings, updateReceiptSettingsRequest } from '../lib/db';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { RequiredMark } from './RequiredMark';
 import { NAVIGATION_GROUPS } from '../lib/navigationConfig';
 import { Billing } from './Billing';
 import { FormModal, FormModalCancelButton } from './FormModal';
@@ -280,6 +282,11 @@ export function Settings({
 
   const handleCommitteeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPhoneValid(committeeForm.mobile1, true) || !isPhoneValid(committeeForm.mobile2 || '', false)) {
+      setMessage(t('validation.phoneMinDigits'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
     setCommitteeInfo(committeeForm);
     setMessage(t('settings.msg.committeeUpdated'));
     setTimeout(() => setMessage(''), 3000);
@@ -654,7 +661,6 @@ export function Settings({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.establishedYear')}</label>
                   <input
                     type="text"
-                    required
                     value={committeeForm.established}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, established: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -666,7 +672,6 @@ export function Settings({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.registrationNumber')}</label>
                   <input
                     type="text"
-                    required
                     value={committeeForm.regNumber}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, regNumber: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -677,7 +682,7 @@ export function Settings({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.associationName')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.associationName')}<RequiredMark /></label>
                   <input
                     type="text"
                     required
@@ -689,9 +694,10 @@ export function Settings({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.email')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.email')}<RequiredMark /></label>
                   <input
                     type="email"
+                    required
                     value={committeeForm.email}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, email: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -716,7 +722,6 @@ export function Settings({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.post')}</label>
                   <input
                     type="text"
-                    required
                     value={committeeForm.post}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, post: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -728,7 +733,6 @@ export function Settings({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.pinCode')}</label>
                   <input
                     type="text"
-                    required
                     value={committeeForm.pinCode}
                     onChange={(e) => setCommitteeForm({ ...committeeForm, pinCode: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -737,26 +741,38 @@ export function Settings({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.districtPS')}</label>
-                <input
-                  type="text"
-                  required
-                  value={committeeForm.districtPS}
-                  onChange={(e) => setCommitteeForm({ ...committeeForm, districtPS: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                  placeholder={t('settings.districtPS')}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.district')}</label>
+                  <input
+                    type="text"
+                    value={committeeForm.districtPS}
+                    onChange={(e) => setCommitteeForm({ ...committeeForm, districtPS: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    placeholder={t('settings.district')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.policeStation')}</label>
+                  <input
+                    type="text"
+                    value={committeeForm.policeStation}
+                    onChange={(e) => setCommitteeForm({ ...committeeForm, policeStation: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    placeholder={t('settings.policeStation')}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.mobile1')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.mobile1')}<RequiredMark /></label>
                   <input
                     type="tel"
                     required
                     value={committeeForm.mobile1}
-                    onChange={(e) => setCommitteeForm({ ...committeeForm, mobile1: e.target.value })}
+                    onChange={(e) => setCommitteeForm({ ...committeeForm, mobile1: onlyDigits(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 9775767402`}
                   />
@@ -767,7 +783,7 @@ export function Settings({
                   <input
                     type="tel"
                     value={committeeForm.mobile2 || ''}
-                    onChange={(e) => setCommitteeForm({ ...committeeForm, mobile2: e.target.value })}
+                    onChange={(e) => setCommitteeForm({ ...committeeForm, mobile2: onlyDigits(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                     placeholder={`${t('common.egPrefix')}: 9876543210`}
                   />
@@ -792,7 +808,7 @@ export function Settings({
               <div>
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.receipts')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  How your committee's digital receipts look and are numbered, for every Chanda collection.
+                  {t('settings.receipt.description')}
                 </p>
               </div>
               <div className="flex flex-col lg:flex-row lg:gap-16">
@@ -800,7 +816,7 @@ export function Settings({
 
                   {/* Receipt style */}
                   <div>
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Receipt style</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('settings.receipt.style')}</h4>
                     <div className="inline-flex p-1 rounded-lg bg-orange-50/80 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40">
                       <button
                         type="button"
@@ -811,7 +827,7 @@ export function Settings({
                             : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400'
                         }`}
                       >
-                        Design a receipt
+                        {t('settings.receipt.designReceipt')}
                       </button>
                       <button
                         type="button"
@@ -822,16 +838,16 @@ export function Settings({
                             : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400'
                         }`}
                       >
-                        Use my printed receipt
+                        {t('settings.receipt.useMyPrintedReceipt')}
                       </button>
                     </div>
                   </div>
 
                   {receiptForm.receiptStyle === 'printed' ? (
                     <div className="border-t border-gray-100 dark:border-gray-800 pt-10 pb-6 text-center">
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Coming soon</p>
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('settings.receipt.comingSoon')}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm mx-auto">
-                        Uploading your own printed receipt design isn't available yet. Switch back to "Design a receipt" to configure and use the digital receipt.
+                        {t('settings.receipt.printedHint')}
                       </p>
                     </div>
                   ) : (
@@ -840,7 +856,7 @@ export function Settings({
                   {/* Receipt language */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
                     <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
-                      Receipt language <span className="text-xs font-normal text-orange-500">(every label on the receipt)</span>
+                      {t('settings.receipt.receiptLanguage')} <span className="text-xs font-normal text-orange-500">{t('settings.receipt.receiptLanguageHint')}</span>
                     </h4>
                     <div className="flex gap-2 mt-2">
                       {LANGUAGES.map(l => (
@@ -862,22 +878,22 @@ export function Settings({
 
                   {/* Society identity */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Society identity (printed on receipts)</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">{t('settings.receipt.societyIdentity')}</h4>
                     <div className="flex flex-wrap gap-x-6 gap-y-3 mb-4">
-                      <ToggleSwitch checked={receiptForm.showLogo} onChange={v => setReceiptForm({ ...receiptForm, showLogo: v })} label="Show logo" />
-                      <ToggleSwitch checked={receiptForm.showAddress} onChange={v => setReceiptForm({ ...receiptForm, showAddress: v })} label="Show address" />
-                      <ToggleSwitch checked={receiptForm.showContact} onChange={v => setReceiptForm({ ...receiptForm, showContact: v })} label="Show contact" />
-                      <ToggleSwitch checked={receiptForm.showRegNo} onChange={v => setReceiptForm({ ...receiptForm, showRegNo: v })} label="Show reg. no." />
+                      <ToggleSwitch checked={receiptForm.showLogo} onChange={v => setReceiptForm({ ...receiptForm, showLogo: v })} label={t('settings.receipt.showLogo')} />
+                      <ToggleSwitch checked={receiptForm.showAddress} onChange={v => setReceiptForm({ ...receiptForm, showAddress: v })} label={t('settings.receipt.showAddress')} />
+                      <ToggleSwitch checked={receiptForm.showContact} onChange={v => setReceiptForm({ ...receiptForm, showContact: v })} label={t('settings.receipt.showContact')} />
+                      <ToggleSwitch checked={receiptForm.showRegNo} onChange={v => setReceiptForm({ ...receiptForm, showRegNo: v })} label={t('settings.receipt.showRegNo')} />
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                      These use your logo, address, contact and registration number already set in Settings → {t('settings.tab.committee')}.
+                      {t('settings.receipt.identityHint')} {t('settings.tab.committee')}.
                     </p>
-                    <ToggleSwitch checked={receiptForm.showUpiId} onChange={v => setReceiptForm({ ...receiptForm, showUpiId: v })} label="Show UPI ID" />
+                    <ToggleSwitch checked={receiptForm.showUpiId} onChange={v => setReceiptForm({ ...receiptForm, showUpiId: v })} label={t('settings.receipt.showUpiId')} />
                     {receiptForm.showUpiId && (
                       <input
                         value={receiptForm.upiId}
                         onChange={e => setReceiptForm({ ...receiptForm, upiId: e.target.value })}
-                        placeholder="e.g. committee@upi"
+                        placeholder={t('settings.receipt.upiIdPlaceholder')}
                         className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                       />
                     )}
@@ -889,13 +905,13 @@ export function Settings({
                       title/address/email); left blank, it falls back to
                       Committee Info automatically. */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Header</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">{t('settings.receipt.header')}</h4>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                      Overrides the logo, title and text shown at the top of the receipt. Leave any field blank to fall back to Settings → {t('settings.tab.committee')}.
+                      {t('settings.receipt.headerHint')} {t('settings.tab.committee')}.
                     </p>
 
                     <div className="mb-4">
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header logo</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.headerLogo')}</label>
                       <div className="flex items-center gap-3">
                         <input
                           type="file"
@@ -918,11 +934,11 @@ export function Settings({
                         />
                         {receiptForm.headerLogoUrl && <img src={receiptForm.headerLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />}
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Leave blank to use your Committee Info logo.</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('settings.receipt.headerLogoHint')}</p>
                     </div>
 
                     <div className="mb-4">
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Logo size</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">{t('settings.receipt.logoSize')}</label>
                       <div className="flex gap-2">
                         {(['small', 'medium', 'large'] as const).map(sz => (
                           <button
@@ -935,7 +951,7 @@ export function Settings({
                                 : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            {sz}
+                            {sz === 'small' ? t('settings.receipt.small') : sz === 'medium' ? t('settings.receipt.medium') : t('settings.receipt.large')}
                           </button>
                         ))}
                       </div>
@@ -943,21 +959,21 @@ export function Settings({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Title</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.titleField')}</label>
                         <input
                           value={receiptForm.headerTitle}
                           onChange={e => setReceiptForm({ ...receiptForm, headerTitle: e.target.value })}
-                          placeholder={committeeInfo.name || 'Committee name'}
+                          placeholder={committeeInfo.name || t('settings.receipt.committeeNamePlaceholder')}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                         />
                       </div>
                       {receiptForm.bandMode === 'default' && (
                         <div>
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Banner title</label>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.bannerTitle')}</label>
                           <input
                             value={receiptForm.headerBandTitle}
                             onChange={e => setReceiptForm({ ...receiptForm, headerBandTitle: e.target.value })}
-                            placeholder={committeeInfo.name || 'e.g. Ganesh Utsav 2025'}
+                            placeholder={committeeInfo.name || t('settings.receipt.bannerTitlePlaceholder')}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                           />
                         </div>
@@ -966,7 +982,7 @@ export function Settings({
 
                     <div className="mb-4 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Banner band</label>
+                        <label className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('settings.receipt.bannerBand')}</label>
                         <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                           <button
                             type="button"
@@ -977,7 +993,7 @@ export function Settings({
                                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            Text &amp; icon
+                            {t('settings.receipt.textAndIcon')}
                           </button>
                           <button
                             type="button"
@@ -988,19 +1004,18 @@ export function Settings({
                                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            Custom image
+                            {t('settings.receipt.customImage')}
                           </button>
                         </div>
                       </div>
                       {receiptForm.bandMode === 'default' ? (
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          Shows the colour gradient, header symbol and banner title below. Switch to Custom image to upload your own designed banner instead.
+                          {t('settings.receipt.bandDefaultHint')}
                         </p>
                       ) : (
                         <>
                           <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-                            Uploads your own designed banner for this band — it replaces the colour/symbol/title entirely.
-                            Recommended size <span className="font-medium">752 × 256px</span> (about 3:1), PNG or JPEG, under <span className="font-medium">150 KB</span>.
+                            {t('settings.receipt.bandImageHint')}
                           </p>
                           <input
                             type="file"
@@ -1030,20 +1045,20 @@ export function Settings({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Subtitle 1 (address line)</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.subtitle1')}</label>
                         <input
                           value={receiptForm.headerSubtitle1}
                           onChange={e => setReceiptForm({ ...receiptForm, headerSubtitle1: e.target.value })}
-                          placeholder={committeeInfo.address || 'Address'}
+                          placeholder={committeeInfo.address || t('settings.receipt.addressPlaceholder')}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Subtitle 2 (contact line)</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.subtitle2')}</label>
                         <input
                           value={receiptForm.headerSubtitle2}
                           onChange={e => setReceiptForm({ ...receiptForm, headerSubtitle2: e.target.value })}
-                          placeholder={committeeInfo.email || 'Email'}
+                          placeholder={committeeInfo.email || t('settings.receipt.emailPlaceholder')}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                         />
                       </div>
@@ -1052,12 +1067,12 @@ export function Settings({
 
                   {/* Look */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Look</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">{t('settings.receipt.look')}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Paper size</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.paperSize')}</label>
                         <div className="flex gap-2">
-                          {([['a5', 'A5 sheet'], ['thermal80mm', '80mm thermal']] as const).map(([v, label]) => (
+                          {([['a5', t('settings.receipt.a5Sheet')], ['thermal80mm', t('settings.receipt.thermal80mm')]] as const).map(([v, label]) => (
                             <button
                               key={v}
                               type="button"
@@ -1072,9 +1087,9 @@ export function Settings({
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Orientation</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.orientation')}</label>
                         <div className="flex gap-2">
-                          {([['portrait', 'Portrait'], ['landscape', 'Landscape']] as const).map(([v, label]) => (
+                          {([['portrait', t('settings.receipt.portrait')], ['landscape', t('settings.receipt.landscape')]] as const).map(([v, label]) => (
                             <button
                               key={v}
                               type="button"
@@ -1091,7 +1106,7 @@ export function Settings({
                     </div>
                     {receiptForm.bandMode === 'default' && (
                       <div className="mb-4">
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Header symbol (one glyph/emoji)</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.headerSymbol')}</label>
                         <input
                           value={receiptForm.headerSymbol}
                           onChange={e => setReceiptForm({ ...receiptForm, headerSymbol: e.target.value })}
@@ -1100,20 +1115,20 @@ export function Settings({
                       </div>
                     )}
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Colour theme</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">{t('settings.receipt.colourTheme')}</label>
                       <div className="flex flex-wrap gap-2 items-center">
-                        {(['saffron', 'rose', 'emerald', 'indigo'] as const).map(c => (
+                        {([['saffron', t('settings.receipt.colorSaffron')], ['rose', t('settings.receipt.colorRose')], ['emerald', t('settings.receipt.colorEmerald')], ['indigo', t('settings.receipt.colorIndigo')]] as const).map(([c, label]) => (
                           <button
                             key={c}
                             type="button"
                             onClick={() => setReceiptForm({ ...receiptForm, colorTheme: c })}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize border-2 transition-colors ${
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
                               receiptForm.colorTheme === c
                                 ? 'border-orange-600 text-orange-700 dark:text-orange-400'
                                 : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            {c}
+                            {label}
                           </button>
                         ))}
                         <button
@@ -1125,7 +1140,7 @@ export function Settings({
                               : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                           }`}
                         >
-                          Custom
+                          {t('settings.receipt.custom')}
                           {receiptForm.colorTheme === 'custom' && (
                             <input
                               type="color"
@@ -1141,7 +1156,7 @@ export function Settings({
 
                   {/* Blessing line */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Blessing / thank-you line</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.blessingLine')}</label>
                     <input
                       value={receiptForm.blessingLine}
                       onChange={e => setReceiptForm({ ...receiptForm, blessingLine: e.target.value })}
@@ -1151,31 +1166,31 @@ export function Settings({
 
                   {/* Details shown */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Details shown</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">{t('settings.receipt.detailsShown')}</h4>
                     <div className="flex flex-wrap gap-x-6 gap-y-3">
                       <ToggleSwitch
                         checked={receiptForm.showAmountWords}
                         onChange={v => setReceiptForm({ ...receiptForm, showAmountWords: v })}
-                        label="Amount in words"
+                        label={t('settings.receipt.amountInWords')}
                       />
                       <ToggleSwitch
                         checked={receiptForm.showPersons}
                         onChange={v => setReceiptForm({ ...receiptForm, showPersons: v })}
-                        label="No. of persons"
+                        label={t('settings.receipt.noOfPersons')}
                       />
                       <ToggleSwitch
                         checked={receiptForm.showPaymentMethod}
                         onChange={v => setReceiptForm({ ...receiptForm, showPaymentMethod: v })}
-                        label="Payment method"
+                        label={t('settings.receipt.paymentMethod')}
                       />
                     </div>
                   </div>
 
                   {/* Signatory & seal */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Signatory & seal</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">{t('settings.receipt.signatorySeal')}</h4>
                     <div className="mb-4">
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signatory label</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.signatoryLabel')}</label>
                       <input
                         value={receiptForm.signatoryLabel}
                         onChange={e => setReceiptForm({ ...receiptForm, signatoryLabel: e.target.value })}
@@ -1183,9 +1198,9 @@ export function Settings({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Signature &amp; stamp</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.signatureStamp')}</label>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                        Upload the signature and stamp together, already combined into one image — this shows right-aligned above the signatory line on the receipt.
+                        {t('settings.receipt.signatureStampHint')}
                       </p>
                       <input
                         type="file"
@@ -1213,14 +1228,14 @@ export function Settings({
                   {/* Tax / 80G */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">Tax / 80G receipt</h4>
+                      <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('settings.receipt.tax80g')}</h4>
                       <ToggleSwitch checked={receiptForm.show80g} onChange={v => setReceiptForm({ ...receiptForm, show80g: v })} />
                     </div>
                     {receiptForm.show80g && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">80G registration no.</label>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.reg80gNo')}</label>
                             <input
                               value={receiptForm.reg80g}
                               onChange={e => setReceiptForm({ ...receiptForm, reg80g: e.target.value })}
@@ -1228,7 +1243,7 @@ export function Settings({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">PAN</label>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.pan')}</label>
                             <input
                               value={receiptForm.pan}
                               onChange={e => setReceiptForm({ ...receiptForm, pan: e.target.value })}
@@ -1237,7 +1252,7 @@ export function Settings({
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Declaration text</label>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.declarationText')}</label>
                           <textarea
                             rows={2}
                             value={receiptForm.declarationText}
@@ -1251,13 +1266,13 @@ export function Settings({
 
                   {/* Receipt numbering */}
                   <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Receipt numbering</h4>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">{t('settings.receipt.numbering')}</h4>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-                      Continue your printed receipt-book serials. First contribution receipt will read {receiptForm.prefix}{String(receiptForm.startNumber).padStart(receiptForm.digits, '0')}.
+                      {t('settings.receipt.numberingHint').replace('{sample}', `${receiptForm.prefix}${String(receiptForm.startNumber).padStart(receiptForm.digits, '0')}`)}
                     </p>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Prefix</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.prefix')}</label>
                         <input
                           value={receiptForm.prefix}
                           onChange={e => setReceiptForm({ ...receiptForm, prefix: e.target.value })}
@@ -1265,7 +1280,7 @@ export function Settings({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start number</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.startNumber')}</label>
                         <input
                           type="number"
                           min={1}
@@ -1275,7 +1290,7 @@ export function Settings({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Digits</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('settings.receipt.digits')}</label>
                         <input
                           type="number"
                           min={1}
@@ -1287,7 +1302,7 @@ export function Settings({
                       </div>
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                      A collection with its own Bill Number already uses that instead, prefixed the same way.
+                      {t('settings.receipt.numberingFooterHint')}
                     </p>
                   </div>
 
@@ -1297,7 +1312,7 @@ export function Settings({
                     className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors cursor-pointer"
                   >
                     <Save size={20} />
-                    {savingReceiptSettings ? 'Saving…' : t('common.save')}
+                    {savingReceiptSettings ? t('settings.receipt.saving') : t('common.save')}
                   </button>
                   </>
                   )}
@@ -1305,7 +1320,7 @@ export function Settings({
 
                 <div className="lg:w-[420px] shrink-0 mt-8 lg:mt-0 lg:ml-auto lg:sticky lg:top-24 lg:self-start">
                   <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 uppercase tracking-wide font-medium">Live preview</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 uppercase tracking-wide font-medium">{t('settings.receipt.livePreview')}</p>
                     <ReceiptCard data={receiptPreviewData} />
                   </div>
                 </div>
@@ -1446,7 +1461,7 @@ export function Settings({
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.password')}</h3>
               <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.currentPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.currentPassword')}<RequiredMark /></label>
                 <input
                   type="password"
                   required
@@ -1456,7 +1471,7 @@ export function Settings({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.newPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.newPassword')}<RequiredMark /></label>
                 <input
                   type="password"
                   required
@@ -1466,7 +1481,7 @@ export function Settings({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.confirmPassword')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.confirmPassword')}<RequiredMark /></label>
                 <input
                   type="password"
                   required
@@ -1548,7 +1563,7 @@ export function Settings({
                   <form id="user-form" onSubmit={handleUserSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')} *</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')}<RequiredMark /></label>
                         <input
                           type="text"
                           required
@@ -1569,7 +1584,7 @@ export function Settings({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.email')} *</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.email')}<RequiredMark /></label>
                         <input
                           type="email"
                           required
@@ -1581,7 +1596,7 @@ export function Settings({
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('settings.password')} {editingUserId ? `(${t('settings.leaveBlankToKeep')})` : ''}
+                          {t('settings.password')}{!editingUserId && <RequiredMark />} {editingUserId ? `(${t('settings.leaveBlankToKeep')})` : ''}
                         </label>
                         <div className="relative">
                           <input
@@ -1729,7 +1744,7 @@ export function Settings({
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{user.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.username}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email || user.username}</p>
                       </div>
                       {!user.isAdmin && (
                         <div className="relative shrink-0" ref={openUserMenuId === user.id ? userMenuRef : undefined}>
@@ -1815,7 +1830,7 @@ export function Settings({
                     {users.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{user.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{user.username}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{user.email || user.username}</td>
                         <td className="px-6 py-4 text-sm">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${

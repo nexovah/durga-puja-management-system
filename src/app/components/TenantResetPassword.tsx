@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { resetTenantPasswordRequest, isPasswordStrong } from '../lib/db';
+import { RequiredMark } from './RequiredMark';
 
 // /reset-password?token=... — the landing page for the link sent by
 // api/auth/request-tenant-password-reset.js. Reachable before login (see
@@ -70,10 +71,11 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">New password</label>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">New password<RequiredMark /></label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="w-full px-4 py-2.5 pr-12 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
@@ -89,9 +91,10 @@ export function TenantResetPassword({ onDone }: { onDone: () => void }) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Confirm new password</label>
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Confirm new password<RequiredMark /></label>
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  required
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-orange-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"

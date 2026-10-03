@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
 import { requestTenantPasswordResetRequest, signupTenantRequest } from '../lib/db';
 import { AuthShowcaseLayout } from './AuthShowcaseLayout';
+import { RequiredMark } from './RequiredMark';
 
 declare global {
   interface Window {
@@ -330,8 +331,9 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
       ) : (
         <form onSubmit={handleForgotSubmit} className="space-y-5">
           <div>
-            <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Username</label>
+            <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">Username or Email<RequiredMark /></label>
             <input
+              required
               value={forgotUsername}
               onChange={e => setForgotUsername(e.target.value)}
               placeholder={t('login.userIdPlaceholder')}
@@ -397,10 +399,11 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
-            {t('login.userId')}
+            {t('login.userId')}<RequiredMark />
           </label>
           <input
             type="text"
+            required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className={inputClass}
@@ -410,11 +413,12 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
         <div>
           <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
-            {t('login.password')}
+            {t('login.password')}<RequiredMark />
           </label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`${inputClass} pr-12`}
@@ -483,10 +487,11 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
       <form onSubmit={handleSignupSubmit} className="space-y-5">
         <div>
           <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
-            {t('login.signup.email')}
+            {t('login.signup.email')}<RequiredMark />
           </label>
           <input
             type="email"
+            required
             value={signupEmail}
             onChange={(e) => setSignupEmail(e.target.value)}
             className={inputClass}
@@ -496,11 +501,12 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
         <div>
           <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
-            {t('login.password')}
+            {t('login.password')}<RequiredMark />
           </label>
           <div className="relative">
             <input
               type={signupShowPassword ? 'text' : 'password'}
+              required
               value={signupPassword}
               onChange={(e) => setSignupPassword(e.target.value)}
               className={`${inputClass} pr-12`}
@@ -518,10 +524,11 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
         <div>
           <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
-            {t('login.signup.confirmPassword')}
+            {t('login.signup.confirmPassword')}<RequiredMark />
           </label>
           <input
             type={signupShowPassword ? 'text' : 'password'}
+            required
             value={signupConfirmPassword}
             onChange={(e) => setSignupConfirmPassword(e.target.value)}
             className={inputClass}

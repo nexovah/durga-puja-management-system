@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2, Reply, MessageSquare } from 'lucide-react';
 import { PageHeading } from './PageHeading';
+import { RequiredMark } from './RequiredMark';
 import {
   SupportTicket, SupportTicketReply, TicketActivity, listMyTicketsRequest, createTicketRequest, uploadTicketImage,
   fetchTicketReplies, postTicketReplyRequest, fetchMyTicketActivity, markTicketRead,
@@ -327,7 +328,7 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.ticketTitle')}</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.ticketTitle')}<RequiredMark /></label>
           <input
             required
             value={title}
@@ -337,7 +338,7 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.description')}</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('helpSupport.create.description')}<RequiredMark /></label>
           <textarea
             required
             rows={5}

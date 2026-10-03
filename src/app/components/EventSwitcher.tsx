@@ -8,6 +8,7 @@ import {
 import { computeCashBankTotals } from '../lib/cashBank';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 import { CustomSelect } from './CustomSelect';
+import { RequiredMark } from './RequiredMark';
 
 const currentYear = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -357,7 +358,7 @@ function EventForm({
 
       <div className="space-y-2.5">
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name *</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name<RequiredMark /></label>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
@@ -367,7 +368,7 @@ function EventForm({
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year *</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year<RequiredMark /></label>
             {yearLocked && (
               <button
                 type="button"

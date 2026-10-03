@@ -27,6 +27,7 @@ import {
   GoogleOAuthSettings,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 type Tab = 'general' | 'profile' | 'password' | 'paymentGateway' | 'email' | 'botProtection' | 'googleOAuth' | 'developer';
 
@@ -289,6 +290,10 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
     e.preventDefault();
     setProfileError('');
     setProfileMessage('');
+    if (!isPhoneValid(profileForm.phone, false) || !isPhoneValid(profileForm.phone2, false)) {
+      setProfileError('Phone number must be at least 10 digits');
+      return;
+    }
     setSavingProfile(true);
     try {
       const updated = await updateSelfProfileRequest(profileForm);
@@ -337,6 +342,10 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
     e.preventDefault();
     setDevError('');
     setDevMessage('');
+    if (!isPhoneValid(devForm.phone, true)) {
+      setDevError('Phone number must be at least 10 digits');
+      return;
+    }
     setSavingDev(true);
     try {
       const updated = await updateDeveloperInfoRequest(devForm);
@@ -594,7 +603,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     <input
                       type="tel"
                       value={profileForm.phone}
-                      onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      onChange={e => setProfileForm({ ...profileForm, phone: onlyDigits(e.target.value) })}
                       className={inputClass}
                     />
                   </div>
@@ -603,7 +612,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     <input
                       type="tel"
                       value={profileForm.phone2}
-                      onChange={e => setProfileForm({ ...profileForm, phone2: e.target.value })}
+                      onChange={e => setProfileForm({ ...profileForm, phone2: onlyDigits(e.target.value) })}
                       className={inputClass}
                     />
                   </div>
@@ -1009,7 +1018,7 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     type="tel"
                     required
                     value={devForm.phone}
-                    onChange={e => setDevForm({ ...devForm, phone: e.target.value })}
+                    onChange={e => setDevForm({ ...devForm, phone: onlyDigits(e.target.value) })}
                     className={inputClass}
                   />
                 </div>

@@ -14,6 +14,7 @@ import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
+import { RequiredMark } from './RequiredMark';
 import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { StatusChangeConfirmModal } from './StatusChangeConfirmModal';
@@ -633,7 +634,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       >
           <form id="expenses-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.title')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.title')}<RequiredMark /></label>
               <input
                 type="text"
                 required
@@ -644,7 +645,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.amountLabel')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.amountLabel')}<RequiredMark /></label>
               <input
                 type="number"
                 required
@@ -658,7 +659,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paymentStatus')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paymentStatus')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.paymentStatus}
                 onChange={(v) => setFormData({ ...formData, paymentStatus: v as ExpensePaymentStatus })}
@@ -746,7 +747,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
               <input
                 type="date"
                 required
@@ -756,7 +757,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.category}
                 onChange={(v) => setFormData({ ...formData, category: v })}
