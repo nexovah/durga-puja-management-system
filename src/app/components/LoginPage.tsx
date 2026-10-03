@@ -73,29 +73,73 @@ function GoogleAuthButtonSlot({
       }
     }
 
-    try {
-      btnRef.current.innerHTML = '';
-      // No dynamic width measurement, no resize listener, no scaling —
-      // GIS hard-caps its own rendered button at 400px internally no
-      // matter what's requested, so there's nothing to gain from matching
-      // the container size here. This button's own width has no effect
-      // on the surrounding form column's width (that's set independently
-      // by the panel's own max-w-* class) — fixed at Google's real max.
-      window.google.accounts.id.renderButton(btnRef.current, {
-        theme: 'outline',
-        size: 'large',
-        width: 400,
-        text: mode === 'signup' ? 'signup_with' : 'signin_with',
-      });
-    } catch (err) {
-      console.error('Google Identity Services renderButton() failed:', err);
-    }
+    const draw = () => {
+      if (!btnRef.current) return;
+      try {
+        btnRef.current.innerHTML = '';
+        // Google's iframe content can never be styled (cross-origin —
+        // CSS/classes from this page can't reach inside it, by browser
+        // design, not a limitation we can work around). So this instance
+        // is rendered fully transparent and placed exactly on top of our
+        // own pixel-matched decorative button below — the user sees our
+        // styled button, clicks land on the real Google button underneath.
+        // Size it to this button's own rendered width (capped at Google's
+        // real 400px max) so the invisible click target lines up with our
+        // button as closely as that cap allows.
+        const containerWidth = Math.round(btnRef.current.getBoundingClientRect().width) || 320;
+        const width = Math.min(400, Math.max(200, containerWidth));
+        window.google.accounts.id.renderButton(btnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width,
+          text: mode === 'signup' ? 'signup_with' : 'signin_with',
+        });
+      } catch (err) {
+        console.error('Google Identity Services renderButton() failed:', err);
+      }
+    };
+
+    draw();
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(draw, 300);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', onResize);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, googleReady]);
 
   return (
     <div className="mb-7">
-      <div ref={btnRef} className="w-full flex justify-center" />
+      <div className="relative w-full">
+        {/* Our own styled button — always visible, matches the app's
+            input/button design exactly (border-2, rounded-2xl, same
+            height as the other fields). Purely decorative — the real
+            click target is the invisible Google button on top of it. */}
+        <div className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-2xl border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium pointer-events-none">
+          <GoogleIcon />
+          {label}
+        </div>
+        {/* Real Google button — invisible, same box, sits on top so it
+            receives the actual click (and keyboard/accessibility
+            interactions Google's own iframe already handles). Inline
+            styles here (not just Tailwind classes) so there's no doubt
+            this is actually absolutely-positioned and invisible — this
+            must never render as a second, separately-visible button. */}
+        <div
+          ref={btnRef}
+          style={
+            googleReady
+              ? { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, overflow: 'hidden' }
+              : { display: 'none' }
+          }
+        />
+      </div>
       {errorMessage && (
         <p className="text-sm text-red-600 dark:text-red-400 mt-2 text-center">{errorMessage}</p>
       )}
@@ -273,7 +317,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   const inputClass = 'w-full px-5 py-3 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 
   const forgotPasswordPanel = (
-    <div className="w-full max-w-md min-[2400px]:max-w-xl">
+    <div className="w-full max-w-md lg:w-[520px] lg:max-w-[520px] lg:shrink-0">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">Reset your password</h1>
       <p className="text-gray-500 dark:text-gray-400 mt-2 mb-7">
         Enter your username — if it has an email on file, we'll send a reset link there.
@@ -338,7 +382,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   );
 
   const loginFormPanel = (
-    <div className="w-full max-w-md min-[2400px]:max-w-xl">
+    <div className="w-full max-w-md lg:w-[520px] lg:max-w-[520px] lg:shrink-0">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {t('login.join.title')}
       </h1>
@@ -424,7 +468,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   );
 
   const signupPanel = (
-    <div className="w-full max-w-md min-[2400px]:max-w-xl">
+    <div className="w-full max-w-md lg:w-[520px] lg:max-w-[520px] lg:shrink-0">
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {t('login.signup.title')}
       </h1>

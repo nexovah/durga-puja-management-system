@@ -258,7 +258,7 @@ export function AuthShowcaseLayout({ heading1, heading2, helpTitle, helpDesc, fo
         className="hidden lg:block fixed inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none"
       />
 
-      <div className="relative w-full max-w-7xl flex flex-col items-center">
+      <div className="relative w-full flex flex-col items-center">
         {/*
           Desktop/tablet row (≥1024px) — card sits to the left of the form
           at its full Figma-matched size on large screens (≥1536px, "2xl"),
