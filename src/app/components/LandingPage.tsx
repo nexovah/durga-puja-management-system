@@ -62,6 +62,7 @@ import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface LandingPageProps {
   onGoToLogin: () => void;
+  onGoToSignup: () => void;
   onGoToLegal: (slug: 'terms' | 'privacy' | 'refund') => void;
 }
 
@@ -126,7 +127,7 @@ const FESTIVALS = [
 // here would fire regardless of this page's own toggle. A public marketing
 // page should default to light and control its own theme independently, so
 // every color below is chosen explicitly from local `dark` state instead.
-export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
+export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingPageProps) {
   const [dark, setDark] = useState(false);
   const [form, setForm] = useState({ committeeName: '', contactName: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -262,9 +263,9 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
             Plan. Collect. Manage. Celebrate.
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <a href="#lead-form" className="px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition inline-flex items-center justify-center gap-2 whitespace-nowrap">
+            <button type="button" onClick={onGoToSignup} className="px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition inline-flex items-center justify-center gap-2 whitespace-nowrap">
               Create Your Committee <ArrowRight className="w-4 h-4" />
-            </a>
+            </button>
             <a href="#features" className={`px-6 py-3 rounded-lg border font-medium transition text-center whitespace-nowrap ${c('border-gray-300 hover:bg-gray-50', 'border-gray-700 hover:bg-gray-900')}`}>
               Explore Features
             </a>
@@ -452,9 +453,9 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
 
       {/* Lead form */}
       <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Bring your committee online</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Bring your Puja committee online</h2>
         <p className={`text-center mb-10 ${c('text-gray-600', 'text-gray-400')}`}>
-          Tell us about your committee — we'll get you set up.
+          Tell us about your Puja committee — we'll get you set up.
         </p>
         {submitted ? (
           <div className={`p-6 rounded-xl border text-center ${c('border-green-200 bg-green-50', 'border-green-900/50 bg-green-900/20')}`}>
@@ -466,7 +467,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Committee name *</label>
+                <label className="block text-sm font-medium mb-1.5">Committee name <span className="text-orange-600">*</span></label>
                 <input
                   value={form.committeeName}
                   onChange={e => setForm(f => ({ ...f, committeeName: e.target.value }))}
@@ -475,7 +476,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Contact name *</label>
+                <label className="block text-sm font-medium mb-1.5">Contact name <span className="text-orange-600">*</span></label>
                 <input
                   value={form.contactName}
                   onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
@@ -484,7 +485,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Phone *</label>
+                <label className="block text-sm font-medium mb-1.5">Phone <span className="text-orange-600">*</span></label>
                 <input
                   value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: onlyDigits(e.target.value) }))}
@@ -510,7 +511,7 @@ export function LandingPage({ onGoToLogin, onGoToLegal }: LandingPageProps) {
               disabled={submitting}
               className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
             >
-              {submitting ? 'Submitting…' : 'Request access'}
+              {submitting ? 'Submitting…' : 'Request Access and Demo'}
             </button>
           </form>
         )}

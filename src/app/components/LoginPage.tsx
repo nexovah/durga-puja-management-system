@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
 import { requestTenantPasswordResetRequest, signupTenantRequest } from '../lib/db';
@@ -25,6 +25,7 @@ interface LoginPageProps {
   // /signup) — forgotPassword stays a transient in-page sub-state, same as
   // before, no route of its own.
   onModeChange?: (mode: 'login' | 'signup') => void;
+  onBackHome?: () => void;
 }
 
 // Renders (and self-manages) one instance of the Google Identity Services
@@ -154,7 +155,7 @@ function GoogleAuthButtonSlot({
 // onLogin/forgot-password wiring, no backend change) just restyled to
 // match the new design. Google sign-in is intentionally static/non-wired
 // per explicit instruction — no auth provider integration exists yet.
-export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChange }: LoginPageProps) {
+export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChange, onBackHome }: LoginPageProps) {
   const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -468,6 +469,19 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
           {t('login.forgotPassword')}
         </button>
       </div>
+
+      {onBackHome && (
+        <button
+          type="button"
+          onClick={onBackHome}
+          className="group flex items-center gap-2 mt-5 text-base font-medium text-gray-400 dark:text-gray-500 hover:text-orange-600 dark:hover:text-orange-500"
+        >
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800/60 text-gray-400 dark:text-gray-500 group-hover:bg-orange-100 dark:group-hover:bg-orange-500/10 group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors">
+            <ChevronLeft size={18} />
+          </span>
+          Back Home
+        </button>
+      )}
     </div>
   );
 

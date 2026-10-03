@@ -1094,6 +1094,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             window.history.pushState(null, '', '/login');
             setLoggedOutPath('/login');
           }}
+          onGoToSignup={() => {
+            window.history.pushState(null, '', '/signup');
+            setLoggedOutPath('/signup');
+          }}
           onGoToLegal={slug => {
             window.history.pushState(null, '', `/${slug}`);
             setLoggedOutPath(`/${slug}`);
@@ -1134,6 +1138,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             window.history.pushState(null, '', newPath);
           }
           setLoggedOutPath(newPath);
+        }}
+        onBackHome={() => {
+          window.history.pushState(null, '', '/');
+          setLoggedOutPath('/');
         }}
       />
     );
