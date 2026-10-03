@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, X, MoreVertical, Check, Pencil } from 'lucide-react';
+import { Plus, Search, X, MoreVertical, Pencil } from 'lucide-react';
 import { EventInfo } from '../lib/db';
 import { CustomSelect } from './CustomSelect';
 import { EventForm, formatFinancialYear, sortEventsNewestFirst } from './EventSwitcher';
@@ -16,6 +16,11 @@ interface EventManageModalProps {
   events: EventInfo[];
   activeEventId: string | null;
   currentUserId: string;
+  // When set (dropdown's pencil icon was clicked), the modal opens
+  // straight into edit mode for this event instead of the list — read
+  // once at mount, since the modal itself unmounts/remounts each time
+  // it's opened/closed.
+  initialEditingEvent?: EventInfo | null;
   onClose: () => void;
   onRowClick: (event: EventInfo) => void;
   onCreated: (event: EventInfo) => void;
@@ -24,10 +29,10 @@ interface EventManageModalProps {
 }
 
 export function EventManageModal({
-  events, activeEventId, currentUserId, onClose, onRowClick, onCreated, onUpdated, onSwitched,
+  events, activeEventId, currentUserId, initialEditingEvent = null, onClose, onRowClick, onCreated, onUpdated, onSwitched,
 }: EventManageModalProps) {
-  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
-  const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
+  const [mode, setMode] = useState<'list' | 'create' | 'edit'>(initialEditingEvent ? 'edit' : 'list');
+  const [editingEvent, setEditingEvent] = useState<EventInfo | null>(initialEditingEvent);
   const [query, setQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('');
   // Row 3-dot menus render via a portal to document.body, not inline —
@@ -131,7 +136,9 @@ export function EventManageModal({
                     <div
                       key={event.id}
                       style={{ height: ROW_HEIGHT }}
-                      className="w-full flex items-center gap-3 px-3 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
+                      className={`w-full flex items-center gap-3 px-3 rounded-lg transition-colors group ${
+                        active ? 'bg-orange-50/70 dark:bg-orange-500/10' : 'hover:bg-orange-50 dark:hover:bg-orange-500/10'
+                      }`}
                     >
                       <button onClick={() => onRowClick(event)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
                         <span className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-base shrink-0">
@@ -142,7 +149,13 @@ export function EventManageModal({
                         </span>
                       </button>
                       {active ? (
-                        <Check size={16} className="text-orange-600 shrink-0" />
+                        <span className="flex items-center gap-1 text-[10.5px] font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-[7px] py-[3px] rounded-full shrink-0">
+                          <span className="relative flex w-[7px] h-[7px]">
+                            <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75" />
+                            <span className="relative inline-flex w-[7px] h-[7px] rounded-full bg-green-500" />
+                          </span>
+                          Live
+                        </span>
                       ) : (
                         <button
                           data-row-menu-trigger

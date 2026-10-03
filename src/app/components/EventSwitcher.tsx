@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronsUpDown, Pencil, X, MoreHorizontal } from 'lucide-react';
+import { ChevronsUpDown, Pencil, X, MoreHorizontal } from 'lucide-react';
 import {
   EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest,
   fetchEventChanda, fetchEventDonationAds, fetchEventMembers, fetchEventLoans, fetchEventExpenses,
@@ -54,8 +54,6 @@ export function EventSwitcher({
   onEventCreated, onEventUpdated, onEventSwitched,
 }: EventSwitcherProps) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
-  const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,14 +65,13 @@ export function EventSwitcher({
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setMode('list');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const closeAll = () => { setOpen(false); setMode('list'); setEditingEvent(null); setManageOpen(false); };
+  const closeAll = () => { setOpen(false); setManageOpen(false); };
 
   const handleRowClick = (event: EventInfo) => {
     if (event.id === activeEventId) { closeAll(); return; }
@@ -123,17 +120,8 @@ export function EventSwitcher({
         <EventPopover
           events={events}
           activeEventId={activeEventId}
-          mode={mode}
-          editingEvent={editingEvent}
-          currentUserId={currentUserId}
-          onClose={closeAll}
           onRowClick={handleRowClick}
-          onEditClick={(e) => { setEditingEvent(e); setMode('edit'); }}
-          onManageClick={() => { setOpen(false); setMode('list'); setManageOpen(true); }}
-          onBackToList={() => setMode('list')}
-          onCreated={(event) => { onEventCreated(event); setMode('list'); }}
-          onUpdated={(event) => { onEventUpdated(event); setMode('list'); setEditingEvent(null); }}
-          onSwitched={onEventSwitched}
+          onManageClick={() => { setOpen(false); setManageOpen(true); }}
         />
       )}
 
@@ -180,35 +168,26 @@ function shortlistEvents(events: EventInfo[], activeEventId: string | null): Eve
 }
 
 function EventPopover({
-  events, activeEventId, mode, editingEvent, currentUserId,
-  onClose, onRowClick, onEditClick, onManageClick, onBackToList, onCreated, onUpdated, onSwitched,
+  events, activeEventId, onRowClick, onEditClick, onManageClick,
 }: {
   events: EventInfo[];
   activeEventId: string | null;
-  mode: 'list' | 'create' | 'edit';
-  editingEvent: EventInfo | null;
-  currentUserId: string;
-  onClose: () => void;
   onRowClick: (event: EventInfo) => void;
-  onEditClick: (event: EventInfo) => void;
   onManageClick: () => void;
-  onBackToList: () => void;
-  onCreated: (event: EventInfo) => void;
-  onUpdated: (event: EventInfo) => void;
-  onSwitched: (eventId: string) => void;
 }) {
   const shortlist = shortlistEvents(events, activeEventId);
   return (
     <div className="absolute top-full left-3 mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
-      {mode === 'list' && (
-        <div className="rounded-xl overflow-hidden">
+      <div className="rounded-xl overflow-hidden">
           <div className="py-1.5">
             {shortlist.map(event => {
               const active = event.id === activeEventId;
               return (
                 <div
                   key={event.id}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors group"
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 transition-colors group ${
+                    active ? 'bg-orange-50/70 dark:bg-orange-500/10' : 'hover:bg-orange-50 dark:hover:bg-orange-500/10'
+                  }`}
                 >
                   <button onClick={() => onRowClick(event)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
                     <span className="w-6 h-6 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-sm shrink-0">
@@ -218,14 +197,15 @@ function EventPopover({
                       {event.name} — {formatFinancialYear(event.year)}
                     </span>
                   </button>
-                  <button
-                    onClick={() => onEditClick(event)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-opacity shrink-0"
-                    aria-label="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  {active && <Check size={16} className="text-orange-600 shrink-0" />}
+                  {active && (
+                    <span className="flex items-center gap-1 text-[10.5px] font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-[7px] py-[3px] rounded-full shrink-0">
+                      <span className="relative flex w-[7px] h-[7px]">
+                        <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex w-[7px] h-[7px] rounded-full bg-green-500" />
+                      </span>
+                      Live
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -238,19 +218,6 @@ function EventPopover({
             Manage 'Puja, Festival or Event'
           </button>
         </div>
-      )}
-
-      {(mode === 'create' || mode === 'edit') && (
-        <EventForm
-          existing={editingEvent}
-          otherEvents={events.filter(e => e.id !== editingEvent?.id)}
-          currentUserId={currentUserId}
-          onCancel={mode === 'create' ? onClose : onBackToList}
-          onSaved={mode === 'create' ? onCreated : onUpdated}
-          onSwitched={onSwitched}
-          compact
-        />
-      )}
     </div>
   );
 }
