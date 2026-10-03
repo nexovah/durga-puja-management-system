@@ -20,9 +20,7 @@ function AndroidBadge({ dark, className = '' }: { dark: boolean; className?: str
       href={ANDROID_APK_URL}
       download
       aria-label="Download the Android app (APK)"
-      className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition ${
-        dark ? 'border-gray-100 bg-black hover:bg-gray-900 text-white' : 'border-gray-900 bg-black hover:bg-gray-800 text-white'
-      } ${className}`}
+      className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-black hover:bg-gray-900 text-white transition ${className}`}
     >
       <img src={androidDownloadIcon} alt="" className="w-[30px] h-[30px] shrink-0" />
       <span className="leading-tight text-left">
@@ -38,7 +36,7 @@ function IOSBadge({ className = '' }: { className?: string }) {
   return (
     <div
       aria-disabled="true"
-      className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 ${className}`}
+      className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 ${className}`}
     >
       <img src={iosAppIcon} alt="" className="w-[30px] h-[30px] shrink-0" />
       <span className="leading-tight text-left">
@@ -177,16 +175,14 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
     return () => { cancelled = true; };
   }, [turnstileSiteKey]);
 
-  // Past ~30% scroll depth, swap the sticky top header for a sticky
-  // bottom CTA bar — keeps the two primary actions reachable without the
-  // header competing for the same strip of screen.
+  // As soon as the very first scroll gesture moves the page off the hero
+  // screen, swap the sticky top header for the sticky bottom CTA bar —
+  // keeps the two primary actions reachable without the header competing
+  // for the same strip of screen. A small pixel threshold (not 0) so it
+  // doesn't flicker on a tiny accidental nudge.
   const [scrolledPast, setScrolledPast] = useState(false);
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
-      setScrolledPast(ratio >= 0.3);
-    };
+    const handleScroll = () => setScrolledPast(window.scrollY > 80);
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -534,7 +530,7 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
       </section>
 
       {/* Footer */}
-      <footer className={`border-t py-8 text-center text-sm ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-400')}`}>
+      <footer className={`border-t pt-8 pb-[110px] text-center text-sm ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-400')}`}>
         <p className={`font-medium mb-4 ${c('text-gray-700', 'text-gray-300')}`}>
           Durga CRM — One Platform. Every Puja. Everything Organized.
         </p>
@@ -568,9 +564,10 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
           </button>
           <a
             href="#lead-form"
-            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg font-medium transition truncate text-gray-900 bg-[#feeda9] hover:bg-[#fde48a] flex items-center justify-center"
+            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg transition bg-[#feeda9] hover:bg-[#fde48a] flex flex-col items-center justify-center"
           >
-            Request Access and Demo
+            <span className="text-gray-900 font-medium truncate leading-tight">Request Access and Demo</span>
+            <span className="text-[11px] text-gray-500 mt-px leading-tight">Claim 1 Month FREE</span>
           </a>
         </div>
       </div>
