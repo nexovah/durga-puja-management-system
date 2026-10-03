@@ -137,23 +137,6 @@ export function DashboardOnboardingWidget({
         />
       </div>
 
-      {/* CTA Button banner if collections haven't started yet */}
-      {!hasPaidCollection && onNavigateToCollection && (
-        <div className="flex flex-wrap items-center gap-2.5 mb-3.5 pb-0.5">
-          <button
-            type="button"
-            onClick={onNavigateToCollection}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-          >
-            <HandCoins size={14} />
-            {t('dashboard.onboarding.startNow')}
-          </button>
-          <span className="text-xs text-gray-400 dark:text-gray-500">
-            {t('dashboard.onboarding.startNowSub')}
-          </span>
-        </div>
-      )}
-
       {/* 4 Interactive Step Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Step 1: Add a festival */}

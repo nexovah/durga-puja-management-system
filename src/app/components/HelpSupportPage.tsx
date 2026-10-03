@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image as ImageIcon, X, Plus, Inbox, ArrowLeft, Send, Inbox as OpenIcon, CheckCircle2, Reply, MessageSquare } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { RequiredMark } from './RequiredMark';
+import { Toast } from './Toast';
 import {
   SupportTicket, SupportTicketReply, TicketActivity, listMyTicketsRequest, createTicketRequest, uploadTicketImage,
   fetchTicketReplies, postTicketReplyRequest, fetchMyTicketActivity, markTicketRead,
@@ -287,9 +288,12 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim() || !currentUser) return;
+    if (!e.currentTarget.checkValidity() || !title.trim() || !body.trim() || !currentUser) {
+      setError(t('validation.fillRequired'));
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -316,7 +320,8 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
   return (
     <div className="max-w-2xl bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6">
       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">{t('helpSupport.create.title')}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <Toast message={error || null} onDone={() => setError('')} type="error" />
         <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">{t('helpSupport.create.submittedBy')}</p>
@@ -368,8 +373,6 @@ function CreateTicketForm({ currentUser, committeeName, onCancel, onCreated }: {
             </label>
           )}
         </div>
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-
         <div className="border-t border-gray-100 dark:border-gray-800 pt-4 flex gap-3">
           <button
             type="submit"

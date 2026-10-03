@@ -120,6 +120,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Chanda | null>(null);
   const [viewTarget, setViewTarget] = useState<Chanda | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Chanda, 'id'>; saveAndAddNew: boolean } | null>(null);
@@ -284,10 +285,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
-      alert(t('validation.phoneMinDigits'));
+      setToastType('error');
+      setToastMessage(t('validation.phoneMinDigits'));
       return;
     }
 
@@ -295,7 +302,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     if (billKey) {
       const isDuplicate = chandaList.some(c => c.id !== editingId && normalizeKey(c.billNumber) === billKey);
       if (isDuplicate) {
-        alert(t('chanda.billNumberDuplicate'));
+        setToastType('error');
+        setToastMessage(t('chanda.billNumberDuplicate'));
         return;
       }
     }
@@ -348,6 +356,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         diffFields(original as any, payload as any, CHANDA_FIELD_LABELS),
         payload.donorName
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new chanda
@@ -357,6 +366,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       };
       setChandaList([...chandaList, newChanda]);
       onLog('create', 'chanda', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, 1, undefined, payload.donorName);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -404,6 +414,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setChandaList(chandaList.filter(c => c.id !== deleteTarget.id));
     onLog('delete', 'chanda', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`, 1, undefined, deleteTarget.donorName);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -710,7 +721,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           </>
         }
       >
-          <form id="chanda-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form id="chanda-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')}<RequiredMark /></label>
@@ -1274,7 +1285,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         onConfirm={handleConfirmImport}
       />
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
         title={viewTarget?.donorName || ''}

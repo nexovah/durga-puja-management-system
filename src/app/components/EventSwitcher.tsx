@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronsUpDown, Plus, Pencil, X, MoreHorizontal } from 'lucide-react';
+import { Check, ChevronsUpDown, Pencil, X, MoreHorizontal } from 'lucide-react';
 import {
   EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest,
   fetchEventChanda, fetchEventDonationAds, fetchEventMembers, fetchEventLoans, fetchEventExpenses,
@@ -9,6 +9,7 @@ import { computeCashBankTotals } from '../lib/cashBank';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 import { CustomSelect } from './CustomSelect';
 import { RequiredMark } from './RequiredMark';
+import { EventManageModal } from './EventManageModal';
 
 const currentYear = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -17,6 +18,14 @@ export function formatFinancialYear(year: number | string): string {
   const y = typeof year === 'string' ? parseInt(year, 10) : year;
   if (!y || isNaN(y)) return String(year || '');
   return `FY ${y}-${y + 1}`;
+}
+
+// Newest festival first — by financial year descending, then by creation
+// time as a tiebreaker for events sharing the same year.
+export function sortEventsNewestFirst(events: EventInfo[]): EventInfo[] {
+  return [...events].sort((a, b) =>
+    b.year - a.year || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 }
 
 // Curated Indian-festival/puja emoji set — a static picker, not a general
@@ -48,6 +57,7 @@ export function EventSwitcher({
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLButtonElement>(null);
 
@@ -64,7 +74,7 @@ export function EventSwitcher({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const closeAll = () => { setOpen(false); setMode('list'); setEditingEvent(null); };
+  const closeAll = () => { setOpen(false); setMode('list'); setEditingEvent(null); setManageOpen(false); };
 
   const handleRowClick = (event: EventInfo) => {
     if (event.id === activeEventId) { closeAll(); return; }
@@ -101,7 +111,7 @@ export function EventSwitcher({
           <>
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                {activeEvent ? `${activeEvent.name} ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
+                {activeEvent ? `${activeEvent.name} — ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
               </p>
             </div>
             {isAdmin && <ChevronsUpDown size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />}
@@ -119,10 +129,23 @@ export function EventSwitcher({
           onClose={closeAll}
           onRowClick={handleRowClick}
           onEditClick={(e) => { setEditingEvent(e); setMode('edit'); }}
-          onCreateClick={() => { setEditingEvent(null); setMode('create'); }}
+          onManageClick={() => { setOpen(false); setMode('list'); setManageOpen(true); }}
           onBackToList={() => setMode('list')}
           onCreated={(event) => { onEventCreated(event); setMode('list'); }}
           onUpdated={(event) => { onEventUpdated(event); setMode('list'); setEditingEvent(null); }}
+          onSwitched={onEventSwitched}
+        />
+      )}
+
+      {manageOpen && isAdmin && (
+        <EventManageModal
+          events={events}
+          activeEventId={activeEventId}
+          currentUserId={currentUserId}
+          onClose={() => setManageOpen(false)}
+          onRowClick={handleRowClick}
+          onCreated={onEventCreated}
+          onUpdated={onEventUpdated}
           onSwitched={onEventSwitched}
         />
       )}
@@ -141,9 +164,24 @@ export function EventSwitcher({
   );
 }
 
+// Dropdown is a quick shortlist, not the full roster — only the 6 newest
+// festivals, plus the active one if it'd otherwise fall outside that top 6
+// (e.g. an older event was reactivated). Everything else lives in the
+// "Manage" modal.
+const DROPDOWN_LIMIT = 6;
+function shortlistEvents(events: EventInfo[], activeEventId: string | null): EventInfo[] {
+  const sorted = sortEventsNewestFirst(events);
+  const top = sorted.slice(0, DROPDOWN_LIMIT);
+  if (activeEventId && !top.some(e => e.id === activeEventId)) {
+    const active = sorted.find(e => e.id === activeEventId);
+    if (active) return [...top.slice(0, DROPDOWN_LIMIT - 1), active];
+  }
+  return top;
+}
+
 function EventPopover({
   events, activeEventId, mode, editingEvent, currentUserId,
-  onClose, onRowClick, onEditClick, onCreateClick, onBackToList, onCreated, onUpdated, onSwitched,
+  onClose, onRowClick, onEditClick, onManageClick, onBackToList, onCreated, onUpdated, onSwitched,
 }: {
   events: EventInfo[];
   activeEventId: string | null;
@@ -153,18 +191,19 @@ function EventPopover({
   onClose: () => void;
   onRowClick: (event: EventInfo) => void;
   onEditClick: (event: EventInfo) => void;
-  onCreateClick: () => void;
+  onManageClick: () => void;
   onBackToList: () => void;
   onCreated: (event: EventInfo) => void;
   onUpdated: (event: EventInfo) => void;
   onSwitched: (eventId: string) => void;
 }) {
+  const shortlist = shortlistEvents(events, activeEventId);
   return (
     <div className="absolute top-full left-3 mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
       {mode === 'list' && (
         <div className="rounded-xl overflow-hidden">
-          <div className="py-1.5 max-h-72 overflow-y-auto">
-            {events.map(event => {
+          <div className="py-1.5">
+            {shortlist.map(event => {
               const active = event.id === activeEventId;
               return (
                 <div
@@ -176,7 +215,7 @@ function EventPopover({
                       {event.emoji || '🪔'}
                     </span>
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                      {event.name} {formatFinancialYear(event.year)}
+                      {event.name} — {formatFinancialYear(event.year)}
                     </span>
                   </button>
                   <button
@@ -193,16 +232,10 @@ function EventPopover({
           </div>
           <div className="border-t border-gray-100 dark:border-gray-800" />
           <button
-            onClick={onCreateClick}
-            className="w-full flex items-start gap-2.5 px-3 py-3 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
+            onClick={onManageClick}
+            className="w-full py-2.5 text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-center"
           >
-            <div className="w-6 h-6 rounded-full border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center shrink-0 mt-0.5">
-              <Plus size={14} className="text-gray-500 dark:text-gray-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Create 'Puja, Festival or Event'</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Collaborate with your entire committee to take full management under control.</p>
-            </div>
+            Manage 'Puja, Festival or Event'
           </button>
         </div>
       )}
@@ -215,14 +248,15 @@ function EventPopover({
           onCancel={mode === 'create' ? onClose : onBackToList}
           onSaved={mode === 'create' ? onCreated : onUpdated}
           onSwitched={onSwitched}
+          compact
         />
       )}
     </div>
   );
 }
 
-function EventForm({
-  existing, otherEvents, currentUserId, onCancel, onSaved, onSwitched,
+export function EventForm({
+  existing, otherEvents, currentUserId, onCancel, onSaved, onSwitched, compact = false,
 }: {
   existing: EventInfo | null;
   otherEvents: EventInfo[];
@@ -230,6 +264,11 @@ function EventForm({
   onCancel: () => void;
   onSaved: (event: EventInfo) => void;
   onSwitched: (eventId: string) => void;
+  // true inside the tight 346px quick-switcher popover; false (default) for
+  // the full-size "Manage" modal, which matches the app's standard
+  // add/edit-form sizing (FormModal-style: bigger title, px-4 py-2 inputs,
+  // px-6 py-3 buttons) instead of the popover's compact text-xs/px-3 one.
+  compact?: boolean;
 }) {
   const [name, setName] = useState(existing?.name || '');
   const [year, setYear] = useState(existing?.year || currentYear);
@@ -345,30 +384,39 @@ function EventForm({
     }
   };
 
+  // Two sizing tiers sharing one layout: `compact` for the tight 346px
+  // quick-switcher popover (unchanged), full-size (default) matching the
+  // app's standard add/edit-form conventions (ChandaCollection etc. — see
+  // durga-crm-ui-design-system skill) for the "Manage" modal.
+  const labelCls = compact ? 'text-xs font-medium text-gray-500 dark:text-gray-400' : 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2';
+  const inputCls = compact
+    ? 'w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500'
+    : 'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none';
+
   return (
-    <div className="p-3.5">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+    <div className={compact ? 'p-3.5' : 'p-4 sm:p-6'}>
+      <div className={`flex items-center justify-between ${compact ? 'mb-3' : 'mb-5'}`}>
+        <p className={compact ? 'text-sm font-bold text-gray-800 dark:text-gray-200' : 'text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200'}>
           {existing ? "Edit 'Puja, Festival or Event'" : "Add 'Puja, Festival or Event'"}
         </p>
         <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-          <X size={16} />
+          <X size={compact ? 16 : 24} />
         </button>
       </div>
 
-      <div className="space-y-2.5">
+      <div className={compact ? 'space-y-2.5' : 'space-y-4'}>
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name<RequiredMark /></label>
+          <label className={labelCls}>Name<RequiredMark /></label>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g. Durga Puja"
-            className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg outline-none focus:border-orange-500"
+            className={inputCls}
           />
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Financial Year<RequiredMark /></label>
+            <label className={labelCls}>Financial Year<RequiredMark /></label>
             {yearLocked && (
               <button
                 type="button"
@@ -376,7 +424,7 @@ function EventForm({
                 className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
                 aria-label="Unlock financial year"
               >
-                <Pencil size={13} />
+                <Pencil size={compact ? 13 : 15} />
               </button>
             )}
           </div>
@@ -385,12 +433,12 @@ function EventForm({
             disabled={yearLocked}
             onChange={v => setYear(Number(v))}
             options={YEAR_OPTIONS.map(y => ({ value: String(y), label: formatFinancialYear(y) }))}
-            className="mt-1"
+            className={compact ? 'mt-1' : 'mt-2'}
           />
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Opening Balance</label>
+            <label className={labelCls}>Opening Balance</label>
             {cashBankLocked && (
               <button
                 type="button"
@@ -398,20 +446,20 @@ function EventForm({
                 className="text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
                 aria-label="Unlock opening balance"
               >
-                <Pencil size={13} />
+                <Pencil size={compact ? 13 : 15} />
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2.5 mt-1">
+          <div className={`grid grid-cols-2 gap-2.5 ${compact ? 'mt-1' : 'mt-2'}`}>
             <div>
-              <label className="text-[11px] text-gray-400 dark:text-gray-500">Cash in Hand (₹)</label>
+              <label className={compact ? 'text-[11px] text-gray-400 dark:text-gray-500' : 'text-xs text-gray-500 dark:text-gray-400'}>Cash in Hand (₹)</label>
               <input
                 type="number"
                 min="0"
                 disabled={cashBankLocked}
                 value={openingCash}
                 onChange={e => setOpeningCash(e.target.value)}
-                className={`w-full mt-0.5 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
+                className={`w-full mt-1 ${compact ? 'px-3 py-2 text-sm' : 'px-4 py-2'} border rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
                   cashBankLocked
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
                     : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
@@ -419,14 +467,14 @@ function EventForm({
               />
             </div>
             <div>
-              <label className="text-[11px] text-gray-400 dark:text-gray-500">Money in Bank (₹)</label>
+              <label className={compact ? 'text-[11px] text-gray-400 dark:text-gray-500' : 'text-xs text-gray-500 dark:text-gray-400'}>Money in Bank (₹)</label>
               <input
                 type="number"
                 min="0"
                 disabled={cashBankLocked}
                 value={openingBank}
                 onChange={e => setOpeningBank(e.target.value)}
-                className={`w-full mt-0.5 px-3 py-2 text-sm border rounded-lg outline-none focus:border-orange-500 ${
+                className={`w-full mt-1 ${compact ? 'px-3 py-2 text-sm' : 'px-4 py-2'} border rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
                   cashBankLocked
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
                     : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:text-gray-100'
@@ -436,8 +484,8 @@ function EventForm({
           </div>
         </div>
         <div className="relative" ref={moreRef}>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Emoji (optional)</label>
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <label className={labelCls}>Emoji (optional)</label>
+          <div className={`flex flex-wrap gap-1.5 ${compact ? 'mt-1.5' : 'mt-2'}`}>
             {displayEmojis.map(e => (
               <button
                 key={e}
@@ -482,16 +530,16 @@ function EventForm({
         </div>
         {!existing && otherEvents.length > 0 && (
           <div className="border-t border-gray-100 dark:border-gray-800 pt-2.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Connect with a previous 'Puja, Festival or Event'? (optional)</label>
+            <label className={labelCls}>Connect with a previous 'Puja, Festival or Event'? (optional)</label>
             <CustomSelect
               value={connectEventId}
               disabled={loadingConnect}
               onChange={v => handleConnectChange(v)}
               options={[
                 { value: '', label: 'No, start fresh' },
-                ...otherEvents.map(e => ({ value: e.id, label: `${e.name} ${formatFinancialYear(e.year)}` })),
+                ...otherEvents.map(e => ({ value: e.id, label: `${e.name} — ${formatFinancialYear(e.year)}` })),
               ]}
-              className="mt-1"
+              className={compact ? 'mt-1' : 'mt-2'}
             />
             {connectEventId && (
               <div className="mt-2 space-y-1.5">
@@ -511,17 +559,17 @@ function EventForm({
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
 
-      <div className="border-t border-gray-100 dark:border-gray-800 mt-3.5 pt-3.5 flex gap-2">
+      <div className={`border-t border-gray-100 dark:border-gray-800 flex gap-3 ${compact ? 'mt-3.5 pt-3.5' : 'mt-5 pt-5'}`}>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+          className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg disabled:opacity-50 transition-colors ${compact ? 'px-3 py-2 text-sm' : 'px-6 py-3 text-sm sm:text-base'}`}
         >
           {saving ? 'Saving…' : existing ? 'Save changes' : 'Create'}
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className={`bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${compact ? 'px-3 py-2 text-sm' : 'px-6 py-3 text-sm sm:text-base'}`}
         >
           Cancel
         </button>

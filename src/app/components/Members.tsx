@@ -107,6 +107,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [formData, setFormData] = useState(emptyForm);
   const [showMembershipPayment, setShowMembershipPayment] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [viewTarget, setViewTarget] = useState<Member | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: MemberFormPayload; saveAndAddNew: boolean } | null>(null);
@@ -127,14 +128,24 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     // Role used to be a native <select required> — now CustomSelect, which
     // doesn't participate in native form validation, so this guard replaces it.
-    if (!formData.role) return;
+    if (!formData.role) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
 
     if (!isPhoneValid(formData.phone, true)) {
-      alert(t('validation.phoneMinDigits'));
+      setToastType('error');
+      setToastMessage(t('validation.phoneMinDigits'));
       return;
     }
 
@@ -194,6 +205,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         diffFields(original as any, payload as any, MEMBERS_FIELD_LABELS),
         payload.name
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new member
@@ -204,6 +216,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
       };
       setMembers([...members, newMember]);
       onLog('create', 'members', payload.name, undefined, undefined, payload.name);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -266,6 +279,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     setMembers(members.filter(m => m.id !== deleteTarget.id));
     onLog('delete', 'members', deleteTarget.name, undefined, undefined, deleteTarget.name);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -431,7 +445,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
           </>
         }
       >
-          <form id="members-form" onSubmit={handleSubmit} className="space-y-4">
+          <form id="members-form" onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')}<RequiredMark /></label>
@@ -745,7 +759,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         />
       </div>
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
         title={viewTarget?.name || ''}

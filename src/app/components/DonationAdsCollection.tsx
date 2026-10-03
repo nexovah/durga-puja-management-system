@@ -138,6 +138,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<DonationAd | null>(null);
   const [viewTarget, setViewTarget] = useState<DonationAd | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<DonationAd, 'id'>; saveAndAddNew: boolean } | null>(null);
@@ -279,10 +280,16 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity() || (formData.category !== 'donation' && !formData.inKind)) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
-      alert(t('validation.phoneMinDigits'));
+      setToastType('error');
+      setToastMessage(t('validation.phoneMinDigits'));
       return;
     }
 
@@ -290,7 +297,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     if (voucherKey) {
       const isDuplicate = donationAdsList.some(item => item.id !== editingId && normalizeKey(item.voucherNumber) === voucherKey);
       if (isDuplicate) {
-        alert(t('donationAds.voucherNumberDuplicate'));
+        setToastType('error');
+        setToastMessage(t('donationAds.voucherNumberDuplicate'));
         return;
       }
     }
@@ -335,6 +343,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         diffFields(original as any, payload as any, DONATION_ADS_FIELD_LABELS),
         payload.donorName || payload.companyName
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newItem: DonationAd = {
@@ -343,6 +352,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       };
       setDonationAdsList([...donationAdsList, newItem]);
       onLog('create', 'donation_ads', `${payload.donorName} — ₹${payload.amount.toLocaleString()}`, undefined, undefined, payload.donorName || payload.companyName);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -388,6 +398,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     setDonationAdsList(donationAdsList.filter(item => item.id !== deleteTarget.id));
     onLog('delete', 'donation_ads', `${deleteTarget.donorName} — ₹${deleteTarget.amount.toLocaleString()}`, undefined, undefined, deleteTarget.donorName || deleteTarget.companyName);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -659,7 +670,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           </>
         }
       >
-          <form id="donation-ads-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form id="donation-ads-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!fixedCategory && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.category')}<RequiredMark /></label>
@@ -702,11 +713,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.amountLabel')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.amountLabel')}<RequiredMark /></label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
+                required
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -745,7 +757,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.adsCategory')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.adsCategory')}<RequiredMark /></label>
                 <CustomSelect
                   value={formData.inKind}
                   onChange={(v) => setFormData({ ...formData, inKind: v })}
@@ -756,9 +768,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
               <input
                 type="date"
+                required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -1129,7 +1142,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         onConfirm={handleConfirmImport}
       />
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
         title={viewTarget?.donorName || viewTarget?.companyName || ''}

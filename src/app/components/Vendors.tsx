@@ -5,6 +5,7 @@ import { Vendor, VendorInput, ActivityModule, ActivityFieldChange, listVendorsRe
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
+import { Toast } from './Toast';
 import { RequiredMark } from './RequiredMark';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -642,7 +643,7 @@ function VendorFormModal({
               className="w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
           </div>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          <Toast message={error || null} onDone={() => setError('')} type="error" />
         </div>
 
         <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex gap-3">

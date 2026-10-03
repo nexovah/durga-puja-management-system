@@ -7,6 +7,7 @@ import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Pagination, usePagination } from './Pagination';
 import { Toast } from './Toast';
+import { RequiredMark } from './RequiredMark';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
@@ -74,6 +75,7 @@ export function EstimationPage({
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
@@ -217,12 +219,18 @@ export function EstimationPage({
 
   const handleSave = () => {
     if (!draft) return;
+    if (!draft.title.trim()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const cleanedItems = draft.lineItems.filter(item => item.title.trim() !== '' || item.amount);
     const cleanedDraft: Estimation = { ...draft, lineItems: cleanedItems };
 
     if (isNew) {
       setEstimationsList([...estimationsList, cleanedDraft]);
       onLog('create', 'estimation', `${cleanedDraft.title} — ₹${totalAmount(cleanedDraft).toLocaleString()}`, undefined, undefined, cleanedDraft.title);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     } else {
       const original = estimationsList.find(est => est.id === cleanedDraft.id);
@@ -232,6 +240,7 @@ export function EstimationPage({
         diffFields(original as any, cleanedDraft as any, ESTIMATION_FIELD_LABELS),
         cleanedDraft.title
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     }
     // Stay on the detail page after saving (don't drop back to the list) —
@@ -301,10 +310,11 @@ export function EstimationPage({
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('estimation.titleLabel')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('estimation.titleLabel')}<RequiredMark /></label>
             <div className="flex gap-2">
               <input
                 type="text"
+                required
                 value={draft.title}
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
                 disabled={!canEdit}
@@ -519,7 +529,7 @@ export function EstimationPage({
           document.body
         )}
 
-        <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+        <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
         <DeleteConfirmModal
           open={!!rowDeleteTarget}
           itemLabel={rowDeleteTarget?.title}
@@ -678,7 +688,7 @@ export function EstimationPage({
         />
       </div>
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.title}

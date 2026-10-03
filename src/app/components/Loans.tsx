@@ -65,6 +65,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Loan[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
   const [viewTarget, setViewTarget] = useState<Loan | null>(null);
   const [memberSuggestOpen, setMemberSuggestOpen] = useState(false);
@@ -128,11 +129,17 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     return 'notSelected';
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
 
     if (!isPhoneValid(formData.phone, false)) {
-      alert(t('validation.phoneMinDigits'));
+      setToastType('error');
+      setToastMessage(t('validation.phoneMinDigits'));
       return;
     }
 
@@ -157,6 +164,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         diffFields(original as any, payload as any, LOANS_FIELD_LABELS),
         payload.donorName
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newLoan: Loan = {
@@ -165,6 +173,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
       };
       setLoansList([...loansList, newLoan]);
       onLog('create', 'loans', `${payload.donorName} — ₹${payload.amountReceived.toLocaleString()}`, undefined, undefined, payload.donorName);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -199,6 +208,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     setLoansList(loansList.filter(l => l.id !== deleteTarget.id));
     onLog('delete', 'loans', `${deleteTarget.donorName} — ₹${deleteTarget.amountReceived.toLocaleString()}`, undefined, undefined, deleteTarget.donorName);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -453,7 +463,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
           </>
         }
       >
-          <form id="loans-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form id="loans-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Row 1: Donor's Name (with a committee-member search suggest,
                 since loans almost always come from a member) | Phone Number */}
             <div className="relative" ref={memberSuggestRef}>
@@ -762,7 +772,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         onConfirm={handleConfirmImport}
       />
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
         title={viewTarget?.donorName || ''}

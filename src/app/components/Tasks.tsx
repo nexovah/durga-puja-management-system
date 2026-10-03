@@ -77,6 +77,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
@@ -119,6 +120,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     if (editingId) {
@@ -140,6 +146,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         diffFields(original as any, formData as any, TASKS_FIELD_LABELS),
         formData.title
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       const newTask: Task = {
@@ -155,6 +162,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
       };
       setTasksList([...tasksList, newTask]);
       onLog('create', 'tasks', formData.title, undefined, undefined, formData.title);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -190,6 +198,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
     setTasksList(tasksList.filter(task => task.id !== deleteTarget.id));
     onLog('delete', 'tasks', deleteTarget.title, undefined, undefined, deleteTarget.title);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -277,7 +286,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
           </>
         }
       >
-          <form id="tasks-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form id="tasks-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.title')}<RequiredMark /></label>
               <input
@@ -695,7 +704,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         </div>
       )}
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <DeleteConfirmModal
         open={!!deleteTarget}
         itemLabel={deleteTarget?.title}

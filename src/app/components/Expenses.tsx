@@ -105,6 +105,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Expense[]; toUpdate: Expense[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [viewTarget, setViewTarget] = useState<Expense | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Expense, 'id'>; saveAndAddNew: boolean } | null>(null);
@@ -209,11 +210,20 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
 
     // Category used to be a native <select required> — now CustomSelect, which
     // doesn't participate in native form validation, so this guard replaces it.
-    if (!formData.category) return;
+    if (!formData.category) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
 
     const amount = parseFloat(formData.amount) || 0;
     const partialPayments: ExpensePartialPayment[] = formData.partialPayments
@@ -226,7 +236,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     const partialSum = partialPayments.reduce((sum, p) => sum + p.amount, 0);
 
     if (formData.paymentStatus === 'partial' && partialSum > amount) {
-      alert(
+      setToastType('error');
+      setToastMessage(
         t('expenses.partialExceedsAmount')
           .replace('{sum}', partialSum.toLocaleString())
           .replace('{amount}', amount.toLocaleString())
@@ -238,7 +249,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     if (voucherKey) {
       const isDuplicate = expenses.some(exp => exp.id !== editingId && normalizeKey(exp.voucherNumber) === voucherKey);
       if (isDuplicate) {
-        alert(t('expenses.voucherNumberDuplicate'));
+        setToastType('error');
+        setToastMessage(t('expenses.voucherNumberDuplicate'));
         return;
       }
     }
@@ -283,6 +295,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         diffFields(original as any, payload as any, EXPENSES_FIELD_LABELS),
         payload.title
       );
+      setToastType('success');
       setToastMessage(t('common.updatedSuccess'));
     } else {
       // Add new expense
@@ -292,6 +305,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       };
       setExpenses([...expenses, newExpense]);
       onLog('create', 'expenses', `${payload.title} — ₹${payload.amount.toLocaleString()}`, undefined, undefined, payload.title);
+      setToastType('success');
       setToastMessage(t('common.savedSuccess'));
     }
 
@@ -340,6 +354,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setExpenses(expenses.filter(exp => exp.id !== deleteTarget.id));
     onLog('delete', 'expenses', `${deleteTarget.title} — ₹${deleteTarget.amount.toLocaleString()}`, undefined, undefined, deleteTarget.title);
     setDeleteTarget(null);
+    setToastType('success');
     setToastMessage(t('common.deletedSuccess'));
   };
 
@@ -632,7 +647,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           </>
         }
       >
-          <form id="expenses-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form id="expenses-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.title')}<RequiredMark /></label>
               <input
@@ -1045,7 +1060,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         onConfirm={handleConfirmImport}
       />
 
-      <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
         title={viewTarget?.title || ''}

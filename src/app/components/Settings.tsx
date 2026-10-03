@@ -141,10 +141,12 @@ export function Settings({
     setCommitteeForm(updated);
     try {
       await setCommitteeInfo(updated);
+      setMessageType('success');
       setMessage(t('settings.nav.saved'));
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Failed to update navigation visibility', err);
+      setMessageType('error');
       setMessage(t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
     }
@@ -155,10 +157,12 @@ export function Settings({
     setCommitteeForm(updated);
     try {
       await setCommitteeInfo(updated);
+      setMessageType('success');
       setMessage(t('settings.nav.saved'));
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Failed to reset navigation visibility', err);
+      setMessageType('error');
       setMessage(t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
     }
@@ -184,10 +188,12 @@ export function Settings({
       setReceiptForm(updated);
       setReceiptSettings(updated);
       try { localStorage.setItem('puja_receipt_designed', 'true'); } catch {}
+      setMessageType('success');
       setMessage(t('settings.msg.receiptSettingsUpdated'));
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Failed to save receipt settings', err);
+      setMessageType('error');
       setMessage(t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
     } finally {
@@ -278,32 +284,50 @@ export function Settings({
     },
   });
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [logoUploading, setLogoUploading] = useState(false);
 
-  const handleCommitteeSubmit = (e: React.FormEvent) => {
+  const handleCommitteeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.checkValidity()) {
+      setMessageType('error');
+      setMessage(t('validation.fillRequired'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
     if (!isPhoneValid(committeeForm.mobile1, true) || !isPhoneValid(committeeForm.mobile2 || '', false)) {
+      setMessageType('error');
       setMessage(t('validation.phoneMinDigits'));
       setTimeout(() => setMessage(''), 3000);
       return;
     }
     setCommitteeInfo(committeeForm);
-    setMessage(t('settings.msg.committeeUpdated'));
+    setMessageType('success');
+      setMessage(t('settings.msg.committeeUpdated'));
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!currentUser) return;
 
+    if (!e.currentTarget.checkValidity()) {
+      setMessageType('error');
+      setMessage(t('validation.fillRequired'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setMessageType('error');
       setMessage(t('settings.msg.passwordMismatch'));
       setTimeout(() => setMessage(''), 3000);
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
+      setMessageType('error');
       setMessage(t('settings.msg.passwordTooShort'));
       setTimeout(() => setMessage(''), 3000);
       return;
@@ -311,20 +335,30 @@ export function Settings({
 
     const ok = await onChangeOwnPassword(currentUser.id, passwordForm.currentPassword, passwordForm.newPassword);
     if (!ok) {
+      setMessageType('error');
       setMessage(t('settings.msg.wrongCurrentPassword'));
       setTimeout(() => setMessage(''), 3000);
       return;
     }
 
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setMessage(t('settings.msg.passwordChanged'));
+    setMessageType('success');
+      setMessage(t('settings.msg.passwordChanged'));
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const handleUserSubmit = async (e: React.FormEvent) => {
+  const handleUserSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!e.currentTarget.checkValidity()) {
+      setMessageType('error');
+      setMessage(t('validation.fillRequired'));
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
     if (!userForm.email.trim()) {
+      setMessageType('error');
       setMessage(t('settings.msg.emailRequired'));
       setTimeout(() => setMessage(''), 3000);
       return;
@@ -334,20 +368,24 @@ export function Settings({
       if (editingUserId) {
         // Edit existing user (password only changes if a new one was typed)
         await onUpdateUser(editingUserId, userForm.name, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.password || undefined, userForm.email.trim());
-        setMessage(t('settings.msg.userUpdated'));
+        setMessageType('success');
+      setMessage(t('settings.msg.userUpdated'));
       } else {
         // Check if username already exists
         if (users.some(u => u.username === userForm.username)) {
-          setMessage(t('settings.msg.usernameExists'));
+          setMessageType('error');
+      setMessage(t('settings.msg.usernameExists'));
           setTimeout(() => setMessage(''), 3000);
           return;
         }
 
         await onCreateUser(userForm.name, userForm.username, userForm.password, userForm.permissions, userForm.canEdit, userForm.canDelete, userForm.canBulkImport, userForm.email.trim());
-        setMessage(t('settings.msg.userCreated'));
+        setMessageType('success');
+      setMessage(t('settings.msg.userCreated'));
       }
     } catch (err) {
       console.error('Failed to save user', err);
+      setMessageType('error');
       setMessage(t('common.saveError'));
       setTimeout(() => setMessage(''), 3000);
       return;
@@ -416,6 +454,7 @@ export function Settings({
     const user = users.find(u => u.id === id);
     if (!user) return;
     if (user.isAdmin) {
+      setMessageType('error');
       setMessage(t('settings.msg.adminCannotDelete'));
       setTimeout(() => setMessage(''), 3000);
       return;
@@ -426,6 +465,7 @@ export function Settings({
   const confirmDeleteUser = async () => {
     if (!deleteUserTarget) return;
     const ok = await onDeleteUser(deleteUserTarget.id);
+    setMessageType(ok ? 'success' : 'error');
     setMessage(ok ? t('settings.msg.userDeleted') : t('common.saveError'));
     setTimeout(() => setMessage(''), 3000);
     setDeleteUserTarget(null);
@@ -436,9 +476,11 @@ export function Settings({
     if (!nextActive && !confirm(t('settings.confirmDisableUser'))) return;
     try {
       await onSetUserActive(user.id, nextActive);
+      setMessageType('success');
       setMessage(nextActive ? t('settings.msg.userEnabled') : t('settings.msg.userDisabled'));
     } catch (err) {
       console.error('Failed to change user active state', err);
+      setMessageType('error');
       setMessage(t('common.saveError'));
     }
     setTimeout(() => setMessage(''), 3000);
@@ -446,7 +488,8 @@ export function Settings({
 
   const handleLanguageChange = (lang: typeof language) => {
     setLanguage(lang);
-    setMessage(t('settings.msg.languageUpdated'));
+    setMessageType('success');
+      setMessage(t('settings.msg.languageUpdated'));
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -454,7 +497,7 @@ export function Settings({
     <div className="space-y-6">
       <PageHeading>{t('settings.pageTitle')}</PageHeading>
 
-      <Toast message={message || null} onDone={() => setMessage('')} />
+      <Toast message={message || null} onDone={() => setMessage('')} type={messageType} />
 
       {/* Left-nav settings shell — matches Super Admin's Settings layout */}
       <div className="flex flex-col sm:flex-row gap-6">
@@ -560,7 +603,7 @@ export function Settings({
           {activeTab === 'committee' && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.committee')}</h3>
-              <form onSubmit={handleCommitteeSubmit} className="space-y-4">
+              <form onSubmit={handleCommitteeSubmit} noValidate className="space-y-4">
               <fieldset disabled={currentUser?.canEdit === false} className="space-y-4 disabled:opacity-60">
               <div className="pb-4 border-b border-gray-100 dark:border-gray-800">
                 <input
@@ -578,7 +621,8 @@ export function Settings({
                       setCommitteeForm({ ...committeeForm, logo: url });
                     } catch (err) {
                       console.error('Logo upload failed', err);
-                      setMessage(t('common.saveError'));
+                      setMessageType('error');
+      setMessage(t('common.saveError'));
                       setTimeout(() => setMessage(''), 3000);
                     } finally {
                       setLogoUploading(false);
@@ -1459,7 +1503,7 @@ export function Settings({
           {activeTab === 'password' && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.tab.password')}</h3>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+              <form onSubmit={handlePasswordSubmit} noValidate className="space-y-4 max-w-md">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.currentPassword')}<RequiredMark /></label>
                 <input
@@ -1560,7 +1604,7 @@ export function Settings({
                   </>
                 }
               >
-                  <form id="user-form" onSubmit={handleUserSubmit} className="space-y-4">
+                  <form id="user-form" onSubmit={handleUserSubmit} noValidate className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.name')}<RequiredMark /></label>
