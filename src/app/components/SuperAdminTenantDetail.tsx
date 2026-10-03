@@ -558,7 +558,7 @@ export function SuperAdminTenantDetail({ tenant, onBack, onSaved, onDeleted }: S
                 {users.map(u => (
                   <tr key={u.id}>
                     <td className={`py-2 font-medium ${u.isActive ? 'text-gray-900 dark:text-gray-100' : 'text-red-600 dark:text-red-400'}`}>{u.name}</td>
-                    <td className="py-2 text-gray-500 dark:text-gray-400">{u.username}</td>
+                    <td className="py-2 text-gray-500 dark:text-gray-400">{u.email || u.username}</td>
                     <td className="py-2 text-gray-600 dark:text-gray-400">{u.isAdmin ? 'Admin' : 'User'}</td>
                     <td className="py-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${

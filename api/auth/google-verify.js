@@ -103,17 +103,22 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Fire-and-forget — never await this before responding. The whole
+    // request previously risked running long enough (JWKS fetch + 2
+    // sequential Supabase RPCs + this email render/send, all awaited in
+    // series) to approach Vercel's function timeout, which kills the
+    // function with NO response body at all — the client then fails to
+    // parse that empty body ("Unexpected end of JSON input"), masking
+    // whatever the real slow step was. Not awaiting this one removes it
+    // from the critical path entirely.
     if (isNewSignup) {
-      try {
-        const { subject, html } = await renderTemplate('signup_welcome', {
-          name: identity.name || loggedIn[0].name,
-          committee_name: loggedIn[0].name,
-          login_url: `${req.headers.origin || ''}/login`,
-        });
-        await sendEmail({ to: identity.email, subject, html });
-      } catch {
-        // Never block signup over a failed welcome email.
-      }
+      renderTemplate('signup_welcome', {
+        name: identity.name || loggedIn[0].name,
+        committee_name: loggedIn[0].name,
+        login_url: `${req.headers.origin || ''}/login`,
+      })
+        .then(({ subject, html }) => sendEmail({ to: identity.email, subject, html }))
+        .catch(() => {});
     }
 
     res.status(200).json({ user: loggedIn[0] });

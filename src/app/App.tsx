@@ -1624,7 +1624,10 @@ function ProfileMenu({
             <div className="min-w-0">
               <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {currentUser?.username ? `@${currentUser.username} · ` : ''}{currentUser?.isAdmin ? t('header.admin') : t('header.user')}
+                {/* Prefer email — username is a synthetic, never-meant-to-
+                    be-shown value for Google-signup accounts (see
+                    supabase/109_tenant_signup.sql's signup_tenant_google). */}
+                {(currentUser?.email || currentUser?.username) ? `${currentUser?.email || `@${currentUser?.username}`} · ` : ''}{currentUser?.isAdmin ? t('header.admin') : t('header.user')}
               </p>
             </div>
           </div>
