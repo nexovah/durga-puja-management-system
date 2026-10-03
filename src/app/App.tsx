@@ -774,7 +774,7 @@ export default function App() {
       await syncMembers(previous, newList);
     } catch (err) {
       console.error('Failed to save member changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setMembersState(previous);
     }
   };
@@ -786,7 +786,7 @@ export default function App() {
       await syncChanda(previous, newList);
     } catch (err) {
       console.error('Failed to save chanda changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setChandaListState(previous);
     }
   };
@@ -798,7 +798,7 @@ export default function App() {
       await syncDonationAds(previous, newList);
     } catch (err) {
       console.error('Failed to save donation/ads changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setDonationAdsListState(previous);
     }
   };
@@ -810,7 +810,7 @@ export default function App() {
       await syncExpenses(previous, newList);
     } catch (err) {
       console.error('Failed to save expense changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setExpensesState(previous);
     }
   };
@@ -822,7 +822,7 @@ export default function App() {
       await syncLoans(previous, newList);
     } catch (err) {
       console.error('Failed to save loan changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setLoansListState(previous);
     }
   };
@@ -834,7 +834,7 @@ export default function App() {
       await syncTasks(previous, newList);
     } catch (err) {
       console.error('Failed to save task changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setTasksListState(previous);
     }
   };
@@ -846,7 +846,7 @@ export default function App() {
       await syncEstimations(previous, newList);
     } catch (err) {
       console.error('Failed to save estimation changes', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setEstimationsListState(previous);
     }
   };
@@ -859,7 +859,7 @@ export default function App() {
       if (saved.id !== info.id) setCommitteeInfoState(saved);
     } catch (err) {
       console.error('Failed to save committee info', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setCommitteeInfoState(previous);
     }
   };
@@ -871,7 +871,7 @@ export default function App() {
       await updateDeveloperInfo(info);
     } catch (err) {
       console.error('Failed to save developer info', err);
-      alert(t('common.saveError'));
+      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
       setDeveloperInfoState(previous);
     }
   };
