@@ -1152,7 +1152,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                       <td className={`px-6 py-4 text-sm font-bold ${
                         status === 'rejected'
                           ? 'text-red-600 line-through'
-                          : status === 'partial'
+                          : status === 'partial' || status === 'pending'
                           ? 'text-yellow-600'
                           : 'text-green-600'
                       }`}>₹{chanda.amount.toLocaleString()}</td>
@@ -1258,8 +1258,24 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                   >
                     {t('common.total')}
                   </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <td className="px-6 py-3 text-sm font-bold text-green-600">
                     ₹{filteredChanda.reduce((sum, c) => sum + getChandaCreditAmount(c), 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                  <td
+                    colSpan={['donorName', 'category'].filter(id => tableCols.isColumnVisible(id)).length + (selectMode ? 1 : 0) || 1}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.totalPending')}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-yellow-600">
+                    ₹{filteredChanda.reduce((sum, c) => {
+                      if (c.paymentStatus === 'pending') return sum + c.amount;
+                      if (c.paymentStatus === 'partial') return sum + Math.max(0, c.amount - (c.partialAmount || 0));
+                      return sum;
+                    }, 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
                 </tr>
@@ -1311,7 +1327,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             valueClassName: `font-bold ${
               (viewTarget.paymentStatus || 'paid') === 'rejected'
                 ? 'text-red-600 line-through'
-                : (viewTarget.paymentStatus || 'paid') === 'partial'
+                : (viewTarget.paymentStatus || 'paid') === 'partial' || (viewTarget.paymentStatus || 'paid') === 'pending'
                 ? 'text-yellow-600'
                 : 'text-green-600'
             }`,
