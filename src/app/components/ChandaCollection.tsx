@@ -14,6 +14,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField } from '../lib/csv';
 import { Pagination, usePagination } from './Pagination';
+import { SelectAllBanner } from './SelectAllBanner';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
@@ -596,7 +597,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [pagination.page, selectMode]);
+  }, [selectMode]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1026,6 +1027,15 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </div>
           }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(c => selectedIds.has(c.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedChanda.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedChanda.map(c => c.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
