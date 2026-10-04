@@ -464,7 +464,7 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
       </section>
 
       {/* Lead form */}
-      <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 pb-[calc(4rem+30px)] sm:py-24">
         <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Bring your Puja committee online</h2>
         <p className={`text-center mb-10 ${c('text-gray-600', 'text-gray-400')}`}>
           Tell us about your Puja committee — we'll get you set up.
@@ -559,14 +559,20 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
             onClick={onGoToSignup}
             className="flex-1 min-w-0 h-[50px] px-5 rounded-lg bg-orange-600 hover:bg-orange-700 transition flex flex-col items-center justify-center"
           >
-            <span className="text-white font-medium truncate leading-tight">Create Your Committee</span>
+            <span className="text-white font-medium truncate leading-tight">
+              <span className="sm:hidden">Create Committee</span>
+              <span className="hidden sm:inline">Create Your Committee</span>
+            </span>
             <span className="text-[11px] text-orange-100 mt-px leading-tight">Avail 1 Month FREE</span>
           </button>
           <a
             href="#lead-form"
             className="flex-1 min-w-0 h-[50px] px-5 rounded-lg transition bg-[#feeda9] hover:bg-[#fde48a] flex flex-col items-center justify-center"
           >
-            <span className="text-gray-900 font-medium truncate leading-tight">Request Access and Demo</span>
+            <span className="text-gray-900 font-medium truncate leading-tight">
+              <span className="sm:hidden">Request Demo</span>
+              <span className="hidden sm:inline">Request Access and Demo</span>
+            </span>
             <span className="text-[11px] text-gray-500 mt-px leading-tight">Claim 1 Month FREE</span>
           </a>
         </div>
