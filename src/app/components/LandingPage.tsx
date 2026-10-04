@@ -464,7 +464,7 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
       </section>
 
       {/* Lead form */}
-      <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 pb-[calc(4rem+30px)] sm:py-24">
+      <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 pb-[calc(4rem+30px)] sm:py-24 max-sm:[scroll-margin-top:-35px]">
         <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Bring your Puja committee online</h2>
         <p className={`text-center mb-10 ${c('text-gray-600', 'text-gray-400')}`}>
           Tell us about your Puja committee — we'll get you set up.
