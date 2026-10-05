@@ -267,7 +267,7 @@ export function AuthShowcaseLayout({ heading1, heading2, helpTitle, helpDesc, fo
         */}
         <div className="hidden lg:flex w-full items-center justify-center px-[6vw] gap-[6vw]">
           <div className="relative w-[414px] h-[640px] min-[1400px]:w-[440px] min-[1400px]:h-[700px] 2xl:w-[520px] 2xl:h-[740px] shrink-0 self-start">
-            <div className="relative z-10 flex h-full w-full flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-10 overflow-y-auto">
+            <div className="relative z-10 flex h-full w-full flex-col items-center text-center rounded-[4px] bg-[#111b2b] p-10 overflow-y-auto">
               {cardBody}
             </div>
           </div>
@@ -280,7 +280,7 @@ export function AuthShowcaseLayout({ heading1, heading2, helpTitle, helpDesc, fo
             below it (not beside it). */}
         <div className="lg:hidden w-full flex flex-col items-center gap-10">
           {formColumn}
-          <div className="w-full max-w-md flex flex-col items-center text-center rounded-[40px] bg-[#0e0e0e] p-8">
+          <div className="w-full max-w-md flex flex-col items-center text-center rounded-[4px] bg-[#111b2b] p-8">
             {cardBody}
           </div>
         </div>
