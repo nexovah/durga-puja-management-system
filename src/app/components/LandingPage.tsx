@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Moon, Sun, CheckCircle2, ArrowRight,
   Menu, X, ReceiptText, WalletCards, Landmark, ShieldCheck, Sparkles, Check,
@@ -121,16 +121,27 @@ export const DEFAULT_COMPARISON_GROUPS = [
 // block in the hero section) — each positioned + independently tilted so
 // they read as loosely floating rather than lined up in a row.
 const FLOATING_FESTIVALS = [
-  { name: 'Durga Puja', className: '-top-6 left-8', tilt: -6, delay: 0, color: 'primary' },
-  { name: 'Kali Puja', className: '-top-9 left-1/3', tilt: 3, delay: 0.4, color: 'accent' },
-  { name: 'Jagaddhatri Puja', className: '-top-5 right-16', tilt: 6, delay: 0.8, color: 'primary' },
-  { name: 'Lakshmi Puja', className: 'top-1/4 -left-6 xl:-left-16', tilt: -3, delay: 1.2, color: 'accent' },
-  { name: 'Saraswati Puja', className: 'top-10 -right-6 xl:-right-16', tilt: 3, delay: 1.6, color: 'primary' },
-  { name: 'Ganesh Chaturthi', className: 'bottom-1/3 -left-8 xl:-left-20', tilt: 6, delay: 2, color: 'accent' },
-  { name: 'Navratri', className: 'bottom-1/4 -right-8 xl:-right-20', tilt: -6, delay: 0.6, color: 'primary' },
-  { name: 'Diwali', className: '-bottom-6 left-10', tilt: 3, delay: 1, color: 'accent' },
-  { name: 'Dussehra', className: '-bottom-9 left-1/2', tilt: -3, delay: 1.4, color: 'primary' },
-  { name: 'Rath Yatra', className: '-bottom-6 right-12', tilt: 6, delay: 1.8, color: 'accent' },
+  { name: 'Durga Puja', className: '-top-6 left-8 -rotate-6' },
+  { name: 'Kali Puja', className: '-top-9 left-1/3 rotate-3' },
+  { name: 'Jagaddhatri Puja', className: '-top-5 right-16 rotate-6' },
+  { name: 'Lakshmi Puja', className: 'top-1/4 -left-6 -rotate-3 xl:-left-16' },
+  { name: 'Saraswati Puja', className: 'top-10 -right-6 rotate-3 xl:-right-16' },
+  { name: 'Ganesh Chaturthi', className: 'bottom-1/3 -left-8 rotate-6 xl:-left-20' },
+  { name: 'Navratri', className: 'bottom-1/4 -right-8 -rotate-6 xl:-right-20' },
+  { name: 'Diwali', className: '-bottom-6 left-10 rotate-3' },
+  { name: 'Dussehra', className: '-bottom-9 left-1/2 -rotate-3' },
+  { name: 'Rath Yatra', className: '-bottom-6 right-12 rotate-6' },
+  // Further outside the banner's left/right edges, past the inner ring
+  // above — spread top-to-bottom on each side so the image reads as
+  // surrounded on every side.
+  { name: 'Basanti Puja', className: 'top-6 -left-24 -rotate-6 xl:-left-32' },
+  { name: 'Vishwakarma Puja', className: 'top-1/2 -left-28 -translate-y-1/2 rotate-3 xl:-left-36' },
+  { name: 'Kojagari Lakshmi Puja', className: 'bottom-6 -left-24 -rotate-3 xl:-left-32' },
+  { name: 'Poila Boishakh', className: 'bottom-24 -left-20 rotate-6 xl:-left-28' },
+  { name: 'Kartik Puja', className: 'top-6 -right-24 rotate-6 xl:-right-32' },
+  { name: 'Christmas Festival', className: 'top-1/2 -right-28 -translate-y-1/2 -rotate-3 xl:-right-36' },
+  { name: 'Gangasagar Mela', className: 'bottom-6 -right-24 rotate-3 xl:-right-32' },
+  { name: 'Basanta Utsav', className: 'bottom-24 -right-20 -rotate-6 xl:-right-28' },
 ];
 
 const featureGroups = [
@@ -238,6 +249,76 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Floating festival chips: a slow continuous drift (sine-wave bob, each
+  // chip its own phase so they never sync up) plus a gentle push-away from
+  // the mouse cursor when it passes near one — driven by one requestAnimationFrame
+  // loop instead of per-frame React state. Each chip's own base tilt (its
+  // rotate-N/-rotate-N Tailwind class) is parsed once up front and
+  // re-applied every frame alongside the drift offset, since setting an
+  // inline transform on the chip itself overrides that class — this way
+  // the whole pill moves as one piece instead of just its text.
+  const heroImageRef = useRef<HTMLDivElement>(null);
+  const chipRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const chipTilts = FLOATING_FESTIVALS.map(({ className }) => {
+    const match = className.match(/(-?)rotate-(\d+)/);
+    if (!match) return 0;
+    return (match[1] === '-' ? -1 : 1) * Number(match[2]);
+  });
+  useEffect(() => {
+    const mouse = { x: -9999, y: -9999, active: false };
+    const current = FLOATING_FESTIVALS.map(() => ({ x: 0, y: 0 }));
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.active = true;
+    };
+    const handleMouseLeave = () => { mouse.active = false; };
+    const el = heroImageRef.current;
+    el?.addEventListener('mousemove', handleMouseMove);
+    el?.addEventListener('mouseleave', handleMouseLeave);
+
+    let raf = 0;
+    const tick = (time: number) => {
+      chipRefs.current.forEach((chip, i) => {
+        if (!chip) return;
+        const bobY = Math.sin(time / 1400 + i * 1.3) * 5;
+
+        let repelX = 0;
+        let repelY = 0;
+        if (mouse.active) {
+          const rect = chip.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = cx - mouse.x;
+          const dy = cy - mouse.y;
+          const dist = Math.hypot(dx, dy);
+          const radius = 110;
+          if (dist < radius && dist > 0.01) {
+            const strength = ((radius - dist) / radius) * 22;
+            repelX = (dx / dist) * strength;
+            repelY = (dy / dist) * strength;
+          }
+        }
+
+        // Ease current position toward the target each frame — a soft
+        // spring-like feel instead of snapping, so it reads as "playing"
+        // with the cursor rather than just jumping away from it.
+        const target = current[i];
+        target.x += (repelX - target.x) * 0.12;
+        target.y += (bobY + repelY - target.y) * 0.12;
+        chip.style.transform = `rotate(${chipTilts[i]}deg) translate(${target.x.toFixed(2)}px, ${target.y.toFixed(2)}px)`;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el?.removeEventListener('mousemove', handleMouseMove);
+      el?.removeEventListener('mouseleave', handleMouseLeave);
+    };
   }, []);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
@@ -352,7 +433,7 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
               <p className="mt-6 text-sm font-semibold text-muted-foreground">Plan. Collect. Manage. Celebrate.</p>
             </div>
 
-            <div className="reveal reveal-delay relative mx-auto mt-16 max-w-6xl lg:mt-20">
+            <div ref={heroImageRef} className="reveal reveal-delay relative mx-auto mt-16 max-w-6xl lg:mt-20">
               <div className="image-frame relative z-10 p-1.5 sm:p-2">
                 <img src={IMG.dashboard} alt="Durga CRM dashboard showing collections, expenses and balances" className="block aspect-[1.46] w-full object-cover" />
               </div>
@@ -361,11 +442,16 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
                   hero image group, desktop only, each independently tilted
                   so they read as "floating" rather than lined up. Purely
                   decorative (z-20, above the images) — conveys that every
-                  kind of Puja/festival can be managed in the same CRM. */}
-              {FLOATING_FESTIVALS.map(({ name, className }) => (
+                  kind of Puja/festival can be managed in the same CRM.
+                  Position/size/colors unchanged — the base tilt (parsed out
+                  of its own rotate-N/-rotate-N class below) is re-applied
+                  every frame alongside the drift/mouse-repel offset, so the
+                  whole pill (not just its text) moves as one piece. */}
+              {FLOATING_FESTIVALS.map(({ name, className }, i) => (
                 <span
                   key={name}
-                  className={`absolute z-20 hidden lg:block whitespace-nowrap rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-md ${className}`}
+                  ref={el => { chipRefs.current[i] = el; }}
+                  className={`absolute z-20 hidden lg:block cursor-pointer whitespace-nowrap rounded-full border border-border bg-card px-[15.4px] py-[6.3px] text-xs font-semibold text-foreground shadow-md will-change-transform ${className}`}
                 >
                   {name}
                 </span>
