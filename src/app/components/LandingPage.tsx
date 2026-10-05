@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  Users, Wallet, Megaphone, Receipt, HandCoins, ClipboardList,
-  CalendarClock, Activity, Moon, Sun, CheckCircle2, ArrowRight,
+  Moon, Sun, CheckCircle2, ArrowRight,
+  Menu, X, ReceiptText, WalletCards, Landmark, ShieldCheck, Sparkles, Check,
 } from 'lucide-react';
 import androidDownloadIcon from '../assets/android-download-icon.svg';
 import iosAppIcon from '../assets/ios-app-icon.svg';
+import '../../styles/landingV2.css';
 
 // Static APK hosted by this app itself (public/downloads/) — a permanent
 // same-origin URL, unlike EAS's signed build-artifact links which expire.
@@ -14,7 +15,7 @@ const ANDROID_APK_URL = '/downloads/durga-crm.apk';
 // the familiar Play Store badge, but with its own icon/wording since this
 // is a direct APK download, not a real Play Store listing (using Google's
 // actual mark here would misrepresent the distribution channel).
-function AndroidBadge({ dark, className = '' }: { dark: boolean; className?: string }) {
+function AndroidBadge({ className = '' }: { className?: string }) {
   return (
     <a
       href={ANDROID_APK_URL}
@@ -46,6 +47,7 @@ function IOSBadge({ className = '' }: { className?: string }) {
     </div>
   );
 }
+
 import { getPlatformSettingsRequest, getTurnstileSiteKeyRequest } from '../lib/superAdminDb';
 
 declare global {
@@ -64,16 +66,20 @@ interface LandingPageProps {
   onGoToLegal: (slug: 'terms' | 'privacy' | 'refund') => void;
 }
 
-const FEATURES = [
-  { icon: Users, title: 'Committee & Members', desc: 'Manage members, roles, designations, contact details, membership fees and subscriptions from one centralized system.' },
-  { icon: HandCoins, title: 'Collection', desc: 'Record collections, contributors, amounts, payment methods, payment status and collection history.' },
-  { icon: Megaphone, title: 'Donations & Sponsorship', desc: 'Manage donations, advertisers and sponsors — commitments, amounts, payment status and outstanding collections.' },
-  { icon: Receipt, title: 'Expense Management', desc: 'Record expenses, categories, vendors, bills, payment methods, partial payments and outstanding amounts.' },
-  { icon: Wallet, title: 'Loan Management', desc: 'Track initial funds and committee loans — lender, amount, repayment status and outstanding balance.' },
-  { icon: ClipboardList, title: 'Estimation & Budget', desc: 'Estimate expected costs, plan your budget and compare estimated spending with actual expenses.' },
-  { icon: CalendarClock, title: 'Task Management', desc: 'Assign responsibilities, set priorities and track deadlines — nothing forgotten, right up to immersion day.' },
-  { icon: Activity, title: 'Activity Log', desc: 'Full audit trail of who changed what, from which device, for complete transparency.' },
-];
+// Screenshots brought in from the Lovable-designed landing page (fetched
+// from its CDN export, see public/landing/ — plain static files, no build
+// step needed).
+const IMG = {
+  dashboard: '/landing/dashboard.png',
+  collection: '/landing/collection.png',
+  expenses: '/landing/expenses.png',
+  treasury: '/landing/treasury.png',
+  expenseDetail: '/landing/expense-detail.png',
+  receipt: '/landing/receipt.png',
+  committee: '/landing/committee.png',
+  navigation: '/landing/navigation.png',
+  darkDashboard: '/landing/dark-dashboard.png',
+};
 
 // Default content — used until (or unless) a Super Admin sets custom
 // content via Settings -> Comparison Table (platform_settings.comparison_table).
@@ -111,22 +117,54 @@ export const DEFAULT_COMPARISON_GROUPS = [
   },
 ];
 
-const FESTIVALS = [
-  'Durga Puja', 'Kali Puja', 'Jagaddhatri Puja', 'Lakshmi Puja', 'Saraswati Puja',
-  'Ganesh Chaturthi', 'Rath Yatra', 'Janmashtami', 'Navratri', 'Diwali',
-  'Dussehra', 'Chhath Puja', 'Sankranti', 'Community & Cultural Festivals',
+// Scattered around the hero's dashboard image (see the floating-pills
+// block in the hero section) — each positioned + independently tilted so
+// they read as loosely floating rather than lined up in a row.
+const FLOATING_FESTIVALS = [
+  { name: 'Durga Puja', className: '-top-6 left-8', tilt: -6, delay: 0, color: 'primary' },
+  { name: 'Kali Puja', className: '-top-9 left-1/3', tilt: 3, delay: 0.4, color: 'accent' },
+  { name: 'Jagaddhatri Puja', className: '-top-5 right-16', tilt: 6, delay: 0.8, color: 'primary' },
+  { name: 'Lakshmi Puja', className: 'top-1/4 -left-6 xl:-left-16', tilt: -3, delay: 1.2, color: 'accent' },
+  { name: 'Saraswati Puja', className: 'top-10 -right-6 xl:-right-16', tilt: 3, delay: 1.6, color: 'primary' },
+  { name: 'Ganesh Chaturthi', className: 'bottom-1/3 -left-8 xl:-left-20', tilt: 6, delay: 2, color: 'accent' },
+  { name: 'Navratri', className: 'bottom-1/4 -right-8 xl:-right-20', tilt: -6, delay: 0.6, color: 'primary' },
+  { name: 'Diwali', className: '-bottom-6 left-10', tilt: 3, delay: 1, color: 'accent' },
+  { name: 'Dussehra', className: '-bottom-9 left-1/2', tilt: -3, delay: 1.4, color: 'primary' },
+  { name: 'Rath Yatra', className: '-bottom-6 right-12', tilt: 6, delay: 1.8, color: 'accent' },
 ];
 
-// This page intentionally does NOT use Tailwind's `dark:` variant. This
-// project's dark mode is configured as `@is(.dark *)` in globals.css, which
-// matches ANY ancestor with class "dark" — not just the nearest one. Since
-// the shared committee-app theme (App.tsx's ThemeProvider) defaults to the
-// visitor's OS preference and can set `dark` on <html>, a `dark:` class
-// here would fire regardless of this page's own toggle. A public marketing
-// page should default to light and control its own theme independently, so
-// every color below is chosen explicitly from local `dark` state instead.
+const featureGroups = [
+  { label: 'Finance', items: 'Collection, Donation, Sponsorship, Expenses, Treasury, Loans, Estimation, Reports' },
+  { label: 'People', items: 'Members, Sponsors, Vendors' },
+  { label: 'Operations', items: 'Tasks, Documents, Assets, Awards' },
+  { label: 'Control', items: 'Activity Log, Settings, Navigation, User Management' },
+];
+
+function BrandMark({ platformLogo }: { platformLogo: string }) {
+  return (
+    <span className="flex items-center gap-2.5 font-extrabold text-foreground">
+      <span className="grid size-8 place-items-center rounded-full bg-primary text-sm text-primary-foreground overflow-hidden">
+        {platformLogo ? <img src={platformLogo} alt="" className="w-full h-full object-cover" /> : 'ॐ'}
+      </span>
+      DURGA CRM
+    </span>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.16em] text-primary">{children}</p>;
+}
+
+// This page uses its own scoped design tokens (.puja-landing-v2 in
+// landingV2.css) instead of the rest of the app's semantic color tokens —
+// see that file's header comment for why. Dark mode here is driven purely
+// by this page's own `dark` state (a `dark` class toggled on the wrapper),
+// independent of the app-wide ThemeContext (same reasoning as before: a
+// public marketing page shouldn't inherit a returning visitor's in-app
+// theme preference).
 export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingPageProps) {
   const [dark, setDark] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [form, setForm] = useState({ committeeName: '', contactName: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -175,21 +213,34 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
     return () => { cancelled = true; };
   }, [turnstileSiteKey]);
 
-  // As soon as the very first scroll gesture moves the page off the hero
-  // screen, swap the sticky top header for the sticky bottom CTA bar —
-  // keeps the two primary actions reachable without the header competing
-  // for the same strip of screen. A small pixel threshold (not 0) so it
-  // doesn't flicker on a tiny accidental nudge.
+  // Direction-aware swap between the sticky top header and the sticky
+  // bottom CTA bar: scrolling DOWN past the hero hides the header and
+  // shows the bottom bar (keeps the two primary actions reachable without
+  // competing with the header for the same strip of screen); scrolling UP
+  // at any point brings the header straight back and hides the bottom bar
+  // — a quick upward flick is read as "I want to get back to the top nav."
+  // Near the very top (<=80px) the header always shows, bar always hidden,
+  // regardless of direction.
   const [scrolledPast, setScrolledPast] = useState(false);
   useEffect(() => {
-    const handleScroll = () => setScrolledPast(window.scrollY > 80);
+    let lastY = window.scrollY;
+    const handleScroll = () => {
+      const y = window.scrollY;
+      if (y <= 80) {
+        setScrolledPast(false);
+      } else if (y > lastY) {
+        setScrolledPast(true); // scrolling down
+      } else if (y < lastY) {
+        setScrolledPast(false); // scrolling up
+      }
+      lastY = y;
+    };
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
-  const c = (light: string, darkCls: string) => (dark ? darkCls : light);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,349 +278,442 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
   };
 
   return (
-    <div className={`min-h-screen ${c('bg-white text-gray-900', 'bg-gray-950 text-gray-100')}`}>
-      {/* Top bar — hidden past ~30% scroll depth, replaced by the sticky
-          bottom CTA bar below. */}
-      <header className={`sticky top-0 z-30 backdrop-blur border-b transition-transform duration-300 ${scrolledPast ? '-translate-y-full' : 'translate-y-0'} ${c('bg-white/80 border-gray-200', 'bg-gray-950/80 border-gray-800')}`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-lg overflow-hidden">
-              {platformLogo ? <img src={platformLogo} alt="Logo" className="w-full h-full object-cover" /> : '🕉️'}
-            </div>
-            <span className="font-semibold text-lg">Durga CRM</span>
-          </div>
-          <div className="flex items-center gap-3">
+    <div className={`puja-landing-v2 min-h-screen ${dark ? 'dark' : ''}`}>
+      {/* Top header — hidden past ~80px scroll depth, replaced by the
+          sticky bottom CTA bar below. */}
+      <header className={`sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur transition-transform duration-300 ${scrolledPast ? '-translate-y-full' : 'translate-y-0'}`}>
+        <div className="section-shell flex items-center justify-between py-3">
+          <a href="#top" aria-label="Durga CRM home"><BrandMark platformLogo={platformLogo} /></a>
+          <nav className="hidden items-center gap-8 text-sm font-semibold md:flex" aria-label="Main navigation">
+            <a className="text-muted-foreground transition-colors hover:text-foreground" href="#features">Features</a>
+            <a className="text-muted-foreground transition-colors hover:text-foreground" href="#how-it-works">How It Works</a>
+            <a className="text-muted-foreground transition-colors hover:text-foreground" href="#pricing">Pricing</a>
+          </nav>
+          <div className="hidden items-center gap-2 md:flex">
             <button
               onClick={() => setDark(d => !d)}
-              className={`p-2 rounded-full transition ${c('hover:bg-gray-100', 'hover:bg-gray-800')}`}
+              className="p-2 rounded-full text-muted-foreground hover:bg-muted transition"
               aria-label="Toggle theme"
             >
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
+            <button className="px-3 py-2 text-sm font-semibold text-foreground" onClick={onGoToLogin}>Login</button>
             <button
-              onClick={onGoToLogin}
-              className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
+              className="rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-md"
+              onClick={onGoToSignup}
             >
-              Committee Login
+              Create Your Committee
             </button>
           </div>
+          <button className="grid size-11 place-items-center text-foreground md:hidden" onClick={() => setMobileNavOpen(o => !o)} aria-expanded={mobileNavOpen} aria-label="Toggle menu">
+            {mobileNavOpen ? <X /> : <Menu />}
+          </button>
         </div>
+        {mobileNavOpen && (
+          <nav className="section-shell grid gap-1 border-t border-border py-4 md:hidden" aria-label="Mobile navigation">
+            {[['Features', '#features'], ['How It Works', '#how-it-works'], ['Pricing', '#pricing']].map(([label, href]) => (
+              <a key={href} className="py-3 font-semibold" href={href} onClick={() => setMobileNavOpen(false)}>{label}</a>
+            ))}
+            <button
+              className="mt-2 p-2 self-start text-sm font-semibold text-muted-foreground flex items-center gap-2"
+              onClick={() => setDark(d => !d)}
+            >
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} Toggle theme
+            </button>
+            <button className="py-3 text-left font-semibold" onClick={() => { setMobileNavOpen(false); onGoToLogin(); }}>Login</button>
+            <button
+              className="mt-2 rounded-md bg-primary px-4 py-3 text-center font-bold text-primary-foreground"
+              onClick={() => { setMobileNavOpen(false); onGoToSignup(); }}
+            >
+              Create Your Committee
+            </button>
+          </nav>
+        )}
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className={`absolute inset-0 bg-gradient-to-br ${c('from-amber-50 via-orange-50 to-amber-100', 'from-gray-950 via-gray-900 to-gray-950')}`} />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 text-center">
-          <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-5 ${c('bg-orange-100 text-orange-700', 'bg-orange-900/30 text-orange-300')}`}>
-            Built for Puja & Festival Committees
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-5">
-            One Platform. Every Puja.<br className="hidden sm:block" /> Everything Organized.
-          </h1>
-          <p className={`max-w-2xl mx-auto text-base sm:text-lg mb-3 ${c('text-gray-600', 'text-gray-400')}`}>
-            Everything your Puja committee needs, all in one place — manage chanda,
-            donations, subscriptions, sponsors, expenses, loans, budgets, estimates and
-            tasks with complete clarity and control.
-          </p>
-          <p className={`text-sm font-medium mb-8 ${c('text-orange-700', 'text-orange-400')}`}>
-            Plan. Collect. Manage. Celebrate.
-          </p>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <button type="button" onClick={onGoToSignup} className="px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition inline-flex items-center justify-center gap-2 whitespace-nowrap">
-              Create Your Committee <ArrowRight className="w-4 h-4" />
-            </button>
-            <a href="#features" className={`px-6 py-3 rounded-lg border font-medium transition text-center whitespace-nowrap ${c('border-gray-300 hover:bg-gray-50', 'border-gray-700 hover:bg-gray-900')}`}>
-              Explore Features
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Positioning */}
-      <section className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-4">
-            Not Just Chanda Management. Your Complete Puja Management System.
-          </h2>
-          <p className={`mb-6 ${c('text-gray-600', 'text-gray-400')}`}>
-            A Puja committee handles much more than collecting chanda — plan the budget,
-            estimate expenses, arrange initial funds, collect chanda, manage subscriptions
-            and member fees, approach sponsors, pay vendors, track partial payments,
-            assign committee tasks, manage deadlines, monitor expenses and reconcile
-            everything. Durga CRM brings all of it together.
-          </p>
-          <p className="font-semibold text-orange-600 mb-8">
-            One committee. One dashboard. One organized system.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <AndroidBadge dark={dark} />
-            <IOSBadge />
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Everything Your Puja Committee Already Does — Now Organized</h2>
-        <p className={`text-center mb-12 max-w-xl mx-auto ${c('text-gray-600', 'text-gray-400')}`}>
-          No complicated accounting system. No scattered notebooks. No hunting
-          through WhatsApp conversations.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className={`p-5 rounded-xl border hover:shadow-md hover:-translate-y-0.5 transition ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${c('bg-orange-100', 'bg-orange-900/30')}`}>
-                <Icon className={`w-5 h-5 ${c('text-orange-600', 'text-orange-400')}`} />
+      <main id="top">
+        {/* Hero */}
+        <section className="relative overflow-hidden pb-16 pt-16 sm:pb-24 sm:pt-20">
+          <div className="section-shell text-center">
+            <div className="reveal mx-auto max-w-4xl">
+              <Eyebrow>Built for Puja &amp; festival committees</Eyebrow>
+              <h1 className="text-4xl font-extrabold leading-[1.05] text-foreground sm:text-6xl lg:text-7xl">
+                One Platform. Every Puja.<br /><span className="text-primary">Everything Organized.</span>
+              </h1>
+              <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Everything your Puja committee needs, all in one place — manage collections, donations, sponsors, expenses, loans, budgets, tasks and reports with complete clarity.
+              </p>
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <button type="button" onClick={onGoToSignup} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-6 font-bold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg">
+                  Create Your Committee <ArrowRight size={17} />
+                </button>
+                <a className="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-card px-6 font-bold text-foreground transition hover:border-primary" href="#features">Explore Features</a>
               </div>
-              <h3 className="font-medium mb-1.5">{title}</h3>
-              <p className={`text-sm ${c('text-gray-600', 'text-gray-400')}`}>{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing + Before/After — merged into one section per the Figma
-          reference's structure: each column's pricing header sits directly
-          above that column's feature rows, instead of a separate pricing
-          section above a separate comparison table. "Before" has no
-          price (it's the manual/no-tool baseline); "With Durga CRM" gets
-          our actual plan card — price, monthly/yearly toggle, CTA — as
-          that column's header, then the highlight continues straight down
-          through every feature row below it. */}
-      <section id="pricing" className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-2">
-            Still Managing Your Puja With Notebooks, Excel &amp; WhatsApp?
-          </h2>
-          <p className={`text-center mb-10 text-sm ${c('text-gray-500', 'text-gray-400')}`}>
-            Every part of running a Puja, side by side — before and with Durga CRM.
-          </p>
-
-          <div className={`rounded-2xl border overflow-hidden ${c('border-gray-200 bg-white', 'border-gray-800 bg-gray-900')}`}>
-            {/* Column headers — feature label blank, Before is a plain
-                baseline label, With Durga CRM carries the actual pricing
-                card. Stacked above the table on mobile instead of a 3rd grid column. */}
-            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] sm:items-end">
-              <div className={`hidden sm:block px-6 py-3 border-b ${c('border-gray-200', 'border-gray-800')}`} />
-              <div className={`hidden sm:flex flex-col justify-end px-6 py-3 border-b ${c('border-gray-200', 'border-gray-800')}`}>
-                <h3 className={`text-sm font-semibold ${c('text-gray-500', 'text-gray-400')}`}>Before</h3>
-                <p className={`text-xs mt-1 ${c('text-gray-400', 'text-gray-500')}`}>Doing it all manually</p>
-              </div>
-              <div className={`px-5 sm:px-6 py-6 border-b ${c('border-orange-200 bg-orange-50', 'border-orange-900/40 bg-orange-500/10')}`}>
-                <h3 className={`text-sm font-bold mb-3 ${c('text-orange-700', 'text-orange-400')}`}>With Durga CRM</h3>
-                {plans.length === 0 ? (
-                  <p className={`text-sm ${c('text-gray-500', 'text-gray-400')}`}>Pricing coming soon.</p>
-                ) : (
-                  <>
-                    {plans.length > 1 && (
-                      <div className={`inline-flex p-0.5 rounded-full mb-3 ${c('bg-white', 'bg-gray-900')}`}>
-                        {plans.map(p => (
-                          <button
-                            key={p.id}
-                            onClick={() => setSelectedPlanId(p.id)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                              selectedPlanId === p.id ? 'bg-orange-600 text-white' : c('text-gray-500', 'text-gray-400')
-                            }`}
-                          >
-                            {p.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {selectedPlan && (
-                      <>
-                        <div className={`text-2xl sm:text-3xl font-bold ${c('text-gray-900', 'text-gray-100')}`}>
-                          {(selectedPlan.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: selectedPlan.currency, maximumFractionDigits: 0 })}
-                          <span className={`text-xs font-normal ml-1 ${c('text-gray-500', 'text-gray-400')}`}>
-                            /{selectedPlan.durationMonths === 1 ? 'month' : `${selectedPlan.durationMonths} months`}
-                          </span>
-                        </div>
-                        <a
-                          href="#lead-form"
-                          className="mt-3 block text-center px-4 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition"
-                        >
-                          Get started
-                        </a>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
+              <p className="mt-6 text-sm font-semibold text-muted-foreground">Plan. Collect. Manage. Celebrate.</p>
             </div>
 
-            {comparisonGroups.map((group, gi) => (
-              <div key={group.category}>
-                <div className={`grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] ${gi > 0 ? `border-t ${c('border-gray-200', 'border-gray-800')}` : ''}`}>
-                  <div className={`px-6 pt-5 pb-2 sm:pb-3 text-sm font-bold ${c('text-gray-900', 'text-gray-100')}`}>{group.category}</div>
-                  <div className={`hidden sm:block ${c('bg-white', 'bg-gray-900')}`} />
-                  <div className={c('bg-orange-50/60', 'bg-orange-500/5')} />
+            <div className="reveal reveal-delay relative mx-auto mt-16 max-w-6xl lg:mt-20">
+              <div className="image-frame relative z-10 p-1.5 sm:p-2">
+                <img src={IMG.dashboard} alt="Durga CRM dashboard showing collections, expenses and balances" className="block aspect-[1.46] w-full object-cover" />
+              </div>
+
+              {/* Floating festival-name pills — scattered around/over the
+                  hero image group, desktop only, each independently tilted
+                  so they read as "floating" rather than lined up. Purely
+                  decorative (z-20, above the images) — conveys that every
+                  kind of Puja/festival can be managed in the same CRM. */}
+              {FLOATING_FESTIVALS.map(({ name, className }) => (
+                <span
+                  key={name}
+                  className={`absolute z-20 hidden lg:block whitespace-nowrap rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-md ${className}`}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Old way */}
+        <section className="border-y border-border bg-card py-20 sm:py-28" id="how-it-works">
+          <div className="section-shell grid items-center gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <Eyebrow>The old way</Eyebrow>
+              <h2 className="text-3xl font-extrabold leading-tight sm:text-5xl">Still managing your Puja with notebooks, Excel &amp; WhatsApp?</h2>
+              <p className="mt-6 max-w-xl leading-7 text-muted-foreground">Paper receipts get lost. Sponsor commitments stay in chats. Balances depend on manual calculation. The committee never sees one complete picture.</p>
+              <p className="mt-8 border-l-2 border-primary pl-5 text-xl font-bold">Everything moves into one system.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {['Paper receipts', 'Scattered contacts', 'WhatsApp follow-ups', 'Manual balances'].map((item, index) => (
+                <div key={item} className="flex min-h-28 items-end border border-border bg-background p-5">
+                  <span className="mr-auto text-sm font-bold text-muted-foreground">0{index + 1}</span>
+                  <span className="max-w-32 text-right font-bold">{item}</span>
                 </div>
-                <div className={`divide-y ${c('divide-gray-100', 'divide-gray-800')}`}>
+              ))}
+              <div className="flex items-center justify-between rounded-md bg-foreground p-6 text-background sm:col-span-2">
+                <span className="text-lg font-extrabold">Before</span><ArrowRight className="text-primary" /><span className="text-lg font-extrabold">Durga CRM</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison table — dynamic (Super Admin can edit via CMS) */}
+        <section className="py-20 sm:py-28">
+          <div className="section-shell">
+            <div className="max-w-2xl">
+              <Eyebrow>One source of truth</Eyebrow>
+              <h2 className="text-3xl font-extrabold sm:text-5xl">From scattered records to complete control.</h2>
+            </div>
+            <div className="mt-12 overflow-hidden border border-border bg-card">
+              <div className="hidden grid-cols-[0.7fr_1fr_1fr] border-b border-border bg-muted px-6 py-4 text-xs font-extrabold uppercase tracking-widest text-muted-foreground md:grid">
+                <span>Feature</span><span>Before</span><span>With Durga CRM</span>
+              </div>
+              {comparisonGroups.map(group => (
+                <div key={group.category}>
+                  <div className="px-6 pt-5 pb-2 text-xs font-extrabold uppercase tracking-widest text-primary">{group.category}</div>
                   {group.rows.map(row => (
-                    <div key={row.feature} className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr]">
-                      <div className="px-6 py-3.5 text-sm font-medium">{row.feature}</div>
-                      <div className={`px-6 pb-2 sm:py-3.5 text-sm flex items-start gap-1.5 ${c('text-gray-500', 'text-gray-400')}`}>
-                        <span className="sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-16">Before</span>
-                        {row.before}
-                      </div>
-                      <div className={`px-6 pb-3.5 sm:py-3.5 text-sm font-medium flex items-start gap-1.5 ${c('bg-orange-50/60 text-gray-800', 'bg-orange-500/5 text-gray-100')}`}>
-                        <span className={`sm:hidden shrink-0 text-[11px] font-semibold uppercase tracking-wide w-16 ${c('text-orange-600', 'text-orange-400')}`}>With CRM</span>
-                        <CheckCircle2 className={`hidden sm:block w-4 h-4 shrink-0 mt-0.5 ${c('text-orange-600', 'text-orange-400')}`} />
-                        {row.after}
-                      </div>
+                    <div key={row.feature} className="grid gap-2 border-b border-border px-5 py-5 last:border-0 md:grid-cols-[0.7fr_1fr_1fr] md:items-center md:px-6">
+                      <strong>{row.feature}</strong>
+                      <span className="text-sm text-muted-foreground line-through decoration-destructive/50">{row.before}</span>
+                      <span className="flex items-center gap-2 text-sm font-semibold"><Check size={16} className="text-chart-2" />{row.after}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        </section>
 
-          <p className={`text-center mt-10 text-sm ${c('text-gray-500', 'text-gray-400')}`}>
-            Less paperwork. Less confusion. More Puja.
-          </p>
-        </div>
-      </section>
-
-      {/* Multi-festival */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-        <h2 className="text-2xl sm:text-3xl font-semibold mb-3">One CRM for Every Puja &amp; Community Festival</h2>
-        <p className={`mb-8 max-w-2xl mx-auto ${c('text-gray-600', 'text-gray-400')}`}>
-          Whether you're organizing a traditional Puja, a large public festival or a
-          community celebration, manage the entire operation from one place.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2.5">
-          {FESTIVALS.map(name => (
-            <span
-              key={name}
-              className={`px-3.5 py-1.5 rounded-full text-sm ${c('bg-gray-100 text-gray-700', 'bg-gray-800 text-gray-300')}`}
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* Emotional closing */}
-      <section className={`border-y ${c('border-gray-200 bg-gray-50', 'border-gray-800 bg-gray-900/40')}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-3">Every Puja Has a Story. Every Rupee Has a Record.</h2>
-          <p className={`mb-8 ${c('text-gray-600', 'text-gray-400')}`}>
-            From the first estimate to the final expense, keep your committee's entire
-            journey organized, transparent and easy to manage.
-          </p>
-          <a href="#lead-form" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium transition">
-            Manage Your Puja <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      </section>
-
-      {/* Lead form */}
-      <section id="lead-form" className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 pb-[calc(4rem+30px)] sm:py-24 max-sm:[scroll-margin-top:-35px]">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">Bring your Puja committee online</h2>
-        <p className={`text-center mb-10 ${c('text-gray-600', 'text-gray-400')}`}>
-          Tell us about your Puja committee — we'll get you set up.
-        </p>
-        {submitted ? (
-          <div className={`p-6 rounded-xl border text-center ${c('border-green-200 bg-green-50', 'border-green-900/50 bg-green-900/20')}`}>
-            <CheckCircle2 className={`w-8 h-8 mx-auto mb-2 ${c('text-green-600', 'text-green-400')}`} />
-            <p className="font-medium">Thanks! We've received your details.</p>
-            <p className={`text-sm mt-1 ${c('text-gray-600', 'text-gray-400')}`}>Our team will reach out shortly.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Committee name <span className="text-orange-600">*</span></label>
-                <input
-                  value={form.committeeName}
-                  onChange={e => setForm(f => ({ ...f, committeeName: e.target.value }))}
-                  className={`w-full px-3.5 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 ${c('border-gray-300 bg-white', 'border-gray-700 bg-gray-900')}`}
-                  placeholder="e.g. Paschim Pansila Sarbojanin Saradatsav"
-                />
+        {/* Product showcase */}
+        <section id="features" className="bg-foreground py-20 text-background sm:py-28">
+          <div className="section-shell">
+            <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+              <div className="lg:sticky lg:top-32 lg:self-start">
+                <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.16em] text-primary">The product, in practice</p>
+                <h2 className="text-4xl font-extrabold sm:text-5xl">See your Puja, clearly.</h2>
+                <p className="mt-6 leading-7 text-background/65">Move from collection to expenses to treasury without losing context. Every screen belongs to the same committee.</p>
+                <div className="mt-8 hidden space-y-2 text-sm font-bold lg:block">
+                  {['01 Dashboard', '02 Collection', '03 Expenses', '04 Treasury'].map(x => <p key={x} className="border-b border-background/15 py-3">{x}</p>)}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Contact name <span className="text-orange-600">*</span></label>
-                <input
-                  value={form.contactName}
-                  onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
-                  className={`w-full px-3.5 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 ${c('border-gray-300 bg-white', 'border-gray-700 bg-gray-900')}`}
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Phone <span className="text-orange-600">*</span></label>
-                <input
-                  value={form.phone}
-                  onChange={e => setForm(f => ({ ...f, phone: onlyDigits(e.target.value) }))}
-                  className={`w-full px-3.5 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 ${c('border-gray-300 bg-white', 'border-gray-700 bg-gray-900')}`}
-                  placeholder="10-digit mobile number"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className={`w-full px-3.5 py-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-500 ${c('border-gray-300 bg-white', 'border-gray-700 bg-gray-900')}`}
-                  placeholder="optional"
-                />
+              <div className="space-y-12 sm:space-y-20">
+                {[
+                  [IMG.dashboard, 'Dashboard', 'The full financial picture, at a glance.'],
+                  [IMG.collection, 'Collection', 'Every contribution and pending amount recorded.'],
+                  [IMG.expenses, 'Expenses', 'Paid, partial and pending payments stay visible.'],
+                  [IMG.treasury, 'Treasury', 'Cash, bank and monthly performance in one place.'],
+                ].map(([src, title, copy]) => (
+                  <figure key={title}>
+                    <div className="overflow-hidden rounded-md border border-background/15 bg-background/5 p-1.5"><img src={src} alt={`Durga CRM ${title} screen`} loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+                    <figcaption className="mt-5 flex items-start justify-between gap-4 border-t border-background/15 pt-4"><span className="font-extrabold">{title}</span><span className="max-w-sm text-right text-sm text-background/60">{copy}</span></figcaption>
+                  </figure>
+                ))}
               </div>
             </div>
-            {turnstileSiteKey && <div id="cf-turnstile" />}
-            {error && <p className={`text-sm ${c('text-red-600', 'text-red-400')}`}>{error}</p>}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-medium transition"
-            >
-              {submitting ? 'Submitting…' : 'Request Access and Demo'}
-            </button>
-          </form>
-        )}
-      </section>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <footer className={`border-t pt-8 pb-[110px] text-center text-sm ${c('border-gray-200 text-gray-500', 'border-gray-800 text-gray-400')}`}>
-        <p className={`font-medium mb-4 ${c('text-gray-700', 'text-gray-300')}`}>
-          Durga CRM — One Platform. Every Puja. Everything Organized.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
-          <AndroidBadge dark={dark} />
-          <IOSBadge />
-        </div>
-        <div className="flex items-center justify-center gap-4 mb-3">
-          <button onClick={() => onGoToLegal('terms')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Terms & Conditions</button>
-          <span aria-hidden="true">·</span>
-          <button onClick={() => onGoToLegal('privacy')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Privacy Policy</button>
-          <span aria-hidden="true">·</span>
-          <button onClick={() => onGoToLegal('refund')} className={`hover:underline ${c('hover:text-orange-600', 'hover:text-orange-400')}`}>Refund Policy</button>
-        </div>
-        © {new Date().getFullYear()} Durga CRM. All rights reserved.
-      </footer>
+        {/* Financial confidence */}
+        <section className="py-20 sm:py-28">
+          <div className="section-shell">
+            <div className="grid items-center gap-12 lg:grid-cols-2">
+              <div>
+                <Eyebrow>Financial confidence</Eyebrow>
+                <h2 className="text-4xl font-extrabold sm:text-5xl">Know where every rupee goes.</h2>
+                <p className="mt-6 max-w-lg leading-7 text-muted-foreground">Collections, donations and sponsorships flow in. Expenses and commitments flow out. Durga CRM makes the current position clear.</p>
+                <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border sm:grid-cols-3">
+                  {[['Collection', '+'], ['Donation', '+'], ['Sponsorship', '+'], ['Expenses', '−'], ['Commitments', '−'], ['Position', '=']].map(([label, sign]) => (
+                    <div key={label} className="bg-card p-5"><span className="text-2xl font-extrabold text-primary">{sign}</span><p className="mt-4 text-sm font-bold">{label}</p></div>
+                  ))}
+                </div>
+              </div>
+              <div className="image-frame p-1.5"><img src={IMG.darkDashboard} alt="Durga CRM financial dashboard in dark mode" loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+            </div>
+          </div>
+        </section>
 
-      {/* Sticky bottom CTA bar — takes over from the top header past ~30%
+        {/* Treasury */}
+        <section className="border-y border-border bg-card py-20 sm:py-28">
+          <div className="section-shell text-center">
+            <Eyebrow>Treasury</Eyebrow>
+            <h2 className="text-4xl font-extrabold sm:text-5xl">Your Puja's financial control center.</h2>
+            <p className="mx-auto mt-6 max-w-2xl leading-7 text-muted-foreground">See collection, donation, sponsorship, expenses, current balance, cash in hand and money in bank — without manual reconciliation.</p>
+            <div className="image-frame mt-12 p-1.5"><img src={IMG.treasury} alt="Durga CRM Treasury financial summary" loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+          </div>
+        </section>
+
+        {/* Three connected flows */}
+        <section className="py-20 sm:py-28">
+          <div className="section-shell">
+            <div className="mb-12 max-w-3xl"><Eyebrow>Three connected flows</Eyebrow><h2 className="text-4xl font-extrabold sm:text-5xl">Every contribution. Properly accounted for.</h2></div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                [ReceiptText, 'Collection', 'Every collection, properly recorded.'],
+                [WalletCards, 'Donation', 'Every contribution, accounted for.'],
+                [Landmark, 'Sponsorship', 'Every sponsor, organized.'],
+              ].map(([Icon, title, copy]) => {
+                const FeatureIcon = Icon as typeof ReceiptText;
+                return <article key={String(title)} className="border-t-2 border-primary bg-card p-7 shadow-sm"><FeatureIcon className="text-primary" /><h3 className="mt-10 text-xl font-extrabold">{String(title)}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{String(copy)}</p></article>;
+              })}
+            </div>
+            <div className="image-frame mt-8 p-1.5"><img src={IMG.collection} alt="Durga CRM collection management interface" loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+          </div>
+        </section>
+
+        {/* Expense management */}
+        <section className="bg-secondary py-20 sm:py-28">
+          <div className="section-shell grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="order-2 lg:order-1 image-frame p-1.5"><img src={IMG.expenseDetail} alt="Durga CRM detailed expense and partial payment tracking" loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+            <div className="order-1 lg:order-2">
+              <Eyebrow>Expense management</Eyebrow>
+              <h2 className="text-4xl font-extrabold sm:text-5xl">Expenses without the guesswork.</h2>
+              <p className="mt-6 leading-7 text-muted-foreground">Track vendor, amount, category, paid amount, payment method, voucher and remarks. Partial payments remain visible until they are settled.</p>
+              <div className="mt-8 inline-flex items-center gap-3 border-l-2 border-primary pl-4 font-bold"><ShieldCheck className="text-primary" />Partial-payment tracking built in</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Beyond accounting */}
+        <section className="py-20 sm:py-28">
+          <div className="section-shell">
+            <div className="grid items-end gap-8 lg:grid-cols-2"><div><Eyebrow>Beyond accounting</Eyebrow><h2 className="text-4xl font-extrabold sm:text-5xl">Run the committee. Not just the accounts.</h2></div><p className="max-w-lg leading-7 text-muted-foreground lg:justify-self-end">Manage members, tasks, documents, assets, awards, settings and every change made by the committee.</p></div>
+            <div className="mt-12 grid gap-5 lg:grid-cols-2">
+              <figure className="image-frame p-1.5"><img src={IMG.receipt} alt="Durga CRM digital receipt configuration" loading="lazy" className="aspect-[1.45] w-full object-cover" /><figcaption className="p-5 font-bold">Digital receipts, designed for your committee</figcaption></figure>
+              <figure className="image-frame p-1.5"><img src={IMG.navigation} alt="Durga CRM navigation and feature settings" loading="lazy" className="aspect-[1.45] w-full object-cover" /><figcaption className="p-5 font-bold">Committee-level navigation and control</figcaption></figure>
+            </div>
+          </div>
+        </section>
+
+        {/* Product architecture */}
+        <section className="border-y border-border bg-card py-20 sm:py-28">
+          <div className="section-shell">
+            <div className="max-w-2xl"><Eyebrow>Product architecture</Eyebrow><h2 className="text-4xl font-extrabold sm:text-5xl">One connected system for the whole committee.</h2></div>
+            <div className="mt-12 grid border-l border-t border-border sm:grid-cols-2 lg:grid-cols-4">
+              {featureGroups.map((group, index) => (
+                <article key={group.label} className="min-h-64 border-b border-r border-border p-6 sm:p-8"><span className="text-xs font-bold text-primary">0{index + 1}</span><h3 className="mt-16 text-xl font-extrabold uppercase">{group.label}</h3><p className="mt-4 text-sm leading-7 text-muted-foreground">{group.items}</p></article>
+              ))}
+            </div>
+            <div className="image-frame mt-8 p-1.5"><img src={IMG.committee} alt="Durga CRM committee information settings" loading="lazy" className="aspect-[1.45] w-full object-cover" /></div>
+          </div>
+        </section>
+
+        {/* Reliability */}
+        <section className="py-20 sm:py-28">
+          <div className="section-shell grid gap-12 lg:grid-cols-2">
+            <div><Eyebrow>Reliability</Eyebrow><h2 className="text-4xl font-extrabold sm:text-6xl">Everything organized.<br />Nothing forgotten.</h2></div>
+            <div className="grid gap-px bg-border sm:grid-cols-2">
+              {['Centralized records', 'Clear financial visibility', 'Transparent activity', 'Digital receipts', 'Organized documents', 'Structured tasks'].map(item => <div key={item} className="flex min-h-24 items-center gap-3 bg-background p-5 text-sm font-bold"><Check size={17} className="text-chart-2" />{item}</div>)}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing — dynamic (fetched from Super Admin's subscription plans) */}
+        <section id="pricing" className="bg-foreground py-20 text-background sm:py-28">
+          <div className="section-shell text-center">
+            <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Simple pricing</p>
+            <h2 className="text-4xl font-extrabold sm:text-5xl">Choose the rhythm that works for your committee.</h2>
+            {plans.length === 0 ? (
+              <p className="mt-12 text-background/60">Pricing coming soon.</p>
+            ) : (
+              <>
+                <div className="mx-auto mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
+                  {plans.map(p => (
+                    <article
+                      key={p.id}
+                      onClick={() => setSelectedPlanId(p.id)}
+                      className={`cursor-pointer text-left border p-7 sm:p-9 transition ${
+                        selectedPlanId === p.id
+                          ? 'relative border-2 border-primary bg-background text-foreground'
+                          : 'border-background/20'
+                      }`}
+                    >
+                      {selectedPlanId === p.id && (
+                        <span className="absolute right-4 top-4 bg-primary px-3 py-1 text-xs font-extrabold uppercase text-primary-foreground">Selected</span>
+                      )}
+                      <p className={`text-sm font-bold ${selectedPlanId === p.id ? 'text-muted-foreground' : 'text-background/60'}`}>{p.name}</p>
+                      <p className="mt-7 text-5xl font-extrabold">
+                        {(p.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: p.currency, maximumFractionDigits: 0 })}
+                      </p>
+                      <p className={`mt-2 text-sm ${selectedPlanId === p.id ? 'text-muted-foreground' : 'text-background/60'}`}>
+                        per {p.durationMonths === 1 ? 'month' : `${p.durationMonths} months`}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+                <div className="mt-8 text-center">
+                  <a className="inline-flex min-h-12 items-center gap-2 rounded-md bg-primary px-6 font-bold text-primary-foreground" href="#lead-form">
+                    Start Managing Your Puja <ArrowRight size={17} />
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Closing + lead form, merged into one section */}
+        <section id="lead-form" className="relative overflow-hidden py-24 sm:py-36 max-sm:[scroll-margin-top:-35px]">
+          <div aria-hidden="true" className="absolute -right-24 top-1/2 size-72 -translate-y-1/2 rounded-full border-[48px] border-primary/10" />
+          <div className="section-shell relative">
+            <div className="text-center">
+              <Sparkles className="mx-auto mb-6 text-primary" />
+              <h2 className="mx-auto max-w-4xl text-4xl font-extrabold sm:text-6xl">Your Puja deserves better than a spreadsheet.</h2>
+              <p className="mx-auto mt-6 max-w-2xl leading-7 text-muted-foreground">
+                Tell us about your Puja committee — we'll get you set up. Bring your committee, collections, expenses, sponsors and financial records into one organized system.
+              </p>
+            </div>
+            <div className="mt-12 max-w-2xl mx-auto">
+          {submitted ? (
+            <div className="p-6 rounded-md border border-chart-2/30 bg-chart-2/10 text-center">
+              <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-chart-2" />
+              <p className="font-bold">Thanks! We've received your details.</p>
+              <p className="text-sm mt-1 text-muted-foreground">Our team will reach out shortly.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Committee name <span className="text-primary">*</span></label>
+                  <input
+                    value={form.committeeName}
+                    onChange={e => setForm(f => ({ ...f, committeeName: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-md border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="e.g. Paschim Pansila Sarbojanin Saradatsav"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Contact name <span className="text-primary">*</span></label>
+                  <input
+                    value={form.contactName}
+                    onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-md border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Phone <span className="text-primary">*</span></label>
+                  <input
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: onlyDigits(e.target.value) }))}
+                    className="w-full px-3.5 py-2.5 rounded-md border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="10-digit mobile number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-md border border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="optional"
+                  />
+                </div>
+              </div>
+              {turnstileSiteKey && <div id="cf-turnstile" />}
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full min-h-12 rounded-md bg-primary hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 text-primary-foreground font-bold transition"
+              >
+                {submitting ? 'Submitting…' : 'Request Access and Demo'}
+              </button>
+            </form>
+          )}
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-border bg-card py-10 pb-[110px]">
+          <div className="section-shell grid grid-cols-1 gap-7 sm:grid-cols-3 sm:items-center">
+            <div>
+              <BrandMark platformLogo={platformLogo} />
+              <p className="text-sm leading-6 text-muted-foreground mt-3">One platform for every Puja committee — collections, expenses, people and operations, organized.</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold">Download our mobile apps</p>
+              <div className="flex flex-wrap items-center gap-[5px] mt-3">
+                <AndroidBadge className="scale-[0.82] origin-left" />
+                <IOSBadge className="scale-[0.82] origin-left" />
+              </div>
+            </div>
+            <div className="flex flex-col items-start sm:items-end gap-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <button onClick={() => onGoToLegal('terms')} className="whitespace-nowrap text-muted-foreground hover:text-primary hover:underline">Terms &amp; Conditions</button>
+                <span aria-hidden="true" className="text-muted-foreground">·</span>
+                <button onClick={() => onGoToLegal('privacy')} className="whitespace-nowrap text-muted-foreground hover:text-primary hover:underline">Privacy Policy</button>
+                <span aria-hidden="true" className="text-muted-foreground">·</span>
+                <button onClick={() => onGoToLegal('refund')} className="whitespace-nowrap text-muted-foreground hover:text-primary hover:underline">Refund Policy</button>
+              </div>
+              <p className="text-xs font-semibold text-muted-foreground">© {new Date().getFullYear()} Durga CRM. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      {/* Sticky bottom CTA bar — takes over from the top header past ~80px
           scroll depth, keeping both primary actions reachable. */}
       <div
-        className={`fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur transition-transform duration-300 ${scrolledPast ? 'translate-y-0' : 'translate-y-full'} ${c('bg-white/90 border-gray-200', 'bg-gray-950/90 border-gray-800')}`}
+        className={`fixed bottom-0 inset-x-0 z-40 border-t border-border backdrop-blur bg-background/95 transition-transform duration-300 ${scrolledPast ? 'translate-y-0' : 'translate-y-full'}`}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        <div className="section-shell py-3 flex items-center gap-3">
           <button
             type="button"
             onClick={onGoToSignup}
-            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg bg-orange-600 hover:bg-orange-700 transition flex flex-col items-center justify-center"
+            className="flex-1 min-w-0 h-[50px] px-5 rounded-md bg-primary transition flex flex-col items-center justify-center"
           >
-            <span className="text-white font-medium truncate leading-tight">
+            <span className="text-primary-foreground font-bold truncate leading-tight">
               <span className="sm:hidden">Create Committee</span>
               <span className="hidden sm:inline">Create Your Committee</span>
             </span>
-            <span className="text-[11px] text-orange-100 mt-px leading-tight">Avail 1 Month FREE</span>
+            <span className="text-[11px] text-primary-foreground/80 mt-px leading-tight">Avail 1 Month FREE</span>
           </button>
           <a
             href="#lead-form"
-            className="flex-1 min-w-0 h-[50px] px-5 rounded-lg transition bg-[#feeda9] hover:bg-[#fde48a] flex flex-col items-center justify-center"
+            className="flex-1 min-w-0 h-[50px] px-5 rounded-md transition bg-[#feeda9] hover:bg-[#fde48a] flex flex-col items-center justify-center"
           >
-            <span className="text-gray-900 font-medium truncate leading-tight">
+            <span className="text-gray-900 font-bold truncate leading-tight">
               <span className="sm:hidden">Request Demo</span>
               <span className="hidden sm:inline">Request Access and Demo</span>
             </span>

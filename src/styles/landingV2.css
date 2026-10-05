@@ -1,0 +1,93 @@
+/*
+ * Design tokens for the new (Lovable-designed) public landing page only.
+ * Scoped under .puja-landing-v2 so these values never leak into — or get
+ * overridden by — the rest of the app's own --background/--primary/etc.
+ * custom properties (globals.css already defines the SAME variable names
+ * for the Figma-exported design system used elsewhere in the app; scoping
+ * here keeps both sets of values coexisting without collision, since CSS
+ * custom properties resolve from the nearest ancestor that sets them).
+ *
+ * `.dark .puja-landing-v2` mirrors this app's existing dark-mode mechanism
+ * (`.dark` toggled on <html> by ThemeContext) — NOT the landing page's own
+ * local light/dark toggle, which instead adds/removes a `dark` class
+ * directly on this wrapper (see LandingPage.tsx's `c()` usage replaced by
+ * conditional `dark` class below).
+ */
+
+.puja-landing-v2 {
+  --radius: 0.45rem;
+  --background: oklch(0.985 0.009 76);
+  --foreground: oklch(0.22 0.035 261);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.66 0.2 40);
+  --primary-foreground: oklch(0.99 0.004 80);
+  --secondary: oklch(0.955 0.022 77);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.96 0.009 76);
+  --muted-foreground: oklch(0.49 0.025 257);
+  --accent: oklch(0.94 0.04 72);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.89 0.018 76);
+  --input: oklch(0.89 0.018 76);
+  --ring: oklch(0.66 0.2 40);
+  --chart-2: oklch(0.6 0.118 184.704);
+
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Manrope", sans-serif;
+}
+
+.puja-landing-v2.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.66 0.2 40);
+  --primary-foreground: oklch(0.99 0.004 80);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-2: oklch(0.696 0.17 162.48);
+}
+
+.puja-landing-v2 * {
+  border-color: var(--border);
+}
+
+.puja-landing-v2 .section-shell {
+  width: min(100% - 2rem, 76rem);
+  margin-inline: auto;
+}
+
+.puja-landing-v2 .image-frame {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 18px 50px -28px color-mix(in oklab, var(--foreground) 25%, transparent);
+}
+
+@keyframes puja-landing-v2-rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .puja-landing-v2 .reveal { animation: puja-landing-v2-rise-in 650ms ease both; }
+  .puja-landing-v2 .reveal-delay { animation-delay: 140ms; }
+}
