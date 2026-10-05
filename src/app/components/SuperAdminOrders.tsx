@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ShoppingCart, XCircle } from 'lucide-react';
-import { Order, OrderDetail, listOrdersRequest, getOrderDetailRequest, cancelManualGrantRequest } from '../lib/superAdminDb';
+import { ArrowLeft, ShoppingCart, XCircle, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import {
+  Order, OrderDetail, listOrdersRequest, getOrderDetailRequest, cancelManualGrantRequest,
+  archiveOrderRequest, unarchiveOrderRequest, deleteOrderRequest,
+} from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+import { Toast } from './Toast';
+import { RowActionsMenu } from './RowActionsMenu';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
@@ -51,7 +56,54 @@ export function SuperAdminOrders() {
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<Order | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
   const reload = () => listOrdersRequest().then(setOrders).catch(err => setError(err?.message || 'Failed to load orders'));
+
+  const handleArchiveConfirm = async () => {
+    if (!archiveTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      const wasArchived = !!archiveTarget.archivedAt;
+      if (wasArchived) await unarchiveOrderRequest(archiveTarget.id, archiveTarget.source);
+      else await archiveOrderRequest(archiveTarget.id, archiveTarget.source);
+      setToastType('success');
+      setToastMessage(wasArchived ? 'Order unarchived.' : 'Order archived.');
+      setArchiveTarget(null);
+      await reload();
+    } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to update order');
+      setError(err?.message || 'Failed to update order');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      await deleteOrderRequest(deleteTarget.id, deleteTarget.source);
+      setToastType('success');
+      setToastMessage('Order permanently deleted.');
+      setDeleteTarget(null);
+      await reload();
+    } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to delete order');
+      setError(err?.message || 'Failed to delete order');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleCancelConfirm = async () => {
     if (!cancelTarget) return;
@@ -59,9 +111,13 @@ export function SuperAdminOrders() {
     setError('');
     try {
       await cancelManualGrantRequest(cancelTarget.id);
+      setToastType('success');
+      setToastMessage('Manual grant cancelled.');
       setCancelTarget(null);
       await reload();
     } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to cancel grant');
       setError(err?.message || 'Failed to cancel grant');
     } finally {
       setCancelling(false);
@@ -104,6 +160,7 @@ export function SuperAdminOrders() {
   const statuses = useMemo(() => Array.from(new Set(orders.map(o => o.status))).sort(), [orders]);
 
   const filtered = orders.filter(o => {
+    if (Boolean(o.archivedAt) !== showArchived) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q && !o.tenantName.toLowerCase().includes(q)) return false;
     const f = appliedFilters;
@@ -195,9 +252,22 @@ export function SuperAdminOrders() {
 
   return (
     <div>
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Orders</h1>
-        <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowArchived(s => !s)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+              showArchived
+                ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-700 dark:text-orange-400'
+                : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            {showArchived ? 'Showing archived' : 'Show archived'}
+          </button>
+          <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
+        </div>
       </div>
 
       <CollapsibleSearchPanel open={showSearch}>
@@ -234,7 +304,7 @@ export function SuperAdminOrders() {
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-          {orders.length === 0 ? 'No orders yet.' : 'No orders match your search.'}
+          {orders.length === 0 ? 'No orders yet.' : showArchived ? 'No archived orders.' : 'No orders match your search.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
@@ -263,16 +333,34 @@ export function SuperAdminOrders() {
                   <td className="px-4 py-3">{statusBadge(order.status)}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 capitalize">{order.source}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-right">
-                    {order.source === 'manual' && order.status !== 'cancelled' && (
-                      <button
-                        onClick={e => { e.stopPropagation(); setCancelTarget(order); }}
-                        title="Cancel this manual grant"
-                        className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    )}
+                  <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                    <RowActionsMenu width={176} menu={close => (
+                      <>
+                        {order.source === 'manual' && order.status !== 'cancelled' && (
+                          <button
+                            onClick={() => { close(); setCancelTarget(order); }}
+                            className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            Cancel grant
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { close(); setArchiveTarget(order); }}
+                          className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          {order.archivedAt ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                          {order.archivedAt ? 'Unarchive' : 'Archive'}
+                        </button>
+                        <button
+                          onClick={() => { close(); setDeleteTarget(order); }}
+                          className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </>
+                    )} />
                   </td>
                 </tr>
               ))}
@@ -292,6 +380,36 @@ export function SuperAdminOrders() {
         confirmLabel={cancelling ? 'Cancelling…' : 'Cancel grant'}
         onCancel={() => setCancelTarget(null)}
         onConfirm={handleCancelConfirm}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!archiveTarget}
+        danger={false}
+        title={archiveTarget?.archivedAt ? 'Unarchive order' : 'Archive order'}
+        message={
+          archiveTarget
+            ? archiveTarget.archivedAt
+              ? `This order for ${archiveTarget.tenantName} will move back to the main orders list.`
+              : `This order for ${archiveTarget.tenantName} will be hidden from the main orders list. You can unarchive it anytime.`
+            : ''
+        }
+        confirmLabel={busy ? 'Working…' : archiveTarget?.archivedAt ? 'Unarchive' : 'Archive'}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!deleteTarget}
+        danger
+        title="Delete order"
+        message={
+          deleteTarget
+            ? `This ${deleteTarget.source} order (${formatAmount(deleteTarget.amountPaise, deleteTarget.currency)}) for ${deleteTarget.tenantName} will be permanently deleted. This cannot be undone.`
+            : ''
+        }
+        confirmLabel={busy ? 'Deleting…' : 'Delete'}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

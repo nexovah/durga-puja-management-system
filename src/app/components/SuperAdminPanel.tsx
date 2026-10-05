@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { Tenant, listTenantsRequest, createTenantRequest, generatePassword, isPasswordStrong, sendNewAdminAlertRequest } from '../lib/superAdminDb';
+import { Plus, Eye, EyeOff, RefreshCw, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import {
+  Tenant, listTenantsRequest, createTenantRequest, generatePassword, isPasswordStrong, sendNewAdminAlertRequest,
+  archiveTenantRequest, unarchiveTenantRequest, deleteTenantCompletelyRequest,
+} from '../lib/superAdminDb';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
+import { Toast } from './Toast';
+import { RowActionsMenu } from './RowActionsMenu';
 
 const slugify = (name: string) =>
   name
@@ -51,6 +57,54 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
 
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<Tenant | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const handleArchiveConfirm = async () => {
+    if (!archiveTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      const wasArchived = !!archiveTarget.archivedAt;
+      if (wasArchived) await unarchiveTenantRequest(archiveTarget.id);
+      else await archiveTenantRequest(archiveTarget.id);
+      setToastType('success');
+      setToastMessage(wasArchived ? `"${archiveTarget.name}" unarchived.` : `"${archiveTarget.name}" archived.`);
+      setArchiveTarget(null);
+      await load();
+    } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to update tenant');
+      setError(err?.message || 'Failed to update tenant');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setBusy(true);
+    setError('');
+    try {
+      const name = deleteTarget.name;
+      await deleteTenantCompletelyRequest(deleteTarget.id);
+      setToastType('success');
+      setToastMessage(`"${name}" and all its data were permanently deleted.`);
+      setDeleteTarget(null);
+      await load();
+    } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to delete tenant');
+      setError(err?.message || 'Failed to delete tenant');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -94,8 +148,12 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
       setAdminEmail('');
       setAdminPassword(generatePassword());
       setShowCreate(false);
+      setToastType('success');
+      setToastMessage(`"${newName.trim()}" created.`);
       await load();
     } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to create tenant');
       setError(err?.message || 'Failed to create tenant');
     } finally {
       setCreating(false);
@@ -103,6 +161,7 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
   };
 
   const filteredTenants = tenants.filter(tenant => {
+    if (Boolean(tenant.archivedAt) !== showArchived) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q && !tenant.name.toLowerCase().includes(q) && !tenant.slug.toLowerCase().includes(q)) return false;
 
@@ -115,9 +174,20 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
 
   return (
     <div>
+      <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tenants</h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button
+            onClick={() => setShowArchived(s => !s)}
+            className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+              showArchived
+                ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-700 dark:text-orange-400'
+                : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            {showArchived ? 'Showing archived' : 'Show archived'}
+          </button>
           <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
           <button
             onClick={() => setShowCreate(s => !s)}
@@ -256,7 +326,7 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">Loading…</div>
       ) : filteredTenants.length === 0 ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-          {tenants.length === 0 ? 'No tenants yet.' : 'No tenants match your search.'}
+          {tenants.length === 0 ? 'No tenants yet.' : showArchived ? 'No archived tenants.' : 'No tenants match your search.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
@@ -270,6 +340,7 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
                 <th className="text-left px-4 py-2.5 font-medium">Expires</th>
                 <th className="text-left px-4 py-2.5 font-medium">Users</th>
                 <th className="text-left px-4 py-2.5 font-medium">Created</th>
+                <th className="text-right px-4 py-2.5 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -306,12 +377,63 @@ export function SuperAdminTenants({ onOpenTenant, refreshToken }: SuperAdminTena
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                     {new Date(tenant.createdAt).toLocaleDateString()}
                   </td>
+                  <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                    <RowActionsMenu menu={close => (
+                      <>
+                        <button
+                          onClick={() => { close(); setArchiveTarget(tenant); }}
+                          className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          {tenant.archivedAt ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                          {tenant.archivedAt ? 'Unarchive' : 'Archive'}
+                        </button>
+                        <button
+                          onClick={() => { close(); setDeleteTarget(tenant); }}
+                          className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </>
+                    )} />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <SuperAdminConfirmModal
+        open={!!archiveTarget}
+        danger={false}
+        title={archiveTarget?.archivedAt ? 'Unarchive tenant' : 'Archive tenant'}
+        message={
+          archiveTarget
+            ? archiveTarget.archivedAt
+              ? `"${archiveTarget.name}" will move back to the main tenants list.`
+              : `"${archiveTarget.name}" will be hidden from the main tenants list. Its data and login are untouched — you can unarchive it anytime.`
+            : ''
+        }
+        confirmLabel={busy ? 'Working…' : archiveTarget?.archivedAt ? 'Unarchive' : 'Archive'}
+        onCancel={() => setArchiveTarget(null)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!deleteTarget}
+        danger
+        codeLength={12}
+        title="Delete tenant completely"
+        message={
+          deleteTarget
+            ? `"${deleteTarget.name}" and every record associated with it — committee info, members, collections, donations, sponsorships, expenses, loans, tasks, estimations, events, assets, documents, vendors, cash/bank adjustments, awards, receipts, orders and support tickets — will be permanently deleted. This cannot be undone.`
+            : ''
+        }
+        confirmLabel={busy ? 'Deleting…' : 'Delete completely'}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }

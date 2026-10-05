@@ -367,6 +367,7 @@ export function fromUserRow(row: any): User {
     name: row.name,
     username: row.username,
     email: row.email || undefined,
+    phone: row.phone || undefined,
     password: '', // never stored/returned client-side; see supabase/README.md
     isAdmin: row.is_admin,
     canEdit: row.can_edit !== false, // defaults true for older rows before this column existed
@@ -1485,10 +1486,11 @@ export async function loginRequest(username: string, password: string): Promise<
 // that whole flow through App.tsx's handleLogin, so a signed-up account
 // ends up in the exact same App-level logged-in state a normal login
 // produces, with no parallel/duplicate session-setup path.
-export async function signupTenantRequest(email: string, password: string): Promise<void> {
+export async function signupTenantRequest(email: string, password: string, phone: string): Promise<void> {
   const { data, error } = await supabase.rpc('signup_tenant', {
     p_email: email,
     p_password: password,
+    p_phone: phone,
   });
   if (error) throw error;
   if (!data || data.length === 0) throw new Error('Could not create account');
@@ -1502,6 +1504,16 @@ export async function signupTenantRequest(email: string, password: string): Prom
       variables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
     }),
   }).catch(() => {});
+}
+
+// Post-login phone capture — used by both the Google-signup interstitial
+// (Google never supplies a phone number) and the backfill gate shown to
+// any pre-existing account with none on file. Also fills
+// committee_info.mobile1 if that's still blank (server-side guard against
+// clobbering a value an admin already entered — see supabase/124_signup_phone_capture.sql).
+export async function setOwnPhoneRequest(userId: string, phone: string): Promise<void> {
+  const { error } = await supabase.rpc('set_own_phone', { p_user_id: userId, p_phone: phone });
+  if (error) throw error;
 }
 
 export async function requestTenantPasswordResetRequest(username: string): Promise<void> {

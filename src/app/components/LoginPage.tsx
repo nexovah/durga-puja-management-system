@@ -3,6 +3,7 @@ import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
 import { requestTenantPasswordResetRequest, signupTenantRequest } from '../lib/db';
+import { onlyDigits, isPhoneValid } from '../lib/validation';
 import { AuthShowcaseLayout } from './AuthShowcaseLayout';
 import { RequiredMark } from './RequiredMark';
 
@@ -180,6 +181,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   //     committee name; the tenant gets an auto-derived placeholder name,
   //     renamed later from Settings) ---
   const [signupEmail, setSignupEmail] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [signupShowPassword, setSignupShowPassword] = useState(false);
@@ -244,6 +246,10 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
       setSignupError(t('login.enterCredentials'));
       return;
     }
+    if (!isPhoneValid(signupPhone, true)) {
+      setSignupError('Enter a valid 10-digit phone number.');
+      return;
+    }
     if (!isPasswordStrong(signupPassword)) {
       setSignupError(t('login.signup.passwordTooWeak'));
       return;
@@ -259,7 +265,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
     setSignupSubmitting(true);
     try {
-      await signupTenantRequest(signupEmail.trim(), signupPassword);
+      await signupTenantRequest(signupEmail.trim(), signupPassword, signupPhone);
       // Tenant now exists with username = email — log straight in through
       // the same prop/flow a normal login uses (App.tsx's handleLogin),
       // so session state ends up identical either way.
@@ -510,6 +516,20 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
             onChange={(e) => setSignupEmail(e.target.value)}
             className={inputClass}
             placeholder={t('login.signup.emailPlaceholder')}
+          />
+        </div>
+
+        <div>
+          <label className="block text-base font-medium text-gray-800 dark:text-gray-200 mb-2">
+            Phone number<RequiredMark />
+          </label>
+          <input
+            type="tel"
+            required
+            value={signupPhone}
+            onChange={(e) => setSignupPhone(onlyDigits(e.target.value))}
+            className={inputClass}
+            placeholder="10-digit mobile number"
           />
         </div>
 

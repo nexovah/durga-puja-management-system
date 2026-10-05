@@ -26,6 +26,7 @@ export interface Tenant {
   maxUsers: number | null; // null = unlimited
   userCount: number;
   createdAt: string;
+  archivedAt: string | null;
 }
 
 export interface SubscriptionCredit {
@@ -51,6 +52,7 @@ function fromTenantRow(row: any): Tenant {
     maxUsers: row.max_users ?? null,
     userCount: Number(row.user_count ?? 0),
     createdAt: row.created_at,
+    archivedAt: row.archived_at ?? null,
   };
 }
 
@@ -198,6 +200,25 @@ export async function purgeTenantRequest(tenantId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function archiveTenantRequest(tenantId: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_archive_tenant', { p_tenant_id: tenantId });
+  if (error) throw error;
+}
+
+export async function unarchiveTenantRequest(tenantId: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_unarchive_tenant', { p_tenant_id: tenantId });
+  if (error) throw error;
+}
+
+// Single-step hard delete — distinct from deleteTenantRequest (soft) +
+// purgeTenantRequest (hard, requires soft-delete first): this one wipes
+// the tenant and every row associated with it immediately, no prior
+// soft-delete step needed. Used by the Tenants list's 3-dot "Delete".
+export async function deleteTenantCompletelyRequest(tenantId: string): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_delete_tenant_completely', { p_tenant_id: tenantId });
+  if (error) throw error;
+}
+
 export async function grantSubscriptionRequest(
   tenantId: string,
   period: 'monthly' | 'yearly',
@@ -235,6 +256,21 @@ export async function cancelManualGrantRequest(creditId: string): Promise<Tenant
   const { data, error } = await supabase.rpc('super_admin_cancel_manual_grant', { p_credit_id: creditId });
   if (error) throw error;
   return fromTenantRow(data);
+}
+
+export async function archiveOrderRequest(orderId: string, source: 'razorpay' | 'manual'): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_archive_order', { p_order_id: orderId, p_source: source });
+  if (error) throw error;
+}
+
+export async function unarchiveOrderRequest(orderId: string, source: 'razorpay' | 'manual'): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_unarchive_order', { p_order_id: orderId, p_source: source });
+  if (error) throw error;
+}
+
+export async function deleteOrderRequest(orderId: string, source: 'razorpay' | 'manual'): Promise<void> {
+  const { error } = await supabase.rpc('super_admin_delete_order', { p_order_id: orderId, p_source: source });
+  if (error) throw error;
 }
 
 export async function listSubscriptionCreditsRequest(tenantId: string): Promise<SubscriptionCredit[]> {
@@ -445,6 +481,7 @@ export interface Order {
   currency: string;
   status: string;
   createdAt: string;
+  archivedAt: string | null;
 }
 
 export interface OrderDetail extends Order {
@@ -466,6 +503,7 @@ function fromOrderRow(row: any): Order {
     currency: row.currency,
     status: row.status,
     createdAt: row.created_at,
+    archivedAt: row.archived_at ?? null,
   };
 }
 

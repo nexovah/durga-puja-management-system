@@ -78,6 +78,7 @@ import {
   fromCommitteeRow,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
+import { PhoneCaptureScreen } from './components/PhoneCaptureScreen';
 import { formatFinancialYear } from './components/EventSwitcher';
 
 export interface User {
@@ -85,6 +86,7 @@ export interface User {
   name: string;
   username: string;
   email?: string; // optional, from app_users.email — used to attribute Help & Support posts
+  phone?: string; // optional, from app_users.phone — missing means the PhoneCaptureScreen gate shows
   password: string; // never populated from the database; kept only for local UI state shape
   isAdmin: boolean;
   canEdit: boolean; // false = view-only: can see pages their permissions allow, but no Add/Edit/Import
@@ -1195,6 +1197,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           </button>
         </div>
       </div>
+    );
+  }
+
+  // Hard gate, same pattern as the "no active event yet" gate below — a
+  // tenant admin with no phone on file (every self-serve signup before
+  // this feature, plus any Google signup, which never gets one from
+  // Google) must provide one before reaching the rest of the app. Only
+  // admins are gated — the phone that matters for business outreach is
+  // the committee's own admin contact, not every staff login.
+  if (currentUser?.isAdmin && !currentUser.phone) {
+    return (
+      <PhoneCaptureScreen
+        currentUserId={currentUser.id}
+        onCompleted={phone => {
+          const updated = { ...currentUser, phone };
+          setCurrentUser(updated);
+          saveSession(updated);
+        }}
+        onLogout={handleLogout}
+      />
     );
   }
 
