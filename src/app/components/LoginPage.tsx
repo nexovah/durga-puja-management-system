@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
-import { requestTenantPasswordResetRequest, signupTenantRequest } from '../lib/db';
+import { requestTenantPasswordResetRequest, signupTenantRequest, loginRequest } from '../lib/db';
+import type { User } from '../App';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
 import { AuthShowcaseLayout } from './AuthShowcaseLayout';
 import { RequiredMark } from './RequiredMark';
@@ -27,6 +28,11 @@ interface LoginPageProps {
   // before, no route of its own.
   onModeChange?: (mode: 'login' | 'signup') => void;
   onBackHome?: () => void;
+  // A plan selected on the landing page before signup — when set, a
+  // successful signup skips straight to checkout instead of logging
+  // straight into the app.
+  preselectedPlanId?: string | null;
+  onSignupPendingCheckout?: (user: User, planId: string) => void;
 }
 
 // Renders (and self-manages) one instance of the Google Identity Services
@@ -156,7 +162,7 @@ function GoogleAuthButtonSlot({
 // onLogin/forgot-password wiring, no backend change) just restyled to
 // match the new design. Google sign-in is intentionally static/non-wired
 // per explicit instruction — no auth provider integration exists yet.
-export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChange, onBackHome }: LoginPageProps) {
+export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChange, onBackHome, preselectedPlanId, onSignupPendingCheckout }: LoginPageProps) {
   const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -266,6 +272,18 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
     setSignupSubmitting(true);
     try {
       await signupTenantRequest(signupEmail.trim(), signupPassword, signupPhone);
+      if (preselectedPlanId && onSignupPendingCheckout) {
+        // A plan was picked on the landing page — authenticate the new
+        // session directly (not via onLogin, which would transition
+        // App.tsx straight into the authed app) and hand off to checkout
+        // instead. Falls back to free-trial on any snag here, same as a
+        // plan-less signup.
+        const user = await loginRequest(signupEmail.trim(), signupPassword);
+        if (user) {
+          onSignupPendingCheckout(user, preselectedPlanId);
+          return;
+        }
+      }
       // Tenant now exists with username = email — log straight in through
       // the same prop/flow a normal login uses (App.tsx's handleLogin),
       // so session state ends up identical either way.

@@ -62,7 +62,7 @@ import { onlyDigits, isPhoneValid } from '../lib/validation';
 
 interface LandingPageProps {
   onGoToLogin: () => void;
-  onGoToSignup: () => void;
+  onGoToSignup: (planId?: string) => void;
   onGoToLegal: (slug: 'terms' | 'privacy' | 'refund') => void;
 }
 
@@ -667,9 +667,13 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
                   ))}
                 </div>
                 <div className="mt-8 text-center">
-                  <a className="inline-flex min-h-12 items-center gap-2 rounded-md bg-primary px-6 font-bold text-primary-foreground" href="#lead-form">
+                  <button
+                    type="button"
+                    onClick={() => onGoToSignup(selectedPlan?.id)}
+                    className="inline-flex min-h-12 items-center gap-2 rounded-md bg-primary px-6 font-bold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg"
+                  >
                     Start Managing Your Puja <ArrowRight size={17} />
-                  </a>
+                  </button>
                 </div>
               </>
             )}

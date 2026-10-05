@@ -7,6 +7,7 @@ import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
 import { ReceiptPublicPage } from './components/ReceiptPublicPage';
 import { TenantResetPassword } from './components/TenantResetPassword';
+import { CheckoutPage } from './components/CheckoutPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
@@ -510,6 +511,12 @@ export default function App() {
   // Tracks the raw pathname while logged out (landing vs. login), since
   // those two routes aren't part of the authed PageKey system above.
   const [loggedOutPath, setLoggedOutPath] = useState(() => window.location.pathname);
+  // Plan selected on the landing page, carried through signup into
+  // checkout — session is established (loginRequest) but `isLoggedIn`
+  // stays false until checkout finishes/is skipped, so this whole flow
+  // stays inside the logged-out render branch below.
+  const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('plan'));
+  const [pendingCheckoutUser, setPendingCheckoutUser] = useState<User | null>(null);
 
   // CMS-driven SEO metadata for the public routes (see
   // supabase/055_cms_pages.sql) — title/description/OG tags, only on
@@ -1096,14 +1103,34 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             window.history.pushState(null, '', '/login');
             setLoggedOutPath('/login');
           }}
-          onGoToSignup={() => {
-            window.history.pushState(null, '', '/signup');
+          onGoToSignup={planId => {
+            const path = planId ? `/signup?plan=${planId}` : '/signup';
+            setCheckoutPlanId(planId ?? null);
+            window.history.pushState(null, '', path);
             setLoggedOutPath('/signup');
           }}
           onGoToLegal={slug => {
             window.history.pushState(null, '', `/${slug}`);
             setLoggedOutPath(`/${slug}`);
           }}
+        />
+      );
+    }
+    if (loggedOutPath === '/checkout' && pendingCheckoutUser && checkoutPlanId) {
+      const finishCheckout = () => {
+        setCurrentUser(pendingCheckoutUser);
+        setIsLoggedIn(true);
+        saveSession(pendingCheckoutUser);
+        setPendingCheckoutUser(null);
+        setCheckoutPlanId(null);
+      };
+      return (
+        <CheckoutPage
+          planId={checkoutPlanId}
+          committeeName={pendingCheckoutUser.name || ''}
+          email={pendingCheckoutUser.email || ''}
+          phone={pendingCheckoutUser.phone || ''}
+          onDone={finishCheckout}
         />
       );
     }
@@ -1133,6 +1160,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         logo={committeeInfo.logo}
         onLogin={handleLogin}
         onGoogleAuth={handleGoogleAuth}
+        preselectedPlanId={checkoutPlanId}
+        onSignupPendingCheckout={(user, planId) => {
+          setPendingCheckoutUser(user);
+          setCheckoutPlanId(planId);
+          window.history.pushState(null, '', `/checkout?plan=${planId}`);
+          setLoggedOutPath('/checkout');
+        }}
         initialMode={loggedOutPath === '/signup' ? 'signup' : 'login'}
         onModeChange={newMode => {
           const newPath = newMode === 'signup' ? '/signup' : '/login';

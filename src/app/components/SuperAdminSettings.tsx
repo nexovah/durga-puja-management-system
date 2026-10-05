@@ -18,6 +18,8 @@ import {
   getGoogleOAuthSettingsRequest,
   updateGoogleOAuthSettingsRequest,
   isPasswordStrong,
+  listVersionsRequest,
+  publishVersionRequest,
   DeveloperInfo,
   SuperAdminProfile,
   PlatformSettings,
@@ -25,6 +27,7 @@ import {
   EmailProviderSettings,
   BotProtectionSettings,
   GoogleOAuthSettings,
+  AppVersion,
 } from '../lib/superAdminDb';
 import { uploadLogo } from '../lib/db';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
@@ -123,6 +126,14 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
   const [devMessage, setDevMessage] = useState('');
   const [devError, setDevError] = useState('');
 
+  const [versions, setVersions] = useState<AppVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(true);
+  const [newVersion, setNewVersion] = useState('');
+  const [newVersionNotes, setNewVersionNotes] = useState('');
+  const [publishingVersion, setPublishingVersion] = useState(false);
+  const [versionMessage, setVersionMessage] = useState('');
+  const [versionError, setVersionError] = useState('');
+
   const [paymentGatewayForm, setPaymentGatewayForm] = useState<PaymentGatewaySettings>(EMPTY_PAYMENT_GATEWAY);
   const [paymentGatewayLoading, setPaymentGatewayLoading] = useState(true);
   const [savingPaymentGateway, setSavingPaymentGateway] = useState(false);
@@ -165,6 +176,10 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       .then(info => { setDevInfo(info); setDevForm(info); })
       .catch(() => {})
       .finally(() => setDevLoading(false));
+    listVersionsRequest()
+      .then(setVersions)
+      .catch(() => {})
+      .finally(() => setVersionsLoading(false));
     getSelfProfileRequest()
       .then(p => { setProfile(p); setProfileForm(p); })
       .catch(() => {})
@@ -356,6 +371,30 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
       setDevError(err?.message || 'Failed to save');
     } finally {
       setSavingDev(false);
+    }
+  };
+
+  const handlePublishVersion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVersionError('');
+    setVersionMessage('');
+    if (!newVersion.trim()) {
+      setVersionError('Version is required');
+      return;
+    }
+    setPublishingVersion(true);
+    try {
+      const row = await publishVersionRequest(newVersion, newVersionNotes);
+      setVersions(prev => [row, ...prev]);
+      setDevInfo(prev => ({ ...prev, version: row.version, changelog: row.notes || '' }));
+      setDevForm(prev => ({ ...prev, version: row.version, changelog: row.notes || '' }));
+      setNewVersion('');
+      setNewVersionNotes('');
+      setVersionMessage('Version published — now live in every tenant\'s Developer Info tab.');
+    } catch (err: any) {
+      setVersionError(err?.message || 'Failed to publish');
+    } finally {
+      setPublishingVersion(false);
     }
   };
 
@@ -1022,29 +1061,6 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     className={inputClass}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">App version</label>
-                  <input
-                    type="text"
-                    required
-                    value={devForm.version}
-                    onChange={e => setDevForm({ ...devForm, version: e.target.value })}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">App version update details</label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    One point per line — shown as a bullet list to every tenant. Kept current whenever the app version changes.
-                  </p>
-                  <textarea
-                    rows={6}
-                    value={devForm.changelog}
-                    onChange={e => setDevForm({ ...devForm, changelog: e.target.value })}
-                    placeholder={'Added: XYZ feature\nFixed: ABC bug\nImproved: performance on the dashboard'}
-                    className={`${inputClass} font-mono text-sm`}
-                  />
-                </div>
                 {devError && <p className="text-sm text-red-600 dark:text-red-400">{devError}</p>}
                 {devMessage && <p className="text-sm text-green-600 dark:text-green-400">{devMessage}</p>}
                 <button
@@ -1063,15 +1079,83 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     <p><strong>Email:</strong> {devInfo.email}</p>
                     <p><strong>Phone:</strong> {devInfo.phone}</p>
                     <p><strong>Version:</strong> {devInfo.version}</p>
-                    {devInfo.changelog && (
-                      <ul className="list-disc pl-5 pt-1 space-y-0.5">
-                        {devInfo.changelog.split('\n').filter(Boolean).map((line, i) => <li key={i}>{line}</li>)}
-                      </ul>
-                    )}
                   </div>
                 </div>
               </form>
             )
+          )}
+
+          {activeTab === 'developer' && !devLoading && (
+            <div className="mt-8 max-w-md space-y-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+              <div>
+                <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-1">Publish new version</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  A manual, explicit action — editing Name/Email/Phone above never publishes a version.
+                </p>
+                <form onSubmit={handlePublishVersion} className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Version</label>
+                    <input
+                      type="text"
+                      value={newVersion}
+                      onChange={e => setNewVersion(e.target.value)}
+                      placeholder="e.g. 1.4.0"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">What's changed</label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      One point per line — shown as a bullet list to every tenant.
+                    </p>
+                    <textarea
+                      rows={6}
+                      value={newVersionNotes}
+                      onChange={e => setNewVersionNotes(e.target.value)}
+                      placeholder={'Added: XYZ feature\nFixed: ABC bug\nImproved: performance on the dashboard'}
+                      className={`${inputClass} font-mono text-sm`}
+                    />
+                  </div>
+                  {versionError && <p className="text-sm text-red-600 dark:text-red-400">{versionError}</p>}
+                  {versionMessage && <p className="text-sm text-green-600 dark:text-green-400">{versionMessage}</p>}
+                  <button
+                    type="submit"
+                    disabled={publishingVersion}
+                    className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-60 transition-colors"
+                  >
+                    <Save size={20} />
+                    {publishingVersion ? 'Publishing…' : 'Publish Version'}
+                  </button>
+                </form>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2">Version History</h4>
+                {versionsLoading ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+                ) : versions.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No versions published yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {versions.map(v => (
+                      <div key={v.id} className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-baseline justify-between">
+                          <span className="font-bold text-gray-800 dark:text-gray-200">v{v.version}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(v.releasedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {v.notes && (
+                          <ul className="list-disc pl-5 pt-1 space-y-0.5 text-sm text-gray-600 dark:text-gray-400">
+                            {v.notes.split('\n').filter(Boolean).map((line, i) => <li key={i}>{line}</li>)}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

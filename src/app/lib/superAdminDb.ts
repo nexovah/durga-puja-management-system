@@ -809,6 +809,41 @@ export async function updateDeveloperInfoRequest(info: DeveloperInfo): Promise<D
   return fromDeveloperRow(data);
 }
 
+// Real version history (supabase/126_app_versions.sql) — separate from
+// the developer_info singleton above (kept in sync automatically on
+// publish, not replaced): publishing is always a manual, explicit action,
+// never tied to a Name/Email/Phone save.
+export interface AppVersion {
+  id: string;
+  version: string;
+  notes: string;
+  releasedAt: string;
+}
+
+function fromAppVersionRow(row: any): AppVersion {
+  return {
+    id: row.id,
+    version: row.version,
+    notes: row.notes || '',
+    releasedAt: row.released_at,
+  };
+}
+
+export async function listVersionsRequest(): Promise<AppVersion[]> {
+  const { data, error } = await supabase.rpc('super_admin_list_versions');
+  if (error) throw error;
+  return (data || []).map(fromAppVersionRow);
+}
+
+export async function publishVersionRequest(version: string, notes: string): Promise<AppVersion> {
+  const { data, error } = await supabase.rpc('super_admin_publish_version', {
+    p_version: version,
+    p_notes: notes || null,
+  });
+  if (error) throw error;
+  return fromAppVersionRow(data);
+}
+
 // "Forgot password?" — calls the send-super-admin-reset-email Edge Function
 // (supabase/functions/send-super-admin-reset-email), which always resolves
 // the same way regardless of whether the username exists (see that

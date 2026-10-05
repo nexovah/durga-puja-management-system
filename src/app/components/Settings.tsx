@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, ReceiptIndianRupee, MoreVertical, Compass, CreditCard } from 'lucide-react';
+import { Save, Plus, Edit2, Trash2, Building2, Lock, Users, Code, Languages, Ban, CheckCircle2, Eye, EyeOff, RefreshCw, Copy, Check, ReceiptIndianRupee, MoreVertical, Compass, CreditCard, Mail, Phone, Sparkles, Rocket } from 'lucide-react';
 import { User, CommitteeInfo } from '../App';
 import { PageHeading } from './PageHeading';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -1986,22 +1986,72 @@ export function Settings({
           {/* Developer Info Tab — read-only; only the platform Super Admin
               can edit this (it's vendor/software info, not committee data) */}
           {activeTab === 'developer' && (
-            <div className="max-w-md">
+            <div className="max-w-2xl">
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-1">{t('settings.tab.developer')}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 Managed by the platform administrator.
               </p>
-              <div className="p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                  <p><strong>{t('settings.label.name')}</strong> {developerInfo.name}</p>
-                  <p><strong>{t('settings.label.email')}</strong> {developerInfo.email}</p>
-                  <p><strong>{t('settings.label.phone')}</strong> {developerInfo.phone}</p>
-                  <p><strong>{t('settings.label.version')}</strong> {developerInfo.version}</p>
-                  {developerInfo.changelog && (
-                    <ul className="list-disc pl-5 pt-1 space-y-0.5">
-                      {developerInfo.changelog.split('\n').filter(Boolean).map((line, i) => <li key={i}>{line}</li>)}
-                    </ul>
-                  )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Vendor card */}
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 relative overflow-hidden">
+                  <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-orange-50 dark:bg-orange-500/10" />
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white mb-4 shadow-sm">
+                      <Building2 size={22} />
+                    </div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Built &amp; maintained by</p>
+                    <p className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4">{developerInfo.name || '—'}</p>
+                    <div className="space-y-2.5 text-sm">
+                      {developerInfo.email && (
+                        <a href={`mailto:${developerInfo.email}`} className="flex items-center gap-2.5 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                          <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                            <Mail size={13} />
+                          </span>
+                          {developerInfo.email}
+                        </a>
+                      )}
+                      {developerInfo.phone && (
+                        <a href={`tel:${developerInfo.phone}`} className="flex items-center gap-2.5 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                          <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                            <Phone size={13} />
+                          </span>
+                          {developerInfo.phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Version card */}
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 p-6 text-white relative overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-orange-500/10" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="w-9 h-9 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                        <Rocket size={18} />
+                      </span>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Current version</p>
+                        <p className="text-xl font-extrabold leading-tight">v{developerInfo.version || '—'}</p>
+                      </div>
+                    </div>
+                    {developerInfo.changelog && (
+                      <div className="pt-4 border-t border-white/10">
+                        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-2">
+                          <Sparkles size={12} className="text-orange-400" /> What's new
+                        </p>
+                        <ul className="space-y-1.5">
+                          {developerInfo.changelog.split('\n').filter(Boolean).map((line, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
+                              <CheckCircle2 size={14} className="text-orange-400 shrink-0 mt-0.5" />
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
