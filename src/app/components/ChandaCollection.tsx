@@ -12,7 +12,9 @@ import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
-import { parseCSV, csvField } from '../lib/csv';
+import { parseCSV, csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
+import { ImportResultsModal, ImportResultsSummary } from './ImportResultsModal';
 import { Pagination, usePagination } from './Pagination';
 import { SelectAllBanner } from './SelectAllBanner';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
@@ -425,58 +427,31 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setEditingId(null);
   };
 
-  const chandaCsvHeader = () => [
-    t('chanda.csv.donorName'),
-    t('chanda.csv.amount'),
-    amount1Label,
-    amount2Label,
-    t('common.paidMethod'),
-    t('chanda.csv.status'),
-    t('chanda.csv.partialAmount'),
-    t('chanda.csv.date'),
-    t('chanda.csv.billNumber'),
-    t('chanda.csv.phone'),
-    t('chanda.csv.phone2'),
-    t('chanda.csv.remarks'),
-    t('chanda.digitalReceipt'),
+  const chandaExportColumns: ExportColumnDef<Chanda>[] = [
+    { id: 'donorName', label: t('chanda.csv.donorName'), value: c => c.donorName },
+    { id: 'amount', label: t('chanda.csv.amount'), value: c => c.amount },
+    { id: 'amount1', label: amount1Label, value: c => c.amount1 ?? '' },
+    { id: 'amount2', label: amount2Label, value: c => c.amount2 ?? '' },
+    { id: 'paidMethod', label: t('common.paidMethod'), value: c => paidMethodLabel(c.paidMethod || 'notSelected') },
+    { id: 'paymentStatus', label: t('chanda.csv.status'), value: c => statusLabel(c.paymentStatus || 'paid') },
+    { id: 'partialAmount', label: t('chanda.csv.partialAmount'), value: c => c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '' },
+    { id: 'date', label: t('chanda.csv.date'), value: c => c.date },
+    { id: 'billNumber', label: t('chanda.csv.billNumber'), value: c => c.billNumber || '' },
+    { id: 'phone1', label: t('chanda.csv.phone'), value: c => c.phone },
+    { id: 'phone2', label: t('chanda.csv.phone2'), value: c => c.phone2 || '' },
+    { id: 'remarks', label: t('chanda.csv.remarks'), value: c => c.remarks },
+    { id: 'receiptNumber', label: t('chanda.digitalReceipt'), value: c => c.receiptNumber || '' },
   ];
 
-  const chandaToCsvRow = (c: Chanda) => [
-    c.donorName,
-    c.amount,
-    c.amount1 ?? '',
-    c.amount2 ?? '',
-    paidMethodLabel(c.paidMethod || 'notSelected'),
-    statusLabel(c.paymentStatus || 'paid'),
-    c.paymentStatus === 'partial' ? (c.partialAmount || 0) : '',
-    c.date,
-    c.billNumber || '',
-    c.phone,
-    c.phone2 || '',
-    c.remarks,
-    c.receiptNumber || '',
-  ];
-
-  const downloadChandaCsv = (rows: Chanda[], filenameSuffix: string) => {
-    const csvContent = [
-      chandaCsvHeader().map(csvField).join(','),
-      ...rows.map(c => chandaToCsvRow(c).map(csvField).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `chanda-collection-${filenameSuffix}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
+  const [exportModal, setExportModal] = useState<{ rows: Chanda[]; suffix: string } | null>(null);
 
   const handleExport = () => {
-    downloadChandaCsv(chandaList, 'all');
+    setExportModal({ rows: chandaList, suffix: 'all' });
   };
 
   const handleExportSelected = () => {
     const selected = chandaList.filter(c => selectedIds.has(c.id));
-    downloadChandaCsv(selected, 'selected');
+    setExportModal({ rows: selected, suffix: 'selected' });
   };
 
   const handleImportClick = () => {
@@ -497,10 +472,19 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][1] || '') ? 0 : 1;
 
       const imported: Chanda[] = [];
+      const rowErrors: ImportRowError[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
+        const lineNum = i - firstDataRow + 1;
         const [donorName, amountRaw, amount1Raw, amount2Raw, paidMethodRaw, statusRaw, partialAmountRaw, date, billNumber, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
-        if (!donorName || isNaN(amount)) continue;
+        if (!donorName) {
+          rowErrors.push({ line: lineNum, reason: 'Donor name is required' });
+          continue;
+        }
+        if (isNaN(amount)) {
+          rowErrors.push({ line: lineNum, reason: 'Amount could not be read as a number' });
+          continue;
+        }
 
         const paymentStatus = parseStatusInput(statusRaw || '');
         const partialAmount = paymentStatus === 'partial'
@@ -527,20 +511,23 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       }
 
       const { toInsert, toUpdate } = prepareImportUpsert(imported, (row) => row.billNumber, chandaList);
-      setImportPreview({ toInsert, toUpdate, errors: [], totalRows: imported.length });
+      setImportPreview({ toInsert, toUpdate, errors: rowErrors, totalRows: rows.length - firstDataRow });
     };
     reader.readAsText(file);
   };
 
+  const [importResults, setImportResults] = useState<ImportResultsSummary | null>(null);
+
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    const { toInsert, toUpdate } = importPreview;
+    const { toInsert, toUpdate, errors, totalRows } = importPreview;
     const updatedIds = new Set(toUpdate.map(r => r.id));
     const merged = chandaList.map(c => (updatedIds.has(c.id) ? toUpdate.find(u => u.id === c.id)! : c));
     setChandaList([...merged, ...toInsert]);
     const count = toInsert.length + toUpdate.length;
     onLog('bulk_import', 'chanda', `${t('common.importResult')}: ${count} (${toInsert.length} new, ${toUpdate.length} updated)`, count);
     setImportPreview(null);
+    setImportResults({ totalRows, importedCount: count, insertedCount: toInsert.length, updatedCount: toUpdate.length, errors });
   };
 
   const isPartial = formData.paymentStatus === 'partial';
@@ -575,11 +562,11 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     { id: 'donorName', label: t('chanda.donorName'), required: true, sortValue: c => c.donorName },
     { id: 'category', label: t('chanda.category'), defaultVisible: false, sortValue: c => chandaCategoryLabel(c.category) },
     { id: 'amount', label: t('common.amount'), align: 'left', sortValue: c => c.amount },
-    { id: 'receiptNumber', label: t('chanda.digitalReceipt'), sortValue: c => c.receiptNumber || '' },
+    { id: 'billNumber', label: t('chanda.billNumber'), sortValue: c => c.billNumber || '' },
     { id: 'paidMethod', label: t('common.paidMethod'), defaultVisible: false, sortValue: c => paidMethodLabel(c.paidMethod || 'notSelected') },
     { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: c => c.paymentStatus || 'paid' },
     { id: 'date', label: t('common.date'), sortValue: c => c.date },
-    { id: 'billNumber', label: t('chanda.billNumber'), sortValue: c => c.billNumber || '' },
+    { id: 'receiptNumber', label: t('chanda.digitalReceipt'), sortValue: c => c.receiptNumber || '' },
     { id: 'phone1', label: t('chanda.phone1'), sortValue: c => c.phone || '' },
     { id: 'phone2', label: t('chanda.phone2'), defaultVisible: false, sortValue: c => c.phone2 || '' },
     { id: 'remarks', label: t('common.remarks'), defaultVisible: false, sortValue: c => c.remarks || '' },
@@ -1076,8 +1063,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 {tableCols.isColumnVisible('amount') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'amount')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
-                {tableCols.isColumnVisible('receiptNumber') && (
-                  <SortableTh column={chandaColumns.find(c => c.id === 'receiptNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                {tableCols.isColumnVisible('billNumber') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'billNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {tableCols.isColumnVisible('paidMethod') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'paidMethod')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
@@ -1088,8 +1075,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 {tableCols.isColumnVisible('date') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'date')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
-                {tableCols.isColumnVisible('billNumber') && (
-                  <SortableTh column={chandaColumns.find(c => c.id === 'billNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                {tableCols.isColumnVisible('receiptNumber') && (
+                  <SortableTh column={chandaColumns.find(c => c.id === 'receiptNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {tableCols.isColumnVisible('phone1') && (
                   <SortableTh column={chandaColumns.find(c => c.id === 'phone1')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
@@ -1159,18 +1146,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                           : 'text-green-600'
                       }`}>₹{chanda.amount.toLocaleString()}</td>
                     )}
-                    {tableCols.isColumnVisible('receiptNumber') && (
-                      <td className="px-6 py-4 text-sm">
-                        {chanda.receiptNumber ? (
-                          <button
-                            type="button"
-                            onClick={() => setReceiptTarget(chanda)}
-                            className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium"
-                          >
-                            {chanda.receiptNumber}
-                          </button>
-                        ) : '-'}
-                      </td>
+                    {tableCols.isColumnVisible('billNumber') && (
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.billNumber || '-'}</td>
                     )}
                     {tableCols.isColumnVisible('paidMethod') && (
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{paidMethodLabel(chanda.paidMethod || 'notSelected')}</td>
@@ -1192,8 +1169,18 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                         {new Date(chanda.date).toLocaleDateString(locale)}
                       </td>
                     )}
-                    {tableCols.isColumnVisible('billNumber') && (
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.billNumber || '-'}</td>
+                    {tableCols.isColumnVisible('receiptNumber') && (
+                      <td className="px-6 py-4 text-sm">
+                        {chanda.receiptNumber ? (
+                          <button
+                            type="button"
+                            onClick={() => setReceiptTarget(chanda)}
+                            className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                          >
+                            {chanda.receiptNumber}
+                          </button>
+                        ) : '-'}
+                      </td>
                     )}
                     {tableCols.isColumnVisible('phone1') && (
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.phone || '-'}</td>
@@ -1311,6 +1298,24 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}
+      />
+
+      <ImportResultsModal
+        open={!!importResults}
+        summary={importResults}
+        onClose={() => setImportResults(null)}
+      />
+
+      <ExportColumnSelectorModal
+        open={!!exportModal}
+        columns={chandaExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey="puja_export_cols_chanda"
+        onClose={() => setExportModal(null)}
+        onExport={orderedIds => {
+          if (!exportModal) return;
+          const csvContent = buildCsv(exportModal.rows, chandaExportColumns, orderedIds);
+          downloadCsv(csvContent, `chanda-collection-${exportModal.suffix}-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />

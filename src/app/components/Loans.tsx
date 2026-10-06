@@ -7,7 +7,9 @@ import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
-import { parseCSV, csvField } from '../lib/csv';
+import { parseCSV, csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
+import { ImportResultsModal, ImportResultsSummary } from './ImportResultsModal';
 import { Pagination, usePagination } from './Pagination';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
 import { FormModal, FormModalCancelButton } from './FormModal';
@@ -218,37 +220,22 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     setEditingId(null);
   };
 
-  const handleExport = () => {
-    const csvContent = [
-      [
-        t('loans.csv.donorName'),
-        t('loans.csv.amountReceived'),
-        t('loans.csv.amountPaid'),
-        t('loans.paymentMethod'),
-        t('loans.returnMethod'),
-        t('loans.csv.date'),
-        t('loans.csv.returnDate'),
-        t('loans.csv.phone'),
-        t('loans.csv.remarks'),
-      ].map(csvField).join(','),
-      ...loansList.map(l => [
-        l.donorName,
-        l.amountReceived,
-        l.amountPaid || 0,
-        paidMethodLabel(l.paymentMethod || 'notSelected'),
-        paidMethodLabel(l.returnMethod || 'notSelected'),
-        l.date,
-        l.returnDate || '',
-        l.phone,
-        l.remarks,
-      ].map(csvField).join(','))
-    ].join('\n');
+  const loanExportColumns: ExportColumnDef<Loan>[] = [
+    { id: 'donorName', label: t('loans.csv.donorName'), value: l => l.donorName },
+    { id: 'amountReceived', label: t('loans.csv.amountReceived'), value: l => l.amountReceived },
+    { id: 'amountPaid', label: t('loans.csv.amountPaid'), value: l => l.amountPaid || 0 },
+    { id: 'paymentMethod', label: t('loans.paymentMethod'), value: l => paidMethodLabel(l.paymentMethod || 'notSelected') },
+    { id: 'returnMethod', label: t('loans.returnMethod'), value: l => paidMethodLabel(l.returnMethod || 'notSelected') },
+    { id: 'date', label: t('loans.csv.date'), value: l => l.date },
+    { id: 'returnDate', label: t('loans.csv.returnDate'), value: l => l.returnDate || '' },
+    { id: 'phone', label: t('loans.csv.phone'), value: l => l.phone },
+    { id: 'remarks', label: t('loans.csv.remarks'), value: l => l.remarks },
+  ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `loans-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const handleExport = () => {
+    setExportModalOpen(true);
   };
 
   const handleImportClick = () => {
@@ -268,10 +255,19 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
       const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][1] || '') ? 0 : 1;
 
       const imported: Loan[] = [];
+      const rowErrors: ImportRowError[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
+        const lineNum = i - firstDataRow + 1;
         const [donorName, amountReceivedRaw, amountPaidRaw, paidMethodRaw, returnMethodRaw, date, returnDate, phone, remarks] = rows[i];
         const amountReceived = parseFloat((amountReceivedRaw || '').replace(/,/g, ''));
-        if (!donorName || isNaN(amountReceived)) continue;
+        if (!donorName) {
+          rowErrors.push({ line: lineNum, reason: 'Donor name is required' });
+          continue;
+        }
+        if (isNaN(amountReceived)) {
+          rowErrors.push({ line: lineNum, reason: 'Amount received could not be read as a number' });
+          continue;
+        }
 
         imported.push({
           id: crypto.randomUUID(),
@@ -288,15 +284,24 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         });
       }
 
-      setImportPreview({ toInsert: imported, errors: [], totalRows: imported.length });
+      setImportPreview({ toInsert: imported, errors: rowErrors, totalRows: rows.length - firstDataRow });
     };
     reader.readAsText(file);
   };
+
+  const [importResults, setImportResults] = useState<ImportResultsSummary | null>(null);
 
   const handleConfirmImport = () => {
     if (!importPreview) return;
     setLoansList([...loansList, ...importPreview.toInsert]);
     onLog('bulk_import', 'loans', `${t('common.importResult')}: ${importPreview.toInsert.length}`, importPreview.toInsert.length);
+    setImportResults({
+      totalRows: importPreview.totalRows,
+      importedCount: importPreview.toInsert.length,
+      insertedCount: importPreview.toInsert.length,
+      updatedCount: 0,
+      errors: importPreview.errors,
+    });
     setImportPreview(null);
   };
 
@@ -772,6 +777,23 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}
+      />
+
+      <ImportResultsModal
+        open={!!importResults}
+        summary={importResults}
+        onClose={() => setImportResults(null)}
+      />
+
+      <ExportColumnSelectorModal
+        open={exportModalOpen}
+        columns={loanExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey="puja_export_cols_loans"
+        onClose={() => setExportModalOpen(false)}
+        onExport={orderedIds => {
+          const csvContent = buildCsv(loansList, loanExportColumns, orderedIds);
+          downloadCsv(csvContent, `loans-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />

@@ -9,7 +9,9 @@ import { CustomSelect } from './CustomSelect';
 import { AutocompleteInput } from './AutocompleteInput';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
-import { parseCSV, csvField } from '../lib/csv';
+import { parseCSV, csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
+import { ImportResultsModal, ImportResultsSummary } from './ImportResultsModal';
 import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
@@ -380,35 +382,21 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       };
     });
 
-  const handleExport = () => {
-    const csvContent = [
-      [
-        t('expenses.csv.title'),
-        t('expenses.csv.amount'),
-        t('expenses.csv.status'),
-        t('expenses.partialPayments'),
-        t('expenses.csv.paidThrough'),
-        t('expenses.csv.date'),
-        t('expenses.csv.category'),
-        t('expenses.csv.remarks'),
-      ].map(csvField).join(','),
-      ...expenses.map(exp => [
-        exp.title,
-        exp.amount,
-        statusLabel(exp.paymentStatus || 'paid'),
-        packPartialPayments(exp.partialPayments),
-        paidThroughLabel(exp.paidThrough || 'notSelected'),
-        exp.date,
-        categoryLabel(exp.category),
-        exp.remarks,
-      ].map(csvField).join(','))
-    ].join('\n');
+  const expenseExportColumns: ExportColumnDef<Expense>[] = [
+    { id: 'title', label: t('expenses.csv.title'), value: exp => exp.title },
+    { id: 'amount', label: t('expenses.csv.amount'), value: exp => exp.amount },
+    { id: 'paymentStatus', label: t('expenses.csv.status'), value: exp => statusLabel(exp.paymentStatus || 'paid') },
+    { id: 'partialPayments', label: t('expenses.partialPayments'), value: exp => packPartialPayments(exp.partialPayments) },
+    { id: 'paidThrough', label: t('expenses.csv.paidThrough'), value: exp => paidThroughLabel(exp.paidThrough || 'notSelected') },
+    { id: 'date', label: t('expenses.csv.date'), value: exp => exp.date },
+    { id: 'category', label: t('expenses.csv.category'), value: exp => categoryLabel(exp.category) },
+    { id: 'remarks', label: t('expenses.csv.remarks'), value: exp => exp.remarks },
+  ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const handleExport = () => {
+    setExportModalOpen(true);
   };
 
   const handleImportClick = () => {
@@ -429,14 +417,23 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][1] || '') ? 0 : 1;
 
       const imported: Expense[] = [];
+      const rowErrors: ImportRowError[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
+        const lineNum = i - firstDataRow + 1;
         const [
           title, amountRaw, statusRaw,
           partialPaymentsRaw,
           paidThroughRaw, date, categoryRaw, remarks,
         ] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
-        if (!title || isNaN(amount)) continue;
+        if (!title) {
+          rowErrors.push({ line: lineNum, reason: 'Title is required' });
+          continue;
+        }
+        if (isNaN(amount)) {
+          rowErrors.push({ line: lineNum, reason: 'Amount could not be read as a number' });
+          continue;
+        }
 
         const paymentStatus = parseStatusInput(statusRaw || '');
         const parsedPartials = unpackPartialPayments(partialPaymentsRaw || '');
@@ -461,17 +458,20 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       // Note: voucherNumber isn't a column in this CSV format, so every
       // imported row is always new — nothing to match against for updates.
       const { toInsert, toUpdate } = prepareImportUpsert<Expense>(imported, () => undefined, expenses);
-      setImportPreview({ toInsert, toUpdate, errors: [], totalRows: imported.length });
+      setImportPreview({ toInsert, toUpdate, errors: rowErrors, totalRows: rows.length - firstDataRow });
     };
     reader.readAsText(file);
   };
 
+  const [importResults, setImportResults] = useState<ImportResultsSummary | null>(null);
+
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    const { toInsert } = importPreview;
+    const { toInsert, errors, totalRows } = importPreview;
     setExpenses([...expenses, ...toInsert]);
     onLog('bulk_import', 'expenses', `${t('common.importResult')}: ${toInsert.length}`, toInsert.length);
     setImportPreview(null);
+    setImportResults({ totalRows, importedCount: toInsert.length, insertedCount: toInsert.length, updatedCount: 0, errors });
   };
 
   const categoryTotals = EXPENSE_CATEGORIES.map(cat => ({
@@ -1060,6 +1060,23 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}
+      />
+
+      <ImportResultsModal
+        open={!!importResults}
+        summary={importResults}
+        onClose={() => setImportResults(null)}
+      />
+
+      <ExportColumnSelectorModal
+        open={exportModalOpen}
+        columns={expenseExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey="puja_export_cols_expenses"
+        onClose={() => setExportModalOpen(false)}
+        onExport={orderedIds => {
+          const csvContent = buildCsv(expenses, expenseExportColumns, orderedIds);
+          downloadCsv(csvContent, `expenses-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />

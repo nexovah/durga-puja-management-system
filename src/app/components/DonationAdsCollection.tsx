@@ -9,7 +9,9 @@ import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
-import { parseCSV, csvField } from '../lib/csv';
+import { parseCSV, csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
+import { ImportResultsModal, ImportResultsSummary } from './ImportResultsModal';
 import { Pagination, usePagination } from './Pagination';
 import { normalizeKey, prepareImportUpsert } from '../lib/uniqueCheck';
 import { ImportPreviewModal, ImportRowError } from './ImportPreviewModal';
@@ -408,41 +410,24 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     setEditingId(null);
   };
 
-  const handleExport = () => {
-    const csvContent = [
-      [
-        t('donationAds.csv.category'),
-        t('donationAds.donorName'),
-        t('donationAds.companyName'),
-        t('donationAds.csv.amount'),
-        t('common.paidMethod'),
-        t('donationAds.inKindOrAdsCategory'),
-        t('donationAds.csv.date'),
-        t('donationAds.csv.voucherNumber'),
-        t('donationAds.csv.phone'),
-        t('donationAds.csv.phone2'),
-        t('donationAds.csv.remarks'),
-      ].map(csvField).join(','),
-      ...scopedList.map(item => [
-        categoryLabel(item.category),
-        item.donorName,
-        item.companyName || '',
-        item.amount,
-        paidMethodLabel(item.paidMethod || 'notSelected'),
-        inKindDisplay(item),
-        item.date,
-        item.voucherNumber || '',
-        item.phone,
-        item.phone2 || '',
-        item.remarks,
-      ].map(csvField).join(','))
-    ].join('\n');
+  const donationAdsExportColumns: ExportColumnDef<DonationAd>[] = [
+    { id: 'category', label: t('donationAds.csv.category'), value: item => categoryLabel(item.category) },
+    { id: 'donorName', label: t('donationAds.donorName'), value: item => item.donorName },
+    { id: 'companyName', label: t('donationAds.companyName'), value: item => item.companyName || '' },
+    { id: 'amount', label: t('donationAds.csv.amount'), value: item => item.amount },
+    { id: 'paidMethod', label: t('common.paidMethod'), value: item => paidMethodLabel(item.paidMethod || 'notSelected') },
+    { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), value: item => inKindDisplay(item) },
+    { id: 'date', label: t('donationAds.csv.date'), value: item => item.date },
+    { id: 'voucherNumber', label: t('donationAds.csv.voucherNumber'), value: item => item.voucherNumber || '' },
+    { id: 'phone', label: t('donationAds.csv.phone'), value: item => item.phone },
+    { id: 'phone2', label: t('donationAds.csv.phone2'), value: item => item.phone2 || '' },
+    { id: 'remarks', label: t('donationAds.csv.remarks'), value: item => item.remarks },
+  ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fixedCategory ? fixedCategory + '-collection' : 'donation-ads-collection'}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const handleExport = () => {
+    setExportModalOpen(true);
   };
 
   const handleImportClick = () => {
@@ -463,14 +448,22 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       const firstDataRow = /^\s*-?\d+(\.\d+)?\s*$/.test(rows[0][3] || '') ? 0 : 1;
 
       const imported: DonationAd[] = [];
+      const rowErrors: ImportRowError[] = [];
       for (let i = firstDataRow; i < rows.length; i++) {
+        const lineNum = i - firstDataRow + 1;
         const [categoryRaw, donorName, companyName, amountRaw, paidMethodRaw, inKindRaw, date, voucherNumber, phone, phone2, remarks] = rows[i];
         const amount = parseFloat((amountRaw || '').replace(/,/g, ''));
-        if (isNaN(amount)) continue;
+        if (isNaN(amount)) {
+          rowErrors.push({ line: lineNum, reason: 'Amount could not be read as a number' });
+          continue;
+        }
 
         const category = parseCategoryInput(categoryRaw);
         const isDonationRow = category === 'donation';
-        if (isDonationRow && !donorName) continue;
+        if (isDonationRow && !donorName) {
+          rowErrors.push({ line: lineNum, reason: 'Donor name is required for a donation row' });
+          continue;
+        }
 
         imported.push({
           id: crypto.randomUUID(),
@@ -489,20 +482,23 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       }
 
       const { toInsert, toUpdate } = prepareImportUpsert(imported, (row) => row.voucherNumber, donationAdsList);
-      setImportPreview({ toInsert, toUpdate, errors: [], totalRows: imported.length });
+      setImportPreview({ toInsert, toUpdate, errors: rowErrors, totalRows: rows.length - firstDataRow });
     };
     reader.readAsText(file);
   };
 
+  const [importResults, setImportResults] = useState<ImportResultsSummary | null>(null);
+
   const handleConfirmImport = () => {
     if (!importPreview) return;
-    const { toInsert, toUpdate } = importPreview;
+    const { toInsert, toUpdate, errors, totalRows } = importPreview;
     const updatedIds = new Set(toUpdate.map(r => r.id));
     const merged = donationAdsList.map(item => (updatedIds.has(item.id) ? toUpdate.find(u => u.id === item.id)! : item));
     setDonationAdsList([...merged, ...toInsert]);
     const count = toInsert.length + toUpdate.length;
     onLog('bulk_import', 'donation_ads', `${t('common.importResult')}: ${count} (${toInsert.length} new, ${toUpdate.length} updated)`, count);
     setImportPreview(null);
+    setImportResults({ totalRows, importedCount: count, insertedCount: toInsert.length, updatedCount: toUpdate.length, errors });
   };
 
   const isDonation = formData.category === 'donation';
@@ -1142,6 +1138,23 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         errors={importPreview?.errors || []}
         onCancel={() => setImportPreview(null)}
         onConfirm={handleConfirmImport}
+      />
+
+      <ImportResultsModal
+        open={!!importResults}
+        summary={importResults}
+        onClose={() => setImportResults(null)}
+      />
+
+      <ExportColumnSelectorModal
+        open={exportModalOpen}
+        columns={donationAdsExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey={`puja_export_cols_donationads${fixedCategory ? '_' + fixedCategory : ''}`}
+        onClose={() => setExportModalOpen(false)}
+        onExport={orderedIds => {
+          const csvContent = buildCsv(scopedList, donationAdsExportColumns, orderedIds);
+          downloadCsv(csvContent, `${fixedCategory ? fixedCategory + '-collection' : 'donation-ads-collection'}-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />

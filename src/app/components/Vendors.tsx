@@ -10,7 +10,8 @@ import { RequiredMark } from './RequiredMark';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
-import { csvField } from '../lib/csv';
+import { csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
 import { Pagination, usePagination } from './Pagination';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import { SearchToggleButton } from './SearchToggleButton';
@@ -218,31 +219,19 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
   const sortedVendorGroups = useMemo(() => tableCols.sortItems(filteredVendorGroups), [tableCols, filteredVendorGroups]);
   const pagination = usePagination(sortedVendorGroups);
 
-  const handleExport = () => {
-    const csvContent = [
-      [
-        t('vendors.name'),
-        t('vendors.contact'),
-        t('expenses.category'),
-        t('vendors.transactions'),
-        t('vendors.totalContractAmount'),
-        t('vendors.totalAmount'),
-      ].map(csvField).join(','),
-      ...vendorGroups.map(g => [
-        g.name,
-        g.contact,
-        g.categories.map(categoryLabel).join(' / '),
-        g.entries.length,
-        g.totalContractAmount,
-        g.totalAmount,
-      ].map(csvField).join(','))
-    ].join('\n');
+  const vendorExportColumns: ExportColumnDef<VendorGroup>[] = [
+    { id: 'name', label: t('vendors.name'), value: g => g.name },
+    { id: 'contact', label: t('vendors.contact'), value: g => g.contact },
+    { id: 'category', label: t('expenses.category'), value: g => g.categories.map(categoryLabel).join(' / ') },
+    { id: 'transactions', label: t('vendors.transactions'), value: g => g.entries.length },
+    { id: 'totalContractAmount', label: t('vendors.totalContractAmount'), value: g => g.totalContractAmount },
+    { id: 'totalAmount', label: t('vendors.totalAmount'), value: g => g.totalAmount },
+  ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `vendors-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const handleExport = () => {
+    setExportModalOpen(true);
   };
 
   return (
@@ -540,6 +529,17 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
           onSave={handleSaveVendor}
         />
       )}
+
+      <ExportColumnSelectorModal
+        open={exportModalOpen}
+        columns={vendorExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey="puja_export_cols_vendors"
+        onClose={() => setExportModalOpen(false)}
+        onExport={orderedIds => {
+          const csvContent = buildCsv(vendorGroups, vendorExportColumns, orderedIds);
+          downloadCsv(csvContent, `vendors-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
+      />
     </div>
   );
 }
