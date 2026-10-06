@@ -32,6 +32,11 @@ interface SettingsProps {
   initialTab?: SettingsTab;
   tabRequestId?: number; // bumped by the caller each time it wants to force-select initialTab, even if it's the same tab as before
   onSubscriptionExtended?: () => void | Promise<void>;
+  // No active subscription — blocks User Management's Add/Edit/Delete
+  // (staff-account changes are a mutating action like any other),
+  // deliberately NOT applied to Committee Info/Receipts/Billing's own
+  // save actions so an expired admin can still fix their details and pay.
+  subscriptionExpired?: boolean;
 }
 
 export type SettingsTab = 'committee' | 'receipts' | 'navigation' | 'billing' | 'password' | 'users' | 'developer' | 'language';
@@ -84,6 +89,7 @@ export function Settings({
   initialTab,
   tabRequestId,
   onSubscriptionExtended,
+  subscriptionExpired,
 }: SettingsProps) {
   const { t, language, setLanguage } = useLanguage();
   const [activeTab, setActiveTabState] = useState<SettingsTab>(() => getSettingsTabFromPath() || initialTab || 'committee');
@@ -1550,6 +1556,7 @@ export function Settings({
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('settings.userManagement')}</h3>
+                {!subscriptionExpired && (
                 <button
                   onClick={() => {
                     setShowUserForm(true);
@@ -1585,6 +1592,7 @@ export function Settings({
                   <Plus size={20} />
                   {t('settings.createNewUser')}
                 </button>
+                )}
               </div>
 
               <FormModal
@@ -1790,7 +1798,7 @@ export function Settings({
                         <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{user.name}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email || user.username}</p>
                       </div>
-                      {!user.isAdmin && (
+                      {!user.isAdmin && !subscriptionExpired && (
                         <div className="relative shrink-0" ref={openUserMenuId === user.id ? userMenuRef : undefined}>
                           <button
                             onClick={() => setOpenUserMenuId(o => (o === user.id ? null : user.id))}
@@ -1916,7 +1924,7 @@ export function Settings({
                             .join(', ')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {!user.isAdmin && (
+                          {!user.isAdmin && !subscriptionExpired && (
                             <div className="relative inline-block" ref={openUserMenuId === user.id ? userMenuRef : undefined}>
                               <button
                                 onClick={() => setOpenUserMenuId(o => (o === user.id ? null : user.id))}

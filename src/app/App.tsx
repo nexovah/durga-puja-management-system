@@ -1238,54 +1238,17 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
     currentUser?.subscriptionExpiresAt != null &&
     new Date(currentUser.subscriptionExpiresAt).getTime() < Date.now();
 
-  if (subscriptionExpired) {
-    // Admins can still reach a standalone Billing screen to renew — they're
-    // the only ones who could pay anyway (Billing is admin-only). Everyone
-    // else just sees the block; they can't act on it, only their admin can.
-    if (currentUser?.isAdmin) {
-      return (
-        <div className="min-h-screen outer-bg-gradient p-4 sm:p-6">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-gray-900 dark:text-gray-100">Durga CRM</span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition"
-              >
-                Log out
-              </button>
-            </div>
-            <div className="mesh-bg-light rounded-2xl p-4 sm:p-6">
-              <Billing
-                currentUser={currentUser}
-                committeeName={committeeInfo.association || committeeInfo.name}
-                committeeInfo={committeeInfo}
-                developerInfo={developerInfo}
-                onSubscriptionExtended={handleSubscriptionExtended}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
-        <div className="max-w-md text-center bg-white dark:bg-gray-900 rounded-xl shadow-md p-8 border border-orange-200 dark:border-orange-500/30">
-          <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">⏳</div>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">You are out of subscription</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Your committee's subscription has expired. Contact your committee admin to renew.
-          </p>
-          <button
-            onClick={handleLogout}
-            className="px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition"
-          >
-            Log out
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // No active subscription (free trial or paid period lapsed) no longer
+  // hard-blocks the app — the tenant can still log in and see everything
+  // already recorded. Every mutating action (Add/Edit/Delete/Import/
+  // Export) is blocked instead via dataCanEdit/dataCanDelete/
+  // dataCanBulkImport below (ANDed into the same canEdit/canDelete/
+  // canBulkImport props every data page already consumes), with a
+  // persistent banner in the top bar (see the sticky top bar JSX below)
+  // pointing them to Billing/Settings to renew.
+  const dataCanEdit = currentUser?.canEdit !== false && !subscriptionExpired;
+  const dataCanDelete = currentUser?.canDelete !== false && !subscriptionExpired;
+  const dataCanBulkImport = currentUser?.canBulkImport !== false && !subscriptionExpired;
 
   // Hard gate, same pattern as the "no active event yet" gate below — a
   // tenant admin with no phone on file (every self-serve signup before
@@ -1428,6 +1391,25 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               showSettings={!!currentUser?.permissions.settings}
             />
           </div>
+          {subscriptionExpired && (
+            <div className="px-3 sm:px-4 lg:px-6 pb-3 flex flex-wrap items-center justify-center gap-2 text-center">
+              <div className="w-full sm:w-auto px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium flex flex-wrap items-center justify-center gap-2">
+                <span>
+                  {currentUser?.isAdmin
+                    ? "Your subscription has expired — you can still view your committee's data, but adding, editing, deleting, importing and exporting are disabled until you renew."
+                    : "Your committee's subscription has expired — contact your committee admin to renew. You can still view existing data."}
+                </span>
+                {currentUser?.isAdmin && (
+                  <button
+                    onClick={() => goToSettingsTab('billing')}
+                    className="px-3 py-1 rounded-md bg-white text-red-600 text-xs font-bold hover:bg-red-50 transition-colors whitespace-nowrap"
+                  >
+                    Renew now →
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content — a rounded card inset from the edges, in a gray
@@ -1459,8 +1441,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             members={members}
             setMembers={setMembers}
             tasksList={tasksList}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             onLog={handleLog}
           />
         )}
@@ -1468,9 +1450,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <ChandaCollection
             chandaList={chandaList}
             setChandaList={setChandaList}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
-            canBulkImport={currentUser?.canBulkImport !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
             committeeInfo={committeeInfo}
             onUpdateCommitteeInfo={setCommitteeInfo}
@@ -1488,9 +1470,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             setDonationAdsList={setDonationAdsList}
             members={members}
             chandaList={chandaList}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
-            canBulkImport={currentUser?.canBulkImport !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
             fixedCategory="donation"
           />
@@ -1501,9 +1483,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             setDonationAdsList={setDonationAdsList}
             members={members}
             chandaList={chandaList}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
-            canBulkImport={currentUser?.canBulkImport !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
             fixedCategory="ads"
           />
@@ -1512,16 +1494,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Expenses
             expenses={expenses}
             setExpenses={setExpenses}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
-            canBulkImport={currentUser?.canBulkImport !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
           />
         )}
         {currentPage === 'vendors' && (
           <Vendors
             expenses={expenses}
-            canEdit={currentUser?.canEdit !== false}
+            canEdit={dataCanEdit}
             onLog={handleLog}
           />
         )}
@@ -1530,9 +1512,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             loansList={loansList}
             setLoansList={setLoansList}
             members={members}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
-            canBulkImport={currentUser?.canBulkImport !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
           />
         )}
@@ -1589,6 +1571,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             initialTab={settingsTab}
             tabRequestId={settingsTabRequestId}
             onSubscriptionExtended={handleSubscriptionExtended}
+            subscriptionExpired={subscriptionExpired}
           />
         )}
         {currentPage === 'activityLog' && (
@@ -1596,8 +1579,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'assets' && (
           <Assets
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             onLog={handleLog}
             companyName={committeeInfo.association || committeeInfo.name}
             companyLogo={committeeInfo.logo}
@@ -1607,16 +1590,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Awards
             awardsList={awardsList}
             onAwardsChanged={setAwardsListState}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             onLog={handleLog}
           />
         )}
         {currentPage === 'documents' && (
           <Documents
             currentUser={currentUser}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             eventLabel={(() => {
               const e = events.find(ev => ev.id === activeEventId);
               return e ? `${e.name} — ${formatFinancialYear(e.year)}` : '';
@@ -1629,8 +1612,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             tasksList={tasksList}
             setTasksList={setTasksList}
             members={members}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             currentUserId={currentUser?.id || ''}
             currentUserName={currentUser?.name || ''}
             isAdmin={!!currentUser?.isAdmin}
@@ -1641,8 +1624,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <EstimationPage
             estimationsList={estimationsList}
             setEstimationsList={setEstimationsList}
-            canEdit={currentUser?.canEdit !== false}
-            canDelete={currentUser?.canDelete !== false}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
             currentUserId={currentUser?.id || ''}
             currentUserName={currentUser?.name || ''}
             committeeAssociation={committeeInfo.association}

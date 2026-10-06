@@ -575,12 +575,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                       <Upload size={16} /> {t('common.import')}
                     </button>
                   )}
-                  <button
-                    onClick={() => { setMenuOpen(false); handleExport(); }}
-                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <Download size={16} /> {t('common.export')}
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleExport(); }}
+                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Download size={16} /> {t('common.export')}
+                    </button>
+                  )}
                   <button
                     onClick={() => { setMenuOpen(false); toggleWidgets(); }}
                     className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Moon, Sun, CheckCircle2, ArrowRight,
   Menu, X, ReceiptText, WalletCards, Landmark, ShieldCheck, Sparkles, Check,
+  Facebook, Youtube,
 } from 'lucide-react';
 import androidDownloadIcon from '../assets/android-download-icon.svg';
 import iosAppIcon from '../assets/ios-app-icon.svg';
@@ -181,6 +182,8 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [platformLogo, setPlatformLogo] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [comparisonGroups, setComparisonGroups] = useState(DEFAULT_COMPARISON_GROUPS);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -190,6 +193,8 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
   useEffect(() => {
     getPlatformSettingsRequest().then(p => {
       setPlatformLogo(p.logoUrl);
+      setFacebookUrl(p.facebookUrl);
+      setYoutubeUrl(p.youtubeUrl);
       if (p.comparisonGroups) setComparisonGroups(p.comparisonGroups);
     }).catch(() => {});
     listSubscriptionPlansRequest().then(p => {
@@ -760,6 +765,32 @@ export function LandingPage({ onGoToLogin, onGoToSignup, onGoToLegal }: LandingP
             <div>
               <BrandMark platformLogo={platformLogo} />
               <p className="text-sm leading-6 text-muted-foreground mt-3">One platform for every Puja committee — collections, expenses, people and operations, organized.</p>
+              {(facebookUrl || youtubeUrl) && (
+                <div className="flex items-center gap-3 mt-4">
+                  {facebookUrl && (
+                    <a
+                      href={facebookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="flex items-center justify-center w-11 h-11 rounded-xl border border-border text-muted-foreground transition hover:text-primary hover:border-primary hover:shadow-[0_0_0_4px_rgba(234,88,12,0.15)]"
+                    >
+                      <Facebook className="w-5 h-5" />
+                    </a>
+                  )}
+                  {youtubeUrl && (
+                    <a
+                      href={youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="YouTube"
+                      className="flex items-center justify-center w-11 h-11 rounded-xl border border-border text-muted-foreground transition hover:text-primary hover:border-primary hover:shadow-[0_0_0_4px_rgba(234,88,12,0.15)]"
+                    >
+                      <Youtube className="w-5 h-5" />
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm font-bold">Download our mobile apps</p>

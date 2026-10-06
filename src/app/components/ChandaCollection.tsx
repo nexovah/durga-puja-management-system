@@ -648,12 +648,14 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                       <Upload size={16} /> {t('common.import')}
                     </button>
                   )}
-                  <button
-                    onClick={() => { setMenuOpen(false); handleExport(); }}
-                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <Download size={16} /> {t('common.export')}
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleExport(); }}
+                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Download size={16} /> {t('common.export')}
+                    </button>
+                  )}
                   <button
                     onClick={() => { setMenuOpen(false); toggleWidgets(); }}
                     className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -1005,7 +1007,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
                 <span>{t('table.select')}</span>
               </button>
-              {selectMode && selectedIds.size > 0 && (
+              {canEdit && selectMode && selectedIds.size > 0 && (
                 <button
                   type="button"
                   onClick={handleExportSelected}

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ShoppingCart, XCircle, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, XCircle, Archive, ArchiveRestore, Trash2, RotateCcw } from 'lucide-react';
 import {
   Order, OrderDetail, listOrdersRequest, getOrderDetailRequest, cancelManualGrantRequest,
-  archiveOrderRequest, unarchiveOrderRequest, deleteOrderRequest,
+  archiveOrderRequest, unarchiveOrderRequest, deleteOrderRequest, refundAndCancelSubscriptionRequest,
 } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 import { Toast } from './Toast';
@@ -31,10 +31,11 @@ function statusBadge(status: string) {
     failed: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
     created: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
     cancelled: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 line-through',
+    refunded: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 line-through',
   };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.created}`}>
-      {status === 'manual' ? 'manual — no payment' : status === 'cancelled' ? 'cancelled' : status}
+      {status === 'manual' ? 'manual — no payment' : status === 'cancelled' ? 'cancelled' : status === 'refunded' ? 'refunded' : status}
     </span>
   );
 }
@@ -55,6 +56,9 @@ export function SuperAdminOrders() {
 
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [cancelling, setCancelling] = useState(false);
+
+  const [refundTarget, setRefundTarget] = useState<Order | null>(null);
+  const [refunding, setRefunding] = useState(false);
 
   const [showArchived, setShowArchived] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Order | null>(null);
@@ -121,6 +125,28 @@ export function SuperAdminOrders() {
       setError(err?.message || 'Failed to cancel grant');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleRefundConfirm = async () => {
+    if (!refundTarget) return;
+    setRefunding(true);
+    setError('');
+    try {
+      await refundAndCancelSubscriptionRequest(refundTarget.id);
+      setToastType('success');
+      setToastMessage('Refunded and subscription cancelled.');
+      setRefundTarget(null);
+      await reload();
+      if (selected?.id === refundTarget.id) {
+        getOrderDetailRequest(refundTarget.id, refundTarget.source).then(setDetail).catch(() => {});
+      }
+    } catch (err: any) {
+      setToastType('error');
+      setToastMessage(err?.message || 'Failed to refund/cancel');
+      setError(err?.message || 'Failed to refund/cancel');
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -234,6 +260,18 @@ export function SuperAdminOrders() {
                   <span className="text-gray-500 dark:text-gray-400">Razorpay customer ID</span>
                   <span className="font-mono text-xs">{detail.razorpayCustomerId || '—'}</span>
                 </div>
+                {detail.refundedAt && (
+                  <>
+                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Refunded at</span>
+                      <span>{new Date(detail.refundedAt).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Razorpay refund ID</span>
+                      <span className="font-mono text-xs">{detail.razorpayRefundId || '—'}</span>
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -353,6 +391,15 @@ export function SuperAdminOrders() {
                             Cancel grant
                           </button>
                         )}
+                        {order.source === 'razorpay' && order.status === 'paid' && (
+                          <button
+                            onClick={() => { close(); setRefundTarget(order); }}
+                            className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Cancel subscription + Refund
+                          </button>
+                        )}
                         <button
                           onClick={() => { close(); setArchiveTarget(order); }}
                           className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -388,6 +435,20 @@ export function SuperAdminOrders() {
         confirmLabel={cancelling ? 'Cancelling…' : 'Cancel grant'}
         onCancel={() => setCancelTarget(null)}
         onConfirm={handleCancelConfirm}
+      />
+
+      <SuperAdminConfirmModal
+        open={!!refundTarget}
+        danger
+        title="Cancel subscription + Refund"
+        message={
+          refundTarget
+            ? `This will refund ${formatAmount(refundTarget.amountPaise, refundTarget.currency)} to ${refundTarget.tenantName} via Razorpay and immediately cancel their subscription — their access ends right away, not at the end of the current period. This cannot be undone.`
+            : ''
+        }
+        confirmLabel={refunding ? 'Processing…' : 'Refund + Cancel'}
+        onCancel={() => setRefundTarget(null)}
+        onConfirm={handleRefundConfirm}
       />
 
       <SuperAdminConfirmModal

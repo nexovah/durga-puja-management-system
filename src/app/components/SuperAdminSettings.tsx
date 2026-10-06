@@ -40,6 +40,7 @@ const EMPTY_PLATFORM: PlatformSettings = {
   logoUrl: '', faviconUrl: '', appTitle: 'Durga CRM',
   showLogoOnSignin: true, showSigninBackground: false, signinBackgroundUrl: '',
   comparisonGroups: null,
+  facebookUrl: '', youtubeUrl: '',
 };
 const EMPTY_PAYMENT_GATEWAY: PaymentGatewaySettings = {
   mode: 'test', testKeyId: '', testKeySecret: '', liveKeyId: '', liveKeySecret: '', webhookSecret: '',
@@ -554,6 +555,31 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     {bgUploading && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Uploading…</p>}
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Facebook URL</label>
+                  <input
+                    type="url"
+                    value={platformForm.facebookUrl}
+                    onChange={e => setPlatformForm(f => ({ ...f, facebookUrl: e.target.value }))}
+                    placeholder="https://facebook.com/yourpage"
+                    className={inputClass}
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Shown as an icon in the landing page footer. Leave blank to hide it.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">YouTube URL</label>
+                  <input
+                    type="url"
+                    value={platformForm.youtubeUrl}
+                    onChange={e => setPlatformForm(f => ({ ...f, youtubeUrl: e.target.value }))}
+                    placeholder="https://youtube.com/@yourchannel"
+                    className={inputClass}
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Shown as an icon in the landing page footer. Leave blank to hide it.</p>
+                </div>
 
                 {platformError && <p className="text-sm text-red-600 dark:text-red-400">{platformError}</p>}
                 {platformMessage && <p className="text-sm text-green-600 dark:text-green-400">{platformMessage}</p>}

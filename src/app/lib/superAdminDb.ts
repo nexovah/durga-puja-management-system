@@ -490,6 +490,8 @@ export interface OrderDetail extends Order {
   razorpayPaymentId: string | null;
   razorpaySubscriptionId: string | null;
   razorpayCustomerId: string | null;
+  refundedAt: string | null;
+  razorpayRefundId: string | null;
   note: string | null;
   grantedByName: string | null;
 }
@@ -637,6 +639,8 @@ export async function getOrderDetailRequest(orderId: string, source: 'razorpay' 
     razorpayPaymentId: row.razorpay_payment_id,
     razorpaySubscriptionId: row.razorpay_subscription_id,
     razorpayCustomerId: row.razorpay_customer_id,
+    refundedAt: row.refunded_at,
+    razorpayRefundId: row.razorpay_refund_id,
     note: row.note,
     grantedByName: row.granted_by_name,
   };
@@ -741,6 +745,8 @@ export interface PlatformSettings {
   showSigninBackground: boolean;
   signinBackgroundUrl: string;
   comparisonGroups: ComparisonGroup[] | null;
+  facebookUrl: string;
+  youtubeUrl: string;
 }
 
 function fromPlatformSettingsRow(row: any): PlatformSettings {
@@ -752,6 +758,8 @@ function fromPlatformSettingsRow(row: any): PlatformSettings {
     showSigninBackground: row.show_signin_background === true,
     signinBackgroundUrl: row.signin_background_url || '',
     comparisonGroups: Array.isArray(row.comparison_table) && row.comparison_table.length > 0 ? row.comparison_table : null,
+    facebookUrl: row.facebook_url || '',
+    youtubeUrl: row.youtube_url || '',
   };
 }
 
@@ -772,6 +780,8 @@ export async function updatePlatformSettingsRequest(settings: PlatformSettings):
     p_show_signin_background: settings.showSigninBackground,
     p_signin_background_url: settings.signinBackgroundUrl || null,
     p_comparison_table: settings.comparisonGroups && settings.comparisonGroups.length > 0 ? settings.comparisonGroups : null,
+    p_facebook_url: settings.facebookUrl || null,
+    p_youtube_url: settings.youtubeUrl || null,
   });
   if (error) throw error;
   return fromPlatformSettingsRow(data);
@@ -1055,18 +1065,35 @@ export async function sendTestEmailRequest(to: string, templateSlug?: string): P
   if (!res.ok) throw new Error(data?.error || 'Failed to send test email');
 }
 
+// Both merged into one endpoint (api/billing/admin.js, dispatched by
+// `action`) to stay under Vercel Hobby's 12-serverless-function cap.
+
 // Creates/re-creates the Razorpay-side Plan object for a subscription
 // plan — called right after a plan is saved, since a plan with no
-// razorpay_plan_id can't be subscribed to (api/billing/create-subscription.js).
+// razorpay_plan_id can't be subscribed to (api/billing/subscription.js's
+// 'create' action).
 export async function syncRazorpayPlanRequest(planId: string): Promise<void> {
   const token = getTenantAccessToken();
-  const res = await fetch('/api/billing/sync-razorpay-plan', {
+  const res = await fetch('/api/billing/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ planId }),
+    body: JSON.stringify({ action: 'syncPlan', planId }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error || 'Failed to sync Razorpay plan');
+}
+
+// "Cancel subscription + Refund" — issues a real Razorpay refund for the
+// payment and immediately cancels the subscription in one step.
+export async function refundAndCancelSubscriptionRequest(transactionId: string): Promise<void> {
+  const token = getTenantAccessToken();
+  const res = await fetch('/api/billing/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action: 'refundCancel', transactionId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Failed to refund/cancel');
 }
 
 // Email templates CMS — see supabase/091_email_templates.sql. `slug` is
