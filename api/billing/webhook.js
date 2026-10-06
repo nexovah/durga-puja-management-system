@@ -124,6 +124,7 @@ export default async function handler(req, res) {
             razorpay_order_id: payment.order_id,
             razorpay_payment_id: paymentId,
             razorpay_subscription_id: subscriptionId,
+            razorpay_customer_id: payment.customer_id || null,
             period_end: currentEnd,
             paid_at: new Date().toISOString(),
           });

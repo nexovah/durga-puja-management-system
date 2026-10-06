@@ -1496,20 +1496,16 @@ export async function signupTenantRequest(email: string, password: string, phone
   if (!data || data.length === 0) throw new Error('Could not create account');
   const tenantName = data[0].name as string;
 
-  fetch('/api/email/send-signup-welcome', {
+  // Welcome email + admin new-signup alert merged into one endpoint
+  // (api/email/send-signup.js) to stay under Vercel Hobby's 12-
+  // serverless-function cap.
+  fetch('/api/email/send-signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       to: email,
-      variables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
-    }),
-  }).catch(() => {});
-
-  fetch('/api/email/send-signup-alert', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      variables: { committee_name: tenantName, email, phone, signup_type: 'Manual' },
+      welcomeVariables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
+      alertVariables: { committee_name: tenantName, email, phone, signup_type: 'Manual' },
     }),
   }).catch(() => {});
 }

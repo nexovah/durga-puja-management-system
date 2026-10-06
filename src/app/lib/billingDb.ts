@@ -137,13 +137,6 @@ export async function listBillingHistoryRequest(): Promise<BillingHistoryItem[]>
   return [...fromRazorpay, ...fromManualGrants].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-interface CreateOrderResult {
-  orderId: string;
-  amount: number;
-  currency: string;
-  keyId: string;
-}
-
 async function callBillingApi<T>(path: string, body: unknown): Promise<T> {
   const token = getTenantAccessToken();
   if (!token) throw new Error('Not logged in');
@@ -157,29 +150,21 @@ async function callBillingApi<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export function createOrderRequest(planId: string): Promise<CreateOrderResult> {
-  return callBillingApi<CreateOrderResult>('/api/billing/create-order', { planId });
-}
-
-export function verifyPaymentRequest(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): Promise<{ ok: boolean }> {
-  return callBillingApi('/api/billing/verify-payment', {
-    razorpay_order_id: razorpayOrderId,
-    razorpay_payment_id: razorpayPaymentId,
-    razorpay_signature: razorpaySignature,
-  });
-}
-
 interface CreateSubscriptionResult {
   subscriptionId: string;
   keyId: string;
 }
 
+// All three merged into one endpoint (api/billing/subscription.js,
+// dispatched by `action`) to stay under Vercel Hobby's 12-serverless-
+// function cap.
 export function createSubscriptionRequest(planId: string): Promise<CreateSubscriptionResult> {
-  return callBillingApi<CreateSubscriptionResult>('/api/billing/create-subscription', { planId });
+  return callBillingApi<CreateSubscriptionResult>('/api/billing/subscription', { action: 'create', planId });
 }
 
 export function verifySubscriptionPaymentRequest(razorpayPaymentId: string, razorpaySubscriptionId: string, razorpaySignature: string): Promise<{ ok: boolean }> {
-  return callBillingApi('/api/billing/verify-subscription-payment', {
+  return callBillingApi('/api/billing/subscription', {
+    action: 'verify',
     razorpay_payment_id: razorpayPaymentId,
     razorpay_subscription_id: razorpaySubscriptionId,
     razorpay_signature: razorpaySignature,
@@ -187,7 +172,7 @@ export function verifySubscriptionPaymentRequest(razorpayPaymentId: string, razo
 }
 
 export function cancelSubscriptionRequest(): Promise<{ ok: boolean }> {
-  return callBillingApi('/api/billing/cancel-subscription', {});
+  return callBillingApi('/api/billing/subscription', { action: 'cancel' });
 }
 
 export async function getActiveSubscriptionRequest(): Promise<ActiveSubscription | null> {

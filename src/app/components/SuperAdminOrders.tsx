@@ -226,6 +226,14 @@ export function SuperAdminOrders() {
                   <span className="text-gray-500 dark:text-gray-400">Razorpay payment ID</span>
                   <span className="font-mono text-xs">{detail.razorpayPaymentId || '—'}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Razorpay subscription ID</span>
+                  <span className="font-mono text-xs">{detail.razorpaySubscriptionId || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Razorpay customer ID</span>
+                  <span className="font-mono text-xs">{detail.razorpayCustomerId || '—'}</span>
+                </div>
               </>
             ) : (
               <>

@@ -488,6 +488,8 @@ export interface OrderDetail extends Order {
   paidAt: string | null;
   razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
+  razorpaySubscriptionId: string | null;
+  razorpayCustomerId: string | null;
   note: string | null;
   grantedByName: string | null;
 }
@@ -633,6 +635,8 @@ export async function getOrderDetailRequest(orderId: string, source: 'razorpay' 
     paidAt: row.paid_at,
     razorpayOrderId: row.razorpay_order_id,
     razorpayPaymentId: row.razorpay_payment_id,
+    razorpaySubscriptionId: row.razorpay_subscription_id,
+    razorpayCustomerId: row.razorpay_customer_id,
     note: row.note,
     grantedByName: row.granted_by_name,
   };
