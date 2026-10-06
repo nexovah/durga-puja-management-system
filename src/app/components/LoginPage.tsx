@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { getPlatformSettingsRequest, getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
+import { getGoogleClientIdRequest, isPasswordStrong } from '../lib/superAdminDb';
 import { requestTenantPasswordResetRequest, signupTenantRequest, loginRequest } from '../lib/db';
 import type { User } from '../App';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
@@ -177,12 +177,6 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   const [forgotUsername, setForgotUsername] = useState('');
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
   const [forgotMessage, setForgotMessage] = useState('');
-  const [platformLogo, setPlatformLogo] = useState('');
-
-  useEffect(() => {
-    getPlatformSettingsRequest().then(p => setPlatformLogo(p.logoUrl)).catch(() => {});
-  }, []);
-
   // --- Traditional signup state (email + password + confirm only — no
   //     committee name; the tenant gets an auto-derived placeholder name,
   //     renamed later from Settings) ---
@@ -335,13 +329,6 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
       setForgotMessage('If that account exists and has an email on file, a reset link has been sent.');
     }
   };
-
-  // `logo` is always the '🕉️' default here (see note above) — prefer the
-  // platform logo over that default when one's been uploaded. Unused in
-  // the new design's form column (the emblem graphic replaces it), kept
-  // only for the brand-name/system-title header text.
-  const effectiveLogo = logo === '🕉️' && platformLogo ? platformLogo : logo;
-  void effectiveLogo;
 
   const inputClass = 'w-full px-5 py-3 border-2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-base placeholder:text-gray-400';
 

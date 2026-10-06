@@ -156,7 +156,7 @@ function BrandMark({ platformLogo }: { platformLogo: string }) {
   return (
     <span className="flex items-center gap-2.5 font-extrabold text-foreground">
       <span className="grid size-8 place-items-center rounded-full bg-primary text-sm text-primary-foreground overflow-hidden">
-        {platformLogo ? <img src={platformLogo} alt="" className="w-full h-full object-cover" /> : 'ॐ'}
+        {platformLogo && <img src={platformLogo} alt="" className="w-full h-full object-cover" />}
       </span>
       DURGA CRM
     </span>
