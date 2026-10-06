@@ -44,7 +44,7 @@ const EMPTY_PLATFORM: PlatformSettings = {
 const EMPTY_PAYMENT_GATEWAY: PaymentGatewaySettings = {
   mode: 'test', testKeyId: '', testKeySecret: '', liveKeyId: '', liveKeySecret: '', webhookSecret: '',
 };
-const EMPTY_EMAIL_PROVIDER: EmailProviderSettings = { resendApiKey: '', fromAddress: '', fromName: 'Durga CRM', internalNotifyEmail: '' };
+const EMPTY_EMAIL_PROVIDER: EmailProviderSettings = { resendApiKey: '', fromAddress: '', fromName: 'Durga CRM', internalNotifyEmail: '', alertRecipientEmails: '' };
 const EMPTY_BOT_PROTECTION: BotProtectionSettings = { turnstileSiteKey: '', turnstileSecretKey: '' };
 const EMPTY_GOOGLE_OAUTH: GoogleOAuthSettings = { clientId: '' };
 
@@ -886,16 +886,19 @@ export function SuperAdminSettings({ onNameChanged }: SuperAdminSettingsProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Internal Notification Email</label>
-                    <input
-                      type="email"
-                      value={emailProviderForm.internalNotifyEmail}
-                      onChange={e => setEmailProviderForm(f => ({ ...f, internalNotifyEmail: e.target.value }))}
-                      placeholder="you@yourdomain.com"
-                      className={inputClass}
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alert recipient emails</label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      One email per line — notified on every new signup, new lead, and new paid order.
+                    </p>
+                    <textarea
+                      rows={4}
+                      value={emailProviderForm.alertRecipientEmails}
+                      onChange={e => setEmailProviderForm(f => ({ ...f, alertRecipientEmails: e.target.value }))}
+                      placeholder={'you@yourdomain.com\nteammate@yourdomain.com'}
+                      className={`${inputClass} font-mono text-sm`}
                       autoComplete="off"
                     />
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Where landing page lead alerts (and future internal alerts) get sent. Leave blank to disable.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Leave blank to disable alerts.</p>
                   </div>
                   {emailProviderError && <p className="text-sm text-red-600 dark:text-red-400">{emailProviderError}</p>}
                   {emailProviderMessage && <p className="text-sm text-green-600 dark:text-green-400">{emailProviderMessage}</p>}

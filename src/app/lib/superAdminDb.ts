@@ -972,6 +972,7 @@ export interface EmailProviderSettings {
   fromAddress: string;
   fromName: string;
   internalNotifyEmail: string;
+  alertRecipientEmails: string;
 }
 
 function fromEmailProviderSettingsRow(row: any): EmailProviderSettings {
@@ -980,6 +981,7 @@ function fromEmailProviderSettingsRow(row: any): EmailProviderSettings {
     fromAddress: row?.from_address || '',
     fromName: row?.from_name || 'Durga CRM',
     internalNotifyEmail: row?.internal_notify_email || '',
+    alertRecipientEmails: row?.alert_recipient_emails || '',
   };
 }
 
@@ -995,6 +997,7 @@ export async function updateEmailProviderSettingsRequest(settings: EmailProvider
     p_from_address: settings.fromAddress || null,
     p_from_name: settings.fromName || null,
     p_internal_notify_email: settings.internalNotifyEmail || null,
+    p_alert_recipient_emails: settings.alertRecipientEmails || null,
   });
   if (error) throw error;
   return fromEmailProviderSettingsRow(data);

@@ -1504,6 +1504,14 @@ export async function signupTenantRequest(email: string, password: string, phone
       variables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
     }),
   }).catch(() => {});
+
+  fetch('/api/email/send-signup-alert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      variables: { committee_name: tenantName, email, phone, signup_type: 'Manual' },
+    }),
+  }).catch(() => {});
 }
 
 // Post-login phone capture — used by both the Google-signup interstitial

@@ -5,7 +5,7 @@
 // sent (Resend key is server-only) and a Turnstile token can be verified
 // (secret key is server-only too).
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
-import { sendEmail, renderTemplate } from '../_lib/email.js';
+import { sendAdminAlert } from '../_lib/email.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -59,21 +59,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { data: settings } = await supabaseAdmin
-      .from('email_provider_settings')
-      .select('internal_notify_email')
-      .eq('id', 1)
-      .single();
-
-    if (settings?.internal_notify_email) {
-      const { subject, html } = await renderTemplate('lead_alert', {
-        committee_name: committeeName,
-        contact_name: contactName,
-        phone,
-        email: email || '',
-      });
-      await sendEmail({ to: settings.internal_notify_email, subject, html });
-    }
+    await sendAdminAlert('lead_alert', {
+      committee_name: committeeName,
+      contact_name: contactName,
+      phone,
+      email: email || '',
+    });
   } catch {
     // Best-effort — the lead is already saved; a notification failure
     // shouldn't be surfaced to the public landing page as an error.

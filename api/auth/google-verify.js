@@ -16,7 +16,7 @@
 // and logs the brand-new account straight in too — a single click either way.
 import { OAuth2Client } from 'google-auth-library';
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js';
-import { sendEmail, renderTemplate } from '../_lib/email.js';
+import { sendEmail, renderTemplate, sendAdminAlert } from '../_lib/email.js';
 
 async function getClientId() {
   const { data } = await supabaseAdmin
@@ -119,9 +119,16 @@ export default async function handler(req, res) {
       })
         .then(({ subject, html }) => sendEmail({ to: identity.email, subject, html }))
         .catch(() => {});
+
+      sendAdminAlert('new_signup_alert', {
+        committee_name: loggedIn[0].name,
+        email: identity.email,
+        phone: loggedIn[0].phone || '',
+        signup_type: 'Google',
+      }).catch(() => {});
     }
 
-    res.status(200).json({ user: loggedIn[0] });
+    res.status(200).json({ user: loggedIn[0], isNewSignup });
   } catch (err) {
     console.error('google-verify handler crashed:', err);
     res.status(500).json({ error: err?.message || 'Internal server error' });

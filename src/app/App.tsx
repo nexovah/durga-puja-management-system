@@ -7,7 +7,7 @@ import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
 import { ReceiptPublicPage } from './components/ReceiptPublicPage';
 import { TenantResetPassword } from './components/TenantResetPassword';
-import { CheckoutPage } from './components/CheckoutPage';
+import { CheckoutPage, CheckoutDoneUpdates } from './components/CheckoutPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
 import { getPlatformSettingsRequest } from './lib/superAdminDb';
 import { Billing } from './components/Billing';
@@ -397,6 +397,8 @@ const EMPTY_DEVELOPER_INFO: DeveloperInfo = {
 };
 
 const SESSION_STORAGE_KEY = 'puja-session';
+const CHECKOUT_RESUME_KEY = 'puja-checkout-resume';
+const CHECKOUT_RESUME_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
 interface StoredSession {
@@ -517,6 +519,33 @@ export default function App() {
   // stays inside the logged-out render branch below.
   const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('plan'));
   const [pendingCheckoutUser, setPendingCheckoutUser] = useState<User | null>(null);
+
+  // Resumes an in-progress checkout after a refresh/backgrounded-tab
+  // reload — `pendingCheckoutUser` is pure React state and wouldn't
+  // otherwise survive a remount, even though the tenant session itself
+  // (the JWT set at enterCheckout time) is still valid.
+  useEffect(() => {
+    if (loggedOutPath !== '/checkout' || pendingCheckoutUser) return;
+    const raw = localStorage.getItem(CHECKOUT_RESUME_KEY);
+    if (!raw) return;
+    try {
+      const { userId, planId, savedAt } = JSON.parse(raw);
+      if (!userId || !planId || Date.now() - savedAt > CHECKOUT_RESUME_MAX_AGE_MS) {
+        localStorage.removeItem(CHECKOUT_RESUME_KEY);
+        return;
+      }
+      supabase.from('app_users').select('*').eq('id', userId).single().then(({ data, error }) => {
+        if (error || !data) {
+          localStorage.removeItem(CHECKOUT_RESUME_KEY);
+          return;
+        }
+        setPendingCheckoutUser(fromUserRow(data));
+        setCheckoutPlanId(planId);
+      });
+    } catch {
+      localStorage.removeItem(CHECKOUT_RESUME_KEY);
+    }
+  }, [loggedOutPath, pendingCheckoutUser]);
 
   // CMS-driven SEO metadata for the public routes (see
   // supabase/055_cms_pages.sql) — title/description/OG tags, only on
@@ -988,6 +1017,18 @@ export default function App() {
   // account straight in too. Same session-establishing steps as
   // handleLogin, except the access token/row came back from this route
   // rather than directly from supabase.rpc('login', ...).
+  // Shared by both the manual and Google new-signup paths: establishes
+  // the pending-checkout state and persists just enough to localStorage
+  // ({ userId, planId, savedAt }) so a mid-payment refresh/backgrounded
+  // tab doesn't strand the user — see the resume effect below.
+  const enterCheckout = (user: User, planId: string) => {
+    setPendingCheckoutUser(user);
+    setCheckoutPlanId(planId);
+    localStorage.setItem(CHECKOUT_RESUME_KEY, JSON.stringify({ userId: user.id, planId, savedAt: Date.now() }));
+    window.history.pushState(null, '', `/checkout?plan=${planId}`);
+    setLoggedOutPath('/checkout');
+  };
+
   const handleGoogleAuth = async (idToken: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await fetch('/api/auth/google-verify', {
@@ -1002,6 +1043,13 @@ export default function App() {
       const row = body.user;
       setTenantAccessToken(row.access_token || null);
       const user = fromUserRow(row);
+      if (body.isNewSignup && checkoutPlanId) {
+        // Stays in the !isLoggedIn branch (deliberately no setIsLoggedIn
+        // here) so the /checkout render block above picks this up next
+        // render, same as the manual-signup handoff.
+        enterCheckout(user, checkoutPlanId);
+        return { success: true };
+      }
       setCurrentUser(user);
       setIsLoggedIn(true);
       saveSession(user);
@@ -1117,16 +1165,24 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
       );
     }
     if (loggedOutPath === '/checkout' && pendingCheckoutUser && checkoutPlanId) {
-      const finishCheckout = () => {
-        setCurrentUser(pendingCheckoutUser);
+      const finishCheckout = (updates: CheckoutDoneUpdates) => {
+        const finalUser: User = {
+          ...pendingCheckoutUser,
+          ...(updates.phone ? { phone: updates.phone } : {}),
+          ...(updates.subscriptionExpiresAt ? { subscriptionExpiresAt: updates.subscriptionExpiresAt } : {}),
+        };
+        setCurrentUser(finalUser);
         setIsLoggedIn(true);
-        saveSession(pendingCheckoutUser);
+        saveSession(finalUser);
         setPendingCheckoutUser(null);
         setCheckoutPlanId(null);
+        localStorage.removeItem(CHECKOUT_RESUME_KEY);
       };
       return (
         <CheckoutPage
           planId={checkoutPlanId}
+          userId={pendingCheckoutUser.id}
+          tenantId={pendingCheckoutUser.tenantId || ''}
           committeeName={pendingCheckoutUser.name || ''}
           email={pendingCheckoutUser.email || ''}
           phone={pendingCheckoutUser.phone || ''}
@@ -1161,12 +1217,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         onLogin={handleLogin}
         onGoogleAuth={handleGoogleAuth}
         preselectedPlanId={checkoutPlanId}
-        onSignupPendingCheckout={(user, planId) => {
-          setPendingCheckoutUser(user);
-          setCheckoutPlanId(planId);
-          window.history.pushState(null, '', `/checkout?plan=${planId}`);
-          setLoggedOutPath('/checkout');
-        }}
+        onSignupPendingCheckout={enterCheckout}
         initialMode={loggedOutPath === '/signup' ? 'signup' : 'login'}
         onModeChange={newMode => {
           const newPath = newMode === 'signup' ? '/signup' : '/login';
