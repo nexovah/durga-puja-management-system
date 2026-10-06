@@ -53,7 +53,11 @@ export default async function handler(req, res) {
     order = await razorpay.orders.create({
       amount: plan.amount_paise,
       currency: plan.currency,
-      receipt: `tenant_${tenantId}_${Date.now()}`,
+      // Razorpay caps `receipt` at 40 chars — the full tenant UUID plus a
+      // timestamp blew past that. Just needs to be unique enough for our
+      // own records, not globally meaningful: first 8 chars of the
+      // tenant id + a base36 timestamp comfortably fits.
+      receipt: `t_${tenantId.slice(0, 8)}_${Date.now().toString(36)}`,
     });
   } catch (err) {
     res.status(502).json({ error: 'Razorpay order creation failed: ' + (err?.error?.description || err.message) });
