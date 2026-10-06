@@ -43,6 +43,25 @@ export interface BillingHistoryItem {
   status: 'paid' | 'created' | 'failed';
   note: string | null;
   date: string;
+  expiresAt: string | null;
+}
+
+export interface ActiveSubscription {
+  id: string;
+  planId: string;
+  status: string;
+  currentEnd: string | null;
+  nextChargeAt: string | null;
+}
+
+function fromActiveSubscriptionRow(row: any): ActiveSubscription {
+  return {
+    id: row.id,
+    planId: row.plan_id,
+    status: row.status,
+    currentEnd: row.current_end,
+    nextChargeAt: row.next_charge_at,
+  };
 }
 
 function fromPlanRow(row: any): SubscriptionPlan {
@@ -99,6 +118,7 @@ export async function listBillingHistoryRequest(): Promise<BillingHistoryItem[]>
     status: row.status,
     note: null,
     date: row.paid_at || row.created_at,
+    expiresAt: row.period_end || null,
   }));
 
   const fromManualGrants: BillingHistoryItem[] = (creditResult.data || []).map((row: any) => ({
@@ -111,6 +131,7 @@ export async function listBillingHistoryRequest(): Promise<BillingHistoryItem[]>
     status: 'paid',
     note: row.note,
     date: row.created_at,
+    expiresAt: row.period_end || null,
   }));
 
   return [...fromRazorpay, ...fromManualGrants].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -146,6 +167,39 @@ export function verifyPaymentRequest(razorpayOrderId: string, razorpayPaymentId:
     razorpay_payment_id: razorpayPaymentId,
     razorpay_signature: razorpaySignature,
   });
+}
+
+interface CreateSubscriptionResult {
+  subscriptionId: string;
+  keyId: string;
+}
+
+export function createSubscriptionRequest(planId: string): Promise<CreateSubscriptionResult> {
+  return callBillingApi<CreateSubscriptionResult>('/api/billing/create-subscription', { planId });
+}
+
+export function verifySubscriptionPaymentRequest(razorpayPaymentId: string, razorpaySubscriptionId: string, razorpaySignature: string): Promise<{ ok: boolean }> {
+  return callBillingApi('/api/billing/verify-subscription-payment', {
+    razorpay_payment_id: razorpayPaymentId,
+    razorpay_subscription_id: razorpaySubscriptionId,
+    razorpay_signature: razorpaySignature,
+  });
+}
+
+export function cancelSubscriptionRequest(): Promise<{ ok: boolean }> {
+  return callBillingApi('/api/billing/cancel-subscription', {});
+}
+
+export async function getActiveSubscriptionRequest(): Promise<ActiveSubscription | null> {
+  const { data, error } = await supabase
+    .from('billing_subscriptions')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? fromActiveSubscriptionRow(data) : null;
 }
 
 // Loads Razorpay's Checkout script once and reuses it on subsequent calls.

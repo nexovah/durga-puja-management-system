@@ -1051,6 +1051,20 @@ export async function sendTestEmailRequest(to: string, templateSlug?: string): P
   if (!res.ok) throw new Error(data?.error || 'Failed to send test email');
 }
 
+// Creates/re-creates the Razorpay-side Plan object for a subscription
+// plan — called right after a plan is saved, since a plan with no
+// razorpay_plan_id can't be subscribed to (api/billing/create-subscription.js).
+export async function syncRazorpayPlanRequest(planId: string): Promise<void> {
+  const token = getTenantAccessToken();
+  const res = await fetch('/api/billing/sync-razorpay-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ planId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Failed to sync Razorpay plan');
+}
+
 // Email templates CMS — see supabase/091_email_templates.sql. `slug` is
 // the stable key Phase C's trigger points reference, never the row id.
 export interface EmailTemplate {

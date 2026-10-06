@@ -1,43 +1,54 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ReceiptIndianRupee } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ReceiptIndianRupee, FileDown } from 'lucide-react';
 import {
   SubscriptionPlan,
   BillingHistoryItem,
+  ActiveSubscription,
   listSubscriptionPlansRequest,
   listBillingHistoryRequest,
-  createOrderRequest,
-  verifyPaymentRequest,
+  createSubscriptionRequest,
+  verifySubscriptionPaymentRequest,
+  cancelSubscriptionRequest,
+  getActiveSubscriptionRequest,
   loadRazorpayCheckout,
 } from '../lib/billingDb';
-import { User } from '../App';
+import { User, CommitteeInfo } from '../App';
+import { DeveloperInfo } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
+import { RowActionsMenu } from './RowActionsMenu';
+import { InvoiceCard, InvoiceCardData, downloadInvoicePdf } from './InvoiceCard';
 
 interface BillingProps {
   currentUser: User | null;
   committeeName: string;
+  committeeInfo: CommitteeInfo;
+  developerInfo: DeveloperInfo;
   onSubscriptionExtended: () => void | Promise<void>;
 }
 
 const formatAmount = (paise: number, currency: string) =>
   (paise / 100).toLocaleString('en-IN', { style: 'currency', currency });
 
-export function Billing({ currentUser, committeeName, onSubscriptionExtended }: BillingProps) {
+export function Billing({ currentUser, committeeName, committeeInfo, developerInfo, onSubscriptionExtended }: BillingProps) {
   const { t, locale } = useLanguage();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const [payingPlanId, setPayingPlanId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [invoiceItem, setInvoiceItem] = useState<BillingHistoryItem | null>(null);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [activeSubscription, setActiveSubscription] = useState<ActiveSubscription | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [p, h] = await Promise.all([listSubscriptionPlansRequest(), listBillingHistoryRequest()]);
+      const [p, h, s] = await Promise.all([listSubscriptionPlansRequest(), listBillingHistoryRequest(), getActiveSubscriptionRequest().catch(() => null)]);
       setPlans(p);
-      setSelectedPlanId(prev => prev && p.some(pl => pl.id === prev) ? prev : (p[0]?.id ?? null));
       setHistory(h);
+      setActiveSubscription(s);
     } catch (err: any) {
       setError(err?.message || t('billing.loadError'));
     } finally {
@@ -47,7 +58,6 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
 
   useEffect(() => { load(); }, []);
 
-  const plan = plans.find(p => p.id === selectedPlanId);
   const expiresAt = currentUser?.subscriptionExpiresAt ? new Date(currentUser.subscriptionExpiresAt) : null;
   const isExpired = !expiresAt || expiresAt.getTime() < Date.now();
 
@@ -104,45 +114,87 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
     return t('billing.history.source.razorpay');
   };
 
-  const handlePay = async () => {
-    if (!plan) return;
-    setPaying(true);
+  const handlePay = async (plan: SubscriptionPlan) => {
+    setPayingPlanId(plan.id);
     setError('');
     setSuccessMessage('');
     try {
       await loadRazorpayCheckout();
-      const order = await createOrderRequest(plan.id);
+      const sub = await createSubscriptionRequest(plan.id);
 
       const razorpay = new window.Razorpay({
-        key: order.keyId,
-        order_id: order.orderId,
-        amount: order.amount,
-        currency: order.currency,
+        key: sub.keyId,
+        subscription_id: sub.subscriptionId,
         name: 'Durga CRM',
         description: `${plan.name} — ${committeeName}`,
         handler: async (response: any) => {
           try {
-            await verifyPaymentRequest(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+            await verifySubscriptionPaymentRequest(response.razorpay_payment_id, response.razorpay_subscription_id, response.razorpay_signature);
             setSuccessMessage(t('billing.paymentSuccess'));
             await load();
             await onSubscriptionExtended();
           } catch (err: any) {
             setError(err?.message || t('billing.verificationFailed'));
           } finally {
-            setPaying(false);
+            setPayingPlanId(null);
           }
         },
         modal: {
-          ondismiss: () => setPaying(false),
+          ondismiss: () => setPayingPlanId(null),
         },
         theme: { color: '#ea580c' },
       });
       razorpay.open();
     } catch (err: any) {
       setError(err?.message || t('billing.startFailed'));
-      setPaying(false);
+      setPayingPlanId(null);
     }
   };
+
+  const handleCancelAutoRenew = async () => {
+    setCancelling(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await cancelSubscriptionRequest();
+      setSuccessMessage('Auto-renew cancelled — your current plan stays active until it expires.');
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Could not cancel auto-renew');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleDownloadInvoice = async (item: BillingHistoryItem) => {
+    setInvoiceItem(item);
+    setDownloadingInvoice(true);
+    // Render happens on the next tick (InvoiceCard mounts off-screen below)
+    // before we grab it with html2canvas — a short delay keeps this simple
+    // without wiring a ref-ready callback for a one-off download action.
+    setTimeout(async () => {
+      try {
+        await downloadInvoicePdf(item.id);
+      } finally {
+        setDownloadingInvoice(false);
+        setInvoiceItem(null);
+      }
+    }, 50);
+  };
+
+  const invoiceData: InvoiceCardData | null = invoiceItem ? {
+    invoiceNumber: invoiceItem.id.slice(0, 8).toUpperCase(),
+    date: invoiceItem.date,
+    fromName: developerInfo.name || 'Durga CRM',
+    fromEmail: developerInfo.email || '',
+    fromPhone: developerInfo.phone || '',
+    billToName: committeeInfo.association || committeeInfo.name || committeeName,
+    billToAddress: committeeInfo.address || '',
+    billToEmail: committeeInfo.email || '',
+    planLabel: `${translatePeriod(invoiceItem.period)} membership subscription`,
+    amountPaise: invoiceItem.amountPaise,
+    currency: invoiceItem.currency,
+  } : null;
 
   return (
     <div className="space-y-6">
@@ -194,95 +246,79 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
         <div className="text-center text-gray-500 dark:text-gray-400 py-12">{t('billing.loading')}</div>
       ) : (
         <>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 max-w-md">
-            {plans.length === 0 ? (
+          {plans.length === 0 ? (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('billing.notAvailable')}</p>
-            ) : (
-              <>
-                {plans.length > 1 && (
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {plans.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelectedPlanId(p.id)}
-                        disabled={p.id === activePlanId}
-                        className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition ${
-                          p.id === activePlanId
-                            ? 'bg-green-600 text-white cursor-not-allowed opacity-90'
-                            : p.id === expiredPlanId
-                            ? 'bg-red-600 text-white'
-                            : selectedPlanId === p.id
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        {translatePlanName(p.name)}
-                        {p.id === activePlanId && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
-                            {t('billing.active')}
-                          </span>
-                        )}
-                        {p.id === expiredPlanId && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/25 align-middle">
-                            {t('billing.expiredBadge')}
-                          </span>
-                        )}
-                      </button>
-                    ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {plans.map(plan => (
+                <div key={plan.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{translatePlanName(plan.name)}</span>
+                    {plan.id === activePlanId && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        {t('billing.activePlan')}
+                      </span>
+                    )}
+                    {plan.id === expiredPlanId && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                        {t('billing.expiredPlan')}
+                      </span>
+                    )}
                   </div>
-                )}
-
-                {plan && (
-                  <>
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="text-3xl font-semibold">
-                        {formatAmount(plan.amountPaise, plan.currency)}
-                      </div>
-                      {plan.id === activePlanId && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                          {t('billing.activePlan')}
-                        </span>
-                      )}
-                      {plan.id === expiredPlanId && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                          {t('billing.expiredPlan')}
-                        </span>
-                      )}
+                  <div className="text-3xl font-semibold mb-1">
+                    {formatAmount(plan.amountPaise, plan.currency)}
+                  </div>
+                  {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{translatePlanDesc(plan.description)}</p>}
+                  <ul className="space-y-2 my-5 flex-1">
+                    {(plan.features ? plan.features.split('\n').filter(Boolean) : [
+                      'Unlimited members & users',
+                      'All collection modules',
+                      'Budgeting & estimation',
+                      'Task management',
+                      'Full activity log',
+                      'Priority support',
+                    ]).map(item => (
+                      <li key={item} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
+                        {translateFeature(item)}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => handlePay(plan)}
+                    disabled={payingPlanId === plan.id || plan.id === activePlanId}
+                    className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition"
+                  >
+                    {payingPlanId === plan.id
+                      ? t('billing.processing')
+                      : plan.id === activePlanId
+                      ? t('billing.currentPlan')
+                      : t('billing.pay').replace('{amount}', formatAmount(plan.amountPaise, plan.currency))}
+                  </button>
+                  {plan.id === activePlanId && activeSubscription && activeSubscription.planId === plan.id && (
+                    <div className="mt-3 text-center">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {activeSubscription.currentEnd
+                          ? `Auto-renews on ${new Date(activeSubscription.currentEnd).toLocaleDateString(locale)}`
+                          : 'Auto-renew active'}
+                      </p>
+                      <button
+                        onClick={handleCancelAutoRenew}
+                        disabled={cancelling}
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-60 mt-1"
+                      >
+                        {cancelling ? 'Cancelling…' : 'Cancel auto-renew'}
+                      </button>
                     </div>
-                    {plan.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{translatePlanDesc(plan.description)}</p>}
-                    <ul className="space-y-2 my-5">
-                      {(plan.features ? plan.features.split('\n').filter(Boolean) : [
-                        'Unlimited members & users',
-                        'All collection modules',
-                        'Budgeting & estimation',
-                        'Task management',
-                        'Full activity log',
-                        'Priority support',
-                      ]).map(item => (
-                        <li key={item} className="flex items-center gap-2 text-sm">
-                          <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
-                          {translateFeature(item)}
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      onClick={handlePay}
-                      disabled={paying || plan.id === activePlanId}
-                      className="w-full px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition"
-                    >
-                      {paying
-                        ? t('billing.processing')
-                        : plan.id === activePlanId
-                        ? t('billing.currentPlan')
-                        : t('billing.pay').replace('{amount}', formatAmount(plan.amountPaise, plan.currency))}
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
-          <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
                 <ReceiptIndianRupee className="w-4 h-4" /> {t('billing.history.title')}
@@ -301,13 +337,13 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.activated')}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.expires')}</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">{t('billing.history.col.source')}</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {history.map(item => {
                       const activated = new Date(item.date);
-                      const expires = new Date(activated);
-                      expires.setMonth(expires.getMonth() + item.durationMonths);
+                      const expires = item.expiresAt ? new Date(item.expiresAt) : null;
                       return (
                         <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                           <td className="px-6 py-4 text-sm capitalize text-gray-700 dark:text-gray-300">{translatePeriod(item.period)}</td>
@@ -324,9 +360,22 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{activated.toLocaleDateString(locale)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expires.toLocaleDateString(locale)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{expires ? expires.toLocaleDateString(locale) : '—'}</td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                             {translateSource(item.source)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-right">
+                            <RowActionsMenu
+                              menu={close => (
+                                <button
+                                  onClick={() => { close(); handleDownloadInvoice(item); }}
+                                  disabled={downloadingInvoice}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-60"
+                                >
+                                  <FileDown className="w-4 h-4" /> Download Invoice (PDF)
+                                </button>
+                              )}
+                            />
                           </td>
                         </tr>
                       );
@@ -337,6 +386,12 @@ export function Billing({ currentUser, committeeName, onSubscriptionExtended }: 
             )}
           </div>
         </>
+      )}
+
+      {invoiceData && (
+        <div style={{ position: 'fixed', top: -9999, left: -9999 }}>
+          <InvoiceCard data={invoiceData} />
+        </div>
       )}
     </div>
   );

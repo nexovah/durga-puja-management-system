@@ -1259,6 +1259,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               <Billing
                 currentUser={currentUser}
                 committeeName={committeeInfo.association || committeeInfo.name}
+                committeeInfo={committeeInfo}
+                developerInfo={developerInfo}
                 onSubscriptionExtended={handleSubscriptionExtended}
               />
             </div>
@@ -1651,6 +1653,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Billing
             currentUser={currentUser}
             committeeName={committeeInfo.association || committeeInfo.name}
+            committeeInfo={committeeInfo}
+            developerInfo={developerInfo}
             onSubscriptionExtended={handleSubscriptionExtended}
           />
         )}

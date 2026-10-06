@@ -7,6 +7,7 @@ import {
   createPlanRequest,
   updatePlanRequest,
   archivePlanRequest,
+  syncRazorpayPlanRequest,
 } from '../lib/superAdminDb';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 
@@ -118,11 +119,18 @@ export function SuperAdminPlans() {
     setSaving(true);
     setError('');
     try {
+      let savedPlan: SubscriptionPlanAdmin;
       if (editingId === 'new') {
-        await createPlanRequest(form);
-      } else if (editingId) {
-        await updatePlanRequest(editingId, form, formActive);
+        savedPlan = await createPlanRequest(form);
+      } else {
+        savedPlan = await updatePlanRequest(editingId as string, form, formActive);
       }
+      // A plan with no Razorpay Plan object can't be subscribed to — must
+      // await and surface a failure here, not fire-and-forget. Razorpay
+      // Plans are immutable, so editing an existing plan's price/duration
+      // always creates a NEW Razorpay plan (existing subscribers keep
+      // their original price until they resubscribe — standard behavior).
+      await syncRazorpayPlanRequest(savedPlan.id);
       backToList();
       setPlans(await listPlansAdminRequest());
     } catch (err: any) {

@@ -196,6 +196,7 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
   const [signupError, setSignupError] = useState('');
 
   const [googleButtonError, setGoogleButtonError] = useState('');
+  const [googleAuthenticating, setGoogleAuthenticating] = useState(false);
 
   // --- Google Identity Services button loading ---
   const [googleClientId, setGoogleClientId] = useState('');
@@ -237,8 +238,10 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
 
   const handleGoogleCredential = async (response: { credential: string }) => {
     setGoogleButtonError('');
+    setGoogleAuthenticating(true);
     const result = await onGoogleAuth(response.credential);
-    if (result.success) return; // App.tsx already logged the user in (signup or sign-in, one click either way).
+    if (result.success) return; // App.tsx already logged the user in (signup or sign-in) or routed to checkout — keep the loader up until that re-render replaces this screen, rather than flashing it off first.
+    setGoogleAuthenticating(false);
     setGoogleButtonError(result.error || 'Google sign-in failed');
   };
 
@@ -641,13 +644,23 @@ export function LoginPage({ logo, onLogin, onGoogleAuth, initialMode, onModeChan
     loginFormPanel;
 
   return (
-    <AuthShowcaseLayout
-      heading1={t('login.showcase.heading1')}
-      heading2={t('login.showcase.heading2')}
-      helpTitle={t('login.showcase.helpTitle')}
-      helpDesc={t('login.showcase.helpDesc')}
-      formColumn={formColumn}
-    />
+    <>
+      <AuthShowcaseLayout
+        heading1={t('login.showcase.heading1')}
+        heading2={t('login.showcase.heading2')}
+        helpTitle={t('login.showcase.helpTitle')}
+        helpDesc={t('login.showcase.helpDesc')}
+        formColumn={formColumn}
+      />
+      {googleAuthenticating && (
+        <div className="fixed inset-0 z-[100] bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+          <div className="text-center text-gray-500 dark:text-gray-400">
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            Signing you in…
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

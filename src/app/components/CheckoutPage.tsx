@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck, Lock, Check, Mail, Phone, Building2, ArrowRight } from 'lucide-react';
 import {
   listSubscriptionPlansRequest,
-  createOrderRequest,
-  verifyPaymentRequest,
+  createSubscriptionRequest,
+  verifySubscriptionPaymentRequest,
   loadRazorpayCheckout,
   SubscriptionPlan,
 } from '../lib/billingDb';
@@ -80,19 +80,17 @@ export function CheckoutPage({
     setPaying(true);
     try {
       await loadRazorpayCheckout();
-      const order = await createOrderRequest(plan.id);
+      const sub = await createSubscriptionRequest(plan.id);
       const razorpay = new window.Razorpay({
-        key: order.keyId,
-        order_id: order.orderId,
-        amount: order.amount,
-        currency: order.currency,
+        key: sub.keyId,
+        subscription_id: sub.subscriptionId,
         name: 'Durga CRM',
         description: `${plan.name} — ${committeeName}`,
         prefill: { name: committeeName, email, contact: savedPhone || phone },
         handler: async (response: any) => {
           let freshExpiry: string | undefined;
           try {
-            await verifyPaymentRequest(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+            await verifySubscriptionPaymentRequest(response.razorpay_payment_id, response.razorpay_subscription_id, response.razorpay_signature);
             freshExpiry = (await fetchTenantSubscriptionExpiry(tenantId)) || undefined;
           } catch {
             // Verification failing here doesn't strand the account — the
