@@ -137,7 +137,7 @@ export function ReportModulePage<T extends { id: string }>({
       if (f.amountMax && amountOf && amountOf(row) > parseFloat(f.amountMax)) return false;
       if (f.status && statusOf && statusOf(row) !== f.status) return false;
       if (f.paidMethod && paidMethodOf && paidMethodOf(row) !== f.paidMethod) return false;
-      if (f.billVoucher && billVoucherOf && !billVoucherOf(row).toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+      if (f.billVoucher && billVoucherOf && billVoucherOf(row).toLowerCase() !== f.billVoucher.trim().toLowerCase()) return false;
       if (f.phone && phoneOf && !phoneOf(row).includes(f.phone.trim())) return false;
       if (f.inKind && inKindOf && inKindOf(row) !== f.inKind) return false;
       if (f.designation && designationOf && designationOf(row) !== f.designation) return false;

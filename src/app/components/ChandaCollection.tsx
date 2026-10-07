@@ -544,7 +544,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     const f = appliedFilters;
     if (f.amountMin && c.amount < parseFloat(f.amountMin)) return false;
     if (f.amountMax && c.amount > parseFloat(f.amountMax)) return false;
-    if (f.billVoucher && !normalizeKey(c.billNumber).includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.billVoucher && normalizeKey(c.billNumber) !== f.billVoucher.trim().toLowerCase()) return false;
     if (f.status && c.paymentStatus !== f.status) return false;
     if (f.paidMethod && c.paidMethod !== f.paidMethod) return false;
     if (f.designation && c.category !== f.designation) return false;

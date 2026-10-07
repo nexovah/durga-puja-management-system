@@ -519,7 +519,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     const f = appliedFilters;
     if (f.amountMin && d.amount < parseFloat(f.amountMin)) return false;
     if (f.amountMax && d.amount > parseFloat(f.amountMax)) return false;
-    if (f.billVoucher && !(d.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.billVoucher && (d.voucherNumber || '').toLowerCase() !== f.billVoucher.trim().toLowerCase()) return false;
     if (f.paidMethod && d.paidMethod !== f.paidMethod) return false;
     if (f.inKind && d.inKind !== f.inKind) return false;
     if (f.phone && !(d.phone || '').includes(f.phone.trim()) && !(d.phone2 || '').includes(f.phone.trim())) return false;

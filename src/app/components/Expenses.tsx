@@ -503,7 +503,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     const f = appliedFilters;
     if (f.amountMin && exp.amount < parseFloat(f.amountMin)) return false;
     if (f.amountMax && exp.amount > parseFloat(f.amountMax)) return false;
-    if (f.billVoucher && !(exp.voucherNumber || '').toLowerCase().includes(f.billVoucher.trim().toLowerCase())) return false;
+    if (f.billVoucher && (exp.voucherNumber || '').toLowerCase() !== f.billVoucher.trim().toLowerCase()) return false;
     if (f.status && exp.paymentStatus !== f.status) return false;
     if (f.paidMethod && exp.paidThrough !== f.paidMethod) return false;
     if (f.phone && !(exp.vendorContact || '').includes(f.phone.trim()) && !(exp.vendorContact2 || '').includes(f.phone.trim())) return false;
