@@ -500,6 +500,9 @@ function TicketThread({
         senderEmail: currentUser.email,
         body: replyBody.trim(),
         imageUrl,
+        ticketCode: ticket.ticketCode,
+        ticketTitle: ticket.title,
+        committeeName,
       });
       setReplyBody('');
       setReplyImageFile(null);

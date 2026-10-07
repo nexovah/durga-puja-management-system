@@ -3,7 +3,7 @@
 // database's snake_case columns here, so the rest of the app never has to
 // think about it (see supabase/README.md for the full mapping table).
 
-import { supabase, setTenantAccessToken } from './supabaseClient';
+import { supabase, setTenantAccessToken, getTenantAccessToken } from './supabaseClient';
 import {
   User,
   CommitteeInfo,
@@ -1295,7 +1295,28 @@ export async function createTicketRequest(entry: {
     .select()
     .single();
   if (error) throw error;
-  return fromTicketRow(data);
+  const ticket = fromTicketRow(data);
+
+  // Fire-and-forget admin alert — never blocks ticket creation, which
+  // already succeeded above.
+  const token = getTenantAccessToken();
+  if (token) {
+    fetch('/api/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        action: 'ticketAlert',
+        ticketCode: ticket.ticketCode,
+        eventType: 'created',
+        subject: ticket.title,
+        committeeName: entry.committeeName || '',
+        senderName: entry.userName,
+        excerpt: entry.body.slice(0, 280),
+      }),
+    }).catch(() => {});
+  }
+
+  return ticket;
 }
 
 // ---------------------------------------------------------------------------
@@ -1384,6 +1405,10 @@ export async function postTicketReplyRequest(entry: {
   senderEmail?: string;
   body: string;
   imageUrl?: string;
+  // Only needed to drive the admin-alert email below — not persisted.
+  ticketCode?: string;
+  ticketTitle?: string;
+  committeeName?: string;
 }): Promise<SupportTicketReply> {
   const { data, error } = await supabase
     .from('support_ticket_replies')
@@ -1400,7 +1425,32 @@ export async function postTicketReplyRequest(entry: {
     .select()
     .single();
   if (error) throw error;
-  return fromTicketReplyRow(data);
+  const reply = fromTicketReplyRow(data);
+
+  // Fire-and-forget admin alert — this is always the tenant's own reply
+  // (the admin's own reply goes through a separate RPC in
+  // superAdminDb.ts, never through this function), so no sender_role
+  // check is needed here.
+  if (entry.ticketCode) {
+    const token = getTenantAccessToken();
+    if (token) {
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          action: 'ticketAlert',
+          ticketCode: entry.ticketCode,
+          eventType: 'reply',
+          subject: entry.ticketTitle || '',
+          committeeName: entry.committeeName || '',
+          senderName: entry.senderName,
+          excerpt: entry.body.slice(0, 280),
+        }),
+      }).catch(() => {});
+    }
+  }
+
+  return reply;
 }
 
 // ---------------------------------------------------------------------------
@@ -1467,10 +1517,10 @@ export async function loginRequest(username: string, password: string): Promise<
   // Fire-and-forget "new login" notification — never blocks or fails login
   // over it. Only attempted when the user has an email on file.
   if (user.email) {
-    fetch('/api/email/send-login-notification', {
+    fetch('/api/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${row.access_token}` },
-      body: JSON.stringify({ email: user.email, name: user.name }),
+      body: JSON.stringify({ action: 'loginNotification', email: user.email, name: user.name }),
     }).catch(() => {});
   }
   return user;
@@ -1496,13 +1546,14 @@ export async function signupTenantRequest(email: string, password: string, phone
   if (!data || data.length === 0) throw new Error('Could not create account');
   const tenantName = data[0].name as string;
 
-  // Welcome email + admin new-signup alert merged into one endpoint
-  // (api/email/send-signup.js) to stay under Vercel Hobby's 12-
+  // Welcome email + admin new-signup alert merged into the shared
+  // api/email/send.js dispatcher to stay under Vercel Hobby's 12-
   // serverless-function cap.
-  fetch('/api/email/send-signup', {
+  fetch('/api/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      action: 'signup',
       to: email,
       welcomeVariables: { name: tenantName, committee_name: tenantName, login_url: `${window.location.origin}/login` },
       alertVariables: { committee_name: tenantName, email, phone, signup_type: 'Manual' },

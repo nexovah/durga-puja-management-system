@@ -133,10 +133,10 @@ export async function updateGoogleOAuthSettingsRequest(clientId: string): Promis
 
 export async function sendNewAdminAlertRequest(to: string, variables: Record<string, string>): Promise<void> {
   const token = getTenantAccessToken();
-  await fetch('/api/email/send-new-admin-alert', {
+  await fetch('/api/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to, variables }),
+    body: JSON.stringify({ action: 'newAdminAlert', to, variables }),
   }).catch(() => {});
 }
 
@@ -1056,10 +1056,10 @@ export async function getTurnstileSiteKeyRequest(): Promise<string> {
 
 export async function sendTestEmailRequest(to: string, templateSlug?: string): Promise<void> {
   const token = getTenantAccessToken();
-  const res = await fetch('/api/email/send-test', {
+  const res = await fetch('/api/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to, templateSlug: templateSlug || undefined }),
+    body: JSON.stringify({ action: 'test', to, templateSlug: templateSlug || undefined }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error || 'Failed to send test email');
