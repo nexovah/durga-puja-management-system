@@ -1710,7 +1710,9 @@ function ProfileMenu({
         </div>
         <div className="text-left hidden sm:block">
           <p className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{currentUser?.isAdmin ? t('header.admin') : t('header.user')} ({t('header.active')})</p>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide mt-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+            {currentUser?.isAdmin ? t('header.admin') : t('header.user')}
+          </span>
         </div>
         <ChevronDown size={16} className="text-gray-400 dark:text-gray-500 hidden sm:block" />
       </button>
@@ -1732,6 +1734,9 @@ function ProfileMenu({
                     supabase/109_tenant_signup.sql's signup_tenant_google). */}
                 {currentUser?.email || currentUser?.username}
               </p>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide mt-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                {currentUser?.isAdmin ? t('header.admin') : t('header.user')}
+              </span>
             </div>
           </div>
 

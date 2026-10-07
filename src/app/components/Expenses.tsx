@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
@@ -117,11 +118,13 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('expenses');
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [rowMenuPos, setRowMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const rowMenuPortalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+      if (!rowMenuRef.current?.contains(e.target as Node) && !rowMenuPortalRef.current?.contains(e.target as Node)) setOpenRowMenuId(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -222,6 +225,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     // Category used to be a native <select required> — now CustomSelect, which
     // doesn't participate in native form validation, so this guard replaces it.
     if (!formData.category) {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
+
+    if (formData.paidThrough === 'notSelected') {
       setToastType('error');
       setToastMessage(t('validation.fillRequired'));
       return;
@@ -685,11 +694,12 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paidThrough')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.paidThrough')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.paidThrough}
                 onChange={(v) => setFormData({ ...formData, paidThrough: v as PaidThrough })}
-                options={PAID_THROUGH_OPTIONS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                options={PAID_THROUGH_OPTIONS.filter(m => m.value !== 'notSelected').map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                placeholder={t('expenses.paidThrough.notSelected')}
               />
             </div>
 
@@ -990,13 +1000,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                       <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === expense.id ? 'z-30' : 'z-10'}`}>
                         <div className="relative inline-block" ref={openRowMenuId === expense.id ? rowMenuRef : undefined}>
                           <button
-                            onClick={() => setOpenRowMenuId(o => (o === expense.id ? null : expense.id))}
+                            onClick={(e) => {
+                              if (openRowMenuId === expense.id) { setOpenRowMenuId(null); return; }
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setRowMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                              setOpenRowMenuId(expense.id);
+                            }}
                             className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                           >
                             <MoreVertical size={18} />
                           </button>
-                          {openRowMenuId === expense.id && (
-                            <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                          {openRowMenuId === expense.id && rowMenuPos && createPortal(
+                            <div ref={rowMenuPortalRef} style={{ position: 'fixed', top: rowMenuPos.top, right: rowMenuPos.right }} className="w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[200]">
                               {canEdit && (
                                 <button onClick={() => { setOpenRowMenuId(null); handleEdit(expense); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                                   <Edit2 size={14} className="text-gray-400" /> Edit
@@ -1007,7 +1022,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                                   <Trash2 size={14} /> Delete
                                 </button>
                               )}
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </td>

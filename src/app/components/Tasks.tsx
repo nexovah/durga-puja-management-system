@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -65,6 +66,25 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(getEmptyForm);
   const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+  const [assigneePickerPos, setAssigneePickerPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const assigneeBtnRef = useRef<HTMLButtonElement>(null);
+  const assigneeListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!assigneePickerOpen) { setAssigneePickerPos(null); return; }
+    if (assigneeBtnRef.current) {
+      const rect = assigneeBtnRef.current.getBoundingClientRect();
+      setAssigneePickerPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (assigneeListRef.current?.contains(target)) return;
+      if (assigneeBtnRef.current?.contains(target)) return;
+      setAssigneePickerOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [assigneePickerOpen]);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
@@ -321,6 +341,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('tasks.assignTo')}</label>
               <button
+                ref={assigneeBtnRef}
                 type="button"
                 onClick={() => setAssigneePickerOpen(o => !o)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none flex items-center justify-between text-left"
@@ -332,8 +353,12 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                 </span>
                 <ChevronDown size={16} className="shrink-0 text-gray-500 dark:text-gray-400" />
               </button>
-              {assigneePickerOpen && (
-                <div className="absolute z-30 mt-1 w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg shadow-lg">
+              {assigneePickerOpen && assigneePickerPos && createPortal(
+                <div
+                  ref={assigneeListRef}
+                  style={{ position: 'fixed', top: assigneePickerPos.top, left: assigneePickerPos.left, width: assigneePickerPos.width }}
+                  className="z-[200] max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
+                >
                   {members.length === 0 && (
                     <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{t('tasks.noMembers')}</p>
                   )}
@@ -348,7 +373,8 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                       {m.name}
                     </label>
                   ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 

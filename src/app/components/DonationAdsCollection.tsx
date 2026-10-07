@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -136,7 +137,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(() => (fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm));
   const [collectedBySuggestOpen, setCollectedBySuggestOpen] = useState(false);
-  const collectedBySuggestRef = useRef<HTMLDivElement>(null);
+  const [collectedBySuggestPos, setCollectedBySuggestPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const collectedByInputRef = useRef<HTMLInputElement>(null);
+  const collectedByListRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: DonationAd[]; toUpdate: DonationAd[]; errors: ImportRowError[]; totalRows: number } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -149,20 +152,29 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const menuRef = useRef<HTMLDivElement>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [rowMenuPos, setRowMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const rowMenuPortalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+      if (!rowMenuRef.current?.contains(e.target as Node) && !rowMenuPortalRef.current?.contains(e.target as Node)) setOpenRowMenuId(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
-    if (!collectedBySuggestOpen) return;
+    if (!collectedBySuggestOpen) { setCollectedBySuggestPos(null); return; }
+    if (collectedByInputRef.current) {
+      const rect = collectedByInputRef.current.getBoundingClientRect();
+      setCollectedBySuggestPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    }
     const handleClickOutside = (e: MouseEvent) => {
-      if (collectedBySuggestRef.current && !collectedBySuggestRef.current.contains(e.target as Node)) setCollectedBySuggestOpen(false);
+      const target = e.target as Node;
+      if (collectedByListRef.current?.contains(target)) return;
+      if (collectedByInputRef.current?.contains(target)) return;
+      setCollectedBySuggestOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -288,6 +300,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       return;
     }
     const saveAndAddNew = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'andNew';
+
+    if (formData.paidMethod === 'notSelected') {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
 
     if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
       setToastType('error');
@@ -725,11 +743,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.paidMethod')}<RequiredMark /></label>
               <CustomSelect
                 value={formData.paidMethod}
                 onChange={(v) => setFormData({ ...formData, paidMethod: v as PaidMethod })}
-                options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                options={PAID_METHODS.filter(m => m.value !== 'notSelected').map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                placeholder={t('common.paidMethod.notSelected')}
               />
             </div>
 
@@ -811,9 +830,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               />
             </div>
 
-            <div className="relative" ref={collectedBySuggestRef}>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.collectedBy')}</label>
               <input
+                ref={collectedByInputRef}
                 type="text"
                 autoComplete="off"
                 value={formData.collectedBy}
@@ -822,8 +842,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('donationAds.collectedByPlaceholder')}
               />
-              {collectedBySuggestOpen && matchingCollectedBy.length > 0 && (
-                <div className="absolute left-0 top-full mt-1.5 w-full z-30 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+              {collectedBySuggestOpen && collectedBySuggestPos && matchingCollectedBy.length > 0 && createPortal(
+                <div ref={collectedByListRef} style={{ position: 'fixed', top: collectedBySuggestPos.top, left: collectedBySuggestPos.left, width: collectedBySuggestPos.width }} className="z-[200] bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
                   {matchingCollectedBy.map(name => {
                     const type = collectedByTypeMap.get(name);
                     return (
@@ -853,7 +873,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                       </button>
                     );
                   })}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
@@ -1069,13 +1090,18 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                     <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === item.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === item.id ? rowMenuRef : undefined}>
                         <button
-                          onClick={() => setOpenRowMenuId(o => (o === item.id ? null : item.id))}
+                          onClick={(e) => {
+                            if (openRowMenuId === item.id) { setOpenRowMenuId(null); return; }
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setRowMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            setOpenRowMenuId(item.id);
+                          }}
                           className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        {openRowMenuId === item.id && (
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                        {openRowMenuId === item.id && rowMenuPos && createPortal(
+                          <div ref={rowMenuPortalRef} style={{ position: 'fixed', top: rowMenuPos.top, right: rowMenuPos.right }} className="w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[200]">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(item); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <Edit2 size={14} className="text-gray-400" /> Edit
@@ -1086,7 +1112,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                                 <Trash2 size={14} /> Delete
                               </button>
                             )}
-                          </div>
+                          </div>,
+                          document.body
                         )}
                       </div>
                     </td>

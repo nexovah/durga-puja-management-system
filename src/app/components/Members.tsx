@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, MoreVertical, Eye, EyeOff, Download } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
@@ -115,13 +116,15 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
   const [pendingSave, setPendingSave] = useState<{ payload: MemberFormPayload; saveAndAddNew: boolean } | null>(null);
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [rowMenuPos, setRowMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const rowMenuPortalRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('members');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+      if (!rowMenuRef.current?.contains(e.target as Node) && !rowMenuPortalRef.current?.contains(e.target as Node)) setOpenRowMenuId(null);
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -719,13 +722,18 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                     <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === member.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === member.id ? rowMenuRef : undefined}>
                         <button
-                          onClick={() => setOpenRowMenuId(o => (o === member.id ? null : member.id))}
+                          onClick={(e) => {
+                            if (openRowMenuId === member.id) { setOpenRowMenuId(null); return; }
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setRowMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            setOpenRowMenuId(member.id);
+                          }}
                           className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        {openRowMenuId === member.id && (
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                        {openRowMenuId === member.id && rowMenuPos && createPortal(
+                          <div ref={rowMenuPortalRef} style={{ position: 'fixed', top: rowMenuPos.top, right: rowMenuPos.right }} className="w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[200]">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(member); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <Edit2 size={14} className="text-gray-400" /> Edit
@@ -736,7 +744,8 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                                 <Trash2 size={14} /> Delete
                               </button>
                             )}
-                          </div>
+                          </div>,
+                          document.body
                         )}
                       </div>
                     </td>

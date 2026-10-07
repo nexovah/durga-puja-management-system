@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon, Landmark, HandCoins, MoreVertical, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
@@ -71,26 +72,37 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
   const [viewTarget, setViewTarget] = useState<Loan | null>(null);
   const [memberSuggestOpen, setMemberSuggestOpen] = useState(false);
-  const memberSuggestRef = useRef<HTMLDivElement>(null);
+  const [memberSuggestPos, setMemberSuggestPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const memberSuggestInputRef = useRef<HTMLInputElement>(null);
+  const memberSuggestListRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('loans');
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
+  const [rowMenuPos, setRowMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const rowMenuPortalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-      if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) setOpenRowMenuId(null);
+      if (!rowMenuRef.current?.contains(e.target as Node) && !rowMenuPortalRef.current?.contains(e.target as Node)) setOpenRowMenuId(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
-    if (!memberSuggestOpen) return;
+    if (!memberSuggestOpen) { setMemberSuggestPos(null); return; }
+    if (memberSuggestInputRef.current) {
+      const rect = memberSuggestInputRef.current.getBoundingClientRect();
+      setMemberSuggestPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    }
     const handleClickOutside = (e: MouseEvent) => {
-      if (memberSuggestRef.current && !memberSuggestRef.current.contains(e.target as Node)) setMemberSuggestOpen(false);
+      const target = e.target as Node;
+      if (memberSuggestListRef.current?.contains(target)) return;
+      if (memberSuggestInputRef.current?.contains(target)) return;
+      setMemberSuggestOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -142,6 +154,19 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     if (!isPhoneValid(formData.phone, false)) {
       setToastType('error');
       setToastMessage(t('validation.phoneMinDigits'));
+      return;
+    }
+
+    if (formData.paymentMethod === 'notSelected') {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
+      return;
+    }
+
+    const amountPaidNum = parseFloat(formData.amountPaid) || 0;
+    if (amountPaidNum > 0 && formData.returnMethod === 'notSelected') {
+      setToastType('error');
+      setToastMessage(t('validation.fillRequired'));
       return;
     }
 
@@ -473,9 +498,10 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
           <form id="loans-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Row 1: Donor's Name (with a committee-member search suggest,
                 since loans almost always come from a member) | Phone Number */}
-            <div className="relative" ref={memberSuggestRef}>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')}<RequiredMark /></label>
               <input
+                ref={memberSuggestInputRef}
                 type="text"
                 required
                 autoComplete="off"
@@ -485,8 +511,8 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                 placeholder={t('loans.donorNamePlaceholder')}
               />
-              {memberSuggestOpen && matchingMembers.length > 0 && (
-                <div className="absolute left-0 top-full mt-1.5 w-full z-30 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+              {memberSuggestOpen && memberSuggestPos && matchingMembers.length > 0 && createPortal(
+                <div ref={memberSuggestListRef} style={{ position: 'fixed', top: memberSuggestPos.top, left: memberSuggestPos.left, width: memberSuggestPos.width }} className="z-[200] bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
                   <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('loans.membersSuggestLabel')}</p>
                   {matchingMembers.map(m => (
                     <button
@@ -504,7 +530,8 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                       </span>
                     </button>
                   ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
             <div>
@@ -544,11 +571,12 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.paymentMethod')}<RequiredMark /></label>
                 <CustomSelect
                   value={formData.paymentMethod}
                   onChange={(v) => setFormData({ ...formData, paymentMethod: v as PaidMethod })}
-                  options={PAID_METHODS.map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                  options={PAID_METHODS.filter(m => m.value !== 'notSelected').map((m) => ({ value: m.value, label: t(m.labelKey) }))}
+                  placeholder={t('common.paidMethod.notSelected')}
                 />
               </div>
             </div>
@@ -706,13 +734,18 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                     <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === loan.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === loan.id ? rowMenuRef : undefined}>
                         <button
-                          onClick={() => setOpenRowMenuId(o => (o === loan.id ? null : loan.id))}
+                          onClick={(e) => {
+                            if (openRowMenuId === loan.id) { setOpenRowMenuId(null); return; }
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setRowMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            setOpenRowMenuId(loan.id);
+                          }}
                           className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        {openRowMenuId === loan.id && (
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                        {openRowMenuId === loan.id && rowMenuPos && createPortal(
+                          <div ref={rowMenuPortalRef} style={{ position: 'fixed', top: rowMenuPos.top, right: rowMenuPos.right }} className="w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-[200]">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(loan); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <Edit2 size={14} className="text-gray-400" /> Edit
@@ -723,7 +756,8 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                                 <Trash2 size={14} /> Delete
                               </button>
                             )}
-                          </div>
+                          </div>,
+                          document.body
                         )}
                       </div>
                     </td>

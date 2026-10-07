@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface AutocompleteInputProps {
   value: string;
@@ -15,14 +16,29 @@ interface AutocompleteInputProps {
 // browser-native popup doesn't match the app's dropdown styling (unlike
 // CustomSelect's closed-list dropdown, this still lets the user type a
 // brand new value that isn't in `suggestions`).
+//
+// The suggestion list is portaled to document.body (same pattern as
+// CustomSelect/RowActionsMenu) rather than absolutely positioned inside
+// this component's own wrapper — a plain absolute dropdown gets clipped
+// by any scrollable ancestor (e.g. a FormModal's own overflow-y-auto
+// body), which was hiding the suggestions entirely inside modals.
 export function AutocompleteInput({ value, onChange, suggestions, placeholder, className = '', id, autoComplete = 'off' }: AutocompleteInputProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setPos(null); return; }
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    }
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (listRef.current?.contains(target)) return;
+      if (inputRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -34,8 +50,9 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
     : suggestions;
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <input
+        ref={inputRef}
         type="text"
         id={id}
         autoComplete={autoComplete}
@@ -45,8 +62,12 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
         placeholder={placeholder}
         className={`w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none ${className}`}
       />
-      {open && filtered.length > 0 && (
-        <div className="absolute left-0 top-full mt-1.5 w-full z-30 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
+      {open && pos && filtered.length > 0 && createPortal(
+        <div
+          ref={listRef}
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width }}
+          className="z-[200] bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto"
+        >
           {filtered.map(s => (
             <button
               key={s}
@@ -57,7 +78,8 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
               <span className="truncate">{s}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
