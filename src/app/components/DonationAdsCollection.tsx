@@ -538,8 +538,8 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), sortValue: d => inKindDisplay(d) || '' },
     { id: 'date', label: t('common.date'), sortValue: d => d.date },
     { id: 'phone', label: t('common.phone1'), sortValue: d => d.phone || '' },
-    { id: 'collectedBy', label: t('donationAds.collectedBy'), sortValue: d => d.collectedBy || '' },
-    { id: 'remarks', label: t('common.remarks'), sortValue: d => d.remarks || '' },
+    { id: 'collectedBy', label: t('donationAds.collectedBy'), defaultVisible: false, sortValue: d => d.collectedBy || '' },
+    { id: 'remarks', label: t('common.remarks'), defaultVisible: false, sortValue: d => d.remarks || '' },
     ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
   ], [t, fixedCategory, canEdit, canDelete]);
 
@@ -910,9 +910,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('donationAds.widget.total')}</h3>
-            <Wallet className="text-purple-500" size={24} />
+            <Wallet className="text-orange-500" size={24} />
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{total.toLocaleString()}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{total.toLocaleString()}</p>
         </div>
         {fixedCategory && (
         <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
@@ -1005,7 +1005,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                  <th className="sticky right-0 z-10 px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t('common.action')}</th>
                 )}
               </tr>
             </thead>
@@ -1066,7 +1066,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.remarks || '-'}</td>
                   )}
                   {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 text-right">
+                    <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === item.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === item.id ? rowMenuRef : undefined}>
                         <button
                           onClick={() => setOpenRowMenuId(o => (o === item.id ? null : item.id))}
@@ -1078,7 +1078,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(item); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Edit2 size={14} className="text-blue-600" /> Edit
+                                <Edit2 size={14} className="text-gray-400" /> Edit
                               </button>
                             )}
                             {canDelete && (

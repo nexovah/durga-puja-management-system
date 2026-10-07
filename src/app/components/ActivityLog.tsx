@@ -108,7 +108,7 @@ export function ActivityLog() {
     create: 'bg-green-100 text-green-700',
     update: 'bg-blue-100 text-blue-700',
     delete: 'bg-red-100 text-red-700',
-    bulk_import: 'bg-purple-100 text-purple-700',
+    bulk_import: 'bg-yellow-100 text-yellow-700',
   };
 
   const filtered = entries.filter(

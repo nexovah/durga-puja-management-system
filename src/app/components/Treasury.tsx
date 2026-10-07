@@ -470,7 +470,7 @@ export function Treasury({ chandaList, donationAdsList, expenses, loansList, mem
                     </td>
                   )}
                   {tableCols.isColumnVisible('balance') && (
-                    <td className={`px-6 py-4 text-sm font-bold text-right ${data.balance >= 0 ? 'text-purple-600' : 'text-orange-600'}`}>
+                    <td className={`px-6 py-4 text-sm font-bold text-right ${data.balance >= 0 ? 'text-green-600' : 'text-orange-600'}`}>
                       ₹{data.balance.toLocaleString()}
                     </td>
                   )}

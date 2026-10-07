@@ -32,7 +32,7 @@ const CATEGORY_KEYS: { key: DocumentCategory; labelKey: TranslationKey; Icon: Re
   { key: 'police', labelKey: 'documents.category.police', Icon: Shield, bg: 'bg-blue-50 dark:bg-blue-500/10', fg: 'text-blue-600 dark:text-blue-400', border: 'border-blue-400' },
   { key: 'fire', labelKey: 'documents.category.fire', Icon: FlameKindling, bg: 'bg-red-50 dark:bg-red-500/10', fg: 'text-red-600 dark:text-red-400', border: 'border-red-400' },
   { key: 'municipal', labelKey: 'documents.category.municipal', Icon: Landmark, bg: 'bg-amber-50 dark:bg-amber-500/10', fg: 'text-amber-700 dark:text-amber-400', border: 'border-amber-400' },
-  { key: 'committee', labelKey: 'documents.category.committee', Icon: Users, bg: 'bg-purple-50 dark:bg-purple-500/10', fg: 'text-purple-600 dark:text-purple-400', border: 'border-purple-400' },
+  { key: 'committee', labelKey: 'documents.category.committee', Icon: Users, bg: 'bg-green-50 dark:bg-green-500/10', fg: 'text-green-600 dark:text-green-400', border: 'border-green-400' },
   { key: 'electricity', labelKey: 'documents.category.electricity', Icon: Zap, bg: 'bg-yellow-50 dark:bg-yellow-500/10', fg: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-400' },
   { key: 'mom', labelKey: 'documents.category.mom', Icon: FileSignature, bg: 'bg-cyan-50 dark:bg-cyan-500/10', fg: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-400' },
   { key: 'land', labelKey: 'documents.category.land', Icon: LandPlot, bg: 'bg-emerald-50 dark:bg-emerald-500/10', fg: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-400' },

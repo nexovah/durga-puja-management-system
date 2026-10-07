@@ -337,7 +337,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     { id: 'date', label: t('common.date'), sortValue: l => l.date },
     { id: 'returnDate', label: t('loans.returnDate'), sortValue: l => l.returnDate || '' },
     { id: 'phone', label: t('common.phone'), defaultVisible: false, sortValue: l => l.phone || '' },
-    { id: 'remarks', label: t('common.remarks'), sortValue: l => l.remarks || '' },
+    { id: 'remarks', label: t('common.remarks'), defaultVisible: false, sortValue: l => l.remarks || '' },
     ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
   ], [t, canEdit, canDelete]);
 
@@ -652,7 +652,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                   <SortableTh column={loanColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                  <th className="sticky right-0 z-10 px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t('common.action')}</th>
                 )}
               </tr>
             </thead>
@@ -703,7 +703,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{loan.remarks || '-'}</td>
                   )}
                   {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 text-right">
+                    <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === loan.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === loan.id ? rowMenuRef : undefined}>
                         <button
                           onClick={() => setOpenRowMenuId(o => (o === loan.id ? null : loan.id))}
@@ -715,7 +715,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(loan); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Edit2 size={14} className="text-blue-600" /> Edit
+                                <Edit2 size={14} className="text-gray-400" /> Edit
                               </button>
                             )}
                             {canDelete && (

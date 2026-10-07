@@ -59,13 +59,13 @@ export function ImportPreviewModal({
           </div>
 
           {updateCount > 0 && (
-            <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 rounded-lg p-4 flex items-start gap-2.5">
-              <RefreshCcw className="text-purple-600 shrink-0 mt-0.5" size={20} />
+            <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-4 flex items-start gap-2.5">
+              <RefreshCcw className="text-yellow-600 shrink-0 mt-0.5" size={20} />
               <div>
-                <p className="text-sm text-purple-800 font-medium">
+                <p className="text-sm text-yellow-800 font-medium">
                   {t('import.willUpdate').replace('{count}', String(updateCount))}
                 </p>
-                <p className="text-xs text-purple-700 mt-0.5">{t('import.willUpdateHint')}</p>
+                <p className="text-xs text-yellow-700 mt-0.5">{t('import.willUpdateHint')}</p>
               </div>
             </div>
           )}

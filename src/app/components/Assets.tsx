@@ -38,7 +38,7 @@ const ASSET_ICONS: { key: string; label: string; Icon?: React.ComponentType<{ si
   { key: 'electric', label: 'Electric', Icon: Plug, bg: 'bg-yellow-100 dark:bg-yellow-500/10', fg: 'text-yellow-700 dark:text-yellow-400' },
   { key: 'fan', label: 'Fan', Icon: Fan, bg: 'bg-cyan-100 dark:bg-cyan-500/10', fg: 'text-cyan-600 dark:text-cyan-400' },
   { key: 'food', label: 'Food', Icon: UtensilsCrossed, bg: 'bg-rose-100 dark:bg-rose-500/10', fg: 'text-rose-600 dark:text-rose-400' },
-  { key: 'om', label: 'Om', glyph: 'ॐ', bg: 'bg-purple-100 dark:bg-purple-500/10', fg: 'text-purple-600 dark:text-purple-400' },
+  { key: 'om', label: 'Om', glyph: 'ॐ', bg: 'bg-green-100 dark:bg-green-500/10', fg: 'text-green-600 dark:text-green-400' },
   { key: 'drum', label: 'Drum', Icon: Drum, bg: 'bg-red-100 dark:bg-red-500/10', fg: 'text-red-600 dark:text-red-400' },
 ];
 
@@ -390,7 +390,7 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); openEdit(asset); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Pencil size={14} className="text-blue-600" /> {t('common.edit')}
+                                <Pencil size={14} className="text-gray-400" /> {t('common.edit')}
                               </button>
                             )}
                             {canDelete && (

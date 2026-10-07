@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, IndianRupee, Users, MoreVertical, Eye, EyeOff, Download } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { Member, PaymentStatus, PaidMethod, Task, TaskPriority, getMemberCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
@@ -19,6 +19,8 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
+import { ExportColumnSelectorModal } from './ExportColumnSelectorModal';
 
 interface MembersProps {
   members: Member[];
@@ -54,7 +56,7 @@ const TASK_PRIORITY_DOT: Record<TaskPriority, string> = {
   high: 'bg-red-500',
   medium: 'bg-amber-500',
   low: 'bg-blue-500',
-  note: 'bg-purple-500',
+  note: 'bg-yellow-500',
 };
 
 const ROLES: { value: string; labelKey: TranslationKey }[] = [
@@ -331,6 +333,19 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     columns: memberColumns,
   });
 
+  const memberExportColumns: ExportColumnDef<Member>[] = [
+    { id: 'name', label: t('common.name'), value: m => m.name },
+    { id: 'role', label: t('members.role'), value: m => roleLabel(m.role) },
+    { id: 'phone', label: t('common.phone'), value: m => m.phone },
+    { id: 'address', label: t('members.address'), value: m => m.address },
+    { id: 'joinDate', label: t('members.joinDate'), value: m => m.joinDate },
+    { id: 'membershipAmount', label: t('members.membershipAmount'), value: m => m.membershipAmount ?? '' },
+    { id: 'membershipPaymentStatus', label: t('chanda.paymentStatus'), value: m => m.membershipPaymentStatus ? statusLabel(m.membershipPaymentStatus) : '' },
+    { id: 'membershipBillNumber', label: t('chanda.billNumber'), value: m => m.membershipBillNumber || '' },
+    { id: 'membershipRemarks', label: t('common.remarks'), value: m => m.membershipRemarks || '' },
+  ];
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
   const sortedMembers = useMemo(() => tableCols.sortItems(filteredMembers), [tableCols, filteredMembers]);
   const pagination = usePagination(sortedMembers);
   const totalMembershipPayments = members.reduce((sum, m) => sum + getMemberCreditAmount(m), 0);
@@ -360,6 +375,12 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
               </button>
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); setExportModalOpen(true); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Download size={16} /> {t('common.export')}
+                  </button>
                   <button
                     onClick={() => { setMenuOpen(false); toggleWidgets(); }}
                     className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -629,7 +650,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                   <SortableTh column={memberColumns.find(c => c.id === 'assignedTasks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                  <th className="sticky right-0 z-10 px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t('common.action')}</th>
                 )}
               </tr>
             </thead>
@@ -695,7 +716,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                     </td>
                   )}
                   {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 text-right">
+                    <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === member.id ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === member.id ? rowMenuRef : undefined}>
                         <button
                           onClick={() => setOpenRowMenuId(o => (o === member.id ? null : member.id))}
@@ -707,7 +728,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(member); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Edit2 size={14} className="text-blue-600" /> Edit
+                                <Edit2 size={14} className="text-gray-400" /> Edit
                               </button>
                             )}
                             {canDelete && (
@@ -802,6 +823,17 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
         toStatusLabel={pendingSave?.payload.membershipPaymentStatus ? statusLabel(pendingSave.payload.membershipPaymentStatus) : ''}
         onCancel={() => setPendingSave(null)}
         onConfirm={confirmStatusChange}
+      />
+
+      <ExportColumnSelectorModal
+        open={exportModalOpen}
+        columns={memberExportColumns.map(c => ({ id: c.id, label: c.label }))}
+        storageKey="puja_export_cols_members"
+        onClose={() => setExportModalOpen(false)}
+        onExport={orderedIds => {
+          const csvContent = buildCsv(members, memberExportColumns, orderedIds);
+          downloadCsv(csvContent, `members-${new Date().toISOString().split('T')[0]}.csv`);
+        }}
       />
     </div>
   );

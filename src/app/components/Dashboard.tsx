@@ -114,7 +114,7 @@ export function Dashboard({
     green: { border: 'border-green-500 dark:border-green-500/60', icon: 'text-green-600', iconBg: 'bg-green-50 dark:bg-green-500/10', bar: 'bg-green-500' },
     emerald: { border: 'border-emerald-500 dark:border-emerald-500/60', icon: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-500/10', bar: 'bg-emerald-500' },
     sky: { border: 'border-sky-500 dark:border-sky-500/60', icon: 'text-sky-600', iconBg: 'bg-sky-50 dark:bg-sky-500/10', bar: 'bg-sky-500' },
-    purple: { border: 'border-purple-500 dark:border-purple-500/60', icon: 'text-purple-600', iconBg: 'bg-purple-50 dark:bg-purple-500/10', bar: 'bg-purple-500' },
+    purple: { border: 'border-yellow-500 dark:border-yellow-500/60', icon: 'text-yellow-600', iconBg: 'bg-yellow-50 dark:bg-yellow-500/10', bar: 'bg-yellow-500' },
     amber: { border: 'border-amber-500 dark:border-amber-500/60', icon: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-500/10', bar: 'bg-amber-500' },
     red: { border: 'border-red-500 dark:border-red-500/60', icon: 'text-red-600', iconBg: 'bg-red-50 dark:bg-red-500/10', bar: 'bg-red-500' },
     orange: { border: 'border-orange-500 dark:border-orange-500/60', icon: 'text-orange-600', iconBg: 'bg-orange-50 dark:bg-orange-500/10', bar: 'bg-orange-500' },
@@ -219,7 +219,7 @@ export function Dashboard({
         <DashboardDonut
           title={t('dashboard.donut.outstanding')}
           icon={HourglassIcon}
-          iconAccent="text-purple-600"
+          iconAccent="text-yellow-600"
           emptyMessage={t('dashboard.donut.noOutstanding')}
           slices={[
             {

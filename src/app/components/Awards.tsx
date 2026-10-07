@@ -35,7 +35,7 @@ const RANKS: { value: AwardRank; labelKey: TranslationKey; gradient: string; bad
   { value: '3rd', labelKey: 'awards.rank.third', gradient: 'from-amber-600 to-amber-700', badge: '🥉' },
   { value: 'winner', labelKey: 'awards.rank.winner', gradient: 'from-orange-500 to-red-500', badge: '🏆' },
   { value: 'runner_up', labelKey: 'awards.rank.runnerUp', gradient: 'from-blue-500 to-indigo-500', badge: '🎖️' },
-  { value: 'special_mention', labelKey: 'awards.rank.specialMention', gradient: 'from-purple-500 to-pink-500', badge: '⭐' },
+  { value: 'special_mention', labelKey: 'awards.rank.specialMention', gradient: 'from-yellow-500 to-orange-500', badge: '⭐' },
 ];
 const rankInfo = (r: AwardRank) => RANKS.find(x => x.value === r) || RANKS[0];
 

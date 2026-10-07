@@ -1809,11 +1809,11 @@ export function Settings({
                           {openUserMenuId === user.id && (
                             <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                               <button onClick={() => { setOpenUserMenuId(null); handleToggleUserActive(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                {user.isActive === false ? <CheckCircle2 size={14} className="text-green-600" /> : <Ban size={14} className="text-gray-500" />}
+                                {user.isActive === false ? <CheckCircle2 size={14} className="text-gray-400" /> : <Ban size={14} className="text-gray-500" />}
                                 {user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
                               </button>
                               <button onClick={() => { setOpenUserMenuId(null); handleEditUser(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Edit2 size={14} className="text-blue-600" /> Edit
+                                <Edit2 size={14} className="text-gray-400" /> Edit
                               </button>
                               <button onClick={() => { setOpenUserMenuId(null); handleDeleteUser(user.id); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
                                 <Trash2 size={14} /> Delete
@@ -1826,7 +1826,7 @@ export function Settings({
 
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        user.isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                        user.isAdmin ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
                       }`}>
                         {user.isAdmin ? t('header.admin') : t('header.user')}
                       </span>
@@ -1886,7 +1886,7 @@ export function Settings({
                         <td className="px-6 py-4 text-sm">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              user.isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                              user.isAdmin ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
                             }`}>
                               {user.isAdmin ? t('header.admin') : t('header.user')}
                             </span>
@@ -1935,11 +1935,11 @@ export function Settings({
                               {openUserMenuId === user.id && (
                                 <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                                   <button onClick={() => { setOpenUserMenuId(null); handleToggleUserActive(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    {user.isActive === false ? <CheckCircle2 size={14} className="text-green-600" /> : <Ban size={14} className="text-gray-500" />}
+                                    {user.isActive === false ? <CheckCircle2 size={14} className="text-gray-400" /> : <Ban size={14} className="text-gray-500" />}
                                     {user.isActive === false ? t('settings.enableUser') : t('settings.disableUser')}
                                   </button>
                                   <button onClick={() => { setOpenUserMenuId(null); handleEditUser(user); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    <Edit2 size={14} className="text-blue-600" /> Edit
+                                    <Edit2 size={14} className="text-gray-400" /> Edit
                                   </button>
                                   <button onClick={() => { setOpenUserMenuId(null); handleDeleteUser(user.id); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
                                     <Trash2 size={14} /> Delete

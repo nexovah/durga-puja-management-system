@@ -652,7 +652,7 @@ export function EstimationPage({
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); openExisting(est); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <Edit2 size={14} className="text-blue-600" /> Edit
+                                <Edit2 size={14} className="text-gray-400" /> Edit
                               </button>
                             )}
                             {canDelete && (

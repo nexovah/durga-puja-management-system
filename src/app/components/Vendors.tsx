@@ -415,7 +415,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                   </SortableTh>
                 )}
                 {tableCols.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <th className="sticky right-0 z-10 px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                     {t('common.action')}
                   </th>
                 )}
@@ -451,7 +451,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                     <td className="px-6 py-4 text-sm text-green-600 font-bold text-right">₹{g.totalAmount.toLocaleString()}</td>
                   )}
                   {tableCols.isColumnVisible('actions') && (
-                    <td className="px-6 py-4 text-right">
+                    <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === g.key ? 'z-30' : 'z-10'}`}>
                       <div className="relative inline-block" ref={openRowMenuId === g.key ? rowMenuRef : undefined}>
                         <button
                           onClick={() => setOpenRowMenuId(o => (o === g.key ? null : g.key))}
@@ -462,7 +462,7 @@ export function Vendors({ expenses, canEdit, onLog }: VendorsProps) {
                         {openRowMenuId === g.key && (
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                             <button onClick={() => { setOpenRowMenuId(null); setViewingKey(viewingKey === g.key ? null : g.key); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                              <Eye size={14} className="text-blue-600" /> {t('vendors.view')}
+                              <Eye size={14} className="text-gray-400" /> {t('vendors.view')}
                             </button>
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); openEditVendor(g); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">

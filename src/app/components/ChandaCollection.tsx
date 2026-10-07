@@ -1088,7 +1088,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                   <SortableTh column={chandaColumns.find(c => c.id === 'remarks')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
                 {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.action')}</th>
+                  <th className="sticky right-0 z-10 px-6 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t('common.action')}</th>
                 )}
               </tr>
             </thead>
@@ -1192,7 +1192,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                       <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{chanda.remarks || '-'}</td>
                     )}
                     {(canEdit || canDelete) && tableCols.isColumnVisible('actions') && (
-                      <td className="px-6 py-4 text-right">
+                      <td className={`sticky right-0 px-6 py-4 text-right bg-white dark:bg-gray-900 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] ${openRowMenuId === chanda.id ? 'z-30' : 'z-10'}`}>
                         <div className="relative inline-block" ref={openRowMenuId === chanda.id ? rowMenuRef : undefined}>
                           <button
                             onClick={() => setOpenRowMenuId(o => (o === chanda.id ? null : chanda.id))}
@@ -1207,7 +1207,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                                   onClick={() => { setOpenRowMenuId(null); handleEdit(chanda); }}
                                   className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                                 >
-                                  <Edit2 size={15} className="text-blue-600" />
+                                  <Edit2 size={15} className="text-gray-400" />
                                   Edit Collection
                                 </button>
                               )}

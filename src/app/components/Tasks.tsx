@@ -35,7 +35,7 @@ export const PRIORITIES: { value: TaskPriority; labelKey: TranslationKey; badgeC
   { value: 'high', labelKey: 'tasks.priority.high', badgeClass: 'bg-red-100 text-red-700', dotClass: 'bg-red-500' },
   { value: 'medium', labelKey: 'tasks.priority.medium', badgeClass: 'bg-amber-100 text-amber-700', dotClass: 'bg-amber-500' },
   { value: 'low', labelKey: 'tasks.priority.low', badgeClass: 'bg-blue-100 text-blue-700', dotClass: 'bg-blue-500' },
-  { value: 'note', labelKey: 'tasks.priority.note', badgeClass: 'bg-purple-100 text-purple-700', dotClass: 'bg-purple-500' },
+  { value: 'note', labelKey: 'tasks.priority.note', badgeClass: 'bg-yellow-100 text-yellow-700', dotClass: 'bg-yellow-500' },
   { value: 'completed', labelKey: 'tasks.priority.completed', badgeClass: 'bg-green-100 text-green-700', dotClass: 'bg-green-500' },
 ];
 
@@ -582,12 +582,12 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                               </button>
                               {editable && task.priority !== 'completed' && (
                                 <button onClick={() => { setOpenRowMenuId(null); handleMarkComplete(task); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                  <CheckCircle2 size={14} className="text-green-600" /> {t('tasks.markComplete')}
+                                  <CheckCircle2 size={14} className="text-gray-400" /> {t('tasks.markComplete')}
                                 </button>
                               )}
                               {editable && (
                                 <button onClick={() => { setOpenRowMenuId(null); handleEdit(task); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                  <Edit2 size={14} className="text-blue-600" /> Edit
+                                  <Edit2 size={14} className="text-gray-400" /> Edit
                                 </button>
                               )}
                               {deletable && (
