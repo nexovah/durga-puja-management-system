@@ -18,6 +18,8 @@ import { Documents } from './components/Documents';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
+import { Donors } from './components/Donors';
+import { Committee } from './components/Committee';
 import { ChandaCollection } from './components/ChandaCollection';
 import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
@@ -77,6 +79,10 @@ import {
   fromAwardRow,
   fromUserRow,
   fromCommitteeRow,
+  Donor,
+  CommitteeMember,
+  listDonorsRequest,
+  listCommitteeMembersRequest,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 import { PhoneCaptureScreen } from './components/PhoneCaptureScreen';
@@ -205,6 +211,7 @@ export interface Chanda {
   collectedBy?: string; // who physically collected this — mirrors DonationAd's collectedBy field
   receiptNumber: string | null; // DB-assigned on insert, read-only — see assign_chanda_receipt_number()
   receiptToken: string; // DB-assigned random token, the public receipt link's unique id
+  donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
 }
 
 // The amount actually credited toward total collection, based on payment status:
@@ -257,6 +264,7 @@ export interface DonationAd {
   phone2?: string; // Phone Number 2 (optional)
   collectedBy?: string; // Committee member or third party who collected this entry
   remarks: string;
+  donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
 }
 
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
@@ -284,6 +292,7 @@ export interface Expense {
   vendorName?: string;
   vendorContact?: string;
   vendorContact2?: string;
+  vendorId?: string | null; // links to a standing Vendor record when the typed name matches one; null for one-off vendor names
   remarks: string;
 }
 
@@ -441,11 +450,12 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
+type PageKey = 'dashboard' | 'members' | 'donors' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
   members: '/members',
+  donors: '/donors',
   chanda: '/chanda-collection',
   donation: '/donation-collection',
   ads: '/ads-collection',
@@ -649,6 +659,8 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [committeeInfo, setCommitteeInfoState] = useState<CommitteeInfo>(EMPTY_COMMITTEE_INFO);
   const [members, setMembersState] = useState<Member[]>([]);
+  const [donors, setDonors] = useState<Donor[]>([]);
+  const [committeeMembers, setCommitteeMembers] = useState<CommitteeMember[]>([]);
   const [chandaList, setChandaListState] = useState<Chanda[]>([]);
   const [donationAdsList, setDonationAdsListState] = useState<DonationAd[]>([]);
   const [expenses, setExpensesState] = useState<Expense[]>([]);
@@ -719,6 +731,14 @@ export default function App() {
         setCommitteeInfoState(data.committeeInfo);
         setDeveloperInfoState(data.developerInfo);
         setUsers(data.users);
+        // Tenant-wide (not event-scoped), same permanence as vendors — fetched
+        // once here so the Chanda/DonationAds "Member" tab donor-picker is
+        // populated even for a session that never visits the Donors/Committee
+        // pages directly (those pages also self-fetch on mount, which is fine
+        // and idempotent, but must not be the only place this loads).
+        Promise.all([listDonorsRequest(), listCommitteeMembersRequest()])
+          .then(([donorsList, committeeList]) => { setDonors(donorsList); setCommitteeMembers(committeeList); })
+          .catch(err => console.error('Failed to load donors/committee members', err));
         // Non-fatal — the Help & Support notification dot just stays off if this fails.
         fetchMyTicketActivity().then(rows => setHasUnreadSupportReply(rows.some(r => r.hasUnreadAdminReply))).catch(() => {});
       } catch (err: any) {
@@ -1436,13 +1456,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onNavigateToCollection={() => setCurrentPage('chanda')}
           />
         )}
-        {currentPage === 'members' && (
-          <Members
-            members={members}
-            setMembers={setMembers}
-            tasksList={tasksList}
+        {currentPage === 'donors' && (
+          <Donors
+            donors={donors}
+            setDonors={setDonors}
+            committeeMembers={committeeMembers}
+            setCommitteeMembers={setCommitteeMembers}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
+            onLog={handleLog}
+          />
+        )}
+        {currentPage === 'members' && (
+          <Committee
+            donors={donors}
+            committeeMembers={committeeMembers}
+            setCommitteeMembers={setCommitteeMembers}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
             onLog={handleLog}
           />
         )}
@@ -1462,6 +1495,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             members={members}
             donationAdsList={donationAdsList}
             initialAddRequestId={chandaAddRequestId}
+            donors={donors}
+            setDonors={setDonors}
+            committeeMembers={committeeMembers}
+            currentUser={currentUser}
+            users={users}
           />
         )}
         {currentPage === 'donation' && (
@@ -1475,6 +1513,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canBulkImport={dataCanBulkImport}
             onLog={handleLog}
             fixedCategory="donation"
+            donors={donors}
+            setDonors={setDonors}
+            committeeMembers={committeeMembers}
+            currentUser={currentUser}
+            users={users}
           />
         )}
         {currentPage === 'ads' && (
@@ -1488,6 +1531,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canBulkImport={dataCanBulkImport}
             onLog={handleLog}
             fixedCategory="ads"
+            donors={donors}
+            setDonors={setDonors}
+            committeeMembers={committeeMembers}
+            currentUser={currentUser}
+            users={users}
           />
         )}
         {currentPage === 'expenses' && (
@@ -1504,6 +1552,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Vendors
             expenses={expenses}
             canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
+            currentUser={currentUser}
             onLog={handleLog}
           />
         )}

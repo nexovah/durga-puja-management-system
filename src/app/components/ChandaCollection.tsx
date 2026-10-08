@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Download, Upload, CheckSquare, Square, MoreVertical, PieChart, Sparkles, Flame, Pencil, ReceiptIndianRupee, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount } from '../App';
-import { User as UserIcon, Gift } from 'lucide-react';
+import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount, User } from '../App';
+import { User as UserIcon, Gift, Users as UsersIcon } from 'lucide-react';
+import { Donor, CommitteeMember, createDonorRequest } from '../lib/db';
+import { donorFullName, DonorFormModal } from './Donors';
 import { DashboardDonut } from './DashboardDonut';
 import { ReceiptModal } from './ReceiptModal';
 import { ReceiptSettings } from '../lib/db';
@@ -47,6 +49,11 @@ interface ChandaCollectionProps {
   members: Member[];
   donationAdsList: DonationAd[];
   initialAddRequestId?: number;
+  donors: Donor[];
+  setDonors: (donors: Donor[]) => void;
+  committeeMembers: CommitteeMember[];
+  currentUser: User | null;
+  users: User[];
 }
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -106,20 +113,53 @@ const emptyForm = {
   phone2: '',
   remarks: '',
   collectedBy: '',
+  donorId: null as string | null,
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId, donors, setDonors, committeeMembers, currentUser, users }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [donorTab, setDonorTab] = useState<'member' | 'thirdParty'>('member');
+  const [donorQuery, setDonorQuery] = useState('');
+  const [quickAddDonorOpen, setQuickAddDonorOpen] = useState(false);
+
+  // Combined searchable pool for the "Member" tab — standing Donors +
+  // Committee members, both tenant-wide, reusable across every festival.
+  const pickablePeople = useMemo(() => {
+    const fromDonors = donors.map(d => ({ id: d.id, name: donorFullName(d), unit: d.unitNo || '', phone: d.phone || '', phone2: '' }));
+    const fromCommittee = committeeMembers
+      .filter(m => !m.donorId) // standalone committee members not already covered by a donor row
+      .map(m => ({ id: m.id, name: [m.firstName, m.lastName].filter(Boolean).join(' ').trim(), unit: '', phone: m.phone || '', phone2: '' }));
+    return [...fromDonors, ...fromCommittee];
+  }, [donors, committeeMembers]);
+
+  const matchingPickablePeople = useMemo(() => {
+    const q = donorQuery.trim().toLowerCase();
+    if (!q) return [];
+    return pickablePeople.filter(p => p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q)).slice(0, 8);
+  }, [donorQuery, pickablePeople]);
+
+  // Full Donor record for the picked-person card below — gives the
+  // collector a quick-glance view (type, no. of persons, phone) without
+  // re-typing anything, since this is purely a payment against existing
+  // donor data now.
+  const pickedDonor = useMemo(() => donors.find(d => d.id === formData.donorId) || null, [donors, formData.donorId]);
+
+  const openAddForm = () => {
+    setEditingId(null);
+    setFormData({ ...emptyForm, collectedBy: currentUser?.name || '' });
+    setDonorTab('member');
+    setDonorQuery('');
+    setShowForm(true);
+  };
 
   useEffect(() => {
     if (initialAddRequestId && initialAddRequestId > 0) {
-      setEditingId(null);
-      setFormData(emptyForm);
-      setShowForm(true);
+      openAddForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAddRequestId]);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<{ toInsert: Chanda[]; toUpdate: Chanda[]; errors: ImportRowError[]; totalRows: number } | null>(null);
@@ -170,17 +210,19 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   }, [collectedBySuggestOpen]);
 
   // Same Member/Donor-badged suggestion pool as DonationAdsCollection's
-  // Collected By field — Members take priority over Donor on a name clash.
+  // Collected By field — Staff takes priority (so the logged-in user's own
+  // name, pre-filled on open, is recognized), then Members, then Donor.
   const collectedByTypeMap = useMemo(() => {
-    const map = new Map<string, 'member' | 'donor'>();
+    const map = new Map<string, 'member' | 'donor' | 'staff'>();
     chandaList.forEach(c => { if (c.donorName.trim()) map.set(c.donorName.trim(), 'donor'); });
     donationAdsList.forEach(d => {
       if (d.donorName.trim()) map.set(d.donorName.trim(), 'donor');
       if (d.companyName?.trim()) map.set(d.companyName.trim(), 'donor');
     });
     members.forEach(m => { if (m.name.trim()) map.set(m.name.trim(), 'member'); });
+    users.forEach(u => { if (u.name.trim()) map.set(u.name.trim(), 'staff'); });
     return map;
-  }, [members, chandaList, donationAdsList]);
+  }, [members, chandaList, donationAdsList, users]);
 
   const collectedByPool = useMemo(() => [...collectedByTypeMap.keys()], [collectedByTypeMap]);
 
@@ -313,6 +355,12 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       return;
     }
 
+    if (donorTab === 'member' && !formData.donorId) {
+      setToastType('error');
+      setToastMessage(t('committee.pickDonorRequired'));
+      return;
+    }
+
     if (!isPhoneValid(formData.phone, false) || !isPhoneValid(formData.phone2, false)) {
       setToastType('error');
       setToastMessage(t('validation.phoneMinDigits'));
@@ -345,6 +393,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       phone2: formData.phone2,
       remarks: formData.remarks,
       collectedBy: formData.collectedBy.trim() || undefined,
+      donorId: donorTab === 'member' ? formData.donorId : null,
     };
 
     // Editing a record that's already Paid — whether changing its status
@@ -420,7 +469,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       phone2: chanda.phone2 || '',
       remarks: chanda.remarks,
       collectedBy: chanda.collectedBy || '',
+      donorId: chanda.donorId || null,
     });
+    setDonorTab(chanda.donorId ? 'member' : 'thirdParty');
+    setDonorQuery('');
     setEditingId(chanda.id);
     setShowForm(true);
   };
@@ -629,7 +681,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
             {canEdit && (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={openAddForm}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus size={20} />
@@ -730,6 +782,88 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
         }
       >
           <form id="chanda-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 flex rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => { setDonorTab('member'); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold rounded-lg transition-colors ${donorTab === 'member' ? 'bg-white dark:bg-gray-900 text-orange-600 shadow-sm' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                <UsersIcon size={15} /> {t('chanda.memberTab')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDonorTab('thirdParty'); setFormData(f => ({ ...f, donorId: null })); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold rounded-lg transition-colors ${donorTab === 'thirdParty' ? 'bg-white dark:bg-gray-900 text-orange-600 shadow-sm' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                <UserIcon size={15} /> {t('chanda.thirdPartyTab')}
+              </button>
+            </div>
+
+            {donorTab === 'member' && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('committee.pickMember')}</label>
+                {formData.donorId && formData.donorName ? (
+                  <div className="flex items-start justify-between gap-3 px-4 py-3 border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 rounded-lg">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-sm shrink-0">
+                        {formData.donorName.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                          {pickedDonor?.unitNo ? `${pickedDonor.unitNo} · ` : ''}{formData.donorName}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {[
+                            pickedDonor ? (pickedDonor.type === 'owner' ? t('donors.owner') : t('donors.tenant')) : null,
+                            pickedDonor?.numPersons !== null && pickedDonor?.numPersons !== undefined ? `${pickedDonor.numPersons} ${t('donors.numPersons')}` : null,
+                            formData.phone || null,
+                          ].filter(Boolean).map((part, i) => (
+                            <span key={i} className="flex items-center gap-1.5">
+                              {i > 0 && <span className="text-gray-400 dark:text-gray-600">·</span>}
+                              {part}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setFormData(f => ({ ...f, donorId: null, donorName: '', phone: '', phone2: '' }))} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      value={donorQuery}
+                      onChange={(e) => setDonorQuery(e.target.value)}
+                      placeholder={t('committee.searchFlatName')}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    />
+                    {matchingPickablePeople.length > 0 && (
+                      <div className="mt-1.5 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                        {matchingPickablePeople.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => { setFormData(f => ({ ...f, donorId: p.id, donorName: p.name, phone: p.phone })); setDonorQuery(''); }}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                          >
+                            <span className="text-gray-800 dark:text-gray-200">{p.name}</span>
+                            <span className="text-gray-400">{p.unit || ''}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setQuickAddDonorOpen(true)}
+                      className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1.5"
+                    >
+                      <UserIcon size={14} /> {t('chanda.notInListAddMember')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {donorTab === 'thirdParty' && (
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.donorName')}<RequiredMark /></label>
@@ -764,6 +898,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 />
               </div>
             </div>
+            )}
 
             <div className="md:col-span-2 grid grid-cols-3 gap-4">
               <div>
@@ -863,6 +998,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 placeholder={t('chanda.billNumberPlaceholder')}
               />
             </div>
+            {donorTab === 'thirdParty' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone1')}</label>
               <input
@@ -873,6 +1009,8 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
+            )}
+            {donorTab === 'thirdParty' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone2')}</label>
               <input
@@ -883,6 +1021,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>
+            )}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donationAds.collectedBy')}</label>
               <input
@@ -912,18 +1051,22 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                         <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                           type === 'member'
                             ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                            : type === 'staff'
+                            ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
                             : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
                         }`}>
-                          {type === 'member' ? <UserIcon size={14} /> : <Gift size={14} />}
+                          {type === 'member' || type === 'staff' ? <UserIcon size={14} /> : <Gift size={14} />}
                         </span>
                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex-1">{name}</span>
                         {type && (
                           <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
                             type === 'member'
                               ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'
+                              : type === 'staff'
+                              ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
                               : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
                           }`}>
-                            {type === 'member' ? t('donationAds.collectedByMember') : t('donationAds.collectedByDonor')}
+                            {type === 'member' ? t('donationAds.collectedByMember') : type === 'staff' ? t('chanda.collectedByStaff') : t('donationAds.collectedByDonor')}
                           </span>
                         )}
                       </button>
@@ -1347,6 +1490,19 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           downloadCsv(csvContent, `chanda-collection-${exportModal.suffix}-${new Date().toISOString().split('T')[0]}.csv`);
         }}
       />
+
+      {quickAddDonorOpen && (
+        <DonorFormModal
+          donor={null}
+          onCancel={() => setQuickAddDonorOpen(false)}
+          onSave={async (input) => {
+            const created = await createDonorRequest(input);
+            setDonors([...donors, created]);
+            setFormData(f => ({ ...f, donorId: created.id, donorName: donorFullName(created), phone: created.phone || '' }));
+            setQuickAddDonorOpen(false);
+          }}
+        />
+      )}
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal

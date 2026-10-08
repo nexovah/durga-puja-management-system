@@ -97,6 +97,7 @@ const emptyForm = {
   vendorName: '',
   vendorContact: '',
   vendorContact2: '',
+  vendorId: null as string | null,
   remarks: '',
 };
 
@@ -151,6 +152,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setFormData(prev => ({
       ...prev,
       vendorName: value,
+      vendorId: match?.id || null,
       title: lastExpense?.title && !prev.title ? lastExpense.title : prev.title,
       category: match?.category && !prev.category ? match.category : prev.category,
       vendorContact: match?.phone && !prev.vendorContact ? match.phone : prev.vendorContact,
@@ -278,6 +280,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       vendorName: formData.vendorName,
       vendorContact: formData.vendorContact,
       vendorContact2: formData.vendorContact2,
+      vendorId: (() => {
+        const match = vendorDirectory.find(v => v.name.trim().toLowerCase() === formData.vendorName.trim().toLowerCase());
+        return match?.id || formData.vendorId || null;
+      })(),
       remarks: formData.remarks,
     };
 
@@ -349,6 +355,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       vendorName: expense.vendorName || '',
       vendorContact: expense.vendorContact || '',
       vendorContact2: expense.vendorContact2 || '',
+      vendorId: expense.vendorId || null,
       remarks: expense.remarks,
     });
     setEditingId(expense.id);

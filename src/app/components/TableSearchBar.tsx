@@ -13,10 +13,13 @@ export interface TableSearchFilters {
   phone: string;
   inKind: string;
   designation: string;
+  category: string;
+  type: string;
+  unitNo: string;
 }
 
 export const emptyTableSearchFilters: TableSearchFilters = {
-  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '', inKind: '', designation: '',
+  amountMin: '', amountMax: '', billVoucher: '', status: '', dateFrom: '', dateTo: '', paidMethod: '', phone: '', inKind: '', designation: '', category: '', type: '', unitNo: '',
 };
 
 export const hasActiveTableFilters = (f: TableSearchFilters) => Object.values(f).some(v => v.trim() !== '');
@@ -46,6 +49,12 @@ interface TableSearchBarProps {
   inKindLabel?: string;
   designationOptions?: Option[]; // Members-only: filters by Member.role
   designationLabel?: string;
+  categoryOptions?: Option[]; // Donors-only: filters by Donor.category
+  categoryLabel?: string;
+  typeOptions?: Option[]; // Donors-only: filters by Donor.type (owner/tenant)
+  typeLabel?: string;
+  showUnitNo?: boolean; // Donors-only: filters by Donor.unitNo
+  unitNoLabel?: string;
 }
 
 // Per-page search + advanced filter bar — lives in the page body, directly
@@ -58,10 +67,11 @@ export function TableSearchBar({
   resultCount, totalCount,
   showAmount, showBillVoucher, billVoucherLabel, statusOptions, statusLabel, paidMethodOptions, showDateRange, showPhone,
   inKindOptions, inKindLabel, designationOptions, designationLabel,
+  categoryOptions, categoryLabel, typeOptions, typeLabel, showUnitNo, unitNoLabel,
 }: TableSearchBarProps) {
   const { t } = useLanguage();
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone || inKindOptions || designationOptions;
+  const hasAdvancedFields = showAmount || showBillVoucher || statusOptions || paidMethodOptions || showDateRange || showPhone || inKindOptions || designationOptions || categoryOptions || typeOptions || showUnitNo;
 
   const handleSearch = () => {
     onSearch();
@@ -201,6 +211,47 @@ export function TableSearchBar({
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
+              </div>
+            )}
+            {categoryOptions && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{categoryLabel || t('donors.category')}</label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('search.any')}</option>
+                  {categoryOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {typeOptions && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{typeLabel || t('donors.type')}</label>
+                <select
+                  value={filters.type}
+                  onChange={(e) => onFiltersChange({ ...filters, type: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                >
+                  <option value="">{t('search.any')}</option>
+                  {typeOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {showUnitNo && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{unitNoLabel || t('donors.unitNo')}</label>
+                <input
+                  type="text"
+                  value={filters.unitNo}
+                  onChange={(e) => onFiltersChange({ ...filters, unitNo: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
               </div>
             )}
             {paidMethodOptions && (

@@ -85,6 +85,7 @@ export function fromChandaRow(row: any): Chanda {
     collectedBy: row.collected_by || '',
     receiptNumber: row.receipt_number ?? null,
     receiptToken: row.receipt_token,
+    donorId: row.donor_id ?? null,
   };
 }
 // Deliberately omits receipt_number/receipt_token — those are DB-assigned
@@ -108,6 +109,7 @@ function toChandaRow(c: Chanda) {
     phone2: c.phone2 || null,
     remarks: c.remarks,
     collected_by: c.collectedBy || null,
+    donor_id: c.donorId || null,
   };
 }
 
@@ -127,6 +129,7 @@ export function fromDonationAdRow(row: any): DonationAd {
     phone2: row.phone2 || '',
     collectedBy: row.collected_by || undefined,
     remarks: row.remarks || '',
+    donorId: row.donor_id ?? null,
   };
 }
 function toDonationAdRow(d: DonationAd) {
@@ -145,6 +148,7 @@ function toDonationAdRow(d: DonationAd) {
     phone2: d.phone2 || null,
     collected_by: d.collectedBy || null,
     remarks: d.remarks,
+    donor_id: d.donorId || null,
   };
 }
 
@@ -169,6 +173,7 @@ export function fromExpenseRow(row: any): Expense {
     vendorName: row.vendor_name || '',
     vendorContact: row.vendor_contact || '',
     vendorContact2: row.vendor_contact2 || '',
+    vendorId: row.vendor_id ?? null,
     remarks: row.remarks || '',
   };
 }
@@ -186,6 +191,7 @@ function toExpenseRow(e: Expense) {
     vendor_name: e.vendorName || null,
     vendor_contact: e.vendorContact || null,
     vendor_contact2: e.vendorContact2 || null,
+    vendor_id: e.vendorId || null,
     remarks: e.remarks,
   };
 }
@@ -927,18 +933,28 @@ export interface Vendor {
   id: string;
   name: string;
   companyName: string | null;
+  ownerFirstName: string | null;
+  ownerLastName: string | null;
   phone: string | null;
   phone2: string | null;
+  whatsapp: string | null;
+  sameAsContact: boolean;
   address: string | null;
+  city: string | null;
   category: string | null;
 }
 
 export interface VendorInput {
   name: string;
   companyName?: string | null;
+  ownerFirstName?: string | null;
+  ownerLastName?: string | null;
   phone?: string | null;
   phone2?: string | null;
+  whatsapp?: string | null;
+  sameAsContact?: boolean;
   address?: string | null;
+  city?: string | null;
   category?: string | null;
 }
 
@@ -947,9 +963,14 @@ export function fromVendorRow(row: any): Vendor {
     id: row.id,
     name: row.name,
     companyName: row.company_name,
+    ownerFirstName: row.owner_first_name,
+    ownerLastName: row.owner_last_name,
     phone: row.phone,
     phone2: row.phone2,
+    whatsapp: row.whatsapp,
+    sameAsContact: row.same_as_contact !== false,
     address: row.address,
+    city: row.city,
     category: row.category,
   };
 }
@@ -958,9 +979,14 @@ function toVendorRow(v: VendorInput) {
   return {
     name: v.name,
     company_name: v.companyName || null,
+    owner_first_name: v.ownerFirstName || null,
+    owner_last_name: v.ownerLastName || null,
     phone: v.phone || null,
     phone2: v.phone2 || null,
+    whatsapp: v.sameAsContact ? (v.phone || null) : (v.whatsapp || null),
+    same_as_contact: v.sameAsContact !== false,
     address: v.address || null,
+    city: v.city || null,
     category: v.category || null,
   };
 }
@@ -981,6 +1007,187 @@ export async function updateVendorRequest(id: string, input: VendorInput): Promi
   const { data, error } = await supabase.from('vendors').update(toVendorRow(input)).eq('id', id).select().single();
   if (error) throw error;
   return fromVendorRow(data);
+}
+
+export async function deleteVendorRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('vendors').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Donors + Committee members (see supabase/140_donors_committee.sql).
+// Tenant-scoped only, not event-scoped — standing identity records reused
+// across every festival/event, same permanence model as Vendors above.
+// ---------------------------------------------------------------------------
+
+export interface Donor {
+  id: string;
+  category: string;
+  type: 'owner' | 'tenant';
+  unitNo: string | null;
+  numPersons: number | null;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  sameAsContact: boolean;
+  relatedFlat: string | null;
+  isCommitteeMember: boolean;
+  createdAt: string;
+}
+
+export interface DonorInput {
+  category: string;
+  type: 'owner' | 'tenant';
+  unitNo?: string | null;
+  numPersons?: number | null;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  sameAsContact: boolean;
+  relatedFlat?: string | null;
+  isCommitteeMember: boolean;
+}
+
+export function fromDonorRow(row: any): Donor {
+  return {
+    id: row.id,
+    category: row.category,
+    type: row.type,
+    unitNo: row.unit_no,
+    numPersons: row.num_persons === null || row.num_persons === undefined ? null : Number(row.num_persons),
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    email: row.email,
+    sameAsContact: row.same_as_contact,
+    relatedFlat: row.related_flat,
+    isCommitteeMember: row.is_committee_member,
+    createdAt: row.created_at,
+  };
+}
+
+function toDonorRow(d: DonorInput) {
+  return {
+    category: d.category,
+    type: d.type,
+    unit_no: d.unitNo || null,
+    num_persons: d.numPersons ?? null,
+    first_name: d.firstName,
+    last_name: d.lastName,
+    phone: d.phone || null,
+    whatsapp: d.sameAsContact ? (d.phone || null) : (d.whatsapp || null),
+    email: d.email || null,
+    same_as_contact: d.sameAsContact,
+    related_flat: d.relatedFlat || null,
+    is_committee_member: d.isCommitteeMember,
+  };
+}
+
+export async function listDonorsRequest(): Promise<Donor[]> {
+  const { data, error } = await supabase.from('donors').select('*').order('first_name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(fromDonorRow);
+}
+
+export async function createDonorRequest(input: DonorInput): Promise<Donor> {
+  const { data, error } = await supabase.from('donors').insert(toDonorRow(input)).select().single();
+  if (error) throw error;
+  return fromDonorRow(data);
+}
+
+export async function updateDonorRequest(id: string, input: DonorInput): Promise<Donor> {
+  const { data, error } = await supabase.from('donors').update(toDonorRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromDonorRow(data);
+}
+
+export async function deleteDonorRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('donors').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export interface CommitteeMember {
+  id: string;
+  donorId: string | null;
+  designation: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  relatedFlat: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CommitteeMemberInput {
+  donorId?: string | null;
+  designation: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  relatedFlat?: string | null;
+  isActive?: boolean;
+}
+
+export function fromCommitteeMemberRow(row: any): CommitteeMember {
+  return {
+    id: row.id,
+    donorId: row.donor_id,
+    designation: row.designation,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    email: row.email,
+    relatedFlat: row.related_flat,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  };
+}
+
+function toCommitteeMemberRow(c: CommitteeMemberInput) {
+  return {
+    donor_id: c.donorId || null,
+    designation: c.designation,
+    first_name: c.firstName,
+    last_name: c.lastName,
+    phone: c.phone || null,
+    whatsapp: c.whatsapp || null,
+    email: c.email || null,
+    related_flat: c.relatedFlat || null,
+    is_active: c.isActive !== false,
+  };
+}
+
+export async function listCommitteeMembersRequest(): Promise<CommitteeMember[]> {
+  const { data, error } = await supabase.from('committee_members').select('*').order('first_name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(fromCommitteeMemberRow);
+}
+
+export async function createCommitteeMemberRequest(input: CommitteeMemberInput): Promise<CommitteeMember> {
+  const { data, error } = await supabase.from('committee_members').insert(toCommitteeMemberRow(input)).select().single();
+  if (error) throw error;
+  return fromCommitteeMemberRow(data);
+}
+
+export async function updateCommitteeMemberRequest(id: string, input: CommitteeMemberInput): Promise<CommitteeMember> {
+  const { data, error } = await supabase.from('committee_members').update(toCommitteeMemberRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromCommitteeMemberRow(data);
+}
+
+export async function deleteCommitteeMemberRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('committee_members').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function listAssetsRequest(): Promise<Asset[]> {
@@ -1116,6 +1323,7 @@ export interface AppDocument {
   fileSizeBytes: number | null;
   uploadedByName: string;
   uploadedAt: string;
+  vendorId: string | null;
 }
 
 export function fromDocumentRow(row: any): AppDocument {
@@ -1127,6 +1335,7 @@ export function fromDocumentRow(row: any): AppDocument {
     fileSizeBytes: row.file_size_bytes,
     uploadedByName: row.uploaded_by_name,
     uploadedAt: row.uploaded_at,
+    vendorId: row.vendor_id ?? null,
   };
 }
 
@@ -1157,6 +1366,40 @@ export async function createDocumentRequest(entry: {
   const { data, error } = await supabase
     .from('documents')
     .insert({
+      name: entry.name,
+      category: entry.category,
+      file_url: entry.fileUrl,
+      file_size_bytes: entry.fileSizeBytes,
+      uploaded_by_user_id: entry.uploadedByUserId,
+      uploaded_by_name: entry.uploadedByName,
+      uploaded_at: entry.uploadedAt,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromDocumentRow(data);
+}
+
+// Vendor attachments reuse the `documents` table/storage bucket, but are
+// tenant-wide (not event-scoped) like the vendor they belong to — inserted
+// with event_id explicitly null (overriding its normal current_event_id()
+// default) so they stay visible no matter which festival is active. See
+// the widened RLS policy in supabase/144_vendors_overhaul.sql.
+export async function createVendorDocumentRequest(entry: {
+  vendorId: string;
+  name: string;
+  category: DocumentCategory;
+  fileUrl: string;
+  fileSizeBytes: number;
+  uploadedByUserId: string;
+  uploadedByName: string;
+  uploadedAt: string;
+}): Promise<AppDocument> {
+  const { data, error } = await supabase
+    .from('documents')
+    .insert({
+      event_id: null,
+      vendor_id: entry.vendorId,
       name: entry.name,
       category: entry.category,
       file_url: entry.fileUrl,
@@ -1666,7 +1909,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank' | 'awards';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank' | 'awards' | 'donors' | 'committee';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 
