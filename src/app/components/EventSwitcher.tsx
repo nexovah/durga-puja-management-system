@@ -47,11 +47,30 @@ interface EventSwitcherProps {
   onEventCreated: (event: EventInfo) => void;
   onEventUpdated: (event: EventInfo) => void;
   onEventSwitched: (eventId: string) => void;
+  // 'sidebar' (default): bordered box trigger, full-width, chevron only.
+  // 'topbar': plain text trigger (no border/bg), always-visible Live pill
+  // beside the name, used when this component is rendered in the top bar
+  // instead of the sidebar.
+  variant?: 'sidebar' | 'topbar';
+}
+
+// Small animated-dot "Live" pill — shared between the sidebar dropdown's
+// per-row indicator and the topbar trigger's always-visible indicator.
+function LivePill() {
+  return (
+    <span className="flex items-center gap-1 text-[10.5px] font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-[7px] py-[3px] rounded-full shrink-0">
+      <span className="relative flex w-[7px] h-[7px]">
+        <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75" />
+        <span className="relative inline-flex w-[7px] h-[7px] rounded-full bg-green-500" />
+      </span>
+      Live
+    </span>
+  );
 }
 
 export function EventSwitcher({
   events, activeEventId, isAdmin, collapsed, currentUserId,
-  onEventCreated, onEventUpdated, onEventSwitched,
+  onEventCreated, onEventUpdated, onEventSwitched, variant = 'sidebar',
 }: EventSwitcherProps) {
   const [open, setOpen] = useState(false);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
@@ -91,6 +110,59 @@ export function EventSwitcher({
       closeAll();
     }
   };
+
+  if (variant === 'topbar') {
+    return (
+      <div ref={containerRef} className="relative shrink-0">
+        <button
+          ref={anchorRef}
+          onClick={() => isAdmin && setOpen(o => !o)}
+          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${isAdmin ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+          <span className="text-base leading-none shrink-0">{activeEvent?.emoji || '🪔'}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[12rem]">
+            {activeEvent ? `${activeEvent.name} — ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
+          </span>
+          {activeEvent && <LivePill />}
+          {isAdmin && <ChevronsUpDown size={15} className="text-gray-400 dark:text-gray-500 shrink-0" />}
+        </button>
+
+        {open && isAdmin && (
+          <EventPopover
+            events={events}
+            activeEventId={activeEventId}
+            onRowClick={handleRowClick}
+            onManageClick={() => { setOpen(false); setManageOpen(true); }}
+            align="left-0"
+          />
+        )}
+
+        {manageOpen && isAdmin && (
+          <EventManageModal
+            events={events}
+            activeEventId={activeEventId}
+            currentUserId={currentUserId}
+            onClose={() => setManageOpen(false)}
+            onRowClick={handleRowClick}
+            onCreated={onEventCreated}
+            onUpdated={onEventUpdated}
+            onSwitched={onEventSwitched}
+          />
+        )}
+
+        <SuperAdminConfirmModal
+          open={pendingSwitchId !== null}
+          title="Switch 'Puja, Festival or Event'?"
+          message="Every user in this tenant will immediately move to this event — all data they view and add from now on will belong to it. This cannot be undone by simply switching back and forth without care."
+          confirmLabel="Switch Everyone"
+          danger
+          codeLength={12}
+          onCancel={() => setPendingSwitchId(null)}
+          onConfirm={handleConfirmSwitch}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="relative shrink-0 px-3">
@@ -168,16 +240,17 @@ function shortlistEvents(events: EventInfo[], activeEventId: string | null): Eve
 }
 
 function EventPopover({
-  events, activeEventId, onRowClick, onEditClick, onManageClick,
+  events, activeEventId, onRowClick, onEditClick, onManageClick, align = 'left-3',
 }: {
   events: EventInfo[];
   activeEventId: string | null;
   onRowClick: (event: EventInfo) => void;
   onManageClick: () => void;
+  align?: string;
 }) {
   const shortlist = shortlistEvents(events, activeEventId);
   return (
-    <div className="absolute top-full left-3 mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+    <div className={`absolute top-full ${align} mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700`} onClick={e => e.stopPropagation()}>
       <div className="rounded-xl overflow-hidden">
           <div className="py-1.5">
             {shortlist.map(event => {
@@ -197,15 +270,7 @@ function EventPopover({
                       {event.name} — {formatFinancialYear(event.year)}
                     </span>
                   </button>
-                  {active && (
-                    <span className="flex items-center gap-1 text-[10.5px] font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-[7px] py-[3px] rounded-full shrink-0">
-                      <span className="relative flex w-[7px] h-[7px]">
-                        <span className="animate-ping absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75" />
-                        <span className="relative inline-flex w-[7px] h-[7px] rounded-full bg-green-500" />
-                      </span>
-                      Live
-                    </span>
-                  )}
+                  {active && <LivePill />}
                 </div>
               );
             })}

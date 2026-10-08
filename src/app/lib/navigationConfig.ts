@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, HandCoins, Gift, Megaphone, TrendingDown, Wallet,
   Truck, Landmark, CheckSquare, Settings as SettingsIcon, ScrollText,
-  FileBarChart, Calculator, Package, FolderOpen, Trophy, UserPlus, Building2,
+  FileBarChart, Calculator, Package, FolderOpen, Trophy, UserPlus, UsersRound,
 } from 'lucide-react';
 import { TranslationKey } from '../i18n/translations';
 
@@ -66,9 +66,9 @@ export const NAVIGATION_GROUPS: NavGroupConfig[] = [
     labelKey: 'sidebar.groupEssential',
     items: [
       { key: 'donors', icon: UserPlus, labelKey: 'nav.donors', checkPermission: (p) => !!p?.members },
-      { key: 'members', icon: Users, labelKey: 'nav.committee', checkPermission: (p) => !!p?.members },
+      { key: 'members', icon: UsersRound, labelKey: 'nav.committee', checkPermission: (p) => !!p?.members },
       { key: 'vendors', icon: Truck, labelKey: 'nav.vendors', checkPermission: (p) => !!p?.vendors },
-      { key: 'advertisers', icon: Building2, labelKey: 'nav.advertisers', checkPermission: (p) => !!(p?.ads ?? p?.donationAds) },
+      { key: 'advertisers', icon: Megaphone, labelKey: 'nav.advertisers', checkPermission: (p) => !!(p?.ads ?? p?.donationAds) },
       { key: 'documents', icon: FolderOpen, labelKey: 'nav.documents', checkPermission: (p) => p?.documents !== false },
       { key: 'tasks', icon: CheckSquare, labelKey: 'nav.tasks', checkPermission: (p) => !!p?.tasks },
       { key: 'assets', icon: Package, labelKey: 'nav.assets', checkPermission: (p) => p?.assets !== false },

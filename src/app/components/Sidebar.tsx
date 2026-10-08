@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreHorizontal, X } from 'lucide-react';
+import { MoreHorizontal, X, PanelLeftOpen } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { EventSwitcher } from './EventSwitcher';
-import { EventInfo } from '../lib/db';
 import { NAVIGATION_GROUPS, NavPageKey } from '../lib/navigationConfig';
 
 type PageKey = NavPageKey;
@@ -33,13 +31,7 @@ interface SidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
   onCloseMobile: () => void;
-  events: EventInfo[];
-  activeEventId: string | null;
-  isAdmin: boolean;
-  currentUserId: string;
-  onEventCreated: (event: EventInfo) => void;
-  onEventUpdated: (event: EventInfo) => void;
-  onEventSwitched: (eventId: string) => void;
+  onToggleCollapse: () => void;
 }
 
 type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; className?: string }>; label: string; show: boolean };
@@ -51,7 +43,7 @@ type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; classN
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
   logo, association, currentPage, onNavigate, permissions, hiddenNavKeys, collapsed, mobileOpen, onCloseMobile,
-  events, activeEventId, isAdmin, currentUserId, onEventCreated, onEventUpdated, onEventSwitched,
+  onToggleCollapse,
 }: SidebarProps) {
   const { t } = useLanguage();
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
@@ -74,11 +66,22 @@ export function Sidebar({
   const content = (
     <div className="h-full flex flex-col">
       <div className={`flex items-center gap-2.5 shrink-0 ${collapsed ? 'justify-center px-2 py-5' : 'px-4 py-5'}`}>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 border border-gray-300 dark:border-gray-600 rounded-full overflow-hidden shrink-0 w-[41px] h-[41px] flex items-center justify-center">
-          {logo && (logo.startsWith('data:') || logo.startsWith('http')) ? (
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xl leading-none">{logo || '🕉️'}</span>
+        <div className="relative group shrink-0 w-[41px] h-[41px]">
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 border border-gray-300 dark:border-gray-600 rounded-full overflow-hidden w-full h-full flex items-center justify-center">
+            {logo && (logo.startsWith('data:') || logo.startsWith('http')) ? (
+              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl leading-none">{logo || '🕉️'}</span>
+            )}
+          </div>
+          {collapsed && (
+            <button
+              onClick={onToggleCollapse}
+              className="absolute inset-0 hidden group-hover:flex items-center justify-center rounded-full bg-gray-900/70 dark:bg-gray-950/80 text-white"
+              aria-label={t('sidebar.expand')}
+            >
+              <PanelLeftOpen size={18} strokeWidth={1.5} />
+            </button>
           )}
         </div>
         {!collapsed && (
@@ -93,19 +96,6 @@ export function Sidebar({
         >
           <X size={20} />
         </button>
-      </div>
-
-      <div className="pt-3 pb-1">
-        <EventSwitcher
-          events={events}
-          activeEventId={activeEventId}
-          isAdmin={isAdmin}
-          collapsed={collapsed}
-          currentUserId={currentUserId}
-          onEventCreated={onEventCreated}
-          onEventUpdated={onEventUpdated}
-          onEventSwitched={onEventSwitched}
-        />
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-hide pt-3 pb-2 px-3 space-y-5">

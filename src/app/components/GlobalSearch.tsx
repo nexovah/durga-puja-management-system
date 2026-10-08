@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Users, HandCoins, Gift, Megaphone, TrendingDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Search, X, Users, HandCoins, Gift, Megaphone, TrendingDown, Plus } from 'lucide-react';
 import { Member, Chanda, DonationAd, Expense, User } from '../App';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
@@ -25,7 +26,6 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Mac uses the Cmd glyph in the shortcut badge; every other platform
@@ -37,26 +37,18 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   }, [open]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
     const handleShortcut = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setOpen(true);
-        inputRef.current?.focus();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
     document.addEventListener('keydown', handleShortcut);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('keydown', handleShortcut);
     };
@@ -126,39 +118,113 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
     setQuery('');
   };
 
-  return (
-    <div ref={wrapperRef} className="relative w-full max-w-md">
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          placeholder={t('search.placeholder')}
-          className="w-full pl-9 pr-16 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-        />
-        {query ? (
-          <button
-            onClick={() => { setQuery(''); setOpen(false); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X size={15} />
-          </button>
-        ) : (
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-[11px] font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none">
-            {isMac ? '⌘' : 'Ctrl'} J
-          </kbd>
-        )}
-      </div>
+  // Shown only when the modal is empty (no query yet) — quick jump links
+  // plus quick-add shortcuts, Supabase-command-palette style. Both just
+  // navigate to the target page (the user adds the record there
+  // themselves); same permission gating as the live search results above.
+  type Shortcut = { page: SearchablePage; icon: React.ReactNode; labelKey: TranslationKey; show: boolean };
+  const shortcutsAll: Shortcut[] = [
+    { page: 'members', icon: <Users size={16} />, labelKey: 'nav.members', show: !!currentUser?.permissions.members },
+    { page: 'chanda', icon: <HandCoins size={16} />, labelKey: 'nav.chanda', show: !!currentUser?.permissions.chanda },
+    { page: 'donation', icon: <Gift size={16} />, labelKey: 'nav.donation', show: !!(currentUser?.permissions.donation ?? currentUser?.permissions.donationAds) },
+    { page: 'ads', icon: <Megaphone size={16} />, labelKey: 'nav.ads', show: !!(currentUser?.permissions.ads ?? currentUser?.permissions.donationAds) },
+    { page: 'expenses', icon: <TrendingDown size={16} />, labelKey: 'nav.expenses', show: !!currentUser?.permissions.expenses },
+  ];
+  const shortcuts = shortcutsAll.filter(s => s.show);
 
-      {open && (
-        <div className="absolute left-0 right-0 sm:right-auto sm:w-[28rem] top-full mt-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-40 p-4">
-          <p className="text-xs text-gray-400 dark:text-gray-500">{t('search.jumpHint')}</p>
+  type QuickAction = { page: SearchablePage; labelKey: TranslationKey; show: boolean };
+  const quickActionsAll: QuickAction[] = [
+    { page: 'members', labelKey: 'search.action.addMember', show: !!currentUser?.permissions.members },
+    { page: 'chanda', labelKey: 'search.action.addCollection', show: !!currentUser?.permissions.chanda },
+    { page: 'donation', labelKey: 'search.action.addDonation', show: !!(currentUser?.permissions.donation ?? currentUser?.permissions.donationAds) },
+    { page: 'ads', labelKey: 'search.action.addSponsorship', show: !!(currentUser?.permissions.ads ?? currentUser?.permissions.donationAds) },
+    { page: 'expenses', labelKey: 'search.action.addExpense', show: !!currentUser?.permissions.expenses },
+  ];
+  const quickActions = quickActionsAll.filter(a => a.show);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full max-w-[11rem] flex items-center gap-2 pl-3 pr-2 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+      >
+        <Search size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
+        <span className="flex-1 text-left truncate text-gray-400 dark:text-gray-500">{t('search.placeholder')}</span>
+        <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-[11px] font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none shrink-0">
+          {isMac ? '⌘' : 'Ctrl'} K
+        </kbd>
+      </button>
+
+      {open && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center pt-[12vh] px-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="relative border-b border-gray-100 dark:border-gray-800">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
+              <input
+                ref={inputRef}
+                type="text"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('search.placeholder')}
+                className="w-full pl-11 pr-10 py-3.5 text-sm bg-transparent outline-none dark:text-gray-100"
+              />
+              <button
+                onClick={() => setOpen(false)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4">
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('search.jumpHint')}</p>
 
           {query.trim() === '' ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">{t('search.typeToSearch')}</p>
+            <div className="mt-3 space-y-4">
+              {shortcuts.length > 0 && (
+                <div>
+                  <p className="px-3 mb-1 text-xs font-bold text-orange-700 uppercase tracking-wide">{t('search.shortcuts')}</p>
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {shortcuts.map(s => (
+                      <button
+                        key={s.page}
+                        onClick={() => handleSelect(s.page)}
+                        className="w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
+                      >
+                        <span className="text-gray-400 dark:text-gray-500 shrink-0">{s.icon}</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{t(s.labelKey)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {quickActions.length > 0 && (
+                <div>
+                  <p className="px-3 mb-1 text-xs font-bold text-orange-700 uppercase tracking-wide">{t('search.actions')}</p>
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {quickActions.map(a => (
+                      <button
+                        key={a.page}
+                        onClick={() => handleSelect(a.page)}
+                        className="w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                          <Plus size={14} />
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{t(a.labelKey)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {shortcuts.length === 0 && quickActions.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('search.typeToSearch')}</p>
+              )}
+            </div>
           ) : totalResults === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">{t('search.noResults')}</p>
           ) : (
@@ -231,7 +297,10 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                 )}
               </div>
             )}
-        </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

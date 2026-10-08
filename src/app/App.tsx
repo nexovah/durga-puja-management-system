@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, PanelLeftOpen, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -16,6 +16,7 @@ import { Assets } from './components/Assets';
 import { Awards } from './components/Awards';
 import { Documents } from './components/Documents';
 import { Sidebar } from './components/Sidebar';
+import { EventSwitcher } from './components/EventSwitcher';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { Donors } from './components/Donors';
@@ -1340,13 +1341,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         collapsed={sidebarCollapsed}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
-        events={events}
-        activeEventId={activeEventId}
-        isAdmin={!!currentUser?.isAdmin}
-        currentUserId={currentUser?.id || ''}
-        onEventCreated={(event) => setEvents(prev => [...prev, event])}
-        onEventUpdated={(event) => setEvents(prev => prev.map(e => e.id === event.id ? event : e))}
-        onEventSwitched={(eventId) => setActiveEventId(eventId)}
+        onToggleCollapse={toggleSidebarCollapsed}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -1360,13 +1355,27 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             >
               <Menu size={22} />
             </button>
-            <button
-              onClick={toggleSidebarCollapsed}
-              className="hidden lg:flex text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
-              aria-label={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={20} strokeWidth={1.5} /> : <PanelLeftClose size={20} strokeWidth={1.5} />}
-            </button>
+            {!sidebarCollapsed && (
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="hidden lg:flex text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
+                aria-label={t('sidebar.collapse')}
+              >
+                <PanelLeftClose size={20} strokeWidth={1.5} />
+              </button>
+            )}
+
+            <EventSwitcher
+              variant="topbar"
+              collapsed={false}
+              events={events}
+              activeEventId={activeEventId}
+              isAdmin={!!currentUser?.isAdmin}
+              currentUserId={currentUser?.id || ''}
+              onEventCreated={(event) => setEvents(prev => [...prev, event])}
+              onEventUpdated={(event) => setEvents(prev => prev.map(e => e.id === event.id ? event : e))}
+              onEventSwitched={(eventId) => setActiveEventId(eventId)}
+            />
 
             <div className="flex-1 min-w-0">
               <GlobalSearch
@@ -1780,9 +1789,6 @@ function ProfileMenu({
         </div>
         <div className="text-left hidden sm:block">
           <p className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-200">{currentUser?.name}</p>
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide mt-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-            {currentUser?.isAdmin ? t('header.admin') : t('header.user')}
-          </span>
         </div>
         <ChevronDown size={16} className="text-gray-400 dark:text-gray-500 hidden sm:block" />
       </button>
