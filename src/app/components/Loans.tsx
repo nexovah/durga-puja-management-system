@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Download, Upload, User as UserIcon, Landmark, HandCoins, MoreVertical, Eye, EyeOff } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
-import { Loan, Member, PaidMethod, getLoanNetAmount } from '../App';
-import { diffFields, ActivityFieldChange } from '../lib/db';
+import { Loan, Member, PaidMethod, getLoanNetAmount, User } from '../App';
+import { diffFields, ActivityFieldChange, Donor, CommitteeMember, createDonorRequest } from '../lib/db';
+import { donorFullName, DonorFormModal } from './Donors';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -28,6 +29,9 @@ interface LoansProps {
   loansList: Loan[];
   setLoansList: (loans: Loan[]) => void;
   members: Member[];
+  donors: Donor[];
+  setDonors: (donors: Donor[]) => void;
+  committeeMembers: CommitteeMember[];
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
@@ -50,6 +54,7 @@ const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
 
 const emptyForm = {
   donorName: '',
+  donorId: null as string | null,
   amountReceived: '',
   amountPaid: '',
   phone: '',
@@ -60,7 +65,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Loans({ loansList, setLoansList, members, canEdit, canDelete, canBulkImport, onLog }: LoansProps) {
+export function Loans({ loansList, setLoansList, members, donors, setDonors, committeeMembers, canEdit, canDelete, canBulkImport, onLog }: LoansProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,10 +76,6 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
   const [viewTarget, setViewTarget] = useState<Loan | null>(null);
-  const [memberSuggestOpen, setMemberSuggestOpen] = useState(false);
-  const [memberSuggestPos, setMemberSuggestPos] = useState<{ top: number; left: number; width: number } | null>(null);
-  const memberSuggestInputRef = useRef<HTMLInputElement>(null);
-  const memberSuggestListRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('loans');
@@ -92,35 +93,24 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!memberSuggestOpen) { setMemberSuggestPos(null); return; }
-    if (memberSuggestInputRef.current) {
-      const rect = memberSuggestInputRef.current.getBoundingClientRect();
-      setMemberSuggestPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
-    }
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (memberSuggestListRef.current?.contains(target)) return;
-      if (memberSuggestInputRef.current?.contains(target)) return;
-      setMemberSuggestOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [memberSuggestOpen]);
-
-  // Loans are almost always from a committee member, not a third party —
-  // as the donor name is typed, suggest matching members first so the
-  // phone number can be auto-filled from Members instead of retyped.
-  const matchingMembers = useMemo(() => {
-    const q = formData.donorName.trim().toLowerCase();
+  // Loans are almost always from a donor or committee member — search the
+  // standing, tenant-wide Donors + Committee lists (same lender reused
+  // across every festival) instead of retyping their details each time.
+  const [donorQuery, setDonorQuery] = useState('');
+  const [quickAddDonorOpen, setQuickAddDonorOpen] = useState(false);
+  const pickablePeople = useMemo(() => {
+    const fromDonors = donors.map(d => ({ id: d.id, name: donorFullName(d), unit: d.unitNo || '', phone: d.phone || '', type: d.type, numPersons: d.numPersons, source: 'donor' as const }));
+    const fromCommittee = committeeMembers
+      .filter(m => !m.donorId)
+      .map(m => ({ id: m.id, name: [m.firstName, m.lastName].filter(Boolean).join(' ').trim(), unit: '', phone: m.phone || '', type: undefined as 'owner' | 'tenant' | undefined, numPersons: null as number | null, source: 'member' as const }));
+    return [...fromDonors, ...fromCommittee];
+  }, [donors, committeeMembers]);
+  const matchingPickablePeople = useMemo(() => {
+    const q = donorQuery.trim().toLowerCase();
     if (!q) return [];
-    return members.filter(m => m.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [members, formData.donorName]);
-
-  const handlePickMember = (member: Member) => {
-    setFormData(prev => ({ ...prev, donorName: member.name, phone: member.phone || prev.phone }));
-    setMemberSuggestOpen(false);
-  };
+    return pickablePeople.filter(p => p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q)).slice(0, 8);
+  }, [donorQuery, pickablePeople]);
+  const pickedDonor = useMemo(() => donors.find(d => d.id === formData.donorId) || null, [donors, formData.donorId]);
 
   const totalLoans = loansList.reduce((sum, loan) => sum + getLoanNetAmount(loan), 0);
   const outstandingCount = loansList.filter(loan => getLoanNetAmount(loan) > 0).length;
@@ -151,6 +141,12 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
       return;
     }
 
+    if (!formData.donorName.trim()) {
+      setToastType('error');
+      setToastMessage(t('committee.pickDonorRequired'));
+      return;
+    }
+
     if (!isPhoneValid(formData.phone, false)) {
       setToastType('error');
       setToastMessage(t('validation.phoneMinDigits'));
@@ -172,6 +168,7 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
 
     const payload = {
       donorName: formData.donorName,
+      donorId: formData.donorId,
       amountReceived: parseFloat(formData.amountReceived) || 0,
       amountPaid: parseFloat(formData.amountPaid) || 0,
       phone: formData.phone,
@@ -210,8 +207,10 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
   };
 
   const handleEdit = (loan: Loan) => {
+    setDonorQuery('');
     setFormData({
       donorName: loan.donorName,
+      donorId: loan.donorId || null,
       amountReceived: loan.amountReceived.toString(),
       amountPaid: (loan.amountPaid || 0).toString(),
       phone: loan.phone,
@@ -496,54 +495,73 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
         }
       >
           <form id="loans-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Row 1: Donor's Name (with a committee-member search suggest,
-                since loans almost always come from a member) | Phone Number */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('loans.donorName')}<RequiredMark /></label>
-              <input
-                ref={memberSuggestInputRef}
-                type="text"
-                required
-                autoComplete="off"
-                value={formData.donorName}
-                onChange={(e) => { setFormData({ ...formData, donorName: e.target.value }); setMemberSuggestOpen(true); }}
-                onFocus={() => setMemberSuggestOpen(true)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('loans.donorNamePlaceholder')}
-              />
-              {memberSuggestOpen && memberSuggestPos && matchingMembers.length > 0 && createPortal(
-                <div ref={memberSuggestListRef} style={{ position: 'fixed', top: memberSuggestPos.top, left: memberSuggestPos.left, width: memberSuggestPos.width }} className="z-[200] bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-56 overflow-y-auto">
-                  <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('loans.membersSuggestLabel')}</p>
-                  {matchingMembers.map(m => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => handlePickMember(m)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left"
-                    >
-                      <span className="w-7 h-7 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                        <UserIcon size={14} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.name}</span>
-                        {m.phone && <span className="block text-xs text-gray-400 dark:text-gray-500 truncate">{m.phone}</span>}
-                      </span>
-                    </button>
-                  ))}
-                </div>,
-                document.body
+            {/* Search donors + committee members — same picker/picked-card
+                pattern as Record Collection, since a loan's lender is
+                almost always already a standing Donor or Committee member. */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('committee.pickMember')}</label>
+              {formData.donorName ? (
+                <div className="flex items-start justify-between gap-3 px-4 py-3 border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 rounded-lg">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-sm shrink-0">
+                      {formData.donorName.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                        {pickedDonor?.unitNo ? `${pickedDonor.unitNo} · ` : ''}{formData.donorName}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {[
+                          pickedDonor ? (pickedDonor.type === 'owner' ? t('donors.owner') : t('donors.tenant')) : null,
+                          pickedDonor?.numPersons !== null && pickedDonor?.numPersons !== undefined ? `${pickedDonor.numPersons} ${t('donors.numPersons')}` : null,
+                          formData.phone || null,
+                        ].filter(Boolean).map((part, i) => (
+                          <span key={i} className="flex items-center gap-1.5">
+                            {i > 0 && <span className="text-gray-400 dark:text-gray-600">·</span>}
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setFormData(f => ({ ...f, donorId: null, donorName: '', phone: '' }))} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    value={donorQuery}
+                    onChange={(e) => setDonorQuery(e.target.value)}
+                    placeholder={t('committee.searchFlatName')}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  />
+                  {matchingPickablePeople.length > 0 && (
+                    <div className="mt-1.5 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                      {matchingPickablePeople.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => { setFormData(f => ({ ...f, donorId: p.id, donorName: p.name, phone: p.phone })); setDonorQuery(''); }}
+                          className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                        >
+                          <span className="text-gray-800 dark:text-gray-200 truncate">{p.name}{p.unit ? ` · ${p.unit}` : ''}</span>
+                          <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${p.source === 'donor' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'}`}>
+                            {p.source === 'donor' ? t('donationAds.collectedByDonor') : t('donationAds.collectedByMember')}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setQuickAddDonorOpen(true)}
+                    className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1.5"
+                  >
+                    <UserIcon size={14} /> {t('chanda.notInListAddMember')}
+                  </button>
+                </div>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.phone')}</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('loans.phonePlaceholder')}
-              />
-            </div>
+
 
             {/* Row 2: Amount Received | Date | Payment Method */}
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -829,6 +847,19 @@ export function Loans({ loansList, setLoansList, members, canEdit, canDelete, ca
           downloadCsv(csvContent, `loans-${new Date().toISOString().split('T')[0]}.csv`);
         }}
       />
+
+      {quickAddDonorOpen && (
+        <DonorFormModal
+          donor={null}
+          onCancel={() => setQuickAddDonorOpen(false)}
+          onSave={async (input) => {
+            const created = await createDonorRequest(input);
+            setDonors([...donors, created]);
+            setFormData(f => ({ ...f, donorId: created.id, donorName: donorFullName(created), phone: created.phone || '' }));
+            setQuickAddDonorOpen(false);
+          }}
+        />
+      )}
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal

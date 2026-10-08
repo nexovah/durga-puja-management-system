@@ -119,7 +119,7 @@ export function ActivityLog() {
       (deviceFilter === 'all' || (e.device ?? 'web') === deviceFilter)
   );
 
-  const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'tasks', 'assets', 'awards', 'documents', 'vendors', 'cashBank', 'users', 'settings'];
+  const modules: ActivityModule[] = ['members', 'chanda', 'donation_ads', 'expenses', 'loans', 'tasks', 'assets', 'awards', 'documents', 'vendors', 'advertisers', 'cashBank', 'users', 'settings'];
   const actions: ActivityAction[] = ['create', 'update', 'delete', 'bulk_import'];
   const devices: ActivityDevice[] = ['web', 'android', 'ios'];
 

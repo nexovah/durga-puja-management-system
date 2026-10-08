@@ -4,10 +4,10 @@ import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, 
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
-import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest } from '../lib/db';
+import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest, createVendorRequest } from '../lib/db';
+import { VendorFormModal } from './Vendors';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
-import { AutocompleteInput } from './AutocompleteInput';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey, translations } from '../i18n/translations';
 import { parseCSV, csvField, buildCsv, downloadCsv, ExportColumnDef } from '../lib/csv';
@@ -114,6 +114,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [viewTarget, setViewTarget] = useState<Expense | null>(null);
   const [pendingSave, setPendingSave] = useState<{ payload: Omit<Expense, 'id'>; saveAndAddNew: boolean } | null>(null);
   const [vendorDirectory, setVendorDirectory] = useState<Vendor[]>([]);
+  const [vendorQuery, setVendorQuery] = useState('');
+  const [quickAddVendorOpen, setQuickAddVendorOpen] = useState(false);
+  const matchingVendors = useMemo(() => {
+    const q = vendorQuery.trim().toLowerCase();
+    if (!q) return [];
+    return vendorDirectory.filter(v => v.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [vendorQuery, vendorDirectory]);
+  const pickedVendor = useMemo(() => vendorDirectory.find(v => v.id === formData.vendorId) || null, [vendorDirectory, formData.vendorId]);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('expenses');
@@ -135,29 +143,25 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     listVendorsRequest().then(setVendorDirectory).catch(() => {});
   }, []);
 
-  // Picking a known vendor name auto-fills:
-  // - category / phone numbers from the vendor directory (Vendors.tsx)
-  // - title from the most recent expense that matches this vendor name
+  // Picking a vendor auto-fills category/contact from the vendor directory
+  // and title from the most recent past expense for that vendor.
   // Only fills fields that are currently blank, never overwrites user input.
-  const handleVendorNameChange = (value: string) => {
-    const match = vendorDirectory.find(v => v.name.trim().toLowerCase() === value.trim().toLowerCase());
-    // Find the most recent past expense for this vendor to suggest a title.
-    const nameLower = value.trim().toLowerCase();
-    const lastExpense = nameLower
-      ? [...expenses]
-          .filter(e => (e.vendorName || '').trim().toLowerCase() === nameLower)
-          .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-          [0]
-      : undefined;
+  const pickVendor = (v: Vendor) => {
+    const nameLower = v.name.trim().toLowerCase();
+    const lastExpense = [...expenses]
+      .filter(e => (e.vendorName || '').trim().toLowerCase() === nameLower)
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+      [0];
     setFormData(prev => ({
       ...prev,
-      vendorName: value,
-      vendorId: match?.id || null,
+      vendorId: v.id,
+      vendorName: v.name,
       title: lastExpense?.title && !prev.title ? lastExpense.title : prev.title,
-      category: match?.category && !prev.category ? match.category : prev.category,
-      vendorContact: match?.phone && !prev.vendorContact ? match.phone : prev.vendorContact,
-      vendorContact2: match?.phone2 && !prev.vendorContact2 ? match.phone2 : prev.vendorContact2,
+      category: v.category && !prev.category ? v.category : prev.category,
+      vendorContact: v.phone || '',
+      vendorContact2: v.phone2 || '',
     }));
+    setVendorQuery('');
   };
 
   const categoryLabel = (value: string) => {
@@ -280,10 +284,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       vendorName: formData.vendorName,
       vendorContact: formData.vendorContact,
       vendorContact2: formData.vendorContact2,
-      vendorId: (() => {
-        const match = vendorDirectory.find(v => v.name.trim().toLowerCase() === formData.vendorName.trim().toLowerCase());
-        return match?.id || formData.vendorId || null;
-      })(),
+      vendorId: formData.vendorId || null,
       remarks: formData.remarks,
     };
 
@@ -500,13 +501,6 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
-
-  const knownVendorNames = Array.from(
-    new Set([
-      ...expenses.map(exp => exp.vendorName?.trim()),
-      ...vendorDirectory.map(v => v.name?.trim()),
-    ].filter((n): n is string => !!n))
-  ).sort((a, b) => a.localeCompare(b));
 
   const filteredExpenses = expenses.filter(exp => {
     const q = searchQuery.trim().toLowerCase();
@@ -809,34 +803,68 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 placeholder={t('expenses.voucherNumberPlaceholder')}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorName')}</label>
-              <AutocompleteInput
-                value={formData.vendorName}
-                onChange={handleVendorNameChange}
-                suggestions={knownVendorNames}
-                placeholder={t('expenses.vendorNamePlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorContact')}</label>
-              <input
-                type="tel"
-                value={formData.vendorContact}
-                onChange={(e) => setFormData({ ...formData, vendorContact: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('expenses.vendorContactPlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.vendorContact2')}</label>
-              <input
-                type="tel"
-                value={formData.vendorContact2}
-                onChange={(e) => setFormData({ ...formData, vendorContact2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('expenses.vendorContactPlaceholder')}
-              />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('committee.pickVendor')}</label>
+              {formData.vendorName ? (
+                <div className="flex items-start justify-between gap-3 px-4 py-3 border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 rounded-lg">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-sm shrink-0">
+                      {formData.vendorName.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{formData.vendorName}</p>
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {[
+                          pickedVendor?.category ? categoryLabel(pickedVendor.category) : null,
+                          formData.vendorContact || null,
+                        ].filter(Boolean).map((part, i) => (
+                          <span key={i} className="flex items-center gap-1.5">
+                            {i > 0 && <span className="text-gray-400 dark:text-gray-600">·</span>}
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(f => ({ ...f, vendorId: null, vendorName: '', vendorContact: '', vendorContact2: '' }))}
+                    className="text-gray-400 hover:text-gray-600 shrink-0"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    value={vendorQuery}
+                    onChange={(e) => setVendorQuery(e.target.value)}
+                    placeholder={t('expenses.vendorNamePlaceholder')}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  />
+                  {matchingVendors.length > 0 && (
+                    <div className="mt-1.5 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                      {matchingVendors.map(v => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => pickVendor(v)}
+                          className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                        >
+                          <span className="text-gray-800 dark:text-gray-200 truncate">{v.name}{v.category ? ` · ${categoryLabel(v.category)}` : ''}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setQuickAddVendorOpen(true)}
+                    className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1.5"
+                  >
+                    <Plus size={14} /> {t('expenses.notInListAddVendor')}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.remarks')}</label>
@@ -1102,6 +1130,20 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         }}
       />
 
+      {quickAddVendorOpen && (
+        <VendorFormModal
+          vendor={null}
+          documents={[]}
+          onCancel={() => setQuickAddVendorOpen(false)}
+          onSave={async (input) => {
+            const created = await createVendorRequest(input);
+            setVendorDirectory([...vendorDirectory, created]);
+            pickVendor(created);
+            setQuickAddVendorOpen(false);
+          }}
+        />
+      )}
+
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
       <ViewModal
         open={!!viewTarget}
@@ -1135,13 +1177,40 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             ),
           },
           { label: t('expenses.paidThrough'), value: paidThroughLabel(viewTarget.paidThrough || 'notSelected') },
-          ...(status === 'partial' ? [
-            ...partials.map((p, i) => ({
-              label: `${t('expenses.partialPayments')} ${i + 1}`,
-              value: `₹${p.amount.toLocaleString()}${p.voucherNumber ? ` · ${p.voucherNumber}` : ''}${p.date ? ` (${new Date(p.date).toLocaleDateString(locale)})` : ''}`,
-            })),
-            { label: t('chanda.partialAmountLabel'), value: `₹${partialSum.toLocaleString()} / ₹${viewTarget.amount.toLocaleString()}` },
-          ] : []),
+          ...(status === 'partial' && partials.length > 0 ? [{
+            label: t('expenses.partialPayments'),
+            fullWidth: true,
+            value: (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-950">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 w-10">#</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.amount')}</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('expenses.voucherNumber')}</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.date')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {partials.map((p, i) => (
+                      <tr key={i}>
+                        <td className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">{i + 1}</td>
+                        <td className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{p.amount.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{p.voucherNumber || '-'}</td>
+                        <td className="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{p.date ? new Date(p.date).toLocaleDateString(locale) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <td colSpan={2} className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{partialSum.toLocaleString()}</td>
+                      <td colSpan={2} className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">{t('chanda.partialAmountLabel')}: ₹{partialSum.toLocaleString()} / ₹{viewTarget.amount.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ),
+          }] : []),
           { label: t('common.date'), value: new Date(viewTarget.date).toLocaleDateString(locale) },
           { label: t('expenses.category'), value: categoryLabel(viewTarget.category) },
           { label: t('expenses.voucherNumber'), value: viewTarget.voucherNumber || '-' },

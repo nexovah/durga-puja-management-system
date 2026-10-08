@@ -24,6 +24,7 @@ import { ChandaCollection } from './components/ChandaCollection';
 import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
 import { Vendors } from './components/Vendors';
+import { Advertisers } from './components/Advertisers';
 import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
 import { Report } from './components/Report';
@@ -265,6 +266,7 @@ export interface DonationAd {
   collectedBy?: string; // Committee member or third party who collected this entry
   remarks: string;
   donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
+  advertiserId?: string | null; // links to a standing Advertiser record when picked via the Ads-category Third-party tab; null otherwise
 }
 
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
@@ -324,6 +326,7 @@ export interface Loan {
   date: string;
   returnDate?: string;
   remarks: string;
+  donorId?: string | null; // links to a standing Donor/Committee-member record when picked via search; null for a free-typed lender name
 }
 
 // Net contribution of a loan to the committee's balance: what's still held
@@ -450,7 +453,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'donors' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
+type PageKey = 'dashboard' | 'members' | 'donors' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'advertisers' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -461,6 +464,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   ads: '/ads-collection',
   expenses: '/expenses',
   vendors: '/vendors',
+  advertisers: '/advertisers',
   loans: '/loans',
   treasury: '/treasury',
   report: '/report',
@@ -1558,11 +1562,24 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             onLog={handleLog}
           />
         )}
+        {currentPage === 'advertisers' && (
+          <Advertisers
+            donationAds={donationAdsList}
+            canEdit={dataCanEdit}
+            canDelete={dataCanDelete}
+            canBulkImport={dataCanBulkImport}
+            currentUser={currentUser}
+            onLog={handleLog}
+          />
+        )}
         {currentPage === 'loans' && (
           <Loans
             loansList={loansList}
             setLoansList={setLoansList}
             members={members}
+            donors={donors}
+            setDonors={setDonors}
+            committeeMembers={committeeMembers}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
@@ -1641,6 +1658,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           <Awards
             awardsList={awardsList}
             onAwardsChanged={setAwardsListState}
+            committeeMembers={committeeMembers}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             onLog={handleLog}
@@ -1663,6 +1681,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             tasksList={tasksList}
             setTasksList={setTasksList}
             members={members}
+            committeeMembers={committeeMembers}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             currentUserId={currentUser?.id || ''}

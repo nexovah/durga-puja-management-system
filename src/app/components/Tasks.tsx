@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
-import { diffFields, ActivityFieldChange } from '../lib/db';
+import { diffFields, ActivityFieldChange, CommitteeMember } from '../lib/db';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -19,6 +19,7 @@ interface TasksProps {
   tasksList: Task[];
   setTasksList: (tasksList: Task[]) => void;
   members: Member[];
+  committeeMembers: CommitteeMember[];
   canEdit: boolean;
   canDelete: boolean;
   currentUserId: string;
@@ -60,7 +61,7 @@ const getEmptyForm = () => ({
   assignedMemberIds: [] as string[],
 });
 
-export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, currentUserId, currentUserName, isAdmin, onLog }: TasksProps) {
+export function Tasks({ tasksList, setTasksList, members, committeeMembers, canEdit, canDelete, currentUserId, currentUserName, isAdmin, onLog }: TasksProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -107,7 +108,23 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
   const [dateFilter, setDateFilter] = useState('');
 
   const priorityInfo = (p: TaskPriority) => PRIORITIES.find(pr => pr.value === p) || PRIORITIES[1];
-  const memberName = (id: string) => members.find(m => m.id === id)?.name || t('tasks.unknownMember');
+  // Committee members are now the tenant-wide, standing assignment pool
+  // (reused across every festival, unlike the old per-event Members list,
+  // which is why a brand-new festival had nobody to assign to before).
+  // Names still resolve against the old `members` list too, so tasks
+  // assigned before this change keep showing their original assignee.
+  const memberName = (id: string) =>
+    committeeMembers.find(m => m.id === id)?.firstName
+      ? [committeeMembers.find(m => m.id === id)?.firstName, committeeMembers.find(m => m.id === id)?.lastName].filter(Boolean).join(' ')
+      : members.find(m => m.id === id)?.name || t('tasks.unknownMember');
+
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+  const filteredAssignees = useMemo(() => {
+    const q = assigneeSearchQuery.trim().toLowerCase();
+    const active = committeeMembers.filter(m => m.isActive !== false);
+    if (!q) return active;
+    return active.filter(m => [m.firstName, m.lastName].filter(Boolean).join(' ').toLowerCase().includes(q));
+  }, [assigneeSearchQuery, committeeMembers]);
   const completedCount = tasksList.filter(task => task.priority === 'completed').length;
 
   // Only the task's creator, or an admin, can edit/delete it — everyone
@@ -357,22 +374,34 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
                 <div
                   ref={assigneeListRef}
                   style={{ position: 'fixed', top: assigneePickerPos.top, left: assigneePickerPos.left, width: assigneePickerPos.width }}
-                  className="z-[200] max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
+                  className="z-[200] bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden"
                 >
-                  {members.length === 0 && (
-                    <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{t('tasks.noMembers')}</p>
-                  )}
-                  {members.map((m) => (
-                    <label key={m.id} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.assignedMemberIds.includes(m.id)}
-                        onChange={() => toggleAssignee(m.id)}
-                        className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
-                      />
-                      {m.name}
-                    </label>
-                  ))}
+                  <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={assigneeSearchQuery}
+                      onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                      placeholder={t('committee.searchFlatName')}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredAssignees.length === 0 && (
+                      <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{t('tasks.noMembers')}</p>
+                    )}
+                    {filteredAssignees.map((m) => (
+                      <label key={m.id} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-orange-50 dark:hover:bg-orange-500/10 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.assignedMemberIds.includes(m.id)}
+                          onChange={() => toggleAssignee(m.id)}
+                          className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                        />
+                        {[m.firstName, m.lastName].filter(Boolean).join(' ')}
+                      </label>
+                    ))}
+                  </div>
                 </div>,
                 document.body
               )}
@@ -490,6 +519,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
         <TasksBoard
           tasks={filteredTasks}
           members={members}
+          committeeMembers={committeeMembers}
           canEditTask={canEditTask}
           onPriorityChange={handlePriorityChange}
           onCardClick={(task) => setViewingTask(task)}
@@ -678,13 +708,13 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
               {viewingTask.description && (
                 <div>
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{t('tasks.description')}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{viewingTask.description}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{viewingTask.description}</p>
                 </div>
               )}
 
               <div>
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{t('tasks.assignTo')}</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {viewingTask.assignedMemberIds.length === 0
                     ? '-'
                     : viewingTask.assignedMemberIds.map(memberName).join(', ')}
@@ -694,11 +724,11 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{t('tasks.createdAt')}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{new Date(viewingTask.createdAt).toLocaleString(locale)}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(viewingTask.createdAt).toLocaleString(locale)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{t('tasks.expiry')}</p>
-                  <p className={`text-sm ${viewingTask.expiryDate && viewingTask.expiryDate < todayISO() ? 'text-red-600 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <p className={`text-sm font-medium ${viewingTask.expiryDate && viewingTask.expiryDate < todayISO() ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
                     {viewingTask.expiryDate ? new Date(viewingTask.expiryDate).toLocaleDateString(locale) : '-'}
                   </p>
                 </div>
@@ -706,7 +736,7 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
 
               <div>
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{t('tasks.createdBy')}</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{viewingTask.createdByName || '-'}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{viewingTask.createdByName || '-'}</p>
               </div>
             </div>
 
@@ -714,14 +744,14 @@ export function Tasks({ tasksList, setTasksList, members, canEdit, canDelete, cu
               {canEditTask(viewingTask) && (
                 <button
                   onClick={() => { const task = viewingTask; setViewingTask(null); handleEdit(task); }}
-                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors"
                 >
                   {t('common.update')}
                 </button>
               )}
               <button
                 onClick={() => setViewingTask(null)}
-                className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {t('common.close')}
               </button>

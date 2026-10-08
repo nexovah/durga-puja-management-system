@@ -130,6 +130,7 @@ export function fromDonationAdRow(row: any): DonationAd {
     collectedBy: row.collected_by || undefined,
     remarks: row.remarks || '',
     donorId: row.donor_id ?? null,
+    advertiserId: row.advertiser_id ?? null,
   };
 }
 function toDonationAdRow(d: DonationAd) {
@@ -149,6 +150,7 @@ function toDonationAdRow(d: DonationAd) {
     collected_by: d.collectedBy || null,
     remarks: d.remarks,
     donor_id: d.donorId || null,
+    advertiser_id: d.advertiserId || null,
   };
 }
 
@@ -209,6 +211,7 @@ export function fromLoanRow(row: any): Loan {
     date: row.date,
     returnDate: row.return_date || '',
     remarks: row.remarks || '',
+    donorId: row.donor_id ?? null,
   };
 }
 function toLoanRow(l: Loan) {
@@ -224,6 +227,7 @@ function toLoanRow(l: Loan) {
     date: l.date,
     return_date: l.returnDate || null,
     remarks: l.remarks,
+    donor_id: l.donorId || null,
   };
 }
 
@@ -1015,6 +1019,96 @@ export async function deleteVendorRequest(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Advertisers — standing tenant-wide directory for sponsorship/ad third-
+// parties (see supabase/147_advertisers.sql). Mirrors Vendors 1:1.
+// ---------------------------------------------------------------------------
+
+export interface Advertiser {
+  id: string;
+  name: string;
+  companyName: string | null;
+  ownerFirstName: string | null;
+  ownerLastName: string | null;
+  phone: string | null;
+  phone2: string | null;
+  whatsapp: string | null;
+  sameAsContact: boolean;
+  address: string | null;
+  city: string | null;
+  category: string | null;
+}
+
+export interface AdvertiserInput {
+  name: string;
+  companyName?: string | null;
+  ownerFirstName?: string | null;
+  ownerLastName?: string | null;
+  phone?: string | null;
+  phone2?: string | null;
+  whatsapp?: string | null;
+  sameAsContact?: boolean;
+  address?: string | null;
+  city?: string | null;
+  category?: string | null;
+}
+
+export function fromAdvertiserRow(row: any): Advertiser {
+  return {
+    id: row.id,
+    name: row.name,
+    companyName: row.company_name,
+    ownerFirstName: row.owner_first_name,
+    ownerLastName: row.owner_last_name,
+    phone: row.phone,
+    phone2: row.phone2,
+    whatsapp: row.whatsapp,
+    sameAsContact: row.same_as_contact !== false,
+    address: row.address,
+    city: row.city,
+    category: row.category,
+  };
+}
+
+function toAdvertiserRow(a: AdvertiserInput) {
+  return {
+    name: a.name,
+    company_name: a.companyName || null,
+    owner_first_name: a.ownerFirstName || null,
+    owner_last_name: a.ownerLastName || null,
+    phone: a.phone || null,
+    phone2: a.phone2 || null,
+    whatsapp: a.sameAsContact ? (a.phone || null) : (a.whatsapp || null),
+    same_as_contact: a.sameAsContact !== false,
+    address: a.address || null,
+    city: a.city || null,
+    category: a.category || null,
+  };
+}
+
+export async function listAdvertisersRequest(): Promise<Advertiser[]> {
+  const { data, error } = await supabase.from('advertisers').select('*').order('name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(fromAdvertiserRow);
+}
+
+export async function createAdvertiserRequest(input: AdvertiserInput): Promise<Advertiser> {
+  const { data, error } = await supabase.from('advertisers').insert(toAdvertiserRow(input)).select().single();
+  if (error) throw error;
+  return fromAdvertiserRow(data);
+}
+
+export async function updateAdvertiserRequest(id: string, input: AdvertiserInput): Promise<Advertiser> {
+  const { data, error } = await supabase.from('advertisers').update(toAdvertiserRow(input)).eq('id', id).select().single();
+  if (error) throw error;
+  return fromAdvertiserRow(data);
+}
+
+export async function deleteAdvertiserRequest(id: string): Promise<void> {
+  const { error } = await supabase.from('advertisers').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
 // Donors + Committee members (see supabase/140_donors_committee.sql).
 // Tenant-scoped only, not event-scoped — standing identity records reused
 // across every festival/event, same permanence model as Vendors above.
@@ -1324,6 +1418,7 @@ export interface AppDocument {
   uploadedByName: string;
   uploadedAt: string;
   vendorId: string | null;
+  advertiserId: string | null;
 }
 
 export function fromDocumentRow(row: any): AppDocument {
@@ -1336,6 +1431,7 @@ export function fromDocumentRow(row: any): AppDocument {
     uploadedByName: row.uploaded_by_name,
     uploadedAt: row.uploaded_at,
     vendorId: row.vendor_id ?? null,
+    advertiserId: row.advertiser_id ?? null,
   };
 }
 
@@ -1400,6 +1496,38 @@ export async function createVendorDocumentRequest(entry: {
     .insert({
       event_id: null,
       vendor_id: entry.vendorId,
+      name: entry.name,
+      category: entry.category,
+      file_url: entry.fileUrl,
+      file_size_bytes: entry.fileSizeBytes,
+      uploaded_by_user_id: entry.uploadedByUserId,
+      uploaded_by_name: entry.uploadedByName,
+      uploaded_at: entry.uploadedAt,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return fromDocumentRow(data);
+}
+
+// Advertiser attachments reuse the `documents` table/storage bucket, same
+// tenant-wide treatment as createVendorDocumentRequest above (event_id
+// explicitly null — see supabase/147_advertisers.sql's RLS widening).
+export async function createAdvertiserDocumentRequest(entry: {
+  advertiserId: string;
+  name: string;
+  category: DocumentCategory;
+  fileUrl: string;
+  fileSizeBytes: number;
+  uploadedByUserId: string;
+  uploadedByName: string;
+  uploadedAt: string;
+}): Promise<AppDocument> {
+  const { data, error } = await supabase
+    .from('documents')
+    .insert({
+      event_id: null,
+      advertiser_id: entry.advertiserId,
       name: entry.name,
       category: entry.category,
       file_url: entry.fileUrl,
@@ -1909,7 +2037,7 @@ export async function changeOwnPasswordRequest(
 // Activity log — append-only audit trail (see supabase/009_activity_log_and_permissions.sql)
 // ---------------------------------------------------------------------------
 
-export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'cashBank' | 'awards' | 'donors' | 'committee';
+export type ActivityModule = 'members' | 'chanda' | 'donation_ads' | 'expenses' | 'loans' | 'tasks' | 'estimation' | 'users' | 'settings' | 'assets' | 'documents' | 'vendors' | 'advertisers' | 'cashBank' | 'awards' | 'donors' | 'committee';
 export type ActivityAction = 'create' | 'update' | 'delete' | 'bulk_import';
 export type ActivityDevice = 'web' | 'android' | 'ios';
 

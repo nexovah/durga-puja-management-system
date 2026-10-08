@@ -3,10 +3,11 @@ import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertica
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
+import { AutocompleteInput } from './AutocompleteInput';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import {
-  Award, AwardInput, AwardRank, createAwardRequest, updateAwardRequest, deleteAwardRequest,
+  Award, AwardInput, AwardRank, CommitteeMember, createAwardRequest, updateAwardRequest, deleteAwardRequest,
 } from '../lib/db';
 import { ActivityModule } from '../lib/db';
 import { PaidMethod } from '../App';
@@ -16,6 +17,7 @@ import { TranslationKey } from '../i18n/translations';
 interface AwardsProps {
   awardsList: Award[];
   onAwardsChanged: (list: Award[]) => void;
+  committeeMembers: CommitteeMember[];
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: any, recordLabel?: string) => void;
@@ -44,8 +46,12 @@ const EMPTY_FORM: AwardInput = {
   prizeMoney: 0, paidMethod: 'notSelected', receivedBy: '', details: '', photoUrl: '',
 };
 
-export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete, onLog }: AwardsProps) {
+export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, canEdit, canDelete, onLog }: AwardsProps) {
   const { t } = useLanguage();
+  const committeeMemberNames = useMemo(
+    () => committeeMembers.filter(m => m.isActive !== false).map(m => [m.firstName, m.lastName].filter(Boolean).join(' ')).filter(Boolean),
+    [committeeMembers]
+  );
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -273,6 +279,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
           error={formError}
           onCancel={() => setShowForm(false)}
           onSave={handleSave}
+          committeeMemberNames={committeeMemberNames}
         />
       )}
 
@@ -287,7 +294,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, canEdit, canDelete
 }
 
 function AwardFormModal({
-  form, setForm, editing, saving, error, onCancel, onSave,
+  form, setForm, editing, saving, error, onCancel, onSave, committeeMemberNames,
 }: {
   form: AwardInput;
   setForm: (f: AwardInput) => void;
@@ -296,6 +303,7 @@ function AwardFormModal({
   error: string;
   onCancel: () => void;
   onSave: () => void;
+  committeeMemberNames: string[];
 }) {
   const { t } = useLanguage();
   const inputClass = "w-full px-3.5 py-2.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none";
@@ -360,7 +368,7 @@ function AwardFormModal({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 {t('awards.receivedBy')} <span className="text-orange-500 font-normal">({t('common.optional')})</span>
               </label>
-              <input value={form.receivedBy || ''} onChange={e => setForm({ ...form, receivedBy: e.target.value })} placeholder={t('awards.receivedByPlaceholder')} className={inputClass} />
+              <AutocompleteInput value={form.receivedBy || ''} onChange={v => setForm({ ...form, receivedBy: v })} suggestions={committeeMemberNames} placeholder={t('awards.receivedByPlaceholder')} />
             </div>
           </div>
 

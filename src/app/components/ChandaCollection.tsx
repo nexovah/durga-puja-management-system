@@ -9,6 +9,7 @@ import { Donor, CommitteeMember, createDonorRequest } from '../lib/db';
 import { donorFullName, DonorFormModal } from './Donors';
 import { DashboardDonut } from './DashboardDonut';
 import { ReceiptModal } from './ReceiptModal';
+import { ToggleSwitch } from './ToggleSwitch';
 import { ReceiptSettings } from '../lib/db';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -122,16 +123,17 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const [donorTab, setDonorTab] = useState<'member' | 'thirdParty'>('member');
+  const [phoneSameAsContact, setPhoneSameAsContact] = useState(true);
   const [donorQuery, setDonorQuery] = useState('');
   const [quickAddDonorOpen, setQuickAddDonorOpen] = useState(false);
 
   // Combined searchable pool for the "Member" tab — standing Donors +
   // Committee members, both tenant-wide, reusable across every festival.
   const pickablePeople = useMemo(() => {
-    const fromDonors = donors.map(d => ({ id: d.id, name: donorFullName(d), unit: d.unitNo || '', phone: d.phone || '', phone2: '' }));
+    const fromDonors = donors.map(d => ({ id: d.id, name: donorFullName(d), unit: d.unitNo || '', phone: d.phone || '', phone2: '', source: 'donor' as const }));
     const fromCommittee = committeeMembers
       .filter(m => !m.donorId) // standalone committee members not already covered by a donor row
-      .map(m => ({ id: m.id, name: [m.firstName, m.lastName].filter(Boolean).join(' ').trim(), unit: '', phone: m.phone || '', phone2: '' }));
+      .map(m => ({ id: m.id, name: [m.firstName, m.lastName].filter(Boolean).join(' ').trim(), unit: '', phone: m.phone || '', phone2: '', source: 'member' as const }));
     return [...fromDonors, ...fromCommittee];
   }, [donors, committeeMembers]);
 
@@ -152,6 +154,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     setFormData({ ...emptyForm, collectedBy: currentUser?.name || '' });
     setDonorTab('member');
     setDonorQuery('');
+    setPhoneSameAsContact(true);
     setShowForm(true);
   };
 
@@ -390,7 +393,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       date: formData.date,
       billNumber: formData.billNumber,
       phone: formData.phone,
-      phone2: formData.phone2,
+      phone2: donorTab === 'thirdParty' ? (phoneSameAsContact ? formData.phone : formData.phone2) : formData.phone2,
       remarks: formData.remarks,
       collectedBy: formData.collectedBy.trim() || undefined,
       donorId: donorTab === 'member' ? formData.donorId : null,
@@ -442,6 +445,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
     const wasEditing = editingId;
     setFormData(emptyForm);
+    setPhoneSameAsContact(true);
     setEditingId(null);
     setShowForm(saveAndAddNew && !wasEditing);
   };
@@ -473,6 +477,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     });
     setDonorTab(chanda.donorId ? 'member' : 'thirdParty');
     setDonorQuery('');
+    setPhoneSameAsContact(!chanda.phone2 || chanda.phone2 === chanda.phone);
     setEditingId(chanda.id);
     setShowForm(true);
   };
@@ -493,6 +498,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   const handleCancel = () => {
     setFormData(emptyForm);
+    setPhoneSameAsContact(true);
     setShowForm(false);
     setEditingId(null);
   };
@@ -843,10 +849,12 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                             key={p.id}
                             type="button"
                             onClick={() => { setFormData(f => ({ ...f, donorId: p.id, donorName: p.name, phone: p.phone })); setDonorQuery(''); }}
-                            className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                            className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
                           >
-                            <span className="text-gray-800 dark:text-gray-200">{p.name}</span>
-                            <span className="text-gray-400">{p.unit || ''}</span>
+                            <span className="text-gray-800 dark:text-gray-200 truncate">{p.name}{p.unit ? ` · ${p.unit}` : ''}</span>
+                            <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${p.source === 'donor' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'}`}>
+                              {p.source === 'donor' ? t('donationAds.collectedByDonor') : t('donationAds.collectedByMember')}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -1000,7 +1008,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             </div>
             {donorTab === 'thirdParty' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone1')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('donors.contact')}</label>
               <input
                 type="tel"
                 value={formData.phone}
@@ -1012,12 +1020,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             )}
             {donorTab === 'thirdParty' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.phone2')}</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('donors.whatsapp')}</label>
+                <ToggleSwitch checked={phoneSameAsContact} onChange={setPhoneSameAsContact} label={t('donors.sameAsContact')} />
+              </div>
               <input
                 type="tel"
-                value={formData.phone2}
+                value={phoneSameAsContact ? formData.phone : formData.phone2}
+                disabled={phoneSameAsContact}
                 onChange={(e) => setFormData({ ...formData, phone2: onlyDigits(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none disabled:opacity-60"
                 placeholder={t('chanda.phonePlaceholder')}
               />
             </div>

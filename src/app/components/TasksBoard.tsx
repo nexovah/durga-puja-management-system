@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Task, TaskPriority, Member } from '../App';
+import { CommitteeMember } from '../lib/db';
 import { useLanguage } from '../i18n/LanguageContext';
 import { PRIORITIES } from './Tasks';
 
 interface TasksBoardProps {
   tasks: Task[];
   members: Member[];
+  committeeMembers: CommitteeMember[];
   canEditTask: (task: Task) => boolean;
   onPriorityChange: (task: Task, newPriority: TaskPriority) => void;
   onCardClick: (task: Task) => void;
@@ -13,13 +15,18 @@ interface TasksBoardProps {
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
-export function TasksBoard({ tasks, members, canEditTask, onPriorityChange, onCardClick }: TasksBoardProps) {
+export function TasksBoard({ tasks, members, committeeMembers, canEditTask, onPriorityChange, onCardClick }: TasksBoardProps) {
   const { t, locale } = useLanguage();
   const [dragOverColumn, setDragOverColumn] = useState<TaskPriority | null>(null);
 
-  const memberName = (id: string) => members.find(m => m.id === id)?.name || t('tasks.unknownMember');
+  const resolveName = (id: string) => {
+    const cm = committeeMembers.find(m => m.id === id);
+    if (cm) return [cm.firstName, cm.lastName].filter(Boolean).join(' ');
+    return members.find(m => m.id === id)?.name || '';
+  };
+  const memberName = (id: string) => resolveName(id) || t('tasks.unknownMember');
   const memberInitials = (id: string) => {
-    const name = members.find(m => m.id === id)?.name || '?';
+    const name = resolveName(id) || '?';
     return name
       .split(' ')
       .filter(Boolean)
