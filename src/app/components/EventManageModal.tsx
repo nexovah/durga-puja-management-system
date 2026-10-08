@@ -98,7 +98,7 @@ export function EventManageModal({
                 >
                   <Plus size={20} />
                 </button>
-                <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors" aria-label="Close">
+                <button onClick={onClose} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors" aria-label="Close">
                   <X size={20} />
                 </button>
               </div>

@@ -36,7 +36,7 @@ import { EstimationPage } from './components/Estimation';
 import { GlobalSearch } from './components/GlobalSearch';
 import { ConnectivityPill } from './components/ConnectivityPill';
 import { useLanguage } from './i18n/LanguageContext';
-import { useTheme } from './i18n/ThemeContext';
+import { useTheme, Theme } from './i18n/ThemeContext';
 import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
 import {
   fetchAllData,
@@ -1391,14 +1391,6 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             <ConnectivityPill />
 
             <button
-              onClick={toggleTheme}
-              className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
-              aria-label={theme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-
-            <button
               onClick={() => {
                 if (window.location.pathname !== '/help-support') {
                   window.history.pushState(null, '', '/help-support');
@@ -1422,6 +1414,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               onGoToSettingsTab={goToSettingsTab}
               onGoToBilling={() => goToSettingsTab('billing')}
               showSettings={!!currentUser?.permissions.settings}
+              theme={theme}
+              toggleTheme={toggleTheme}
             />
           </div>
           {subscriptionExpired && (
@@ -1742,6 +1736,8 @@ function ProfileMenu({
   onGoToSettingsTab,
   onGoToBilling,
   showSettings,
+  theme,
+  toggleTheme,
 }: {
   currentUser: User | null;
   logo: string;
@@ -1749,6 +1745,8 @@ function ProfileMenu({
   onGoToSettingsTab: (tab: SettingsTab) => void;
   onGoToBilling: () => void;
   showSettings: boolean;
+  theme: Theme;
+  toggleTheme: () => void;
 }) {
   // No per-user profile photo exists in this schema — reuse the committee
   // logo as the avatar image when one's been uploaded, same as mobile's
@@ -1879,6 +1877,33 @@ function ProfileMenu({
             </>
           )}
 
+          <div className="border-t border-gray-100 dark:border-gray-800" />
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">{t('theme.label')}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { if (theme !== 'light') toggleTheme(); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  theme === 'light'
+                    ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Sun size={15} /> {t('theme.light')}
+              </button>
+              <button
+                onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  theme === 'dark'
+                    ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-400'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Moon size={15} /> {t('theme.dark')}
+              </button>
+            </div>
+          </div>
+          <div className="border-t border-gray-100 dark:border-gray-800" />
 
           <button
             onClick={() => { onLogout(); setOpen(false); }}

@@ -445,7 +445,7 @@ export function Advertisers({ donationAds, canEdit, canDelete, canBulkImport, cu
                   </span>
                 )}
               </div>
-              <button onClick={() => setViewingId(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
+              <button onClick={() => setViewingId(null)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 shrink-0">
                 <X size={22} />
               </button>
             </div>
@@ -614,7 +614,7 @@ export function AdvertiserFormModal({
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{advertiser ? t('advertisers.editAdvertiser') : t('advertisers.addAdvertiser')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('vendors.reusableAcrossFestivals')}</p>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button onClick={onCancel} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
             <X size={20} />
           </button>
         </div>
@@ -768,7 +768,7 @@ function AdvertiserAttachModal({
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('vendors.attachDocument')} — {advertiser.name}</h3>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={20} /></button>
+          <button onClick={onCancel} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"><X size={20} /></button>
         </div>
         <div className="p-6 space-y-4">
           <div>

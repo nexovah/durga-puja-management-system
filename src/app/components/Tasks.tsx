@@ -751,7 +751,7 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
               )}
               <button
                 onClick={() => setViewingTask(null)}
-                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 {t('common.close')}
               </button>
