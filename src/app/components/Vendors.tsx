@@ -8,12 +8,13 @@ import { Expense, getExpenseCreditAmount, User } from '../App';
 import {
   Vendor, VendorInput, ActivityModule, ActivityFieldChange,
   AppDocument, DocumentCategory,
-  listVendorsRequest, createVendorRequest, updateVendorRequest, deleteVendorRequest, fromVendorRow,
-  listDocumentsRequest, uploadDocumentFile, createVendorDocumentRequest, deleteDocumentRequest, fromDocumentRow,
+  createVendorRequest, updateVendorRequest, deleteVendorRequest, fromVendorRow,
+  uploadDocumentFile, createVendorDocumentRequest, deleteDocumentRequest, fromDocumentRow,
 } from '../lib/db';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { EXPENSE_CATEGORIES } from './Expenses';
 import { PageHeading } from './PageHeading';
+import { SelectAllBanner } from './SelectAllBanner';
 import { Toast } from './Toast';
 import { RequiredMark } from './RequiredMark';
 import { CustomSelect } from './CustomSelect';
@@ -34,6 +35,10 @@ import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
 
 interface VendorsProps {
   expenses: Expense[];
+  vendors: Vendor[];
+  setVendors: (v: Vendor[] | ((prev: Vendor[]) => Vendor[])) => void;
+  documents: AppDocument[];
+  setDocuments: (d: AppDocument[] | ((prev: AppDocument[]) => AppDocument[])) => void;
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
@@ -106,10 +111,8 @@ function paymentRowsFor(entries: Expense[]): PaymentRow[] {
   return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export function Vendors({ expenses, canEdit, canDelete, canBulkImport, currentUser, onLog }: VendorsProps) {
+export function Vendors({ expenses, vendors, setVendors, documents, setDocuments, canEdit, canDelete, canBulkImport, currentUser, onLog }: VendorsProps) {
   const { t, locale } = useLanguage();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,11 +134,8 @@ export function Vendors({ expenses, canEdit, canDelete, canBulkImport, currentUs
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    listVendorsRequest().then(setVendors).catch(() => {});
-    listDocumentsRequest().then(setDocuments).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // vendors/documents now come from App.tsx (loaded once centrally so they
+  // survive navigation/offline) — no local fetch-on-mount needed here.
   useRealtimeSync(true, 'vendors', setVendors, fromVendorRow);
   useRealtimeSync(true, 'documents', setDocuments, fromDocumentRow);
 
@@ -394,6 +394,16 @@ export function Vendors({ expenses, canEdit, canDelete, canBulkImport, currentUs
           categoryLabel={t('expenses.category')}
         />
       </CollapsibleSearchPanel>
+
+      {selectMode && (
+        <SelectAllBanner
+          pageSelectedCount={pagination.pageItems.filter(v => selectedIds.has(v.id)).length}
+          totalSelectedCount={selectedIds.size}
+          totalFilteredCount={sortedVendors.length}
+          onSelectAllFiltered={() => setSelectedIds(new Set(sortedVendors.map(v => v.id)))}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
 
       {selectMode && canEdit && selectedIds.size > 0 && (
         <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5">

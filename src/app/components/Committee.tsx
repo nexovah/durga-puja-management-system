@@ -8,6 +8,7 @@ import {
 } from '../lib/db';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { PageHeading } from './PageHeading';
+import { SelectAllBanner } from './SelectAllBanner';
 import { Toast } from './Toast';
 import { RequiredMark } from './RequiredMark';
 import { CustomSelect } from './CustomSelect';
@@ -367,6 +368,15 @@ export function Committee({ donors, committeeMembers, setCommitteeMembers, canEd
             </div>
           }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(m => selectedIds.has(m.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedMembers.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedMembers.map(m => m.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">

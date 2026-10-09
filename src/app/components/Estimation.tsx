@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer, MoreVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, ArrowLeft, Save, Calculator, GripVertical, Printer, MoreVertical, Square, CheckSquare } from 'lucide-react';
 import { Estimation, EstimationLineItem, EstimationColumnLabels } from '../App';
 import { diffFields, ActivityFieldChange } from '../lib/db';
 import { PageHeading } from './PageHeading';
@@ -12,6 +12,7 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { SelectAllBanner } from './SelectAllBanner';
 
 interface EstimationPageProps {
   estimationsList: Estimation[];
@@ -77,6 +78,8 @@ export function EstimationPage({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Estimation | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const rowMenuRef = useRef<HTMLDivElement>(null);
 
@@ -582,21 +585,69 @@ export function EstimationPage({
           sortDirection={tableCols.sortState.direction}
           onResetSort={tableCols.resetSort}
           columnDropdown={
-            <ColumnVisibilityDropdown
-              columns={tableCols.columns}
-              isColumnVisible={tableCols.isColumnVisible}
-              toggleColumn={tableCols.toggleColumn}
-              showAllColumns={tableCols.showAllColumns}
-              resetColumns={tableCols.resetColumns}
-              hasCustomVisibility={tableCols.hasCustomVisibility}
-              hiddenCount={tableCols.hiddenCount}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectMode(m => !m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                  selectMode
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+                <span>{t('table.select')}</span>
+              </button>
+              <ColumnVisibilityDropdown
+                columns={tableCols.columns}
+                isColumnVisible={tableCols.isColumnVisible}
+                toggleColumn={tableCols.toggleColumn}
+                showAllColumns={tableCols.showAllColumns}
+                resetColumns={tableCols.resetColumns}
+                hasCustomVisibility={tableCols.hasCustomVisibility}
+                hiddenCount={tableCols.hiddenCount}
+              />
+            </div>
           }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(x => selectedIds.has(x.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedEstimations.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedEstimations.map(x => x.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
+                {selectMode && (
+                  <th className="px-4 py-3 w-10 text-left">
+                    <input
+                      type="checkbox"
+                      checked={pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someChecked = pagination.pageItems.some(x => selectedIds.has(x.id));
+                          const allChecked = pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          pagination.pageItems.forEach(x => next.add(x.id));
+                        } else {
+                          pagination.pageItems.forEach(x => next.delete(x.id));
+                        }
+                        setSelectedIds(next);
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
+                )}
                 {tableCols.isColumnVisible('title') && (
                   <SortableTh column={estimationColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -617,6 +668,21 @@ export function EstimationPage({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {pagination.pageItems.map((est) => (
                 <tr key={est.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  {selectMode && (
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(est.id)}
+                        onChange={(e) => {
+                          const next = new Set(selectedIds);
+                          if (e.target.checked) next.add(est.id);
+                          else next.delete(est.id);
+                          setSelectedIds(next);
+                        }}
+                        className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                      />
+                    </td>
+                  )}
                   {tableCols.isColumnVisible('title') && (
                     <td className="px-6 py-4 text-sm font-medium">
                       <button

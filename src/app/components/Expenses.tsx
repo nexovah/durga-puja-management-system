@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, EyeOff, CheckSquare, Square } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
@@ -27,6 +27,7 @@ import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveT
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { SelectAllBanner } from './SelectAllBanner';
 
 interface ExpensesProps {
   canEdit: boolean;
@@ -427,8 +428,15 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   ];
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportScope, setExportScope] = useState<'all' | 'selected'>('all');
 
   const handleExport = () => {
+    setExportScope('all');
+    setExportModalOpen(true);
+  };
+
+  const handleExportSelected = () => {
+    setExportScope('selected');
     setExportModalOpen(true);
   };
 
@@ -514,6 +522,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   })).filter(ct => ct.total > 0);
 
   const [showSearch, setShowSearch] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -935,21 +945,79 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           sortDirection={tableCols.sortState.direction}
           onResetSort={tableCols.resetSort}
           columnDropdown={
-            <ColumnVisibilityDropdown
-              columns={tableCols.columns}
-              isColumnVisible={tableCols.isColumnVisible}
-              toggleColumn={tableCols.toggleColumn}
-              showAllColumns={tableCols.showAllColumns}
-              resetColumns={tableCols.resetColumns}
-              hasCustomVisibility={tableCols.hasCustomVisibility}
-              hiddenCount={tableCols.hiddenCount}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectMode(m => !m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                  selectMode
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+                <span>{t('table.select')}</span>
+              </button>
+              {selectMode && selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportSelected}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-all shadow-sm"
+                >
+                  <Download size={15} className="shrink-0" />
+                  <span>{t('table.exportSelected')} ({selectedIds.size})</span>
+                </button>
+              )}
+              <ColumnVisibilityDropdown
+                columns={tableCols.columns}
+                isColumnVisible={tableCols.isColumnVisible}
+                toggleColumn={tableCols.toggleColumn}
+                showAllColumns={tableCols.showAllColumns}
+                resetColumns={tableCols.resetColumns}
+                hasCustomVisibility={tableCols.hasCustomVisibility}
+                hiddenCount={tableCols.hiddenCount}
+              />
+            </div>
           }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(x => selectedIds.has(x.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedExpenses.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedExpenses.map(x => x.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {selectMode && (
+                  <th className="px-4 py-3 w-10 text-left">
+                    <input
+                      type="checkbox"
+                      checked={pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someChecked = pagination.pageItems.some(x => selectedIds.has(x.id));
+                          const allChecked = pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          pagination.pageItems.forEach(x => next.add(x.id));
+                        } else {
+                          pagination.pageItems.forEach(x => next.delete(x.id));
+                        }
+                        setSelectedIds(next);
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
+                )}
                 {tableCols.isColumnVisible('title') && (
                   <SortableTh column={expenseColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -989,6 +1057,21 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 const isFullyPaidPartial = status === 'partial' && partialSum >= expense.amount && expense.amount > 0;
                 return (
                   <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    {selectMode && (
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(expense.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(expense.id);
+                            else next.delete(expense.id);
+                            setSelectedIds(next);
+                          }}
+                          className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                        />
+                      </td>
+                    )}
                     {tableCols.isColumnVisible('title') && (
                       <td className="px-6 py-4 text-sm font-medium">
                         <button
@@ -1141,8 +1224,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         storageKey="puja_export_cols_expenses"
         onClose={() => setExportModalOpen(false)}
         onExport={orderedIds => {
-          const csvContent = buildCsv(expenses, expenseExportColumns, orderedIds);
-          downloadCsv(csvContent, `expenses-${new Date().toISOString().split('T')[0]}.csv`);
+          const rows = exportScope === 'selected' ? expenses.filter(x => selectedIds.has(x.id)) : expenses;
+          const csvContent = buildCsv(rows, expenseExportColumns, orderedIds);
+          downloadCsv(csvContent, `expenses-${exportScope}-${new Date().toISOString().split('T')[0]}.csv`);
         }}
       />
 

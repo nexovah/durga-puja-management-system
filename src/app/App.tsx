@@ -86,6 +86,16 @@ import {
   CommitteeMember,
   listDonorsRequest,
   listCommitteeMembersRequest,
+  Vendor,
+  Advertiser,
+  AppDocument,
+  Asset,
+  ActivityLogEntry,
+  listVendorsRequest,
+  listAdvertisersRequest,
+  listDocumentsRequest,
+  listAssetsRequest,
+  fetchActivityLog,
 } from './lib/db';
 import { CreateFirstEventScreen } from './components/CreateFirstEventScreen';
 import { PhoneCaptureScreen } from './components/PhoneCaptureScreen';
@@ -687,7 +697,7 @@ export default function App() {
       if (key === 'm' && perms?.members) {
         e.preventDefault();
         goToAddMember();
-      } else if (key === 'c' && perms?.chanda) {
+      } else if (key === 'b' && perms?.chanda) {
         e.preventDefault();
         goToAddDonor();
       } else if (key === 'd' && (perms?.donation ?? perms?.donationAds)) {
@@ -721,6 +731,17 @@ export default function App() {
   const [tasksList, setTasksListState] = useState<Task[]>([]);
   const [estimationsList, setEstimationsListState] = useState<Estimation[]>([]);
   const [awardsList, setAwardsListState] = useState<Award[]>([]);
+  // Lifted to App.tsx (instead of a local useEffect fetch in each page) so
+  // these 5 lists survive navigation/offline the same way members/chandaList/
+  // etc. above do — App.tsx never unmounts while switching pages, so data
+  // fetched once here stays available even if the device goes offline and
+  // the user navigates away from and back to Vendors/Advertisers/Documents/
+  // Assets/ActivityLog. See listVendorsRequest()/listDonorsRequest() comment.
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
+  const [documents, setDocuments] = useState<AppDocument[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
 
   // Live cross-session sync — once the socket is authorized with this
   // tenant's JWT (setTenantAccessToken -> supabase.realtime.setAuth, see
@@ -737,6 +758,13 @@ export default function App() {
   useRealtimeSync(realtimeEnabled, 'estimations', setEstimationsListState, fromEstimationRow);
   useRealtimeSync(realtimeEnabled, 'awards', setAwardsListState, fromAwardRow);
   useRealtimeSync(realtimeEnabled, 'app_users', setUsers, fromUserRow);
+  // vendors/advertisers/documents/assets/activity_log are NOT synced here —
+  // each of those pages already runs its own local useRealtimeSync (same
+  // precedent as donors/committeeMembers below, which are also fetched
+  // centrally but synced locally). A second central subscription here
+  // duplicated each page's existing one — two simultaneous Supabase
+  // Realtime channels sharing the same topic name — which crashed those
+  // pages to a blank screen on mount. Do not re-add these.
   useEffect(() => {
     if (!realtimeEnabled) return;
     const channel = supabase
@@ -798,6 +826,29 @@ export default function App() {
         Promise.all([listDonorsRequest(), listCommitteeMembersRequest()])
           .then(([donorsList, committeeList]) => { setDonors(donorsList); setCommitteeMembers(committeeList); })
           .catch(err => console.error('Failed to load donors/committee members', err));
+        // Same reasoning as donors/committeeMembers above — Vendors,
+        // Advertisers, Documents, Assets and ActivityLog used to fetch their
+        // own data in a local useEffect on mount, which meant the data was
+        // destroyed on every navigation away from the page (since App.tsx
+        // conditionally unmounts them) and silently failed to reload while
+        // offline, leaving the page blank. Loading them once here instead
+        // keeps them populated across navigation/offline the same way every
+        // other centrally-loaded list already is.
+        Promise.all([
+          listVendorsRequest(),
+          listAdvertisersRequest(),
+          listDocumentsRequest(),
+          listAssetsRequest(),
+          fetchActivityLog(),
+        ])
+          .then(([vendorsList, advertisersList, documentsList, assetsList, activityLogList]) => {
+            setVendors(vendorsList);
+            setAdvertisers(advertisersList);
+            setDocuments(documentsList);
+            setAssets(assetsList);
+            setActivityLog(activityLogList);
+          })
+          .catch(err => console.error('Failed to load vendors/advertisers/documents/assets/activity log', err));
         // Non-fatal — the Help & Support notification dot just stays off if this fails.
         fetchMyTicketActivity().then(rows => setHasUnreadSupportReply(rows.some(r => r.hasUnreadAdminReply))).catch(() => {});
       } catch (err: any) {
@@ -1630,6 +1681,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         {currentPage === 'vendors' && (
           <Vendors
             expenses={expenses}
+            vendors={vendors}
+            setVendors={setVendors}
+            documents={documents}
+            setDocuments={setDocuments}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
@@ -1640,6 +1695,10 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         {currentPage === 'advertisers' && (
           <Advertisers
             donationAds={donationAdsList}
+            advertisers={advertisers}
+            setAdvertisers={setAdvertisers}
+            documents={documents}
+            setDocuments={setDocuments}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
@@ -1718,10 +1777,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
           />
         )}
         {currentPage === 'activityLog' && (
-          <ActivityLog />
+          <ActivityLog activityLog={activityLog} setActivityLog={setActivityLog} />
         )}
         {currentPage === 'assets' && (
           <Assets
+            assets={assets}
+            setAssets={setAssets}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}
             onLog={handleLog}
@@ -1741,6 +1802,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         )}
         {currentPage === 'documents' && (
           <Documents
+            documents={documents}
+            setDocuments={setDocuments}
             currentUser={currentUser}
             canEdit={dataCanEdit}
             canDelete={dataCanDelete}

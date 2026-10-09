@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus, Pencil, Trash2, Package, Armchair, Home, Volume2, Lightbulb, Plug, Fan, UtensilsCrossed, Drum, X,
-  Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText, Eye, EyeOff,
+  Layers, Boxes, IndianRupee, MapPin, MoreVertical, Download, FileText, Eye, EyeOff, Square, CheckSquare,
 } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
@@ -12,10 +12,11 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
+import { SelectAllBanner } from './SelectAllBanner';
 import { ReportPrintTable } from './ReportPrintTable';
 import { downloadTableCSV, SummaryLine } from '../lib/reportExport';
 import {
-  Asset, AssetInput, AssetCondition, listAssetsRequest, createAssetRequest, updateAssetRequest, deleteAssetRequest, fromAssetRow,
+  Asset, AssetInput, AssetCondition, createAssetRequest, updateAssetRequest, deleteAssetRequest, fromAssetRow,
 } from '../lib/db';
 import { ActivityModule } from '../lib/db';
 import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
@@ -23,6 +24,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
 interface AssetsProps {
+  assets: Asset[];
+  setAssets: (a: Asset[] | ((prev: Asset[]) => Asset[])) => void;
   canEdit: boolean;
   canDelete: boolean;
   onLog: (action: 'create' | 'update' | 'delete', module: ActivityModule, summary: string, count?: number, changes?: any, recordLabel?: string) => void;
@@ -58,12 +61,11 @@ const EMPTY_FORM: AssetInput = {
   value: null, storedAt: '', icon: 'box', notes: '', purchaseDate: '',
 };
 
-export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: AssetsProps) {
+export function Assets({ assets, setAssets, canEdit, canDelete, onLog, companyName, companyLogo }: AssetsProps) {
   const { t } = useLanguage();
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AssetInput>(EMPTY_FORM);
@@ -122,15 +124,8 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
     };
   }, [printData]);
 
-  const reload = () => {
-    setLoading(true);
-    listAssetsRequest()
-      .then(setAssets)
-      .catch(err => setError(err?.message || 'Failed to load assets'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { reload(); }, []);
+  // assets now comes from App.tsx (loaded once centrally so it survives
+  // navigation/offline) — no local fetch-on-mount needed here.
   useRealtimeSync(true, 'assets', setAssets, fromAssetRow);
 
   const filteredAssets = useMemo(() => {
@@ -266,6 +261,13 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
               </button>
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                  <button
+                    onClick={() => { setMenuOpen(false); setSelectMode(m => !m); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {selectMode ? <CheckSquare size={16} /> : <Square size={16} />}
+                    {t('table.select')}
+                  </button>
                   <button onClick={handleDownloadCSV} className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <Download size={16} /> {t('assets.downloadCSV')}
                   </button>
@@ -344,9 +346,16 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
       )}
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-        {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('assets.loading')}</p>
-        ) : assets.length === 0 ? (
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(x => selected.has(x.id)).length}
+            totalSelectedCount={selected.size}
+            totalFilteredCount={filteredAssets.length}
+            onSelectAllFiltered={() => setSelected(new Set(filteredAssets.map(x => x.id)))}
+            onClear={() => setSelected(new Set())}
+          />
+        )}
+        {assets.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <Package className="w-8 h-8 mx-auto mb-2 opacity-60" />
             <p className="text-sm">{t('assets.empty')}</p>
@@ -366,12 +375,14 @@ export function Assets({ canEdit, canDelete, onLog, companyName, companyLogo }: 
               return (
                 <div key={asset.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
                   <div className="flex items-start gap-3 mb-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(asset.id)}
-                      onChange={() => toggleSelect(asset.id)}
-                      className="mt-2.5 rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
-                    />
+                    {selectMode && (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(asset.id)}
+                        onChange={() => toggleSelect(asset.id)}
+                        className="mt-2.5 rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                      />
+                    )}
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${icon.bg} ${icon.fg}`}>
                       {icon.Icon ? <icon.Icon size={20} /> : <span className="text-lg font-bold">{icon.glyph}</span>}
                     </div>

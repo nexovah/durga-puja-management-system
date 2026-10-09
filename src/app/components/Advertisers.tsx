@@ -8,11 +8,12 @@ import { DonationAd, User } from '../App';
 import {
   Advertiser, AdvertiserInput, ActivityModule, ActivityFieldChange,
   AppDocument, DocumentCategory,
-  listAdvertisersRequest, createAdvertiserRequest, updateAdvertiserRequest, deleteAdvertiserRequest, fromAdvertiserRow,
-  listDocumentsRequest, uploadDocumentFile, createAdvertiserDocumentRequest, fromDocumentRow,
+  createAdvertiserRequest, updateAdvertiserRequest, deleteAdvertiserRequest, fromAdvertiserRow,
+  uploadDocumentFile, createAdvertiserDocumentRequest, fromDocumentRow,
 } from '../lib/db';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { PageHeading } from './PageHeading';
+import { SelectAllBanner } from './SelectAllBanner';
 import { Toast } from './Toast';
 import { RequiredMark } from './RequiredMark';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -31,6 +32,10 @@ import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
 
 interface AdvertisersProps {
   donationAds: DonationAd[];
+  advertisers: Advertiser[];
+  setAdvertisers: (a: Advertiser[] | ((prev: Advertiser[]) => Advertiser[])) => void;
+  documents: AppDocument[];
+  setDocuments: (d: AppDocument[] | ((prev: AppDocument[]) => AppDocument[])) => void;
   canEdit: boolean;
   canDelete: boolean;
   canBulkImport: boolean;
@@ -38,10 +43,8 @@ interface AdvertisersProps {
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
 }
 
-export function Advertisers({ donationAds, canEdit, canDelete, canBulkImport, currentUser, onLog }: AdvertisersProps) {
+export function Advertisers({ donationAds, advertisers, setAdvertisers, documents, setDocuments, canEdit, canDelete, canBulkImport, currentUser, onLog }: AdvertisersProps) {
   const { t, locale } = useLanguage();
-  const [advertisers, setAdvertisers] = useState<Advertiser[]>([]);
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,11 +66,8 @@ export function Advertisers({ donationAds, canEdit, canDelete, canBulkImport, cu
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    listAdvertisersRequest().then(setAdvertisers).catch(() => {});
-    listDocumentsRequest().then(setDocuments).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // advertisers/documents now come from App.tsx (loaded once centrally so
+  // they survive navigation/offline) — no local fetch-on-mount needed here.
   useRealtimeSync(true, 'advertisers', setAdvertisers, fromAdvertiserRow);
   useRealtimeSync(true, 'documents', setDocuments, fromDocumentRow);
 
@@ -311,6 +311,16 @@ export function Advertisers({ donationAds, canEdit, canDelete, canBulkImport, cu
           showPhone
         />
       </CollapsibleSearchPanel>
+
+      {selectMode && (
+        <SelectAllBanner
+          pageSelectedCount={pagination.pageItems.filter(a => selectedIds.has(a.id)).length}
+          totalSelectedCount={selectedIds.size}
+          totalFilteredCount={sortedAdvertisers.length}
+          onSelectAllFiltered={() => setSelectedIds(new Set(sortedAdvertisers.map(a => a.id)))}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
 
       {selectMode && canEdit && selectedIds.size > 0 && (
         <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5">

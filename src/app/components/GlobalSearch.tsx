@@ -146,7 +146,7 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   type QuickAction = { page: SearchablePage; labelKey: TranslationKey; show: boolean; key: string };
   const quickActionsAll: QuickAction[] = [
     { page: 'members', labelKey: 'search.action.addMember', show: !!currentUser?.permissions.members, key: 'M' },
-    { page: 'chanda', labelKey: 'search.action.addCollection', show: !!currentUser?.permissions.chanda, key: 'C' },
+    { page: 'chanda', labelKey: 'search.action.addCollection', show: !!currentUser?.permissions.chanda, key: 'B' },
     { page: 'donation', labelKey: 'search.action.addDonation', show: !!(currentUser?.permissions.donation ?? currentUser?.permissions.donationAds), key: 'D' },
     { page: 'ads', labelKey: 'search.action.addSponsorship', show: !!(currentUser?.permissions.ads ?? currentUser?.permissions.donationAds), key: 'S' },
     { page: 'expenses', labelKey: 'search.action.addExpense', show: !!currentUser?.permissions.expenses, key: 'E' },

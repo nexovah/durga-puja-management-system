@@ -1206,7 +1206,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {selectMode && (
-                  <th className="px-4 py-3 w-10">
+                  <th className="px-4 py-3 w-10 text-left">
                     <input
                       type="checkbox"
                       checked={pagination.pageItems.length > 0 && pagination.pageItems.every(c => selectedIds.has(c.id))}

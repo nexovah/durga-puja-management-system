@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Globe, Smartphone, Apple } from 'lucide-react';
+import { RefreshCw, Globe, Smartphone, Apple, Square, CheckSquare } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
+import { SelectAllBanner } from './SelectAllBanner';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchActivityLog, ActivityLogEntry, ActivityAction, ActivityModule, ActivityDevice } from '../lib/db';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
@@ -63,15 +64,21 @@ function whoLabel(entry: ActivityLogEntry): string {
 // tampered with from the client). Every create/edit/delete/bulk-import across
 // Members, Chanda, Donation/Ads, Expenses, Loans and User Management writes
 // one row here via App.tsx's `handleLog`.
-export function ActivityLog() {
+interface ActivityLogProps {
+  activityLog: ActivityLogEntry[];
+  setActivityLog: (e: ActivityLogEntry[] | ((prev: ActivityLogEntry[]) => ActivityLogEntry[])) => void;
+}
+
+export function ActivityLog({ activityLog: entries, setActivityLog: setEntries }: ActivityLogProps) {
   const { t, locale } = useLanguage();
-  const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [moduleFilter, setModuleFilter] = useState<'all' | ActivityModule>('all');
   const [actionFilter, setActionFilter] = useState<'all' | ActivityAction>('all');
   const [userFilter, setUserFilter] = useState<'all' | string>('all');
   const [deviceFilter, setDeviceFilter] = useState<'all' | ActivityDevice>('all');
   const [showSearch, setShowSearch] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const load = () => {
     setLoading(true);
@@ -96,10 +103,9 @@ export function ActivityLog() {
     createdAt: row.created_at,
   }));
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // entries now comes from App.tsx (loaded once centrally so it survives
+  // navigation/offline) — no fetch-on-mount here; `load` above is only
+  // invoked by the manual refresh button.
 
   const moduleLabel = (m: ActivityModule) => t(`activityLog.module.${m}` as any) || m;
   const actionLabel = (a: ActivityAction) => t(`activityLog.action.${a}` as any) || a;
@@ -224,18 +230,72 @@ export function ActivityLog() {
           filteredItemsCount={filtered.length}
           startIndex={pagination.startIndex}
           endIndex={pagination.endIndex}
-          columns={activityLogColumns}
-          isColumnVisible={tableCols.isColumnVisible}
-          onToggleColumn={tableCols.toggleColumn}
-          onResetColumns={tableCols.resetColumns}
-          onShowAllColumns={tableCols.showAllColumns}
           sortState={tableCols.sortState}
           onClearSort={tableCols.resetSort}
+          columnDropdown={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectMode(m => !m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                  selectMode
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+                <span>{t('table.select')}</span>
+              </button>
+              <ColumnVisibilityDropdown
+                columns={activityLogColumns}
+                isColumnVisible={tableCols.isColumnVisible}
+                toggleColumn={tableCols.toggleColumn}
+                showAllColumns={tableCols.showAllColumns}
+                resetColumns={tableCols.resetColumns}
+                hasCustomVisibility={activityLogColumns.some(c => (c.required ? true : c.defaultVisible !== false) !== tableCols.isColumnVisible(c.id))}
+                hiddenCount={activityLogColumns.filter(c => !tableCols.isColumnVisible(c.id)).length}
+              />
+            </div>
+          }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(e => selectedIds.has(e.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedEntries.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedEntries.map(e => e.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {selectMode && (
+                  <th className="px-4 py-3 w-10 text-left">
+                    <input
+                      type="checkbox"
+                      checked={pagination.pageItems.length > 0 && pagination.pageItems.every(e => selectedIds.has(e.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someChecked = pagination.pageItems.some(e => selectedIds.has(e.id));
+                          const allChecked = pagination.pageItems.length > 0 && pagination.pageItems.every(e => selectedIds.has(e.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          pagination.pageItems.forEach(x => next.add(x.id));
+                        } else {
+                          pagination.pageItems.forEach(x => next.delete(x.id));
+                        }
+                        setSelectedIds(next);
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
+                )}
                 {tableCols.isColumnVisible('time') && (
                   <SortableTh columnId="time" sortState={tableCols.sortState} onToggleSort={tableCols.toggleSort}>
                     {t('activityLog.col.time')}
@@ -283,6 +343,21 @@ export function ActivityLog() {
               )}
               {pagination.pageItems.map(entry => (
                 <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  {selectMode && (
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(entry.id)}
+                        onChange={(e) => {
+                          const next = new Set(selectedIds);
+                          if (e.target.checked) next.add(entry.id);
+                          else next.delete(entry.id);
+                          setSelectedIds(next);
+                        }}
+                        className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                      />
+                    </td>
+                  )}
                   {tableCols.isColumnVisible('time') && (
                     <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
                       {new Date(entry.createdAt).toLocaleString(locale)}

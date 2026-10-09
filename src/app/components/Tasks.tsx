@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical, Square, CheckSquare } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange, CommitteeMember } from '../lib/db';
 import { rankSearchMatches } from '../lib/searchRank';
@@ -15,6 +15,7 @@ import { Toast } from './Toast';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { TasksBoard } from './TasksBoard';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
+import { SelectAllBanner } from './SelectAllBanner';
 
 interface TasksProps {
   tasksList: Task[];
@@ -101,6 +102,8 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [activeTab, setActiveTab] = useState<'all' | 'completed'>('all');
@@ -537,21 +540,69 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
           sortDirection={tableCols.sortState.direction}
           onResetSort={tableCols.resetSort}
           columnDropdown={
-            <ColumnVisibilityDropdown
-              columns={tableCols.columns}
-              isColumnVisible={tableCols.isColumnVisible}
-              toggleColumn={tableCols.toggleColumn}
-              showAllColumns={tableCols.showAllColumns}
-              resetColumns={tableCols.resetColumns}
-              hasCustomVisibility={tableCols.hasCustomVisibility}
-              hiddenCount={tableCols.hiddenCount}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectMode(m => !m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                  selectMode
+                    ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+                <span>{t('table.select')}</span>
+              </button>
+              <ColumnVisibilityDropdown
+                columns={tableCols.columns}
+                isColumnVisible={tableCols.isColumnVisible}
+                toggleColumn={tableCols.toggleColumn}
+                showAllColumns={tableCols.showAllColumns}
+                resetColumns={tableCols.resetColumns}
+                hasCustomVisibility={tableCols.hasCustomVisibility}
+                hiddenCount={tableCols.hiddenCount}
+              />
+            </div>
           }
         />
+        {selectMode && (
+          <SelectAllBanner
+            pageSelectedCount={pagination.pageItems.filter(x => selectedIds.has(x.id)).length}
+            totalSelectedCount={selectedIds.size}
+            totalFilteredCount={sortedTasks.length}
+            onSelectAllFiltered={() => setSelectedIds(new Set(sortedTasks.map(x => x.id)))}
+            onClear={() => setSelectedIds(new Set())}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {selectMode && (
+                  <th className="px-4 py-3 w-10 text-left">
+                    <input
+                      type="checkbox"
+                      checked={pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someChecked = pagination.pageItems.some(x => selectedIds.has(x.id));
+                          const allChecked = pagination.pageItems.length > 0 && pagination.pageItems.every(x => selectedIds.has(x.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          pagination.pageItems.forEach(x => next.add(x.id));
+                        } else {
+                          pagination.pageItems.forEach(x => next.delete(x.id));
+                        }
+                        setSelectedIds(next);
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
+                )}
                 {tableCols.isColumnVisible('title') && (
                   <SortableTh column={taskColumns.find(c => c.id === 'title')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -580,6 +631,21 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
                 const deletable = canDeleteTask(task);
                 return (
                   <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    {selectMode && (
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(task.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(task.id);
+                            else next.delete(task.id);
+                            setSelectedIds(next);
+                          }}
+                          className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+                        />
+                      </td>
+                    )}
                     {tableCols.isColumnVisible('title') && (
                       <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">
                         <button

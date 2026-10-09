@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Plus, Trash2, Eye, X, FileUp, List, LayoutGrid, Info,
-  Shield, FlameKindling, Landmark, Users, Zap, FileSignature, LandPlot, FileText, MoreVertical,
+  Shield, FlameKindling, Landmark, Users, Zap, FileSignature, LandPlot, FileText, MoreVertical, Square, CheckSquare,
 } from 'lucide-react';
 import { PageHeading } from './PageHeading';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { SelectAllBanner } from './SelectAllBanner';
 import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { TableSearchBar, TableSearchFilters, emptyTableSearchFilters, hasActiveTableFilters } from './TableSearchBar';
 import {
   AppDocument, DocumentCategory, ActivityModule,
-  listDocumentsRequest, uploadDocumentFile, createDocumentRequest, deleteDocumentRequest, fromDocumentRow,
+  uploadDocumentFile, createDocumentRequest, deleteDocumentRequest, fromDocumentRow,
 } from '../lib/db';
 import { User } from '../App';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
@@ -19,6 +20,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/translations';
 
 interface DocumentsProps {
+  documents: AppDocument[];
+  setDocuments: (d: AppDocument[] | ((prev: AppDocument[]) => AppDocument[])) => void;
   currentUser: User | null;
   canEdit: boolean;
   canDelete: boolean;
@@ -46,10 +49,8 @@ const toLocalDateTimeInput = (d: Date) => {
 
 // Event-scoped, unlike Assets — each Puja/Festival has its own government/
 // committee permission paperwork (supabase/072_documents.sql).
-export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }: DocumentsProps) {
+export function Documents({ documents: docs, setDocuments: setDocs, currentUser, canEdit, canDelete, eventLabel, onLog }: DocumentsProps) {
   const { t } = useLanguage();
-  const [docs, setDocs] = useState<AppDocument[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [view, setView] = useState<'list' | 'grid'>('list');
   const [showUpload, setShowUpload] = useState(false);
@@ -58,6 +59,8 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
   const [appliedFilters, setAppliedFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const categories = useMemo(() => CATEGORY_KEYS.map(c => ({
     ...c,
@@ -66,15 +69,8 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
 
   const getCategoryInfo = (k: DocumentCategory) => categories.find(c => c.key === k) || categories[categories.length - 1];
 
-  const reload = () => {
-    setLoading(true);
-    listDocumentsRequest()
-      .then(setDocs)
-      .catch(err => setError(err?.message || t('documents.validation.loadFailed')))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { reload(); }, []);
+  // documents now comes from App.tsx (loaded once centrally so it survives
+  // navigation/offline) — no local fetch-on-mount needed here.
   useRealtimeSync(true, 'documents', setDocs, fromDocumentRow);
 
   const filtered = useMemo(() => {
@@ -131,6 +127,18 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
                 <LayoutGrid size={18} />
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setSelectMode(m => !m)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all shadow-sm ${
+                selectMode
+                  ? 'bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 text-orange-600 dark:text-orange-400'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+              }`}
+            >
+              {selectMode ? <CheckSquare size={15} className="shrink-0" /> : <Square size={15} className="shrink-0" />}
+              <span>{t('table.select')}</span>
+            </button>
             {canEdit && (
               <button
                 onClick={() => setShowUpload(true)}
@@ -176,10 +184,18 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
         </div>
       )}
 
+      {selectMode && (
+        <SelectAllBanner
+          pageSelectedCount={pagination.pageItems.filter(d => selectedIds.has(d.id)).length}
+          totalSelectedCount={selectedIds.size}
+          totalFilteredCount={filtered.length}
+          onSelectAllFiltered={() => setSelectedIds(new Set(filtered.map(d => d.id)))}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
+
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-        {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">{t('documents.loading')}</p>
-        ) : docs.length === 0 ? (
+        {docs.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-60" />
             <p className="text-sm">{t('documents.empty')}</p>
@@ -194,13 +210,41 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
             {view === 'list' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 sm:p-6">
                 {pagination.pageItems.map(doc => (
-                  <DocumentListRow key={doc.id} doc={doc} categoryInfo={getCategoryInfo(doc.category)} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
+                  <DocumentListRow
+                    key={doc.id}
+                    doc={doc}
+                    categoryInfo={getCategoryInfo(doc.category)}
+                    canDelete={canDelete}
+                    onDelete={() => setDeleteTarget(doc)}
+                    selectMode={selectMode}
+                    selected={selectedIds.has(doc.id)}
+                    onToggleSelect={(checked) => {
+                      const next = new Set(selectedIds);
+                      if (checked) next.add(doc.id);
+                      else next.delete(doc.id);
+                      setSelectedIds(next);
+                    }}
+                  />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 sm:p-6">
                 {pagination.pageItems.map(doc => (
-                  <DocumentThumb key={doc.id} doc={doc} categoryInfo={getCategoryInfo(doc.category)} canDelete={canDelete} onDelete={() => setDeleteTarget(doc)} />
+                  <DocumentThumb
+                    key={doc.id}
+                    doc={doc}
+                    categoryInfo={getCategoryInfo(doc.category)}
+                    canDelete={canDelete}
+                    onDelete={() => setDeleteTarget(doc)}
+                    selectMode={selectMode}
+                    selected={selectedIds.has(doc.id)}
+                    onToggleSelect={(checked) => {
+                      const next = new Set(selectedIds);
+                      if (checked) next.add(doc.id);
+                      else next.delete(doc.id);
+                      setSelectedIds(next);
+                    }}
+                  />
                 ))}
               </div>
             )}
@@ -240,17 +284,28 @@ export function Documents({ currentUser, canEdit, canDelete, eventLabel, onLog }
 }
 
 function DocumentListRow({
-  doc, categoryInfo, canDelete, onDelete,
+  doc, categoryInfo, canDelete, onDelete, selectMode, selected, onToggleSelect,
 }: {
   doc: AppDocument;
   categoryInfo: { label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string };
   canDelete: boolean;
   onDelete: () => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (checked: boolean) => void;
 }) {
   const { t } = useLanguage();
   const cat = categoryInfo;
   return (
     <div className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      {selectMode && (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={(e) => onToggleSelect?.(e.target.checked)}
+          className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500 shrink-0"
+        />
+      )}
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${cat.bg} ${cat.fg}`}>
         <cat.Icon size={20} />
       </div>
@@ -299,17 +354,28 @@ function DocumentRowMenu({ doc, canDelete, onDelete }: { doc: AppDocument; canDe
 }
 
 function DocumentThumb({
-  doc, categoryInfo, canDelete, onDelete,
+  doc, categoryInfo, canDelete, onDelete, selectMode, selected, onToggleSelect,
 }: {
   doc: AppDocument;
   categoryInfo: { label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; bg: string; fg: string; border: string };
   canDelete: boolean;
   onDelete: () => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (checked: boolean) => void;
 }) {
   const { t } = useLanguage();
   const cat = categoryInfo;
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col relative">
+      {selectMode && (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={(e) => onToggleSelect?.(e.target.checked)}
+          className="absolute top-2 left-2 z-10 rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500"
+        />
+      )}
       <a
         href={doc.fileUrl}
         target="_blank"

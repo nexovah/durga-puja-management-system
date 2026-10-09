@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Trophy, Medal, Award as AwardIcon, X, MoreVertical, Eye, EyeOff, Square, CheckSquare } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { AutocompleteInput } from './AutocompleteInput';
 import { Pagination, usePagination } from './Pagination';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { SelectAllBanner } from './SelectAllBanner';
 import {
   Award, AwardInput, AwardRank, CommitteeMember, createAwardRequest, updateAwardRequest, deleteAwardRequest,
 } from '../lib/db';
@@ -65,6 +66,8 @@ export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, 
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
   const pageMenuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('awards');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -152,6 +155,13 @@ export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, 
               {pageMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
                   <button
+                    onClick={() => { setPageMenuOpen(false); setSelectMode(m => !m); }}
+                    className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {selectMode ? <CheckSquare size={16} /> : <Square size={16} />}
+                    {t('table.select')}
+                  </button>
+                  <button
                     onClick={() => { setPageMenuOpen(false); toggleWidgets(); }}
                     className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
@@ -192,6 +202,16 @@ export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, 
       </div>
       )}
 
+      {selectMode && (
+        <SelectAllBanner
+          pageSelectedCount={pagination.pageItems.filter(a => selectedIds.has(a.id)).length}
+          totalSelectedCount={selectedIds.size}
+          totalFilteredCount={awards.length}
+          onSelectAllFiltered={() => setSelectedIds(new Set(awards.map(a => a.id)))}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
+
       {awards.length === 0 ? (
         <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
           <Trophy className="w-8 h-8 mx-auto mb-2 opacity-60" />
@@ -206,6 +226,19 @@ export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, 
                 <div key={award.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
                   <div className={`bg-gradient-to-r ${rank.gradient} rounded-t-2xl px-5 py-4 flex items-center justify-between text-white`}>
                     <div className="flex items-center gap-3 min-w-0">
+                      {selectMode && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(award.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(award.id);
+                            else next.delete(award.id);
+                            setSelectedIds(next);
+                          }}
+                          className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500 shrink-0"
+                        />
+                      )}
                       <span className="text-2xl shrink-0">{rank.badge}</span>
                       <div className="min-w-0">
                         <p className="font-bold truncate">{award.title}</p>
