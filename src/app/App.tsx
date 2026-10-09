@@ -660,6 +660,52 @@ export default function App() {
     setCurrentPage('chanda');
   };
 
+  // Same "bump a counter, switch page, the destination page's effect pops
+  // its own Add form open" convention as goToAddDonor above — one per
+  // Cmd/Ctrl+<letter> quick-add shortcut (GlobalSearch's Actions list).
+  const [memberAddRequestId, setMemberAddRequestId] = useState(0);
+  const goToAddMember = () => { setMemberAddRequestId(id => id + 1); setCurrentPage('members'); };
+  const [donationAddRequestId, setDonationAddRequestId] = useState(0);
+  const goToAddDonation = () => { setDonationAddRequestId(id => id + 1); setCurrentPage('donation'); };
+  const [adsAddRequestId, setAdsAddRequestId] = useState(0);
+  const goToAddSponsorship = () => { setAdsAddRequestId(id => id + 1); setCurrentPage('ads'); };
+  const [expenseAddRequestId, setExpenseAddRequestId] = useState(0);
+  const goToAddExpense = () => { setExpenseAddRequestId(id => id + 1); setCurrentPage('expenses'); };
+
+  // Global quick-add shortcuts — Cmd/Ctrl+M/C/D/S/E — mirrored in
+  // GlobalSearch's "Actions" list (⌘ badges) so the keys shown there
+  // actually do something from anywhere in the app, not just that menu.
+  // Each one switches to its page (if not already there) and pops that
+  // page's Add form open via the initialAddRequestId counter convention,
+  // gated by the same permission check as the corresponding nav item/
+  // GlobalSearch action row.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      const perms = currentUser?.permissions;
+      if (key === 'm' && perms?.members) {
+        e.preventDefault();
+        goToAddMember();
+      } else if (key === 'c' && perms?.chanda) {
+        e.preventDefault();
+        goToAddDonor();
+      } else if (key === 'd' && (perms?.donation ?? perms?.donationAds)) {
+        e.preventDefault();
+        goToAddDonation();
+      } else if (key === 's' && (perms?.ads ?? perms?.donationAds)) {
+        e.preventDefault();
+        goToAddSponsorship();
+      } else if (key === 'e' && perms?.expenses) {
+        e.preventDefault();
+        goToAddExpense();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -1400,6 +1446,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
                 expenses={expenses}
                 currentUser={currentUser}
                 onNavigate={setCurrentPage}
+                onQuickAdd={(page) => {
+                  if (page === 'members') goToAddMember();
+                  else if (page === 'chanda') goToAddDonor();
+                  else if (page === 'donation') goToAddDonation();
+                  else if (page === 'ads') goToAddSponsorship();
+                  else if (page === 'expenses') goToAddExpense();
+                }}
               />
             </div>
 
@@ -1499,6 +1552,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
             onLog={handleLog}
+            initialAddRequestId={memberAddRequestId}
           />
         )}
         {currentPage === 'chanda' && (
@@ -1540,6 +1594,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             committeeMembers={committeeMembers}
             currentUser={currentUser}
             users={users}
+            initialAddRequestId={donationAddRequestId}
           />
         )}
         {currentPage === 'ads' && (
@@ -1558,6 +1613,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             committeeMembers={committeeMembers}
             currentUser={currentUser}
             users={users}
+            initialAddRequestId={adsAddRequestId}
           />
         )}
         {currentPage === 'expenses' && (
@@ -1568,6 +1624,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
             onLog={handleLog}
+            initialAddRequestId={expenseAddRequestId}
           />
         )}
         {currentPage === 'vendors' && (

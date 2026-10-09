@@ -185,7 +185,7 @@ export function SuperAdminLayout({ adminName, page, onNavigate, onLogout, childr
 
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div className="fixed inset-0 h-dvh bg-black/40" onClick={() => setMobileOpen(false)} />
           <aside className="relative w-64 h-full bg-white dark:bg-gray-900 shadow-xl">
             {navContent}
           </aside>

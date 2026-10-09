@@ -14,6 +14,11 @@ interface GlobalSearchProps {
   expenses: Expense[];
   currentUser: User | null;
   onNavigate: (page: SearchablePage) => void;
+  // Quick-add rows (and their global Cmd/Ctrl+<letter> shortcuts) open the
+  // target page's Add form directly, instead of just navigating there —
+  // App.tsx wires this to each page's existing initialAddRequestId
+  // convention (ChandaCollection etc.).
+  onQuickAdd: (page: SearchablePage) => void;
 }
 
 const RESULTS_PER_SECTION = 8;
@@ -22,7 +27,7 @@ const RESULTS_PER_SECTION = 8;
 // have a match, click one to go there. Real searching-and-editing of a
 // table's own data happens on that page itself via TableSearchBar — this
 // stays a fast "which menu is this in" lookup, not a filter.
-export function GlobalSearch({ members, chandaList, donationAdsList, expenses, currentUser, onNavigate }: GlobalSearchProps) {
+export function GlobalSearch({ members, chandaList, donationAdsList, expenses, currentUser, onNavigate, onQuickAdd }: GlobalSearchProps) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -118,6 +123,12 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
     setQuery('');
   };
 
+  const handleQuickAdd = (page: SearchablePage) => {
+    onQuickAdd(page);
+    setOpen(false);
+    setQuery('');
+  };
+
   // Shown only when the modal is empty (no query yet) — quick jump links
   // plus quick-add shortcuts, Supabase-command-palette style. Both just
   // navigate to the target page (the user adds the record there
@@ -132,13 +143,13 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
   ];
   const shortcuts = shortcutsAll.filter(s => s.show);
 
-  type QuickAction = { page: SearchablePage; labelKey: TranslationKey; show: boolean };
+  type QuickAction = { page: SearchablePage; labelKey: TranslationKey; show: boolean; key: string };
   const quickActionsAll: QuickAction[] = [
-    { page: 'members', labelKey: 'search.action.addMember', show: !!currentUser?.permissions.members },
-    { page: 'chanda', labelKey: 'search.action.addCollection', show: !!currentUser?.permissions.chanda },
-    { page: 'donation', labelKey: 'search.action.addDonation', show: !!(currentUser?.permissions.donation ?? currentUser?.permissions.donationAds) },
-    { page: 'ads', labelKey: 'search.action.addSponsorship', show: !!(currentUser?.permissions.ads ?? currentUser?.permissions.donationAds) },
-    { page: 'expenses', labelKey: 'search.action.addExpense', show: !!currentUser?.permissions.expenses },
+    { page: 'members', labelKey: 'search.action.addMember', show: !!currentUser?.permissions.members, key: 'M' },
+    { page: 'chanda', labelKey: 'search.action.addCollection', show: !!currentUser?.permissions.chanda, key: 'C' },
+    { page: 'donation', labelKey: 'search.action.addDonation', show: !!(currentUser?.permissions.donation ?? currentUser?.permissions.donationAds), key: 'D' },
+    { page: 'ads', labelKey: 'search.action.addSponsorship', show: !!(currentUser?.permissions.ads ?? currentUser?.permissions.donationAds), key: 'S' },
+    { page: 'expenses', labelKey: 'search.action.addExpense', show: !!currentUser?.permissions.expenses, key: 'E' },
   ];
   const quickActions = quickActionsAll.filter(a => a.show);
 
@@ -157,7 +168,7 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
       </button>
 
       {open && createPortal(
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-start justify-center pt-[12vh] px-4" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 h-dvh bg-black/40 z-[200] flex items-start justify-center pt-[12vh] px-4" onClick={() => setOpen(false)}>
           <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="relative border-b border-gray-100 dark:border-gray-800">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
@@ -208,13 +219,16 @@ export function GlobalSearch({ members, chandaList, donationAdsList, expenses, c
                     {quickActions.map(a => (
                       <button
                         key={a.page}
-                        onClick={() => handleSelect(a.page)}
+                        onClick={() => handleQuickAdd(a.page)}
                         className="w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
                       >
                         <span className="w-6 h-6 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
                           <Plus size={14} />
                         </span>
-                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{t(a.labelKey)}</span>
+                        <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200">{t(a.labelKey)}</span>
+                        <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-[11px] font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none shrink-0">
+                          {isMac ? '⌘' : 'Ctrl'} {a.key}
+                        </kbd>
                       </button>
                     ))}
                   </div>

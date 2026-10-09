@@ -99,7 +99,7 @@ export function FestivalReportView({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 h-dvh bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-t-xl px-6 py-6 text-white relative">
           <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white">

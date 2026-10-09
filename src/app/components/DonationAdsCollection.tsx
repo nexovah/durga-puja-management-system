@@ -55,6 +55,10 @@ interface DonationAdsCollectionProps {
   committeeMembers: CommitteeMember[];
   currentUser: User | null;
   users: User[];
+  // Bumped by App.tsx's global Cmd/Ctrl+D (donation) / Cmd/Ctrl+S
+  // (sponsorship) shortcut to pop the Add form open on arrival at this
+  // page, same convention as ChandaCollection's initialAddRequestId.
+  initialAddRequestId?: number;
 }
 
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
@@ -143,7 +147,7 @@ const emptyForm = {
   advertiserId: null as string | null,
 };
 
-export function DonationAdsCollection({ donationAdsList, setDonationAdsList, members, chandaList, canEdit, canDelete, canBulkImport, onLog, fixedCategory, donors, setDonors, committeeMembers, currentUser, users }: DonationAdsCollectionProps) {
+export function DonationAdsCollection({ donationAdsList, setDonationAdsList, members, chandaList, canEdit, canDelete, canBulkImport, onLog, fixedCategory, donors, setDonors, committeeMembers, currentUser, users, initialAddRequestId }: DonationAdsCollectionProps) {
   const { t, locale } = useLanguage();
   const [donorTab, setDonorTab] = useState<'member' | 'thirdParty'>('thirdParty');
   const [donorQuery, setDonorQuery] = useState('');
@@ -453,6 +457,23 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     setPendingSave(null);
   };
 
+  const openAddForm = () => {
+    setEditingId(null);
+    setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory, collectedBy: currentUser?.name || '' } : { ...emptyForm, collectedBy: currentUser?.name || '' });
+    setDonorTab('thirdParty');
+    setDonorQuery('');
+    setAdvertiserQuery('');
+    setPhoneSameAsContact(true);
+    setShowForm(true);
+  };
+
+  useEffect(() => {
+    if (initialAddRequestId && initialAddRequestId > 0) {
+      openAddForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAddRequestId]);
+
   const handleEdit = (item: DonationAd) => {
     setFormData({
       category: item.category,
@@ -668,15 +689,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             )}
             {canEdit && (
               <button
-                onClick={() => {
-                  setEditingId(null);
-                  setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory, collectedBy: currentUser?.name || '' } : { ...emptyForm, collectedBy: currentUser?.name || '' });
-                  setDonorTab('thirdParty');
-                  setDonorQuery('');
-                  setAdvertiserQuery('');
-                  setPhoneSameAsContact(true);
-                  setShowForm(true);
-                }}
+                onClick={openAddForm}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus size={20} />

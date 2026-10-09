@@ -35,6 +35,10 @@ interface ExpensesProps {
   expenses: Expense[];
   setExpenses: (expenses: Expense[]) => void;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: 'expenses', summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
+  // Bumped by App.tsx's global Cmd/Ctrl+E shortcut to pop the Add form open
+  // on arrival at this page, same convention as ChandaCollection's
+  // initialAddRequestId.
+  initialAddRequestId?: number;
 }
 
 // partialPayments is skipped — it's an array of sub-records, not a scalar field to diff.
@@ -102,7 +106,7 @@ const emptyForm = {
   remarks: '',
 };
 
-export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImport, onLog }: ExpensesProps) {
+export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImport, onLog, initialAddRequestId }: ExpensesProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -338,6 +342,19 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     setPendingSave(null);
   };
 
+  const openAddForm = () => {
+    setFormData(emptyForm);
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  useEffect(() => {
+    if (initialAddRequestId && initialAddRequestId > 0) {
+      openAddForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAddRequestId]);
+
   const handleEdit = (expense: Expense) => {
     setFormData({
       title: expense.title,
@@ -560,7 +577,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             )}
             {canEdit && (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={openAddForm}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus size={20} />

@@ -37,6 +37,10 @@ interface CommitteeProps {
   canDelete: boolean;
   canBulkImport: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
+  // Bumped by App.tsx's global Cmd/Ctrl+M shortcut to pop the Add form open
+  // on arrival at this page, same convention as ChandaCollection's
+  // initialAddRequestId.
+  initialAddRequestId?: number;
 }
 
 export const ROLES: { value: string; labelKey: TranslationKey }[] = [
@@ -57,7 +61,7 @@ function committeeFullName(m: { firstName: string; lastName: string }): string {
   return [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
 }
 
-export function Committee({ donors, committeeMembers, setCommitteeMembers, canEdit, canDelete, canBulkImport, onLog }: CommitteeProps) {
+export function Committee({ donors, committeeMembers, setCommitteeMembers, canEdit, canDelete, canBulkImport, onLog, initialAddRequestId }: CommitteeProps) {
   const { t } = useLanguage();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,6 +105,13 @@ export function Committee({ donors, committeeMembers, setCommitteeMembers, canEd
   };
 
   const openCreate = () => { setEditingMember(null); setShowForm(true); };
+
+  useEffect(() => {
+    if (initialAddRequestId && initialAddRequestId > 0) {
+      openCreate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAddRequestId]);
   const openEdit = (m: CommitteeMember) => { setEditingMember(m); setShowForm(true); };
 
   const handleSave = async (input: CommitteeMemberInput) => {
@@ -596,7 +607,7 @@ function CommitteeFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
+    <div className="fixed inset-0 h-dvh bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
       <div ref={formRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <span className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">

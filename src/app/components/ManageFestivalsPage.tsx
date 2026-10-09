@@ -437,7 +437,7 @@ export function ManageFestivalsPage({
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 h-dvh bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
           <div ref={eventFormRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
             <EventForm
               existing={editingEvent}

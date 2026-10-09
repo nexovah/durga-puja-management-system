@@ -432,7 +432,7 @@ function TicketMetaFooter({
 
 function Lightbox({ url, onClose }: { url: string; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6" onClick={onClose}>
+    <div className="fixed inset-0 h-dvh bg-black/70 z-50 flex items-center justify-center p-6" onClick={onClose}>
       <button onClick={onClose} className="absolute top-5 right-5 text-white hover:text-gray-300">
         <X size={28} />
       </button>

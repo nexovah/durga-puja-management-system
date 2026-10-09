@@ -174,7 +174,7 @@ export function Sidebar({
       {/* Mobile overlay drawer — solid white so it reads clearly over the dimmed backdrop */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="fixed inset-0 bg-black/40" onClick={onCloseMobile} />
+          <div className="fixed inset-0 h-dvh bg-black/40" onClick={onCloseMobile} />
           <aside className="relative w-64 h-full bg-white dark:bg-gray-900 shadow-xl">
             {content}
           </aside>

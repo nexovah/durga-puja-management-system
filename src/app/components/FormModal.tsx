@@ -56,7 +56,7 @@ export function FormModal({ open, title, onClose, children, footer }: FormModalP
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div className="fixed inset-0 h-dvh bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="bg-white dark:bg-gray-900 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-xl shadow-xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200">{title}</h3>

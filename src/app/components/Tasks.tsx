@@ -683,7 +683,7 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
       {/* View modal — full task details, read-only */}
       {viewingTask && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
+          className="fixed inset-0 h-dvh bg-black/40 z-40 flex items-center justify-center p-4"
           onClick={() => setViewingTask(null)}
         >
           <div
