@@ -215,8 +215,6 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   // payment status — distinct from totalExpenses (what's actually been
   // paid so far, credited via getExpenseCreditAmount).
   const grandTotalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const paidStatusTotal = expenses.filter(e => e.paymentStatus === 'paid').reduce((sum, e) => sum + e.amount, 0);
-  const partialStatusTotal = expenses.filter(e => e.paymentStatus === 'partial').reduce((sum, e) => sum + getExpenseCreditAmount(e), 0);
 
   const isPartial = formData.paymentStatus === 'partial';
 
@@ -916,11 +914,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           compact
           grandTotal={{ label: t('expenses.widget.grandTotal'), value: grandTotalExpense }}
           slices={[
-            { name: t('expenses.status.paid'), value: paidStatusTotal },
-            { name: t('expenses.status.partial'), value: partialStatusTotal },
+            { name: t('expenses.status.paid'), value: totalExpenses },
             { name: t('expenses.widget.pending'), value: Math.max(0, grandTotalExpense - totalExpenses) },
           ]}
-          colors={['#16a34a', '#3b82f6', '#f59e0b']}
+          colors={['#16a34a', '#f59e0b']}
           emptyMessage={t('expenses.widget.noData')}
         />
         <DashboardDonut

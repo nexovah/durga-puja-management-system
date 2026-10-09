@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass, Pencil, Check } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -1535,6 +1535,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               showSettings={!!currentUser?.permissions.settings}
               theme={theme}
               toggleTheme={toggleTheme}
+              onNameUpdated={(name) => {
+                if (!currentUser) return;
+                const updated = { ...currentUser, name };
+                setCurrentUser(updated);
+                saveSession(updated);
+              }}
             />
           </div>
           {subscriptionExpired && (
@@ -1886,6 +1892,7 @@ function ProfileMenu({
   showSettings,
   theme,
   toggleTheme,
+  onNameUpdated,
 }: {
   currentUser: User | null;
   logo: string;
@@ -1895,6 +1902,7 @@ function ProfileMenu({
   showSettings: boolean;
   theme: Theme;
   toggleTheme: () => void;
+  onNameUpdated: (name: string) => void;
 }) {
   // No per-user profile photo exists in this schema — reuse the committee
   // logo as the avatar image when one's been uploaded, same as mobile's
@@ -1903,6 +1911,9 @@ function ProfileMenu({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1918,6 +1929,29 @@ function ProfileMenu({
   const goTo = (tab: SettingsTab) => {
     onGoToSettingsTab(tab);
     setOpen(false);
+  };
+
+  const startEditingName = () => {
+    setNameInput(currentUser?.name || '');
+    setEditingName(true);
+  };
+
+  const saveName = async () => {
+    if (!currentUser || !nameInput.trim() || savingName) return;
+    setSavingName(true);
+    try {
+      await updateUserRequest(
+        currentUser.id, nameInput.trim(), currentUser.permissions,
+        currentUser.canEdit, currentUser.canDelete, currentUser.canBulkImport,
+        undefined, currentUser.email,
+      );
+      onNameUpdated(nameInput.trim());
+      setEditingName(false);
+    } catch (err) {
+      console.error('Failed to update name', err);
+    } finally {
+      setSavingName(false);
+    }
   };
 
   return (
@@ -1948,8 +1982,37 @@ function ProfileMenu({
                 (currentUser?.name || '?').charAt(0).toUpperCase()
               )}
             </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
+            <div className="min-w-0 flex-1">
+              {editingName ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+                    className="min-w-0 flex-1 px-2 py-1 text-sm font-bold rounded-md bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 outline-none"
+                  />
+                  <button
+                    onClick={saveName}
+                    disabled={savingName || !nameInput.trim()}
+                    className="shrink-0 text-orange-600 hover:text-orange-700 disabled:opacity-50"
+                    aria-label={t('common.save')}
+                  >
+                    <Check size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
+                  <button
+                    onClick={startEditingName}
+                    className="shrink-0 text-gray-400 hover:text-orange-600 dark:hover:text-orange-400"
+                    aria-label={t('common.edit')}
+                  >
+                    <Pencil size={13} />
+                  </button>
+                </div>
+              )}
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {/* Email only — username is a synthetic, never-meant-to-be-
                     shown value for Google-signup accounts (see
@@ -1979,13 +2042,6 @@ function ProfileMenu({
                 >
                   <Compass size={18} />
                   {t('settings.tab.navigation')}
-                </button>
-                <button
-                  onClick={() => goTo('password')}
-                  className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                >
-                  <Lock size={18} />
-                  {t('settings.tab.password')}
                 </button>
                 {currentUser?.isAdmin && (
                   <button
