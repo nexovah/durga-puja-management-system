@@ -371,6 +371,32 @@ function fromDeveloperRow(row: any): DeveloperInfo {
   };
 }
 
+// Release history for the Help & Support "What's New" dropdown — read-only
+// tenant-facing view of the Super Admin-published app_versions table (see
+// supabase/151_tenant_readable_versions.sql), separate from the single
+// developer_info.changelog field above.
+export interface AppVersionEntry {
+  id: string;
+  version: string;
+  notes: string;
+  releasedAt: string;
+}
+
+function fromAppVersionEntryRow(row: any): AppVersionEntry {
+  return {
+    id: row.id,
+    version: row.version,
+    notes: row.notes || '',
+    releasedAt: row.released_at,
+  };
+}
+
+export async function listAppVersionsRequest(limit = 5): Promise<AppVersionEntry[]> {
+  const { data, error } = await supabase.rpc('list_app_versions', { p_limit: limit });
+  if (error) throw error;
+  return (data || []).map(fromAppVersionEntryRow);
+}
+
 export function fromUserRow(row: any): User {
   return {
     id: row.id,

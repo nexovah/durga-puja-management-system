@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Menu, LogOut, ChevronDown, Building2, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass, Pencil, Check } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, Building2, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, Compass, Pencil, Check } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
@@ -36,6 +36,7 @@ import { Tasks } from './components/Tasks';
 import { EstimationPage } from './components/Estimation';
 import { GlobalSearch } from './components/GlobalSearch';
 import { ConnectivityPill } from './components/ConnectivityPill';
+import { HelpSupportMenu } from './components/HelpSupportMenu';
 import { useLanguage } from './i18n/LanguageContext';
 import { useTheme, Theme } from './i18n/ThemeContext';
 import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
@@ -1509,22 +1510,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
 
             <ConnectivityPill />
 
-            <button
-              onClick={() => {
+            <HelpSupportMenu
+              hasUnreadSupportReply={hasUnreadSupportReply}
+              onOpenSupportTicket={() => {
                 if (window.location.pathname !== '/help-support') {
                   window.history.pushState(null, '', '/help-support');
                 }
                 setCurrentPage('helpSupport');
               }}
-              className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
-              aria-label={t('nav.helpSupport')}
-              title={t('nav.helpSupport')}
-            >
-              <HelpCircle size={20} />
-              {hasUnreadSupportReply && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-gray-900" />
-              )}
-            </button>
+            />
 
             <ProfileMenu
               currentUser={currentUser}
