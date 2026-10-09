@@ -158,7 +158,7 @@ export function ActivityLog() {
     <div>
       <PageHeading
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 page-actions-row">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             <button
               onClick={load}

@@ -284,7 +284,7 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
           canEdit && (
             <button
               onClick={handleAddNew}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold w-full sm:w-auto"
             >
               <Plus size={20} />
               {t('tasks.addNew')}

@@ -278,7 +278,7 @@ export function EstimationPage({
       <div className="space-y-6">
         <PageHeading
           action={
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3 page-actions-row">
               <button
                 onClick={backToList}
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
@@ -544,7 +544,7 @@ export function EstimationPage({
     <div className="space-y-6">
       <PageHeading
         action={
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 page-actions-row">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && (
               <button

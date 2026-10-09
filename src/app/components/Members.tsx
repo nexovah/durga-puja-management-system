@@ -358,7 +358,7 @@ export function Members({ members, setMembers, tasksList, canEdit, canDelete, on
     <div className="space-y-6">
       <PageHeading
         action={
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 page-actions-row">
             <SearchToggleButton open={showSearch} onToggle={() => setShowSearch(o => !o)} />
             {canEdit && (
               <button

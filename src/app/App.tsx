@@ -1337,6 +1337,17 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
         onToggleCollapse={toggleSidebarCollapsed}
+        activeEvents={activeEvents}
+        currentEventId={activeEventId}
+        isAdmin={!!currentUser?.isAdmin}
+        currentUserId={currentUser?.id || ''}
+        onCurrentEventChanged={(eventId) => setActiveEventId(eventId)}
+        onManageFestivals={() => {
+          if (window.location.pathname !== '/manage-festivals') {
+            window.history.pushState(null, '', '/manage-festivals');
+          }
+          setCurrentPage('manageFestivals');
+        }}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -1360,21 +1371,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
               </button>
             )}
 
-            <EventSwitcher
-              variant="topbar"
-              collapsed={false}
-              activeEvents={activeEvents}
-              currentEventId={activeEventId}
-              isAdmin={!!currentUser?.isAdmin}
-              currentUserId={currentUser?.id || ''}
-              onCurrentEventChanged={(eventId) => setActiveEventId(eventId)}
-              onManageFestivals={() => {
-                if (window.location.pathname !== '/manage-festivals') {
-                  window.history.pushState(null, '', '/manage-festivals');
-                }
-                setCurrentPage('manageFestivals');
-              }}
-            />
+            {/* Topbar EventSwitcher is desktop-only — on mobile it's shown
+                inside the nav drawer instead (Sidebar.tsx), freeing up the
+                cramped header row for search + icons. */}
+            <div className="hidden lg:block">
+              <EventSwitcher
+                variant="topbar"
+                collapsed={false}
+                activeEvents={activeEvents}
+                currentEventId={activeEventId}
+                isAdmin={!!currentUser?.isAdmin}
+                currentUserId={currentUser?.id || ''}
+                onCurrentEventChanged={(eventId) => setActiveEventId(eventId)}
+                onManageFestivals={() => {
+                  if (window.location.pathname !== '/manage-festivals') {
+                    window.history.pushState(null, '', '/manage-festivals');
+                  }
+                  setCurrentPage('manageFestivals');
+                }}
+              />
+            </div>
 
             <div className="flex-1 min-w-0">
               <GlobalSearch

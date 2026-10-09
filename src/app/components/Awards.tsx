@@ -133,7 +133,7 @@ export function Awards({ awardsList: awards, onAwardsChanged, committeeMembers, 
     <div className="space-y-6">
       <PageHeading
         action={
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 page-actions-row">
             {canEdit && (
               <button
                 onClick={openCreate}

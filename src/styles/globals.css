@@ -271,6 +271,30 @@ div:has(> input[type='datetime-local']) {
   display: none; /* Chrome, Safari, new Edge */
 }
 
+/* PageHeading's action row (search toggle, Add button, 3-dot menu, etc) —
+   on mobile, stretch every direct child to fill the row evenly instead of
+   bunching left with empty space to the right, matching the full-width
+   footer-button convention already used in every add/edit modal. Desktop
+   (sm+) reverts to each button's natural width. */
+@media (max-width: 639px) {
+  /* `:not(.hidden)` guards a hidden file-input some rows carry (bulk-import
+     trigger) — must stay display:none, never get flexed into visibility. */
+  .page-actions-row > button:not(.hidden),
+  .page-actions-row > a:not(.hidden),
+  .page-actions-row > div:not(.hidden) {
+    flex: 1 1 0%;
+    display: flex;
+    justify-content: center;
+  }
+  /* The 3-dot row-menu button sits inside a `relative` wrapper div (for its
+     dropdown) rather than being a direct button — its own button child
+     still needs centering once the wrapper has stretched to fill its
+     1-fr share. */
+  .page-actions-row > div > button:only-child {
+    width: 100%;
+  }
+}
+
 /* Main content panel (tenant App.tsx, SuperAdminLayout.tsx) — a near-white
    mesh gradient, deliberately lighter than the amber/orange gradient used
    on the sidebar/outer page corners, so the two areas read as visibly

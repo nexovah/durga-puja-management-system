@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { MoreHorizontal, X, PanelLeftOpen } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { NAVIGATION_GROUPS, NavPageKey } from '../lib/navigationConfig';
+import { EventSwitcher } from './EventSwitcher';
+import { EventInfo } from '../lib/db';
 
 type PageKey = NavPageKey;
 
@@ -11,6 +13,15 @@ interface SidebarProps {
   association: string;
   currentPage: PageKey;
   onNavigate: (page: PageKey) => void;
+  // Shown mobile-only (lg:hidden), inside the drawer — frees up the topbar
+  // on narrow screens, where the full EventSwitcher + Live pill + search
+  // didn't fit. Desktop keeps it in the topbar only (not duplicated here).
+  activeEvents: EventInfo[];
+  currentEventId: string | null;
+  isAdmin: boolean;
+  currentUserId: string;
+  onCurrentEventChanged: (eventId: string) => void;
+  onManageFestivals: () => void;
   permissions?: {
     members?: boolean;
     chanda?: boolean;
@@ -43,7 +54,7 @@ type NavItem = { key: PageKey; icon: React.ComponentType<{ size?: number; classN
 // slide-in overlay drawer on mobile (`mobileOpen`), closed by default.
 export function Sidebar({
   logo, association, currentPage, onNavigate, permissions, hiddenNavKeys, collapsed, mobileOpen, onCloseMobile,
-  onToggleCollapse,
+  onToggleCollapse, activeEvents, currentEventId, isAdmin, currentUserId, onCurrentEventChanged, onManageFestivals,
 }: SidebarProps) {
   const { t } = useLanguage();
   const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
@@ -96,6 +107,19 @@ export function Sidebar({
         >
           <X size={20} />
         </button>
+      </div>
+
+      <div className="lg:hidden pb-3">
+        <EventSwitcher
+          variant="sidebar"
+          collapsed={false}
+          activeEvents={activeEvents}
+          currentEventId={currentEventId}
+          isAdmin={isAdmin}
+          currentUserId={currentUserId}
+          onCurrentEventChanged={onCurrentEventChanged}
+          onManageFestivals={() => { onCloseMobile(); onManageFestivals(); }}
+        />
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-hide pt-3 pb-2 px-3 space-y-5">
