@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { X, Phone, MessageCircle, Star, Wallet, BarChart3 } from 'lucide-react';
+import { X, Phone, MessageCircle, Users, Wallet, BarChart3 } from 'lucide-react';
 import { Donor, EventInfo, fetchEventChanda } from '../lib/db';
 import { Chanda, getChandaCreditAmount } from '../App';
 import { STATUS_BADGE_CLASS } from './ChandaCollection';
@@ -51,11 +51,19 @@ export function DonorDetailModal({ donor, events, onClose, onAddCollection }: Do
 
   const loading = crossEventRecords === null;
 
+  const donorName = donorFullName(donor).trim().toLowerCase();
+
   const records = useMemo(() => {
     return (crossEventRecords || [])
-      .filter(c => c.donorId === donor.id)
+      // Prefer the real donorId link; fall back to a name match for any
+      // row somehow not yet linked (e.g. added via the Third-party tab
+      // with the donor's exact name typed in) — same convention used
+      // elsewhere in the app (Advertisers.tsx's adsFor) so a donor's
+      // unpaid/pending entries never silently disappear from their
+      // history just because that one row isn't linked.
+      .filter(c => c.donorId === donor.id || (!c.donorId && c.donorName.trim().toLowerCase() === donorName))
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [crossEventRecords, donor.id]);
+  }, [crossEventRecords, donor.id, donorName]);
 
   const totalContributed = useMemo(
     () => records.reduce((sum, c) => sum + getChandaCreditAmount(c), 0),
@@ -124,8 +132,8 @@ export function DonorDetailModal({ donor, events, onClose, onAddCollection }: Do
               <p className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1">{donor.whatsapp || '-'}</p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-              <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"><Star size={12} /> {t('donors.memberRating')}</p>
-              <p className="text-sm font-medium text-gray-400 dark:text-gray-500 mt-1">{t('donors.notRatedYet')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"><Users size={12} /> {t('donors.numPersons')}</p>
+              <p className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1">{donor.numPersons ?? '-'}</p>
             </div>
             <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-3">
               <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1"><Wallet size={12} /> {t('donors.totalContributed')}</p>
@@ -141,13 +149,15 @@ export function DonorDetailModal({ donor, events, onClose, onAddCollection }: Do
           ) : chartData.length === 0 ? (
             <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">{t('donors.noContributions')}</p>
           ) : (
-            <div className="h-48 mb-6">
+            <div className="h-36 mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: axisTick }} tickLine={false} axisLine={{ stroke: axisStroke }} interval={0} />
                   <YAxis
                     tick={{ fontSize: 11, fill: axisTick }}
-                    tickFormatter={(v) => `₹${Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(0)}k` : v}`}
+                    tickFormatter={(v) => `₹${Number(v) >= 1000 ? `${(Number(v) / 1000).toFixed(1).replace(/\.0$/, '')}k` : v}`}
+                    allowDecimals={false}
+                    tickCount={4}
                     tickLine={false}
                     axisLine={false}
                     width={44}
@@ -194,11 +204,11 @@ export function DonorDetailModal({ donor, events, onClose, onAddCollection }: Do
           </div>
         </div>
 
-        <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between gap-3 shrink-0">
+        <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center gap-3 shrink-0">
           <button onClick={onClose} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
             {t('common.close')}
           </button>
-          <button onClick={() => onAddCollection(donor.id)} className="px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
+          <button onClick={() => onAddCollection(donor.id)} className="flex-1 px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
             {t('chanda.addNew')}
           </button>
         </div>

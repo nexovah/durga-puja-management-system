@@ -171,7 +171,21 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   useEffect(() => {
     if (initialAddRequestId && initialAddRequestId > 0) {
-      openAddForm(initialDonorId);
+      // Donors.tsx's "New Collection" deep-link: if this donor already has
+      // a record in the CURRENT (active) event, open that record for
+      // editing instead of starting a blank add — a donor should only
+      // ever have one Collection entry per festival. Falls back to a
+      // name match for any legacy row not linked via donorId, same
+      // reasoning as pickablePeople/adsFor elsewhere in the app.
+      const donorName = initialDonorId ? pickablePeople.find(p => p.id === initialDonorId)?.name : undefined;
+      const existing = initialDonorId
+        ? chandaList.find(c => c.donorId === initialDonorId || (!c.donorId && donorName && c.donorName.trim().toLowerCase() === donorName.trim().toLowerCase()))
+        : undefined;
+      if (existing) {
+        handleEdit(existing);
+      } else {
+        openAddForm(initialDonorId);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAddRequestId]);
