@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.pill,
-    backgroundColor: colors.dark,
+    backgroundColor: colors.primaryButtonBg,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.dark,

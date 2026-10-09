@@ -98,9 +98,9 @@ const styles = StyleSheet.create({
   inputError: { borderColor: colors.red },
   errorText: { fontSize: 12, color: colors.red, textAlign: 'center', marginBottom: 6 },
   buttonRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  confirmButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.dark },
+  confirmButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg },
   confirmButtonDisabled: { opacity: 0.4 },
   confirmText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
 });

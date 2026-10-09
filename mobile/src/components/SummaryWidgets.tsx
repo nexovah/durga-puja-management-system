@@ -10,7 +10,7 @@ export interface Widget {
 }
 
 const TINTS: Record<Widget['tint'], { bg: string; border: string; iconBg: string; iconColor: string; valueColor: string }> = {
-  neutral: { bg: colors.card, border: colors.border, iconBg: '#f4f1ec', iconColor: colors.inkSoft, valueColor: colors.ink },
+  neutral: { bg: colors.card, border: colors.border, iconBg: colors.secondaryButtonBg, iconColor: colors.inkSoft, valueColor: colors.ink },
   green: { bg: colors.greenBg, border: colors.greenBorder, iconBg: colors.card, iconColor: colors.green, valueColor: colors.greenText },
   amber: { bg: colors.amberBg, border: colors.amberBorder, iconBg: colors.card, iconColor: colors.amber, valueColor: colors.amberText },
 };

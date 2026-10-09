@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: radius.md,
-    backgroundColor: colors.dark,
+    backgroundColor: colors.primaryButtonBg,
   },
   doneButtonText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });

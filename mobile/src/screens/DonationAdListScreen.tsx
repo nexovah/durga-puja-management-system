@@ -70,7 +70,7 @@ export function DonationAdListScreen({ route, navigation }: any) {
               badgeLabel={PAYMENT_STATUS_LABEL[item.paymentStatus || 'pending']}
               badgeBg={colorSet.bg}
               badgeColor={colorSet.text}
-              onPress={() => navigation.navigate('DonationAdForm', { category, mode: 'edit', id: item.id })}
+              onPress={() => navigation.navigate('DonationAdDetail', { category, id: item.id })}
             />
           );
         }}

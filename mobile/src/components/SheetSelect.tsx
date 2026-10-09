@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
     backgroundColor: colors.bg,
   },
-  chipActive: { backgroundColor: colors.dark, borderColor: colors.dark },
+  chipActive: { backgroundColor: colors.primaryButtonBg, borderColor: colors.primaryButtonBg },
   chipText: { fontSize: 12.5, fontWeight: '600', color: colors.inkSoft },
   chipTextActive: { color: '#ffffff' },
 });

@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: colors.borderStrong },
   dotActive: { width: 22, backgroundColor: colors.orange },
   primaryButton: {
-    width: '100%', backgroundColor: colors.dark, borderRadius: radius.pill,
+    width: '100%', backgroundColor: colors.primaryButtonBg, borderRadius: radius.pill,
     paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
   },
   primaryButtonText: { fontSize: 15, fontWeight: '700', color: '#ffffff' },

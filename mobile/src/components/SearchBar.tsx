@@ -2,9 +2,9 @@ import { View, TextInput, StyleSheet } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { colors, radius } from '../theme';
 
-export function SearchBar({ value, onChangeText, placeholder }: { value: string; onChangeText: (v: string) => void; placeholder: string }) {
+export function SearchBar({ value, onChangeText, placeholder, bare }: { value: string; onChangeText: (v: string) => void; placeholder: string; bare?: boolean }) {
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, bare && styles.wrapBare]}>
       <Search size={16} color={colors.mutedLight} strokeWidth={2} />
       <TextInput
         value={value}
@@ -32,5 +32,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  wrapBare: { marginHorizontal: 0, marginTop: 0 },
   input: { flex: 1, fontSize: 14, color: colors.ink, padding: 0 },
 });

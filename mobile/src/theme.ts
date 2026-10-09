@@ -13,7 +13,20 @@ export const colors = {
   orange: '#ea580c',
   orangeLight: '#fed7aa',
   orangeSoft: '#fff1e6',
+  // `dark` stays available for genuine text/icon use (identical to `ink`)
+  // — but must NEVER be used as a button fill. Every primary action
+  // (Save/Update/Done/confirm) uses `primaryButtonBg` (orange), matching
+  // web's single orange-primary-CTA brand convention. See
+  // `durga-crm-ui-design-system` skill — web never uses a black/near-
+  // black fill for a primary button.
   dark: '#1c1917',
+  primaryButtonBg: '#ea580c',
+  primaryButtonText: '#ffffff',
+  // Neutral Cancel-button fill — promoted from a hardcoded hex that was
+  // repeated across 3 form screens, matches web's bg-gray-200 Cancel
+  // convention.
+  secondaryButtonBg: '#f4f1ec',
+  secondaryButtonText: '#1c1917',
   green: '#059669',
   greenBg: '#ecfdf5',
   greenBorder: '#d1fae5',
@@ -36,3 +49,9 @@ export const radius = {
   xl: 20,
   pill: 999,
 };
+
+// Soft mesh-gradient hero header tones — orange/cream only (brand stays
+// orange-primary, unlike the purple/pink reference screenshots this was
+// inspired by). Used by GradientHeader.tsx behind Home/Detail screens'
+// top section, mirroring web's .outer-bg-gradient treatment.
+export const gradientHero = ['#fff1e6', '#fed7aa', '#ffe8cf'];

@@ -55,7 +55,7 @@ export function ExpensesListScreen({ navigation }: any) {
         renderItem={({ item }) => {
           const colorSet = STATUS_COLORS[item.paymentStatus];
           return (
-            <TouchableOpacity onPress={() => navigation.navigate('ExpenseForm', { mode: 'edit', id: item.id })} style={styles.row} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => navigation.navigate('ExpenseDetail', { id: item.id })} style={styles.row} activeOpacity={0.7}>
               <View style={styles.icon}>
                 <Receipt size={17} color={colors.red} strokeWidth={2} />
               </View>

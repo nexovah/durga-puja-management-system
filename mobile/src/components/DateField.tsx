@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   sheetTitle: { fontSize: 15, fontWeight: '800', color: colors.ink, marginBottom: 10 },
   doneButton: {
     marginTop: 10, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.dark,
+    paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg,
   },
   doneButtonText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });

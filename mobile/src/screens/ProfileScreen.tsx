@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, LogOut } from 'lucide-react-native';
 import { useAuth } from '../lib/auth';
-import { getCommitteeInfo, CommitteeInfo, getActiveEvent, ActiveEventInfo } from '../lib/db';
+import { getCommitteeInfo, CommitteeInfo, getMyCurrentEvent, ActiveEventInfo } from '../lib/db';
 import { colors, radius } from '../theme';
 import { BottomSheet } from '../components/BottomSheet';
 
@@ -18,7 +18,7 @@ export function ProfileScreen({ navigation }: any) {
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   // Read-only, refetched on focus — switching only ever happens on web.
-  useFocusEffect(useCallback(() => { if (user?.tenantId) getActiveEvent(user.tenantId).then(setActiveEvent).catch(() => {}); }, [user?.tenantId]));
+  useFocusEffect(useCallback(() => { if (user?.tenantId) getMyCurrentEvent().then(setActiveEvent).catch(() => {}); }, [user?.tenantId]));
 
   return (
     <View style={styles.container}>
@@ -118,6 +118,6 @@ const styles = StyleSheet.create({
   sheetButtonRow: { flexDirection: 'row', gap: 10 },
   sheetLogoutButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.red },
   sheetLogoutText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  sheetCancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  sheetCancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   sheetCancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
 });

@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
   form: { padding: 20, gap: 14 },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
-  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
-  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.dark },
+  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg },
   saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });

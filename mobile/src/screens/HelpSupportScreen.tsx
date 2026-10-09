@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   cardBody: { fontSize: 12.5, color: colors.inkSoft, lineHeight: 18 },
   cardDate: { fontSize: 11, color: colors.mutedLight, marginTop: 2 },
   footer: { backgroundColor: colors.card, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  newButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.dark, paddingVertical: 14, borderRadius: radius.md },
+  newButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.primaryButtonBg, paddingVertical: 14, borderRadius: radius.md },
   newButtonText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
   detail: { gap: 10, paddingBottom: 10 },
   detailTitle: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 1, lineHeight: 21 },

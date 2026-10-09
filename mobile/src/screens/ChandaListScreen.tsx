@@ -79,7 +79,7 @@ export function ChandaListScreen({ navigation }: any) {
               badgeLabel={PAYMENT_STATUS_LABEL[item.paymentStatus]}
               badgeBg={colorSet.bg}
               badgeColor={colorSet.text}
-              onPress={() => navigation.navigate('ChandaForm', { mode: 'edit', id: item.id })}
+              onPress={() => navigation.navigate('ChandaDetail', { id: item.id })}
             />
           );
         }}

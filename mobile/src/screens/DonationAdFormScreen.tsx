@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listDonationAds, createDonationAd, updateDonationAd, logActivity, diffFields, DonationAd, DonationAdCategory, PaidMethod, PaymentStatus } from '../lib/db';
+import { listDonationAds, createDonationAd, updateDonationAd, logActivity, diffFields, DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, listDonors, listCommitteeMembers, createDonor, listAdvertisers, createAdvertiser } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
@@ -11,6 +11,7 @@ import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { useAuth } from '../lib/auth';
 import { todayISO, formatAmount } from '../lib/labels';
+import { EntityPicker, PickableEntity } from '../components/EntityPicker';
 
 const PAID_METHOD_OPTIONS: { value: PaidMethod; label: string }[] = [
   { value: 'notSelected', label: 'Not Selected' },
@@ -48,7 +49,7 @@ const STATUS_OPTIONS: { value: PaymentStatus; label: string }[] = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
-const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '' };
+const emptyForm = { donorName: '', companyName: '', amount: '', paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus, inKind: '', date: todayISO(), voucherNumber: '', phone: '', phone2: '', remarks: '', donorId: null as string | null, advertiserId: null as string | null };
 
 const DONATION_AD_FIELD_LABELS: Record<string, string> = {
   donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount', paidMethod: 'Paid Method',
@@ -71,6 +72,21 @@ export function DonationAdFormScreen({ route, navigation }: any) {
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
   const [original, setOriginal] = useState<DonationAd | null>(null);
+  const [tab, setTab] = useState<'member' | 'thirdParty'>('member');
+  const [pickablePeople, setPickablePeople] = useState<PickableEntity[]>([]);
+  const [pickableAdvertisers, setPickableAdvertisers] = useState<PickableEntity[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const [donors, members] = await Promise.all([listDonors(), listCommitteeMembers()]);
+      setPickablePeople([
+        ...donors.map(d => ({ id: d.id, label: [d.firstName, d.lastName].filter(Boolean).join(' '), subtitle: d.unitNo || undefined, phone: d.phone, source: 'donor' as const })),
+        ...members.map(m => ({ id: m.id, label: [m.firstName, m.lastName].filter(Boolean).join(' '), phone: m.phone, source: 'member' as const })),
+      ]);
+      const advertisers = await listAdvertisers();
+      setPickableAdvertisers(advertisers.map(a => ({ id: a.id, label: a.name, phone: a.phone, source: 'advertiser' as const })));
+    })();
+  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -85,15 +101,28 @@ export function DonationAdFormScreen({ route, navigation }: any) {
           paymentStatus: existing.paymentStatus || 'pending',
           inKind: existing.inKind, date: existing.date, voucherNumber: existing.voucherNumber || '',
           phone: existing.phone, phone2: existing.phone2 || '', remarks: existing.remarks,
+          donorId: existing.donorId ?? null, advertiserId: existing.advertiserId ?? null,
         });
+        setTab(existing.donorId ? 'member' : 'thirdParty');
       }
       setLoading(false);
     })();
   }, [isEdit, id, category]);
 
+  const pickedPerson = pickablePeople.find(p => p.id === form.donorId) || null;
+  const pickedAdvertiser = pickableAdvertisers.find(a => a.id === form.advertiserId) || null;
+
   const handleSaveButtonPress = () => {
     setError('');
-    if ((!isAds && !form.donorName.trim()) || !form.amount.trim()) {
+    if (tab === 'member' && !form.donorId) {
+      setError('Please pick a member.');
+      return;
+    }
+    if (tab === 'thirdParty' && isAds && !form.advertiserId && !form.donorName.trim()) {
+      setError('Please pick an advertiser.');
+      return;
+    }
+    if ((!isAds && tab === 'thirdParty' && !form.donorName.trim()) || !form.amount.trim()) {
       setError(isAds ? 'Amount is required.' : 'Donor name and amount are required.');
       return;
     }
@@ -118,6 +147,8 @@ export function DonationAdFormScreen({ route, navigation }: any) {
       phone: form.phone.trim(),
       phone2: form.phone2.trim() || undefined,
       remarks: form.remarks.trim(),
+      donorId: tab === 'member' ? form.donorId : null,
+      advertiserId: tab === 'thirdParty' && isAds ? form.advertiserId : null,
     };
     setSaving(true);
     try {
@@ -156,13 +187,60 @@ export function DonationAdFormScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <TextField label={`Donor's Name${!isAds ? ' *' : ''}`} required={!isAds} value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
-        {isAds && (
+        <View style={styles.tabRow}>
+          <TouchableOpacity style={[styles.tabButton, tab === 'member' && styles.tabButtonActive]} onPress={() => { setTab('member'); setForm(f => ({ ...f, advertiserId: null })); }}>
+            <Text style={[styles.tabText, tab === 'member' && styles.tabTextActive]}>Member</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tabButton, tab === 'thirdParty' && styles.tabButtonActive]} onPress={() => { setTab('thirdParty'); setForm(f => ({ ...f, donorId: null })); }}>
+            <Text style={[styles.tabText, tab === 'thirdParty' && styles.tabTextActive]}>Third-party</Text>
+          </TouchableOpacity>
+        </View>
+
+        {tab === 'member' ? (
+          <EntityPicker
+            label="Pick a member"
+            placeholder="Search flat / name…"
+            items={pickablePeople}
+            picked={pickedPerson}
+            onPick={item => setForm(f => ({ ...f, donorId: item.id, donorName: item.label, phone: item.phone || '' }))}
+            onClear={() => setForm(f => ({ ...f, donorId: null, donorName: '', phone: '' }))}
+            onQuickAdd={async (name, phone) => {
+              const created = await createDonor({ firstName: name, phone });
+              const entity: PickableEntity = { id: created.id, label: [created.firstName, created.lastName].filter(Boolean).join(' '), phone: created.phone, source: 'donor' };
+              setPickablePeople(prev => [...prev, entity]);
+              return entity;
+            }}
+            quickAddLabel="Not in the list? Add the member"
+          />
+        ) : isAds ? (
+          <EntityPicker
+            label="Pick an advertiser"
+            placeholder="Search advertiser / company…"
+            items={pickableAdvertisers}
+            picked={pickedAdvertiser}
+            onPick={item => setForm(f => ({ ...f, advertiserId: item.id, donorName: item.label, phone: item.phone || '' }))}
+            onClear={() => setForm(f => ({ ...f, advertiserId: null, donorName: '', phone: '' }))}
+            onQuickAdd={async (name, phone) => {
+              const created = await createAdvertiser({ name, phone });
+              const entity: PickableEntity = { id: created.id, label: created.name, phone: created.phone, source: 'advertiser' };
+              setPickableAdvertisers(prev => [...prev, entity]);
+              return entity;
+            }}
+            quickAddLabel="Not in the list? Add the advertiser"
+          />
+        ) : (
+          <TextField label="Donor's Name *" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        )}
+        {isAds && tab === 'thirdParty' && (
           <TextField label="Company Name" value={form.companyName} onChangeText={v => setForm({ ...form, companyName: v })} placeholder="Company name" />
         )}
         <TextField label="Amount (₹)" required value={form.amount} onChangeText={v => setForm({ ...form, amount: v })} placeholder="0" keyboardType="numeric" />
-        <TextField label="Phone Number" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
-        <TextField label="Phone Number 2" value={form.phone2} onChangeText={v => setForm({ ...form, phone2: v })} placeholder="Optional" keyboardType="phone-pad" />
+        {tab === 'thirdParty' && (
+          <>
+            <TextField label="Contact" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
+            <TextField label="WhatsApp" value={form.phone2} onChangeText={v => setForm({ ...form, phone2: v })} placeholder="Optional" keyboardType="phone-pad" />
+          </>
+        )}
         <ChipSelect label="Paid Method" value={form.paidMethod} onChange={v => setForm({ ...form, paidMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
         <ChipSelect label="Payment Status" required value={form.paymentStatus} onChange={v => setForm({ ...form, paymentStatus: v as PaymentStatus })} options={STATUS_OPTIONS} />
         {!isAds && (
@@ -203,10 +281,15 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 14 },
   title: { fontSize: 17, fontWeight: '800', color: colors.ink, flex: 1 },
   form: { padding: 20, gap: 14 },
+  tabRow: { flexDirection: 'row', gap: 8, backgroundColor: colors.secondaryButtonBg, borderRadius: radius.pill, padding: 4, marginBottom: 2 },
+  tabButton: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: radius.pill },
+  tabButtonActive: { backgroundColor: colors.primaryButtonBg },
+  tabText: { fontSize: 13, fontWeight: '700', color: colors.muted },
+  tabTextActive: { color: '#ffffff' },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
-  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
-  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.dark },
+  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg },
   saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });

@@ -27,6 +27,9 @@ export interface Chanda {
   phone: string;
   phone2?: string;
   remarks: string;
+  // Links to a standing Donor/Committee-member record when picked via the
+  // new search-and-pick field — null for free-typed Third-party entries.
+  donorId?: string | null;
 }
 
 export interface Member {
@@ -59,6 +62,10 @@ export interface DonationAd {
   phone: string;
   phone2?: string;
   remarks: string;
+  // donorId for Member-tab picks; advertiserId for Ads-category Third-
+  // party Advertiser picks — null for free-typed/Donation-category entries.
+  donorId?: string | null;
+  advertiserId?: string | null;
 }
 
 export interface ExpensePartialPayment {
@@ -81,6 +88,9 @@ export interface Expense {
   vendorContact?: string;
   vendorContact2?: string;
   remarks: string;
+  // Links to a standing Vendor record when picked via the new
+  // search-and-pick field — null if somehow left free-typed.
+  vendorId?: string | null;
 }
 
 export const getChandaCreditAmount = (c: Chanda): number => {
@@ -130,6 +140,7 @@ function fromChandaRow(row: any): Chanda {
     phone: row.phone || '',
     phone2: row.phone2 || '',
     remarks: row.remarks || '',
+    donorId: row.donor_id ?? null,
   };
 }
 function toChandaRow(c: Partial<Chanda>) {
@@ -148,6 +159,7 @@ function toChandaRow(c: Partial<Chanda>) {
     phone: c.phone,
     phone2: c.phone2 || null,
     remarks: c.remarks || '',
+    donor_id: c.donorId ?? null,
   };
 }
 
@@ -200,6 +212,8 @@ function fromDonationAdRow(row: any): DonationAd {
     phone: row.phone || '',
     phone2: row.phone2 || '',
     remarks: row.remarks || '',
+    donorId: row.donor_id ?? null,
+    advertiserId: row.advertiser_id ?? null,
   };
 }
 function toDonationAdRow(d: Partial<DonationAd>) {
@@ -216,6 +230,8 @@ function toDonationAdRow(d: Partial<DonationAd>) {
     phone: d.phone,
     phone2: d.phone2 || null,
     remarks: d.remarks || '',
+    donor_id: d.donorId ?? null,
+    advertiser_id: d.advertiserId ?? null,
   };
 }
 
@@ -241,6 +257,7 @@ function fromExpenseRow(row: any): Expense {
     vendorContact: row.vendor_contact || '',
     vendorContact2: row.vendor_contact2 || '',
     remarks: row.remarks || '',
+    vendorId: row.vendor_id ?? null,
   };
 }
 function toExpenseRow(e: Partial<Expense>) {
@@ -257,6 +274,7 @@ function toExpenseRow(e: Partial<Expense>) {
     vendor_contact: e.vendorContact || null,
     vendor_contact2: e.vendorContact2 || null,
     remarks: e.remarks || '',
+    vendor_id: e.vendorId ?? null,
   };
 }
 
@@ -489,12 +507,18 @@ export function diffFields(
 }
 
 // ---------------------------------------------------------------------------
-// Active event (Puja / Festival) — read-only on mobile. Switching only
-// happens on web, admin-only (see supabase/064_events.sql,
-// src/app/components/EventSwitcher.tsx). Mobile just displays whichever
-// event tenants.active_event_id currently points at, refetched on screen
-// focus (useFocusEffect, same convention as HomeScreen/HelpSupportScreen)
-// so it can't silently drift if an admin switches mid-session.
+// Festival (Puja / Event) selection — multiple festivals can now be
+// `is_active` at once (supabase/149_multi_active_events.sql, web side:
+// src/app/components/EventSwitcher.tsx), and each user independently picks
+// which one they're working in (app_users.current_event_id), per-user not
+// per-tenant. `tenants.active_event_id` is now vestigial — DO NOT read it;
+// it stops being updated once that migration ships.
+//
+// Mobile stays "pick, don't manage" (marking a festival active/inactive is
+// still web/admin-only, via ManageFestivalsPage.tsx) — but every role can
+// now pick their own current festival from mobile too, mirroring the web
+// EventSwitcher dropdown's instant, unconfirmed switch (low-stakes,
+// personal, only affects this user's own session).
 // ---------------------------------------------------------------------------
 export interface ActiveEventInfo {
   id: string;
@@ -503,19 +527,133 @@ export interface ActiveEventInfo {
   emoji: string | null;
 }
 
-// tenants has no RLS of its own (only tenant-scoped tables like events do),
-// so this must filter to the caller's own tenant explicitly — otherwise
-// .single() sees every tenant's row and errors once more than one exists.
-export async function getActiveEvent(tenantId: string): Promise<ActiveEventInfo | null> {
-  const { data: tenantRow, error: tenantError } = await supabase.from('tenants').select('active_event_id').eq('id', tenantId).single();
-  if (tenantError) throw tenantError;
-  if (!tenantRow?.active_event_id) return null;
+// What THIS user is currently viewing — resolves current_event_id()
+// server-side (per-user now, not the old tenant-wide pointer), refetched on
+// screen focus (useFocusEffect, same convention as HomeScreen/
+// HelpSupportScreen) so it can't silently drift if this user switches
+// their selection elsewhere (e.g. on web) mid-session.
+export async function getMyCurrentEvent(): Promise<ActiveEventInfo | null> {
+  const { data: eventId, error: rpcError } = await supabase.rpc('get_my_current_event');
+  if (rpcError) throw rpcError;
+  if (!eventId) return null;
   const { data, error } = await supabase
     .from('events')
     .select('id, name, year, emoji')
-    .eq('id', tenantRow.active_event_id)
+    .eq('id', eventId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
   return { id: data.id, name: data.name, year: data.year, emoji: data.emoji ?? null };
+}
+
+// Every festival currently in the tenant's active set — the pool this user
+// can pick from. tenants has no RLS of its own, but `events` does
+// (tenant-isolation only), so a plain filtered select works here.
+export async function listActiveEvents(tenantId: string): Promise<ActiveEventInfo[]> {
+  const { data, error } = await supabase
+    .from('events')
+    .select('id, name, year, emoji')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(d => ({ id: d.id, name: d.name, year: d.year, emoji: d.emoji ?? null }));
+}
+
+// Point this user's own selection at an active festival — no admin gate,
+// no confirmation (same as web's EventSwitcher dropdown row click).
+export async function setCurrentEvent(eventId: string): Promise<void> {
+  const { error } = await supabase.rpc('set_current_event', { p_event_id: eventId });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Donors / Committee members / Vendors / Advertisers — standing, tenant-wide
+// entities (no event_id, reused across every festival), mirroring web's
+// Donors.tsx/Committee.tsx/Vendors.tsx/Advertisers.tsx (supabase/
+// 140_donors_committee.sql, 144_vendors_overhaul.sql, 147_advertisers.sql).
+// Mobile intentionally stays list+create only — minimal name+phone quick-
+// add, no update/delete, no address/category/WhatsApp editing (that stays
+// a web-only task via the dedicated Donors/Vendors/Advertisers pages).
+// ---------------------------------------------------------------------------
+
+export interface Donor {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  unitNo: string | null;
+}
+
+export interface CommitteeMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
+export interface Advertiser {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
+export async function listDonors(): Promise<Donor[]> {
+  const { data, error } = await supabase.from('donors').select('id, first_name, last_name, phone, unit_no').order('first_name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(d => ({ id: d.id, firstName: d.first_name || '', lastName: d.last_name || '', phone: d.phone ?? null, unitNo: d.unit_no ?? null }));
+}
+
+export async function createDonor(input: { firstName: string; phone: string }): Promise<Donor> {
+  const { data, error } = await supabase
+    .from('donors')
+    .insert({ first_name: input.firstName, phone: input.phone || null, type: 'owner', category: 'general' })
+    .select('id, first_name, last_name, phone, unit_no')
+    .single();
+  if (error) throw error;
+  return { id: data.id, firstName: data.first_name || '', lastName: data.last_name || '', phone: data.phone ?? null, unitNo: data.unit_no ?? null };
+}
+
+export async function listCommitteeMembers(): Promise<CommitteeMember[]> {
+  const { data, error } = await supabase.from('committee_members').select('id, first_name, last_name, phone').eq('is_active', true).order('first_name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(m => ({ id: m.id, firstName: m.first_name || '', lastName: m.last_name || '', phone: m.phone ?? null }));
+}
+
+export async function listVendors(): Promise<Vendor[]> {
+  const { data, error } = await supabase.from('vendors').select('id, name, phone').order('name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(v => ({ id: v.id, name: v.name || '', phone: v.phone ?? null }));
+}
+
+export async function createVendor(input: { name: string; phone: string }): Promise<Vendor> {
+  const { data, error } = await supabase
+    .from('vendors')
+    .insert({ name: input.name, phone: input.phone || null })
+    .select('id, name, phone')
+    .single();
+  if (error) throw error;
+  return { id: data.id, name: data.name || '', phone: data.phone ?? null };
+}
+
+export async function listAdvertisers(): Promise<Advertiser[]> {
+  const { data, error } = await supabase.from('advertisers').select('id, name, phone').order('name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(a => ({ id: a.id, name: a.name || '', phone: a.phone ?? null }));
+}
+
+export async function createAdvertiser(input: { name: string; phone: string }): Promise<Advertiser> {
+  const { data, error } = await supabase
+    .from('advertisers')
+    .insert({ name: input.name, phone: input.phone || null })
+    .select('id, name, phone')
+    .single();
+  if (error) throw error;
+  return { id: data.id, name: data.name || '', phone: data.phone ?? null };
 }

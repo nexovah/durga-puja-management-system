@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listChanda, createChanda, updateChanda, logActivity, diffFields, Chanda, ChandaCategory, PaidMethod, PaymentStatus } from '../lib/db';
+import { listChanda, createChanda, updateChanda, logActivity, diffFields, listDonors, listCommitteeMembers, createDonor, Chanda, ChandaCategory, PaidMethod, PaymentStatus } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
 import { PinConfirmSheet } from '../components/PinConfirmSheet';
+import { EntityPicker, PickableEntity } from '../components/EntityPicker';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { useAuth } from '../lib/auth';
 import { todayISO, formatAmount, PAYMENT_STATUS_LABEL, STATUS_COLORS } from '../lib/labels';
@@ -33,7 +34,7 @@ const CATEGORY_OPTIONS: { value: ChandaCategory; label: string }[] = [
 const emptyForm = {
   donorName: '', category: '' as ChandaCategory | '', numPersons: '', amount: '', amount1: '', amount2: '', billNumber: '', phone: '', phone2: '',
   paidMethod: 'notSelected' as PaidMethod, paymentStatus: 'pending' as PaymentStatus,
-  partialAmount: '', date: todayISO(), remarks: '',
+  partialAmount: '', date: todayISO(), remarks: '', donorId: null as string | null,
 };
 
 const CHANDA_FIELD_LABELS: Record<string, string> = {
@@ -56,6 +57,18 @@ export function ChandaFormScreen({ route, navigation }: any) {
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
   const [original, setOriginal] = useState<Chanda | null>(null);
+  const [tab, setTab] = useState<'member' | 'thirdParty'>('member');
+  const [pickablePeople, setPickablePeople] = useState<PickableEntity[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const [donors, members] = await Promise.all([listDonors(), listCommitteeMembers()]);
+      setPickablePeople([
+        ...donors.map(d => ({ id: d.id, label: [d.firstName, d.lastName].filter(Boolean).join(' '), subtitle: d.unitNo || undefined, phone: d.phone, source: 'donor' as const })),
+        ...members.map(m => ({ id: m.id, label: [m.firstName, m.lastName].filter(Boolean).join(' '), phone: m.phone, source: 'member' as const })),
+      ]);
+    })().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -79,11 +92,15 @@ export function ChandaFormScreen({ route, navigation }: any) {
           partialAmount: existing.partialAmount ? String(existing.partialAmount) : '',
           date: existing.date,
           remarks: existing.remarks,
+          donorId: existing.donorId ?? null,
         });
+        setTab(existing.donorId ? 'member' : 'thirdParty');
       }
       setLoading(false);
     })();
   }, [isEdit, id]);
+
+  const pickedPerson = pickablePeople.find(p => p.id === form.donorId) || null;
 
   // Amount 1 / Amount 2 are an optional breakdown of the main Amount field —
   // matching web's logic: leaving both blank lets Amount stay freely typed,
@@ -100,6 +117,10 @@ export function ChandaFormScreen({ route, navigation }: any) {
 
   const handleSaveButtonPress = () => {
     setError('');
+    if (tab === 'member' && !form.donorId) {
+      setError('Please pick a member.');
+      return;
+    }
     if (!form.donorName.trim() || !form.amount.trim()) {
       setError('Donor name and amount are required.');
       return;
@@ -127,6 +148,7 @@ export function ChandaFormScreen({ route, navigation }: any) {
       partialAmount: form.paymentStatus === 'partial' ? (parseFloat(form.partialAmount) || 0) : undefined,
       date: form.date,
       remarks: form.remarks.trim(),
+      donorId: tab === 'member' ? form.donorId : null,
     };
     setSaving(true);
     try {
@@ -176,7 +198,40 @@ export function ChandaFormScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabButton, tab === 'member' && styles.tabButtonActive]}
+            onPress={() => { setTab('member'); setForm(f => ({ ...f, donorId: null })); }}
+          >
+            <Text style={[styles.tabText, tab === 'member' && styles.tabTextActive]}>Member</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, tab === 'thirdParty' && styles.tabButtonActive]}
+            onPress={() => setTab('thirdParty')}
+          >
+            <Text style={[styles.tabText, tab === 'thirdParty' && styles.tabTextActive]}>Third-party</Text>
+          </TouchableOpacity>
+        </View>
+
+        {tab === 'member' ? (
+          <EntityPicker
+            label="Pick a member"
+            placeholder="Search flat / name…"
+            items={pickablePeople}
+            picked={pickedPerson}
+            onPick={item => setForm(f => ({ ...f, donorId: item.id, donorName: item.label, phone: item.phone || '' }))}
+            onClear={() => setForm(f => ({ ...f, donorId: null, donorName: '', phone: '' }))}
+            onQuickAdd={async (name, phone) => {
+              const created = await createDonor({ firstName: name, phone });
+              const entity: PickableEntity = { id: created.id, label: [created.firstName, created.lastName].filter(Boolean).join(' '), phone: created.phone, source: 'donor' };
+              setPickablePeople(prev => [...prev, entity]);
+              return entity;
+            }}
+            quickAddLabel="Not in the list? Add the member"
+          />
+        ) : (
+          <TextField label="Donor's Name" required value={form.donorName} onChangeText={v => setForm({ ...form, donorName: v })} placeholder="Donor's name" />
+        )}
         <TextField label="No. of Persons" value={form.numPersons} onChangeText={v => setForm({ ...form, numPersons: v })} placeholder="Optional" keyboardType="numeric" />
         <ChipSelect label="Category" value={form.category} onChange={v => setForm({ ...form, category: v as ChandaCategory })} options={CATEGORY_OPTIONS} />
         <View style={styles.row}>
@@ -195,7 +250,9 @@ export function ChandaFormScreen({ route, navigation }: any) {
             <TextField label="Amount 2 (₹)" value={form.amount2} onChangeText={v => handleSubAmountChange('amount2', v)} placeholder="Optional" keyboardType="numeric" />
           </View>
         </View>
-        <TextField label="Phone Number" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
+        {tab === 'thirdParty' && (
+          <TextField label="Contact" value={form.phone} onChangeText={v => setForm({ ...form, phone: v })} placeholder="10-digit phone" keyboardType="phone-pad" />
+        )}
         <ChipSelect label="Paid Method" value={form.paidMethod} onChange={v => setForm({ ...form, paidMethod: v as PaidMethod })} options={PAID_METHOD_OPTIONS} />
         <ChipSelect label="Payment Status" required value={form.paymentStatus} onChange={v => setForm({ ...form, paymentStatus: v as PaymentStatus })} options={STATUS_OPTIONS} />
         {form.paymentStatus === 'partial' && (
@@ -234,10 +291,15 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 10, fontWeight: '700', color: '#166534' },
   form: { padding: 20, gap: 14 },
   row: { flexDirection: 'row', gap: 12 },
+  tabRow: { flexDirection: 'row', gap: 8, backgroundColor: colors.secondaryButtonBg, borderRadius: radius.pill, padding: 4, marginBottom: 2 },
+  tabButton: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: radius.pill },
+  tabButtonActive: { backgroundColor: colors.primaryButtonBg },
+  tabText: { fontSize: 13, fontWeight: '700', color: colors.muted },
+  tabTextActive: { color: '#ffffff' },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
-  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
-  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.dark },
+  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg },
   saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });

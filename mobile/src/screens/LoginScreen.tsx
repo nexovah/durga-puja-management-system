@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   eyeButton: { position: 'absolute', right: 14 },
   error: { fontSize: 12.5, color: colors.red, textAlign: 'center' },
-  button: { backgroundColor: colors.dark, paddingVertical: 14, borderRadius: radius.md, alignItems: 'center', marginTop: 4 },
+  button: { backgroundColor: colors.primaryButtonBg, paddingVertical: 14, borderRadius: radius.md, alignItems: 'center', marginTop: 4 },
   buttonText: { color: '#ffffff', fontSize: 14.5, fontWeight: '700' },
   footnote: { fontSize: 11.5, color: colors.mutedLight, textAlign: 'center', lineHeight: 17, paddingHorizontal: 12 },
 });

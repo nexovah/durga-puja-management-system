@@ -10,7 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   listChanda, listMembers, listDonationAds, listExpenses, getCommitteeInfo,
   getChandaCreditAmount, getMemberCreditAmount, getExpenseCreditAmount,
-  getActiveEvent, ActiveEventInfo,
+  getMyCurrentEvent, ActiveEventInfo,
   Chanda, Expense, DonationAd,
 } from '../lib/db';
 import { colors, radius } from '../theme';
@@ -85,7 +85,7 @@ export function HomeScreen({ navigation }: any) {
   // happens there, never on mobile.
   useFocusEffect(
     useCallback(() => {
-      if (user?.tenantId) getActiveEvent(user.tenantId).then(setActiveEvent).catch(() => {});
+      if (user?.tenantId) getMyCurrentEvent().then(setActiveEvent).catch(() => {});
     }, [user?.tenantId])
   );
 
@@ -385,5 +385,5 @@ const styles = StyleSheet.create({
   empty: { fontSize: 13, color: colors.mutedLight, textAlign: 'center', paddingVertical: 12 },
   bottomNav: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 22 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40, position: 'relative' },
-  fab: { position: 'absolute', left: '50%', top: -30, marginLeft: -27, width: 54, height: 54, borderRadius: radius.pill, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center', shadowColor: colors.dark, shadowOpacity: 0.32, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  fab: { position: 'absolute', left: '50%', top: -30, marginLeft: -27, width: 54, height: 54, borderRadius: radius.pill, backgroundColor: colors.primaryButtonBg, alignItems: 'center', justifyContent: 'center', shadowColor: colors.dark, shadowOpacity: 0.32, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
 });

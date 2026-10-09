@@ -8,10 +8,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   X, Wallet, Users, HeartHandshake, Megaphone, Receipt, Store, HandCoins, CheckSquare, FileText,
-  Info, LifeBuoy, Shield, RotateCcw,
+  Info, LifeBuoy, Shield, RotateCcw, ChevronDown,
 } from 'lucide-react-native';
 import { useAuth, UserPermissions } from '../lib/auth';
-import { getCommitteeInfo, CommitteeInfo, getActiveEvent, ActiveEventInfo } from '../lib/db';
+import { getCommitteeInfo, CommitteeInfo, getMyCurrentEvent, ActiveEventInfo } from '../lib/db';
 import { colors, radius } from '../theme';
 import { SearchBar } from '../components/SearchBar';
 
@@ -76,7 +76,7 @@ export function MenuScreen({ navigation }: any) {
   const load = useCallback(async () => setCommittee(await getCommitteeInfo()), []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   // Read-only, refetched on focus — switching only ever happens on web.
-  useFocusEffect(useCallback(() => { if (user?.tenantId) getActiveEvent(user.tenantId).then(setActiveEvent).catch(() => {}); }, [user?.tenantId]));
+  useFocusEffect(useCallback(() => { if (user?.tenantId) getMyCurrentEvent().then(setActiveEvent).catch(() => {}); }, [user?.tenantId]));
 
   const committeeName = committee?.association || committee?.name || '';
   const isCommitteeLogoUrl = !!committee?.logo && /^https?:\/\//.test(committee.logo);
@@ -124,11 +124,12 @@ export function MenuScreen({ navigation }: any) {
       </View>
 
       {activeEvent && (
-        <View style={styles.eventBanner}>
+        <TouchableOpacity style={styles.eventBanner} onPress={() => navigation.navigate('PickFestival')}>
           <Text style={styles.eventBannerText} numberOfLines={1}>
             {activeEvent.emoji || '🪔'} {activeEvent.name} {activeEvent.year}
           </Text>
-        </View>
+          <ChevronDown size={14} color={colors.orange} />
+        </TouchableOpacity>
       )}
 
       <SearchBar value={search} onChangeText={setSearch} placeholder="Search menu…" />
@@ -164,13 +165,13 @@ const styles = StyleSheet.create({
   profileAvatarImage: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: '#d6d3d1' },
   profileAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.orangeSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d6d3d1' },
   profileAvatarText: { fontSize: 14, fontWeight: '800', color: colors.orange },
-  eventBanner: { marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.orangeSoft, alignSelf: 'flex-start' },
+  eventBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 20, marginTop: 12, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.orangeSoft, alignSelf: 'flex-start' },
   eventBannerText: { fontSize: 13, fontWeight: '700', color: colors.orange },
   list: { padding: 20, paddingTop: 8, gap: 20 },
   section: { gap: 8 },
   sectionLabel: { fontSize: 11.5, fontWeight: '700', color: colors.mutedLight, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2, paddingLeft: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg },
-  iconBox: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#f4f1ec', alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.secondaryButtonBg, alignItems: 'center', justifyContent: 'center' },
   rowLabel: { fontSize: 14, fontWeight: '700', color: colors.ink },
   empty: { fontSize: 13, color: colors.mutedLight, textAlign: 'center', paddingVertical: 24 },
 });

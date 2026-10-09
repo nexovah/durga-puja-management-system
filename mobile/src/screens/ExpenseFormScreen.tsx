@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { listExpenses, createExpense, updateExpense, logActivity, diffFields, Expense, ExpensePaymentStatus, PaidThrough } from '../lib/db';
+import { listExpenses, createExpense, updateExpense, logActivity, diffFields, Expense, ExpensePaymentStatus, PaidThrough, listVendors, createVendor } from '../lib/db';
 import { colors, radius } from '../theme';
 import { TextField, ChipSelect } from '../components/FormField';
 import { DateField } from '../components/DateField';
@@ -12,6 +12,7 @@ import { PinConfirmSheet } from '../components/PinConfirmSheet';
 import { useKeyboardVisible } from '../components/KeyboardDoneBar';
 import { useAuth } from '../lib/auth';
 import { todayISO, formatAmount } from '../lib/labels';
+import { EntityPicker, PickableEntity } from '../components/EntityPicker';
 
 const CATEGORY_OPTIONS = [
   { value: 'construction', label: 'Construction' },
@@ -50,7 +51,7 @@ const STATUS_OPTIONS: { value: ExpensePaymentStatus; label: string }[] = [
 const emptyForm = {
   title: '', amount: '', category: 'other', paymentStatus: 'paid' as ExpensePaymentStatus,
   paidThrough: 'notSelected' as PaidThrough, date: todayISO(), voucherNumber: '',
-  vendorName: '', vendorContact: '', vendorContact2: '', remarks: '',
+  vendorName: '', vendorContact: '', vendorContact2: '', remarks: '', vendorId: null as string | null,
 };
 
 const EXPENSE_FIELD_LABELS: Record<string, string> = {
@@ -73,6 +74,14 @@ export function ExpenseFormScreen({ route, navigation }: any) {
   const [error, setError] = useState('');
   const [pinSheetOpen, setPinSheetOpen] = useState(false);
   const [original, setOriginal] = useState<Expense | null>(null);
+  const [pickableVendors, setPickableVendors] = useState<PickableEntity[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const vendors = await listVendors();
+      setPickableVendors(vendors.map(v => ({ id: v.id, label: v.name, phone: v.phone, source: 'vendor' as const })));
+    })();
+  }, []);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -86,6 +95,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
           paymentStatus: existing.paymentStatus, paidThrough: existing.paidThrough, date: existing.date,
           voucherNumber: existing.voucherNumber || '', vendorName: existing.vendorName || '',
           vendorContact: existing.vendorContact || '', vendorContact2: existing.vendorContact2 || '', remarks: existing.remarks,
+          vendorId: existing.vendorId ?? null,
         });
         setPartialPayments(
           (existing.partialPayments || []).map(p => ({
@@ -134,6 +144,7 @@ export function ExpenseFormScreen({ route, navigation }: any) {
       vendorContact: form.vendorContact.trim() || undefined,
       vendorContact2: form.vendorContact2.trim() || undefined,
       remarks: form.remarks.trim(),
+      vendorId: form.vendorId,
     };
     setSaving(true);
     try {
@@ -160,6 +171,8 @@ export function ExpenseFormScreen({ route, navigation }: any) {
     }
   };
 
+  const pickedVendor = pickableVendors.find(v => v.id === form.vendorId) || null;
+
   if (loading) return <View style={styles.loading}><ActivityIndicator color={colors.orange} size="large" /></View>;
 
   return (
@@ -181,15 +194,22 @@ export function ExpenseFormScreen({ route, navigation }: any) {
         )}
         <ChipSelect label="Paid Through" value={form.paidThrough} onChange={v => setForm({ ...form, paidThrough: v as PaidThrough })} options={PAID_THROUGH_OPTIONS} />
         <TextField label="Voucher Number" value={form.voucherNumber} onChangeText={v => setForm({ ...form, voucherNumber: v })} placeholder="Optional" />
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <TextField label="Vendor Name" value={form.vendorName} onChangeText={v => setForm({ ...form, vendorName: v })} placeholder="Optional" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextField label="Phone Number" value={form.vendorContact} onChangeText={v => setForm({ ...form, vendorContact: v })} placeholder="Optional" keyboardType="phone-pad" />
-          </View>
-        </View>
-        <TextField label="Phone Number 01" value={form.vendorContact2} onChangeText={v => setForm({ ...form, vendorContact2: v })} placeholder="Optional" keyboardType="phone-pad" />
+        <EntityPicker
+          label="Pick a vendor"
+          placeholder="Search vendor…"
+          items={pickableVendors}
+          picked={pickedVendor}
+          onPick={item => setForm(f => ({ ...f, vendorId: item.id, vendorName: item.label, vendorContact: item.phone || '' }))}
+          onClear={() => setForm(f => ({ ...f, vendorId: null, vendorName: '', vendorContact: '' }))}
+          onQuickAdd={async (name, phone) => {
+            const created = await createVendor({ name, phone });
+            const entity: PickableEntity = { id: created.id, label: created.name, phone: created.phone, source: 'vendor' };
+            setPickableVendors(prev => [...prev, entity]);
+            return entity;
+          }}
+          quickAddLabel="Not in the list? Add the vendor"
+        />
+        <TextField label="WhatsApp" value={form.vendorContact2} onChangeText={v => setForm({ ...form, vendorContact2: v })} placeholder="Optional" keyboardType="phone-pad" />
         <DateField label="Date" required value={form.date} onChange={v => setForm({ ...form, date: v })} />
         <TextField label="Remarks" value={form.remarks} onChangeText={v => setForm({ ...form, remarks: v })} placeholder="Optional notes" multiline />
         {!!error && <Text style={styles.error}>{error}</Text>}
@@ -223,8 +243,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   error: { fontSize: 12.5, color: colors.red },
   footer: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 22, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border },
-  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: '#f4f1ec' },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.secondaryButtonBg },
   cancelText: { fontSize: 14, fontWeight: '700', color: colors.inkSoft },
-  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.dark },
+  saveButton: { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.primaryButtonBg },
   saveText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 });
