@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, Upload, Edit2, Trash2, Plus, X, MoreVertical, CheckSquare, Square, UserPlus } from 'lucide-react';
 import {
-  Donor, DonorInput, CommitteeMember, CommitteeMemberInput,
+  Donor, DonorInput, CommitteeMember, CommitteeMemberInput, EventInfo,
   ActivityModule, ActivityFieldChange,
   listDonorsRequest, createDonorRequest, updateDonorRequest, deleteDonorRequest, fromDonorRow,
   createCommitteeMemberRequest,
 } from '../lib/db';
+import { DonorDetailModal } from './DonorDetailModal';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { PageHeading } from './PageHeading';
 import { SelectAllBanner } from './SelectAllBanner';
@@ -38,6 +39,10 @@ interface DonorsProps {
   canDelete: boolean;
   canBulkImport: boolean;
   onLog: (action: 'create' | 'update' | 'delete' | 'bulk_import', module: ActivityModule, summary: string, count?: number, changes?: ActivityFieldChange[], recordLabel?: string) => void;
+  // For the donor detail modal's cross-event contribution history + its
+  // "Add Collection" footer button.
+  events: EventInfo[];
+  onAddCollectionForDonor: (donorId: string) => void;
 }
 
 export const DONOR_CATEGORIES = [
@@ -50,7 +55,7 @@ export function donorFullName(d: { firstName: string; lastName: string }): strin
   return [d.firstName, d.lastName].filter(Boolean).join(' ').trim();
 }
 
-export function Donors({ donors, setDonors, committeeMembers, setCommitteeMembers, canEdit, canDelete, canBulkImport, onLog }: DonorsProps) {
+export function Donors({ donors, setDonors, committeeMembers, setCommitteeMembers, canEdit, canDelete, canBulkImport, onLog, events, onAddCollectionForDonor }: DonorsProps) {
   const { t } = useLanguage();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +75,7 @@ export function Donors({ donors, setDonors, committeeMembers, setCommitteeMember
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [viewingDonorId, setViewingDonorId] = useState<string | null>(null);
 
   useEffect(() => {
     listDonorsRequest().then(setDonors).catch(() => {});
@@ -441,7 +447,16 @@ export function Donors({ donors, setDonors, committeeMembers, setCommitteeMember
                     </td>
                   )}
                   {tableCols.isColumnVisible('unitNo') && (<td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{d.unitNo || '-'}</td>)}
-                  {tableCols.isColumnVisible('name') && (<td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-200 font-medium">{donorFullName(d)}</td>)}
+                  {tableCols.isColumnVisible('name') && (
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <button
+                        onClick={() => setViewingDonorId(d.id)}
+                        className="text-gray-800 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 hover:underline text-left"
+                      >
+                        {donorFullName(d)}
+                      </button>
+                    </td>
+                  )}
                   {tableCols.isColumnVisible('category') && (<td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{categoryLabel(d.category)}</td>)}
                   {tableCols.isColumnVisible('type') && (
                     <td className="px-6 py-4 text-sm">
@@ -562,6 +577,19 @@ export function Donors({ donors, setDonors, committeeMembers, setCommitteeMember
       />
 
       <Toast message={toastMessage} onDone={() => setToastMessage(null)} type={toastType} />
+
+      {viewingDonorId && (() => {
+        const viewingDonor = donors.find(d => d.id === viewingDonorId);
+        if (!viewingDonor) return null;
+        return (
+          <DonorDetailModal
+            donor={viewingDonor}
+            events={events}
+            onClose={() => setViewingDonorId(null)}
+            onAddCollection={(donorId) => { setViewingDonorId(null); onAddCollectionForDonor(donorId); }}
+          />
+        );
+      })()}
     </div>
   );
 }

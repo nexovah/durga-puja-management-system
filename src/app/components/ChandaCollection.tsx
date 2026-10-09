@@ -51,6 +51,11 @@ interface ChandaCollectionProps {
   members: Member[];
   donationAdsList: DonationAd[];
   initialAddRequestId?: number;
+  // Pre-selects this donor on the Member tab when initialAddRequestId
+  // fires — set by Donors.tsx's "Add Collection" deep-link (see
+  // DonorDetailModal.tsx), so the collector doesn't have to re-search for
+  // the donor they just viewed.
+  initialDonorId?: string | null;
   donors: Donor[];
   setDonors: (donors: Donor[]) => void;
   committeeMembers: CommitteeMember[];
@@ -87,7 +92,7 @@ const PAID_METHODS: { value: PaidMethod; labelKey: TranslationKey }[] = [
   { value: 'check', labelKey: 'common.paidMethod.check' },
 ];
 
-const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
+export const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
   paid: 'bg-green-100 text-green-700',
   pending: 'bg-yellow-100 text-yellow-700',
   partial: 'bg-blue-100 text-blue-700',
@@ -118,7 +123,7 @@ const emptyForm = {
   donorId: null as string | null,
 };
 
-export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId, donors, setDonors, committeeMembers, currentUser, users }: ChandaCollectionProps) {
+export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId, initialDonorId, donors, setDonors, committeeMembers, currentUser, users }: ChandaCollectionProps) {
   const { t, locale } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -148,9 +153,16 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   // donor data now.
   const pickedDonor = useMemo(() => donors.find(d => d.id === formData.donorId) || null, [donors, formData.donorId]);
 
-  const openAddForm = () => {
+  const openAddForm = (presetDonorId?: string | null) => {
     setEditingId(null);
-    setFormData({ ...emptyForm, collectedBy: currentUser?.name || '' });
+    const preset = presetDonorId ? pickablePeople.find(p => p.id === presetDonorId) : null;
+    setFormData({
+      ...emptyForm,
+      collectedBy: currentUser?.name || '',
+      donorId: preset?.id ?? null,
+      donorName: preset?.name ?? '',
+      phone: preset?.phone ?? '',
+    });
     setDonorTab('member');
     setDonorQuery('');
     setPhoneSameAsContact(true);
@@ -159,7 +171,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
 
   useEffect(() => {
     if (initialAddRequestId && initialAddRequestId > 0) {
-      openAddForm();
+      openAddForm(initialDonorId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAddRequestId]);

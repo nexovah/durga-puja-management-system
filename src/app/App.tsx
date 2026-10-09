@@ -671,6 +671,16 @@ export default function App() {
     setCurrentPage('chanda');
   };
 
+  // Donors page's detail-modal "Add Collection" button — same bump-and-
+  // navigate shape as goToAddDonor, plus the specific donor id to
+  // pre-select on arrival (see ChandaCollection's initialDonorId prop).
+  const [chandaAddDonorId, setChandaAddDonorId] = useState<string | null>(null);
+  const goToAddCollectionForDonor = (donorId: string) => {
+    setChandaAddDonorId(donorId);
+    setChandaAddRequestId(id => id + 1);
+    setCurrentPage('chanda');
+  };
+
   // Same "bump a counter, switch page, the destination page's effect pops
   // its own Add form open" convention as goToAddDonor above — one per
   // Cmd/Ctrl+<letter> quick-add shortcut (GlobalSearch's Actions list).
@@ -1592,6 +1602,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             canDelete={dataCanDelete}
             canBulkImport={dataCanBulkImport}
             onLog={handleLog}
+            events={events}
+            onAddCollectionForDonor={goToAddCollectionForDonor}
           />
         )}
         {currentPage === 'members' && (
@@ -1622,6 +1634,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             members={members}
             donationAdsList={donationAdsList}
             initialAddRequestId={chandaAddRequestId}
+            initialDonorId={chandaAddDonorId}
             donors={donors}
             setDonors={setDonors}
             committeeMembers={committeeMembers}

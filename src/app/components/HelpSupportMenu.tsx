@@ -55,7 +55,7 @@ export function HelpSupportMenu({ hasUnreadSupportReply, onOpenSupportTicket }: 
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg p-1.5 shrink-0 transition-colors"
+        className="relative text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-white dark:hover:bg-gray-800 rounded-lg p-1.5 shrink-0 transition-colors"
         aria-label={t('nav.helpSupport')}
         title={t('nav.helpSupport')}
       >
