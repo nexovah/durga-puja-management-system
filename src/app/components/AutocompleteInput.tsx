@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { rankSearchMatches } from '../lib/searchRank';
 
 interface AutocompleteInputProps {
   value: string;
@@ -46,7 +47,7 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
 
   const query = value.trim().toLowerCase();
   const filtered = query
-    ? suggestions.filter(s => s.toLowerCase().includes(query) && s.toLowerCase() !== query)
+    ? rankSearchMatches(suggestions.filter(s => s.toLowerCase() !== query), value, s => s, undefined, suggestions.length)
     : suggestions;
 
   return (

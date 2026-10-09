@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
-import { EventInfo, createEventRequest, switchActiveEventRequest } from '../lib/db';
+import { EventInfo, createEventRequest, setEventActiveRequest, setCurrentEventRequest } from '../lib/db';
 import { CustomSelect } from './CustomSelect';
 import { formatFinancialYear } from './EventSwitcher';
 import { RequiredMark } from './RequiredMark';
@@ -15,13 +15,21 @@ const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
 // (current_event_id() returns null -> every write to the 7 scoped tables is
 // denied by RLS regardless of what the frontend blocks).
 export function CreateFirstEventScreen({
-  isAdmin, currentUserId, onCreated, onLogout,
+  isAdmin, currentUserId, onCreated, onLogout, pickableEvents, onPicked,
 }: {
   isAdmin: boolean;
   currentUserId: string;
   onCreated: (event: EventInfo) => void;
   onLogout: () => void;
+  // When the tenant already has one or more active festivals but THIS user
+  // has no current selection yet (first login, or their previous selection
+  // was just deactivated) — show a simple pick list instead of the
+  // create-a-brand-new-festival form. Every role sees this, not just admins.
+  pickableEvents?: EventInfo[];
+  onPicked?: (eventId: string) => void;
 }) {
+  const [picking, setPicking] = useState(false);
+  const [pickError, setPickError] = useState('');
   const [name, setName] = useState('');
   const [year, setYear] = useState(currentYear);
   const [emoji, setEmoji] = useState<string | null>('🪔');
@@ -29,6 +37,53 @@ export function CreateFirstEventScreen({
   const [openingBank, setOpeningBank] = useState('0');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  if (pickableEvents && pickableEvents.length > 0 && onPicked) {
+    const handlePick = async (eventId: string) => {
+      setPicking(true);
+      setPickError('');
+      try {
+        await setCurrentEventRequest(eventId);
+        onPicked(eventId);
+      } catch (err: any) {
+        console.error('Failed to pick festival', err);
+        setPickError(err?.message || 'Could not switch to that festival. Please try again.');
+      } finally {
+        setPicking(false);
+      }
+    };
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-md p-8 border border-gray-200 dark:border-gray-800">
+          <div className="w-14 h-14 mx-auto rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 text-2xl">🪔</div>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 text-center">Pick your festival</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
+            Your committee has {pickableEvents.length > 1 ? 'multiple festivals' : 'a festival'} active right now — choose which one you're working in.
+          </p>
+          <div className="space-y-2">
+            {pickableEvents.map(event => (
+              <button
+                key={event.id}
+                disabled={picking}
+                onClick={() => handlePick(event.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-orange-300 dark:hover:border-orange-500/40 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-left disabled:opacity-50"
+              >
+                <span className="w-9 h-9 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-base shrink-0">{event.emoji || '🪔'}</span>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{event.name} — {formatFinancialYear(event.year)}</span>
+              </button>
+            ))}
+          </div>
+          {pickError && <p className="text-xs text-red-600 mt-3">{pickError}</p>}
+          <button
+            onClick={onLogout}
+            className="w-full mt-6 px-4 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium transition"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -62,12 +117,11 @@ export function CreateFirstEventScreen({
         name.trim(), year, emoji, currentUserId,
         parseFloat(openingCash) || 0, parseFloat(openingBank) || 0,
       );
-      // Creating an event doesn't itself set it active server-side —
-      // without this, tenants.active_event_id stays null, so the very
-      // next fetchActiveEventId() call (next reload, or any other user
-      // in this tenant) sees no active event and this screen reappears
+      // Creating an event doesn't itself mark it active or select it for
+      // this user — without both, this screen would reappear next reload
       // even though an event already exists.
-      await switchActiveEventRequest(event.id);
+      await setEventActiveRequest(event.id, true);
+      await setCurrentEventRequest(event.id);
       onCreated(event);
     } catch (err: any) {
       console.error('Failed to create first event', err);

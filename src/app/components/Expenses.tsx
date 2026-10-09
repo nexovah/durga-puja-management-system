@@ -5,6 +5,7 @@ import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
 import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest, createVendorRequest } from '../lib/db';
+import { rankSearchMatches } from '../lib/searchRank';
 import { VendorFormModal } from './Vendors';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
@@ -117,9 +118,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const [vendorQuery, setVendorQuery] = useState('');
   const [quickAddVendorOpen, setQuickAddVendorOpen] = useState(false);
   const matchingVendors = useMemo(() => {
-    const q = vendorQuery.trim().toLowerCase();
-    if (!q) return [];
-    return vendorDirectory.filter(v => v.name.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(vendorDirectory, vendorQuery, v => v.name);
   }, [vendorQuery, vendorDirectory]);
   const pickedVendor = useMemo(() => vendorDirectory.find(v => v.id === formData.vendorId) || null, [vendorDirectory, formData.vendorId]);
   const [menuOpen, setMenuOpen] = useState(false);

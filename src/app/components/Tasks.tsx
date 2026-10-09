@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, ChevronDown, CheckCircle2, Eye, LayoutList, LayoutGrid, MoreVertical } from 'lucide-react';
 import { Task, TaskPriority, Member } from '../App';
 import { diffFields, ActivityFieldChange, CommitteeMember } from '../lib/db';
+import { rankSearchMatches } from '../lib/searchRank';
 import { PageHeading } from './PageHeading';
 import { CustomSelect } from './CustomSelect';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -120,10 +121,9 @@ export function Tasks({ tasksList, setTasksList, members, committeeMembers, canE
 
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
   const filteredAssignees = useMemo(() => {
-    const q = assigneeSearchQuery.trim().toLowerCase();
     const active = committeeMembers.filter(m => m.isActive !== false);
-    if (!q) return active;
-    return active.filter(m => [m.firstName, m.lastName].filter(Boolean).join(' ').toLowerCase().includes(q));
+    if (!assigneeSearchQuery.trim()) return active;
+    return rankSearchMatches(active, assigneeSearchQuery, m => [m.firstName, m.lastName].filter(Boolean).join(' '), undefined, active.length);
   }, [assigneeSearchQuery, committeeMembers]);
   const completedCount = tasksList.filter(task => task.priority === 'completed').length;
 

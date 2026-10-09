@@ -34,6 +34,7 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { rankSearchMatches } from '../lib/searchRank';
 
 interface ChandaCollectionProps {
   chandaList: Chanda[];
@@ -138,9 +139,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   }, [donors, committeeMembers]);
 
   const matchingPickablePeople = useMemo(() => {
-    const q = donorQuery.trim().toLowerCase();
-    if (!q) return [];
-    return pickablePeople.filter(p => p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(pickablePeople, donorQuery, p => p.name, p => [p.unit]);
   }, [donorQuery, pickablePeople]);
 
   // Full Donor record for the picked-person card below — gives the
@@ -230,9 +229,7 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const collectedByPool = useMemo(() => [...collectedByTypeMap.keys()], [collectedByTypeMap]);
 
   const matchingCollectedBy = useMemo(() => {
-    const q = formData.collectedBy.trim().toLowerCase();
-    if (!q) return [];
-    return collectedByPool.filter(name => name.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(collectedByPool, formData.collectedBy, name => name);
   }, [collectedByPool, formData.collectedBy]);
 
   // Admin-editable, tenant-wide (stored on committee_info) — falls back to

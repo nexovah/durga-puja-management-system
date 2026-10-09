@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, Pencil, X, MoreHorizontal } from 'lucide-react';
 import {
-  EventInfo, createEventRequest, updateEventRequest, switchActiveEventRequest,
+  EventInfo, createEventRequest, updateEventRequest, setCurrentEventRequest, setEventActiveRequest,
   fetchEventChanda, fetchEventDonationAds, fetchEventMembers, fetchEventLoans, fetchEventExpenses,
   copyMembersToActiveEvent, copyChandaDonorsToActiveEvent, copyAdsDonorsToActiveEvent,
 } from '../lib/db';
@@ -9,7 +9,6 @@ import { computeCashBankTotals } from '../lib/cashBank';
 import { SuperAdminConfirmModal } from './SuperAdminConfirmModal';
 import { CustomSelect } from './CustomSelect';
 import { RequiredMark } from './RequiredMark';
-import { EventManageModal } from './EventManageModal';
 
 const currentYear = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -39,14 +38,18 @@ const MORE_EVENT_EMOJIS = [
 ];
 
 interface EventSwitcherProps {
-  events: EventInfo[];
-  activeEventId: string | null;
+  // All festivals currently in the tenant's active set (any number) — the
+  // admin-managed pool everyone picks from. Full roster (active + inactive)
+  // lives in Manage Festivals, not here.
+  activeEvents: EventInfo[];
+  // The signed-in user's OWN current selection among activeEvents — a
+  // per-user pick (app_users.current_event_id), not a tenant-wide pointer.
+  currentEventId: string | null;
   isAdmin: boolean;
   collapsed: boolean;
   currentUserId: string;
-  onEventCreated: (event: EventInfo) => void;
-  onEventUpdated: (event: EventInfo) => void;
-  onEventSwitched: (eventId: string) => void;
+  onCurrentEventChanged: (eventId: string) => void;
+  onManageFestivals: () => void;
   // 'sidebar' (default): bordered box trigger, full-width, chevron only.
   // 'topbar': plain text trigger (no border/bg), always-visible Live pill
   // beside the name, used when this component is rendered in the top bar
@@ -69,16 +72,14 @@ function LivePill() {
 }
 
 export function EventSwitcher({
-  events, activeEventId, isAdmin, collapsed, currentUserId,
-  onEventCreated, onEventUpdated, onEventSwitched, variant = 'sidebar',
+  activeEvents, currentEventId, isAdmin, collapsed, currentUserId,
+  onCurrentEventChanged, onManageFestivals, variant = 'sidebar',
 }: EventSwitcherProps) {
   const [open, setOpen] = useState(false);
-  const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
-  const [manageOpen, setManageOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLButtonElement>(null);
 
-  const activeEvent = events.find(e => e.id === activeEventId) || null;
+  const currentEvent = activeEvents.find(e => e.id === currentEventId) || null;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -90,24 +91,22 @@ export function EventSwitcher({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const closeAll = () => { setOpen(false); setManageOpen(false); };
-
-  const handleRowClick = (event: EventInfo) => {
-    if (event.id === activeEventId) { closeAll(); return; }
-    setPendingSwitchId(event.id);
-  };
-
-  const handleConfirmSwitch = async () => {
-    if (!pendingSwitchId) return;
+  // Switching which active festival YOU are viewing is now a personal,
+  // instant, unconfirmed action — it only ever affects your own session
+  // (app_users.current_event_id), never anyone else's. The old 12-char
+  // "Switch Everyone" confirm is gone; that friction now lives only on the
+  // admin actions that affect every user (deactivating/deleting a festival
+  // in Manage Festivals).
+  const handleRowClick = async (event: EventInfo) => {
+    if (event.id === currentEventId) { setOpen(false); return; }
     try {
-      await switchActiveEventRequest(pendingSwitchId);
-      onEventSwitched(pendingSwitchId);
+      await setCurrentEventRequest(event.id);
+      onCurrentEventChanged(event.id);
     } catch (err) {
-      console.error('Failed to switch event', err);
-      alert('Could not switch the event. Please try again.');
+      console.error('Failed to switch festival', err);
+      alert('Could not switch to that festival. Please try again.');
     } finally {
-      setPendingSwitchId(null);
-      closeAll();
+      setOpen(false);
     }
   };
 
@@ -116,50 +115,26 @@ export function EventSwitcher({
       <div ref={containerRef} className="relative shrink-0">
         <button
           ref={anchorRef}
-          onClick={() => isAdmin && setOpen(o => !o)}
-          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${isAdmin ? 'cursor-pointer' : 'cursor-default'}`}
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
         >
-          <span className="text-base leading-none shrink-0">{activeEvent?.emoji || '🪔'}</span>
+          <span className="text-base leading-none shrink-0">{currentEvent?.emoji || '🪔'}</span>
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[12rem]">
-            {activeEvent ? `${activeEvent.name} — ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
+            {currentEvent ? `${currentEvent.name} — ${formatFinancialYear(currentEvent.year)}` : 'Pick a festival'}
           </span>
-          {activeEvent && <LivePill />}
-          {isAdmin && <ChevronsUpDown size={15} className="text-gray-400 dark:text-gray-500 shrink-0" />}
+          {currentEvent && <LivePill />}
+          <ChevronsUpDown size={15} className="text-gray-400 dark:text-gray-500 shrink-0" />
         </button>
 
-        {open && isAdmin && (
+        {open && (
           <EventPopover
-            events={events}
-            activeEventId={activeEventId}
+            events={activeEvents}
+            currentEventId={currentEventId}
             onRowClick={handleRowClick}
-            onManageClick={() => { setOpen(false); setManageOpen(true); }}
+            onManageClick={isAdmin ? () => { setOpen(false); onManageFestivals(); } : undefined}
             align="left-0"
           />
         )}
-
-        {manageOpen && isAdmin && (
-          <EventManageModal
-            events={events}
-            activeEventId={activeEventId}
-            currentUserId={currentUserId}
-            onClose={() => setManageOpen(false)}
-            onRowClick={handleRowClick}
-            onCreated={onEventCreated}
-            onUpdated={onEventUpdated}
-            onSwitched={onEventSwitched}
-          />
-        )}
-
-        <SuperAdminConfirmModal
-          open={pendingSwitchId !== null}
-          title="Switch 'Puja, Festival or Event'?"
-          message="Every user in this tenant will immediately move to this event — all data they view and add from now on will belong to it. This cannot be undone by simply switching back and forth without care."
-          confirmLabel="Switch Everyone"
-          danger
-          codeLength={12}
-          onCancel={() => setPendingSwitchId(null)}
-          onConfirm={handleConfirmSwitch}
-        />
       </div>
     );
   }
@@ -168,98 +143,74 @@ export function EventSwitcher({
     <div ref={containerRef} className="relative shrink-0 px-3">
       <button
         ref={anchorRef}
-        onClick={() => isAdmin && setOpen(o => !o)}
-        className={`w-full flex items-center gap-2.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-colors ${
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center gap-2.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-colors hover:border-orange-300 dark:hover:border-orange-500/40 cursor-pointer ${
           collapsed ? 'justify-center p-2' : 'px-3 py-2.5'
-        } ${isAdmin ? 'hover:border-orange-300 dark:hover:border-orange-500/40 cursor-pointer' : 'cursor-default'}`}
+        }`}
       >
         <div className="w-7 h-7 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-base shrink-0">
-          {activeEvent?.emoji || '🪔'}
+          {currentEvent?.emoji || '🪔'}
         </div>
         {!collapsed && (
           <>
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                {activeEvent ? `${activeEvent.name} — ${formatFinancialYear(activeEvent.year)}` : 'No active Puja'}
+                {currentEvent ? `${currentEvent.name} — ${formatFinancialYear(currentEvent.year)}` : 'Pick a festival'}
               </p>
             </div>
-            {isAdmin && <ChevronsUpDown size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />}
+            <ChevronsUpDown size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
           </>
         )}
       </button>
 
-      {open && isAdmin && (
+      {open && (
         <EventPopover
-          events={events}
-          activeEventId={activeEventId}
+          events={activeEvents}
+          currentEventId={currentEventId}
           onRowClick={handleRowClick}
-          onManageClick={() => { setOpen(false); setManageOpen(true); }}
+          onManageClick={isAdmin ? () => { setOpen(false); onManageFestivals(); } : undefined}
         />
       )}
-
-      {manageOpen && isAdmin && (
-        <EventManageModal
-          events={events}
-          activeEventId={activeEventId}
-          currentUserId={currentUserId}
-          onClose={() => setManageOpen(false)}
-          onRowClick={handleRowClick}
-          onCreated={onEventCreated}
-          onUpdated={onEventUpdated}
-          onSwitched={onEventSwitched}
-        />
-      )}
-
-      <SuperAdminConfirmModal
-        open={pendingSwitchId !== null}
-        title="Switch 'Puja, Festival or Event'?"
-        message="Every user in this tenant will immediately move to this event — all data they view and add from now on will belong to it. This cannot be undone by simply switching back and forth without care."
-        confirmLabel="Switch Everyone"
-        danger
-        codeLength={12}
-        onCancel={() => setPendingSwitchId(null)}
-        onConfirm={handleConfirmSwitch}
-      />
     </div>
   );
 }
 
-// Dropdown is a quick shortlist, not the full roster — only the 6 newest
-// festivals, plus the active one if it'd otherwise fall outside that top 6
-// (e.g. an older event was reactivated). Everything else lives in the
-// "Manage" modal.
+// Dropdown source is already just the admin-managed active set (no longer
+// "every festival ever created" — that full roster lives in Manage
+// Festivals), current selection first, newest-first otherwise, capped at
+// DROPDOWN_LIMIT.
 const DROPDOWN_LIMIT = 6;
-function shortlistEvents(events: EventInfo[], activeEventId: string | null): EventInfo[] {
+function shortlistEvents(events: EventInfo[], currentEventId: string | null): EventInfo[] {
   const sorted = sortEventsNewestFirst(events);
-  const top = sorted.slice(0, DROPDOWN_LIMIT);
-  if (activeEventId && !top.some(e => e.id === activeEventId)) {
-    const active = sorted.find(e => e.id === activeEventId);
-    if (active) return [...top.slice(0, DROPDOWN_LIMIT - 1), active];
-  }
-  return top;
+  const current = currentEventId ? sorted.find(e => e.id === currentEventId) : undefined;
+  const rest = sorted.filter(e => e.id !== currentEventId);
+  return [...(current ? [current] : []), ...rest].slice(0, DROPDOWN_LIMIT);
 }
 
 function EventPopover({
-  events, activeEventId, onRowClick, onEditClick, onManageClick, align = 'left-3',
+  events, currentEventId, onRowClick, onManageClick, align = 'left-3',
 }: {
   events: EventInfo[];
-  activeEventId: string | null;
+  currentEventId: string | null;
   onRowClick: (event: EventInfo) => void;
-  onManageClick: () => void;
+  onManageClick?: () => void;
   align?: string;
 }) {
-  const shortlist = shortlistEvents(events, activeEventId);
+  const shortlist = shortlistEvents(events, currentEventId);
   return (
     <div className={`absolute top-full ${align} mt-2 w-[346px] z-[100] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700`} onClick={e => e.stopPropagation()}>
       <div className="rounded-xl overflow-hidden">
           <div className="py-1.5">
+            {shortlist.length === 0 && (
+              <p className="px-3 py-4 text-sm text-gray-400 dark:text-gray-500 text-center">No active festivals.</p>
+            )}
             {shortlist.map(event => {
-              const active = event.id === activeEventId;
+              const viewing = event.id === currentEventId;
               return (
                 <div
                   key={event.id}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 transition-colors group ${
-                    active ? 'bg-orange-50/70 dark:bg-orange-500/10' : 'hover:bg-orange-50 dark:hover:bg-orange-500/10'
+                    viewing ? 'bg-orange-50/70 dark:bg-orange-500/10' : 'hover:bg-orange-50 dark:hover:bg-orange-500/10'
                   }`}
                 >
                   <button onClick={() => onRowClick(event)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
@@ -270,18 +221,26 @@ function EventPopover({
                       {event.name} — {formatFinancialYear(event.year)}
                     </span>
                   </button>
-                  {active && <LivePill />}
+                  {viewing ? <LivePill /> : (
+                    <span className="text-[10.5px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-[7px] py-[3px] rounded-full shrink-0">
+                      Active
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
-          <div className="border-t border-gray-100 dark:border-gray-800" />
-          <button
-            onClick={onManageClick}
-            className="w-full py-2.5 text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-center"
-          >
-            Manage 'Puja, Festival or Event'
-          </button>
+          {onManageClick && (
+            <>
+              <div className="border-t border-gray-100 dark:border-gray-800" />
+              <button
+                onClick={onManageClick}
+                className="w-full py-2.5 text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors text-center"
+              >
+                Manage 'Puja, Festival or Event'
+              </button>
+            </>
+          )}
         </div>
     </div>
   );
@@ -389,9 +348,11 @@ export function EventForm({
 
       if (!existing && connectEventId && (copyMembers || copyDonors)) {
         // Bulk copy inserts must land with event_id = this new event, which
-        // only happens once it's the active event (RLS scopes every insert
-        // to current_event_id()) — switch to it first.
-        await switchActiveEventRequest(saved.id);
+        // only happens once it's both in the active set AND this user's own
+        // current selection (RLS scopes every insert to current_event_id(),
+        // now per-user) — mark it active and switch to it first.
+        await setEventActiveRequest(saved.id, true);
+        await setCurrentEventRequest(saved.id);
         onSwitched(saved.id);
         if (copyMembers) {
           const members = await fetchEventMembers(connectEventId);

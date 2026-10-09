@@ -31,6 +31,7 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { rankSearchMatches } from '../lib/searchRank';
 
 interface DonationAdsCollectionProps {
   donationAdsList: DonationAd[];
@@ -157,9 +158,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   }, []);
 
   const matchingAdvertisers = useMemo(() => {
-    const q = advertiserQuery.trim().toLowerCase();
-    if (!q) return [];
-    return advertisers.filter(a => a.name.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(advertisers, advertiserQuery, a => a.name);
   }, [advertiserQuery, advertisers]);
 
   const pickAdvertiser = (a: Advertiser) => {
@@ -176,9 +175,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   }, [donors, committeeMembers]);
 
   const matchingPickablePeople = useMemo(() => {
-    const q = donorQuery.trim().toLowerCase();
-    if (!q) return [];
-    return pickablePeople.filter(p => p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(pickablePeople, donorQuery, p => p.name, p => [p.unit]);
   }, [donorQuery, pickablePeople]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -249,9 +246,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const collectedByPool = useMemo(() => [...collectedByTypeMap.keys()], [collectedByTypeMap]);
 
   const matchingCollectedBy = useMemo(() => {
-    const q = formData.collectedBy.trim().toLowerCase();
-    if (!q) return [];
-    return collectedByPool.filter(name => name.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(collectedByPool, formData.collectedBy, name => name);
   }, [collectedByPool, formData.collectedBy]);
 
   const scopedList = fixedCategory ? donationAdsList.filter(item => item.category === fixedCategory) : donationAdsList;
@@ -601,6 +596,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
 
   const isDonation = formData.category === 'donation';
 
+  const addNewLabel = fixedCategory === 'donation'
+    ? t('donationAds.addNewDonation')
+    : fixedCategory === 'ads'
+    ? t('donationAds.addNewSponsorship')
+    : t('donationAds.addNew');
+
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [draftFilters, setDraftFilters] = useState<TableSearchFilters>(emptyTableSearchFilters);
@@ -679,7 +680,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                 className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus size={20} />
-                {t('donationAds.addNew')}
+                {addNewLabel}
               </button>
             )}
             <div className="relative" ref={menuRef}>
@@ -749,7 +750,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       {/* Form */}
       <FormModal
         open={canEdit && showForm}
-        title={editingId ? t('donationAds.editEntry') : t('donationAds.addNew')}
+        title={editingId ? t('donationAds.editEntry') : addNewLabel}
         onClose={handleCancel}
         footer={
           <>

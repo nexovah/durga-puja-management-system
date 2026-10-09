@@ -25,6 +25,7 @@ import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, SortableTh, DataTableToolbar, ColumnDef, ColumnVisibilityDropdown } from './TableColumnManager';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
 import { ROLES } from './Committee';
 
 interface DonorsProps {
@@ -563,6 +564,8 @@ export function DonorFormModal({
   onSave: (input: DonorInput, designation?: string) => Promise<void>;
 }) {
   const { t } = useLanguage();
+  const formRef = useRef<HTMLDivElement>(null);
+  useAutoFocusFirstField(formRef);
   const [category, setCategory] = useState(donor?.category || 'general');
   const [type, setType] = useState<'owner' | 'tenant'>(donor?.type || 'owner');
   const [unitNo, setUnitNo] = useState(donor?.unitNo || '');
@@ -600,7 +603,7 @@ export function DonorFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div ref={formRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
             {donor ? t('donors.editDonor') : t('donors.addDonor')}

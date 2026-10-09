@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Menu, LogOut, ChevronDown, Building2, Lock, Users as UsersIcon, Languages, Code, PanelLeftClose, Sun, Moon, CreditCard as CreditCardIcon, HelpCircle, Compass } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { setTenantAccessToken } from './lib/supabaseClient';
@@ -26,6 +26,7 @@ import { DonationAdsCollection } from './components/DonationAdsCollection';
 import { Expenses } from './components/Expenses';
 import { Vendors } from './components/Vendors';
 import { Advertisers } from './components/Advertisers';
+import { ManageFestivalsPage } from './components/ManageFestivalsPage';
 import { Loans } from './components/Loans';
 import { Treasury } from './components/Treasury';
 import { Report } from './components/Report';
@@ -64,7 +65,7 @@ import {
   getCmsPageRequest,
   EventInfo,
   fetchEvents,
-  fetchActiveEventId,
+  getMyCurrentEventRequest,
   fetchTenantSlug,
   getReceiptSettingsRequest,
   ReceiptSettings,
@@ -454,7 +455,7 @@ function clearStoredSession() {
 // and DEPLOYMENT.md.
 // ---------------------------------------------------------------------------
 
-type PageKey = 'dashboard' | 'members' | 'donors' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'advertisers' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards';
+type PageKey = 'dashboard' | 'members' | 'donors' | 'chanda' | 'donation' | 'ads' | 'expenses' | 'vendors' | 'advertisers' | 'loans' | 'treasury' | 'report' | 'settings' | 'activityLog' | 'assets' | 'documents' | 'tasks' | 'estimation' | 'billing' | 'helpSupport' | 'awards' | 'manageFestivals';
 
 const PAGE_SLUGS: Record<PageKey, string> = {
   dashboard: '/dashboard',
@@ -478,6 +479,7 @@ const PAGE_SLUGS: Record<PageKey, string> = {
   estimation: '/estimation',
   billing: '/billing',
   helpSupport: '/help-support',
+  manageFestivals: '/manage-festivals',
 };
 
 const SLUG_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
@@ -702,7 +704,13 @@ export default function App() {
   }, [realtimeEnabled]);
   const [developerInfo, setDeveloperInfoState] = useState<DeveloperInfo>(EMPTY_DEVELOPER_INFO);
   const [events, setEvents] = useState<EventInfo[]>([]);
+  // `activeEventId` = THIS user's own current-event selection
+  // (app_users.current_event_id) — a tenant can now have multiple
+  // `events[i].isActive` festivals at once; `activeEvents` below is that
+  // admin-managed pool, `activeEventId` is which one of them this
+  // particular user is personally viewing right now.
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const activeEvents = useMemo(() => events.filter(e => e.isActive), [events]);
   const [eventsLoadError, setEventsLoadError] = useState<string | null>(null);
   const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>(DEFAULT_RECEIPT_SETTINGS);
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
@@ -758,9 +766,9 @@ export default function App() {
       // event-switcher widget/gate is blank/stuck loading while every other
       // page still works normally.
       try {
-        const [eventsList, activeId] = await Promise.all([fetchEvents(), currentUser?.tenantId ? fetchActiveEventId(currentUser.tenantId) : Promise.resolve(null)]);
+        const [eventsList, myEventId] = await Promise.all([fetchEvents(), getMyCurrentEventRequest()]);
         setEvents(eventsList);
-        setActiveEventId(activeId);
+        setActiveEventId(myEventId);
         setEventsLoadError(null);
       } catch (err: any) {
         console.error('Failed to load events', err);
@@ -804,28 +812,10 @@ export default function App() {
     setAwardsListState(data.awardsList);
   };
 
-  // Keep the active-event display fresh: if a teammate's admin switches
-  // events mid-session, RLS makes their *data* correct instantly, but the
-  // *displayed* name is just client state unless refetched — refetch on
-  // every route change plus a light poll so it can never drift far.
-  useEffect(() => {
-    if (!isLoggedIn || !currentUser?.tenantId) return;
-    fetchActiveEventId(currentUser.tenantId).then(setActiveEventId).catch(() => {});
-  }, [isLoggedIn, currentPage, currentUser?.tenantId]);
-
   useEffect(() => {
     if (!isLoggedIn || !currentUser?.tenantId) return;
     fetchTenantSlug(currentUser.tenantId).then(setTenantSlug).catch(() => {});
     getReceiptSettingsRequest().then(setReceiptSettings).catch(() => {});
-  }, [isLoggedIn, currentUser?.tenantId]);
-
-  useEffect(() => {
-    if (!isLoggedIn || !currentUser?.tenantId) return;
-    const tenantId = currentUser.tenantId;
-    const interval = setInterval(() => {
-      fetchActiveEventId(tenantId).then(setActiveEventId).catch(() => {});
-    }, 60000);
-    return () => clearInterval(interval);
   }, [isLoggedIn, currentUser?.tenantId]);
 
   // --- List setters: keep the exact `setX(wholeNewArray)` signature every
@@ -1321,10 +1311,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
         isAdmin={!!currentUser?.isAdmin}
         currentUserId={currentUser?.id || ''}
         onCreated={(event) => {
-          setEvents(prev => [...prev, event]);
+          // CreateFirstEventScreen already called setEventActiveRequest(id,
+          // true) server-side — reflect that locally too, since the row
+          // createEventRequest() returns predates that call (isActive: false).
+          setEvents(prev => [...prev, { ...event, isActive: true }]);
           setActiveEventId(event.id);
         }}
         onLogout={handleLogout}
+        pickableEvents={activeEvents}
+        onPicked={(eventId) => setActiveEventId(eventId)}
       />
     );
   }
@@ -1368,13 +1363,17 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             <EventSwitcher
               variant="topbar"
               collapsed={false}
-              events={events}
-              activeEventId={activeEventId}
+              activeEvents={activeEvents}
+              currentEventId={activeEventId}
               isAdmin={!!currentUser?.isAdmin}
               currentUserId={currentUser?.id || ''}
-              onEventCreated={(event) => setEvents(prev => [...prev, event])}
-              onEventUpdated={(event) => setEvents(prev => prev.map(e => e.id === event.id ? event : e))}
-              onEventSwitched={(eventId) => setActiveEventId(eventId)}
+              onCurrentEventChanged={(eventId) => setActiveEventId(eventId)}
+              onManageFestivals={() => {
+                if (window.location.pathname !== '/manage-festivals') {
+                  window.history.pushState(null, '', '/manage-festivals');
+                }
+                setCurrentPage('manageFestivals');
+              }}
             />
 
             <div className="flex-1 min-w-0">
@@ -1719,6 +1718,19 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             currentUser={currentUser}
             committeeName={committeeInfo.association || committeeInfo.name}
             onUnreadChange={setHasUnreadSupportReply}
+          />
+        )}
+        {currentPage === 'manageFestivals' && (
+          <ManageFestivalsPage
+            events={events}
+            currentEventId={activeEventId}
+            isAdmin={!!currentUser?.isAdmin}
+            currentUserId={currentUser?.id || ''}
+            companyName={committeeInfo.association || committeeInfo.name}
+            companyLogo={committeeInfo.logo}
+            onEventCreated={(event) => setEvents(prev => [...prev, event])}
+            onEventUpdated={(event) => setEvents(prev => prev.map(e => e.id === event.id ? event : e))}
+            onCurrentEventChanged={(eventId) => setActiveEventId(eventId)}
           />
         )}
         </div>

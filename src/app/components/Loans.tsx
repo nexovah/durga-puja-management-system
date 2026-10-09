@@ -24,6 +24,7 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, ColumnVisibilityDropdown, SortableTh, DataTableToolbar, ColumnDef } from './TableColumnManager';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { rankSearchMatches } from '../lib/searchRank';
 
 interface LoansProps {
   loansList: Loan[];
@@ -106,9 +107,7 @@ export function Loans({ loansList, setLoansList, members, donors, setDonors, com
     return [...fromDonors, ...fromCommittee];
   }, [donors, committeeMembers]);
   const matchingPickablePeople = useMemo(() => {
-    const q = donorQuery.trim().toLowerCase();
-    if (!q) return [];
-    return pickablePeople.filter(p => p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(pickablePeople, donorQuery, p => p.name, p => [p.unit]);
   }, [donorQuery, pickablePeople]);
   const pickedDonor = useMemo(() => donors.find(d => d.id === formData.donorId) || null, [donors, formData.donorId]);
 

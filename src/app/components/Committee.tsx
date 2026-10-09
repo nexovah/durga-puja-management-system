@@ -25,6 +25,8 @@ import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { useTableColumns, SortableTh, DataTableToolbar, ColumnDef, ColumnVisibilityDropdown } from './TableColumnManager';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { rankSearchMatches } from '../lib/searchRank';
+import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
 import { donorFullName } from './Donors';
 
 interface CommitteeProps {
@@ -525,6 +527,8 @@ function CommitteeFormModal({
   onSave: (input: CommitteeMemberInput) => Promise<void>;
 }) {
   const { t } = useLanguage();
+  const formRef = useRef<HTMLDivElement>(null);
+  useAutoFocusFirstField(formRef);
   const [tab, setTab] = useState<AddTab>(member ? 'new' : 'fromDonor');
   const [donorQuery, setDonorQuery] = useState('');
   const [pickedDonor, setPickedDonor] = useState<Donor | null>(member?.donorId ? donors.find(d => d.id === member.donorId) || null : null);
@@ -540,9 +544,7 @@ function CommitteeFormModal({
   const [error, setError] = useState('');
 
   const matchingDonors = useMemo(() => {
-    const q = donorQuery.trim().toLowerCase();
-    if (!q) return [];
-    return donors.filter(d => donorFullName(d).toLowerCase().includes(q) || (d.unitNo || '').toLowerCase().includes(q)).slice(0, 8);
+    return rankSearchMatches(donors, donorQuery, d => donorFullName(d), d => [d.unitNo]);
   }, [donorQuery, donors]);
 
   const handleSave = async () => {
@@ -595,7 +597,7 @@ function CommitteeFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div ref={formRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <span className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
             <UserIcon size={20} />

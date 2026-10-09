@@ -2128,6 +2128,10 @@ export interface EventInfo {
   createdAt: string;
   openingCash: number;
   openingBank: number;
+  isComplete: boolean;
+  reportPublished: boolean;
+  reportPublishedAt: string | null;
+  isActive: boolean;
 }
 
 function toEventInfo(row: any): EventInfo {
@@ -2140,6 +2144,10 @@ function toEventInfo(row: any): EventInfo {
     createdAt: row.created_at,
     openingCash: Number(row.opening_cash) || 0,
     openingBank: Number(row.opening_bank) || 0,
+    isComplete: row.is_complete === true,
+    reportPublished: row.report_published === true,
+    reportPublishedAt: row.report_published_at ?? null,
+    isActive: row.is_active === true,
   };
 }
 
@@ -2236,6 +2244,38 @@ export async function fetchEventExpenses(eventId: string): Promise<Expense[]> {
   return (data || []).map(fromExpenseRow);
 }
 
+export async function fetchEventAwards(eventId: string): Promise<Award[]> {
+  const { data, error } = await supabase.rpc('fetch_event_awards', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromAwardRow);
+}
+
+export async function fetchEventCashBankAdjustments(eventId: string): Promise<CashBankAdjustment[]> {
+  const { data, error } = await supabase.rpc('fetch_event_cash_bank_adjustments', { p_event_id: eventId });
+  if (error) throw error;
+  return (data || []).map(fromCashBankAdjustmentRow);
+}
+
+// ---------------------------------------------------------------------------
+// Festival lifecycle — Mark As Complete / Publish Report / Delete, backing
+// the Manage Festivals page (supabase/148_events_lifecycle_and_delete.sql).
+// ---------------------------------------------------------------------------
+
+export async function markEventCompleteRequest(eventId: string, complete: boolean): Promise<void> {
+  const { error } = await supabase.rpc('mark_event_complete', { p_event_id: eventId, p_complete: complete });
+  if (error) throw error;
+}
+
+export async function markEventReportPublishedRequest(eventId: string): Promise<void> {
+  const { error } = await supabase.rpc('mark_event_report_published', { p_event_id: eventId });
+  if (error) throw error;
+}
+
+export async function deleteEventRequest(eventId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_event_completely', { p_event_id: eventId });
+  if (error) throw error;
+}
+
 // ---------------------------------------------------------------------------
 // "Connect with a previous Puja/Festival" — opt-in bulk copy of a previous
 // event's committee members / donor identities into the now-active event.
@@ -2299,11 +2339,33 @@ export async function copyAdsDonorsToActiveEvent(donationAdsList: DonationAd[]):
   if (error) throw error;
 }
 
-// Admin-only server-verified switch — see switch_active_event() in
-// supabase/064_events.sql. Moves every user under this tenant to the new
-// event immediately (single shared pointer, no per-user state).
+// Deprecated — single tenant-wide pointer, superseded by multi-active
+// festivals (supabase/149_multi_active_events.sql). Kept unused rather
+// than deleted; new code uses setCurrentEventRequest/setEventActiveRequest
+// below instead. tenants.active_event_id is now vestigial.
 export async function switchActiveEventRequest(eventId: string): Promise<void> {
   const { error } = await supabase.rpc('switch_active_event', { p_event_id: eventId });
+  if (error) throw error;
+}
+
+// Multiple active festivals — see supabase/149_multi_active_events.sql.
+// set_current_event: no admin gate, no confirmation — any user may point
+// their own selection at any currently-active festival in their tenant.
+export async function setCurrentEventRequest(eventId: string): Promise<void> {
+  const { error } = await supabase.rpc('set_current_event', { p_event_id: eventId });
+  if (error) throw error;
+}
+
+// What the CALLING user is currently viewing (per-user, not tenant-wide).
+export async function getMyCurrentEventRequest(): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_my_current_event');
+  if (error) throw error;
+  return data ?? null;
+}
+
+// Admin-only: add/remove a festival from the tenant's active set.
+export async function setEventActiveRequest(eventId: string, active: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_event_active', { p_event_id: eventId, p_active: active });
   if (error) throw error;
 }
 

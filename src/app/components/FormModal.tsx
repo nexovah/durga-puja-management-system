@@ -1,5 +1,10 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+
+// Any typeable field — skips buttons, tab switches and CustomSelect's own
+// closed-dropdown trigger (a <button>, can't type into it) so autofocus
+// always lands on something a user can start typing into immediately.
+const TYPEABLE_SELECTOR = 'input[type="text"], input[type="tel"], input[type="number"], input[type="email"], input[type="date"], input:not([type]), textarea';
 
 interface FormModalProps {
   open: boolean;
@@ -34,6 +39,20 @@ export function FormModalCancelButton({ onClick, label }: { onClick: () => void;
 // full-screen on mobile with the action buttons pinned to the bottom so
 // they stay reachable while the form scrolls.
 export function FormModal({ open, title, onClose, children, footer }: FormModalProps) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Focus the first typeable field the moment the modal opens, so a user
+  // who just clicked "Add" can start typing immediately without an extra
+  // click into the form — standard across every Add/Edit modal, since
+  // they all render their first field as this body's first input/textarea.
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      bodyRef.current?.querySelector<HTMLElement>(TYPEABLE_SELECTOR)?.focus();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -46,7 +65,7 @@ export function FormModal({ open, title, onClose, children, footer }: FormModalP
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+        <div ref={bodyRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {children}
         </div>
 

@@ -27,6 +27,7 @@ import { SearchToggleButton } from './SearchToggleButton';
 import { CollapsibleSearchPanel } from './CollapsibleSearchPanel';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { onlyDigits, isPhoneValid } from '../lib/validation';
+import { useAutoFocusFirstField } from '../lib/useAutoFocusFirstField';
 
 interface AdvertisersProps {
   donationAds: DonationAd[];
@@ -570,6 +571,8 @@ export function AdvertiserFormModal({
   onSave: (input: AdvertiserInput) => Promise<void>;
 }) {
   const { t } = useLanguage();
+  const formRef = useRef<HTMLDivElement>(null);
+  useAutoFocusFirstField(formRef);
   const [name, setName] = useState(advertiser?.name || '');
   const [companyName, setCompanyName] = useState(advertiser?.companyName || '');
   const [category, setCategory] = useState(advertiser?.category || '');
@@ -605,7 +608,7 @@ export function AdvertiserFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div ref={formRef} className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <span className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 flex items-center justify-center shrink-0">
             <Megaphone size={20} />
