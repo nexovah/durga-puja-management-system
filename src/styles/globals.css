@@ -272,26 +272,57 @@ div:has(> input[type='datetime-local']) {
 }
 
 /* PageHeading's action row (search toggle, Add button, 3-dot menu, etc) —
-   on mobile, stretch every direct child to fill the row evenly instead of
-   bunching left with empty space to the right, matching the full-width
-   footer-button convention already used in every add/edit modal. Desktop
-   (sm+) reverts to each button's natural width. */
+   on mobile, all stay on ONE row, never wrapping. Search and the 3-dot
+   menu are fixed-size square icon buttons (never stretch/shrink with
+   viewport width); the Add button is the only one that grows, filling
+   whatever width is left — always reads as the primary, bigger action.
+   Desktop (sm+) reverts to each button's natural width/layout. */
 @media (max-width: 639px) {
-  /* `:not(.hidden)` guards a hidden file-input some rows carry (bulk-import
-     trigger) — must stay display:none, never get flexed into visibility. */
+  .page-actions-row {
+    flex-wrap: nowrap;
+  }
+  /* The hidden file-input some rows carry (bulk-import trigger) is still a
+     DOM child even though invisible — it can land in the "middle" slot
+     between first/last and must stay display:none no matter what,
+     overriding any other rule below. */
+  .page-actions-row > input.hidden {
+    display: none !important;
+  }
+  /* `:not(.hidden)` guards that same hidden file-input — must stay
+     display:none, never get flexed into visibility. */
   .page-actions-row > button:not(.hidden),
   .page-actions-row > a:not(.hidden),
   .page-actions-row > div:not(.hidden) {
-    flex: 1 1 0%;
+    flex: 0 0 auto;
+  }
+  /* Search toggle and 3-dot menu — fixed square icon buttons, first/last
+     slot in the row, never grow or shrink. */
+  .page-actions-row > *:first-child:not(:last-child),
+  .page-actions-row > *:last-child:not(:first-child) {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* The Add button — the one middle child — grows to fill the remaining
+     row width. */
+  .page-actions-row > *:not(:first-child):not(:last-child) {
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     justify-content: center;
   }
   /* The 3-dot row-menu button sits inside a `relative` wrapper div (for its
-     dropdown) rather than being a direct button — its own button child
-     still needs centering once the wrapper has stretched to fill its
-     1-fr share. */
-  .page-actions-row > div > button:only-child {
-    width: 100%;
+     dropdown) rather than being a direct button — give the wrapper's own
+     button child the same fixed square treatment. */
+  .page-actions-row > div:first-child > button:only-child,
+  .page-actions-row > div:last-child > button:only-child {
+    width: 44px;
+    height: 44px;
+    padding: 0;
   }
 }
 
