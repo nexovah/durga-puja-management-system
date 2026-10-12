@@ -1478,8 +1478,20 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                   >
                     {t('common.total')}
                   </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
-                    ₹{filteredDonationAds.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
+                  <td className="px-6 py-3 text-sm font-bold text-green-600 dark:text-green-400">
+                    ₹{filteredDonationAds.filter(d => d.paymentStatus === 'paid').reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                  <td
+                    colSpan={['donorName', 'companyName'].filter(id => tableCols.isColumnVisible(id)).length || 1}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.totalPending')}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-yellow-600 dark:text-yellow-400">
+                    ₹{filteredDonationAds.filter(d => d.paymentStatus === 'pending').reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
                   </td>
                   <td colSpan={100} />
                 </tr>

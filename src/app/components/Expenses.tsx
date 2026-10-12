@@ -1172,8 +1172,23 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                   >
                     {t('common.total')}
                   </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <td className="px-6 py-3 text-sm font-bold text-green-600 dark:text-green-400">
                     ₹{filteredExpenses.reduce((sum, exp) => sum + getExpenseCreditAmount(exp), 0).toLocaleString()}
+                  </td>
+                  <td colSpan={100} />
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                  <td
+                    colSpan={tableCols.isColumnVisible('title') ? 1 : 0}
+                    className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {t('common.totalPending')}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-yellow-600 dark:text-yellow-400">
+                    ₹{filteredExpenses
+                      .filter(exp => exp.paymentStatus !== 'cancelled')
+                      .reduce((sum, exp) => sum + (exp.amount - getExpenseCreditAmount(exp)), 0)
+                      .toLocaleString()}
                   </td>
                   <td colSpan={100} />
                 </tr>
