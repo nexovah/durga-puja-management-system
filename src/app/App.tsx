@@ -228,6 +228,27 @@ export interface Chanda {
   donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
 }
 
+// Turns a raw Postgres/Supabase error into something a non-technical user
+// can act on — the setX wrappers below otherwise show the raw "duplicate
+// key value violates unique constraint ..." message verbatim, which reads
+// as a scary unrecoverable bug even when it's just "you typed a bill
+// number that's already in use this festival." Falls back to the raw
+// message when the pattern isn't one we recognize, so nothing is ever
+// silently swallowed.
+export function friendlySaveError(err: unknown, genericMessage: string): string {
+  const raw = (err && (err as any).message) ? String((err as any).message) : '';
+  if (/chanda_tenant_event_receipt_number_key|idx_chanda_bill_number_unique/.test(raw)) {
+    return 'That bill number is already used in this festival. Please use a different bill number — the same number can be reused in a different festival.';
+  }
+  if (/idx_donation_ads_voucher_number_unique/.test(raw)) {
+    return 'That voucher number is already used in this festival. Please use a different voucher number — the same number can be reused in a different festival.';
+  }
+  if (/idx_expenses_voucher_number_unique/.test(raw)) {
+    return 'That voucher number is already used in this festival. Please use a different voucher number — the same number can be reused in a different festival.';
+  }
+  return genericMessage + (raw ? `\n\n${raw}` : '');
+}
+
 // The amount actually credited toward total collection, based on payment status:
 // paid -> full amount, partial -> the partial amount entered, pending/rejected -> 0.
 export function getChandaCreditAmount(chanda: Chanda): number {
@@ -936,7 +957,7 @@ export default function App() {
       await syncMembers(previous, newList);
     } catch (err) {
       console.error('Failed to save member changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setMembersState(previous);
     }
   };
@@ -948,7 +969,7 @@ export default function App() {
       await syncChanda(previous, newList);
     } catch (err) {
       console.error('Failed to save chanda changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setChandaListState(previous);
     }
   };
@@ -960,7 +981,7 @@ export default function App() {
       await syncDonationAds(previous, newList);
     } catch (err) {
       console.error('Failed to save donation/ads changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setDonationAdsListState(previous);
     }
   };
@@ -972,7 +993,7 @@ export default function App() {
       await syncExpenses(previous, newList);
     } catch (err) {
       console.error('Failed to save expense changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setExpensesState(previous);
     }
   };
@@ -984,7 +1005,7 @@ export default function App() {
       await syncLoans(previous, newList);
     } catch (err) {
       console.error('Failed to save loan changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setLoansListState(previous);
     }
   };
@@ -996,7 +1017,7 @@ export default function App() {
       await syncTasks(previous, newList);
     } catch (err) {
       console.error('Failed to save task changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setTasksListState(previous);
     }
   };
@@ -1008,7 +1029,7 @@ export default function App() {
       await syncEstimations(previous, newList);
     } catch (err) {
       console.error('Failed to save estimation changes', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setEstimationsListState(previous);
     }
   };
@@ -1021,7 +1042,7 @@ export default function App() {
       if (saved.id !== info.id) setCommitteeInfoState(saved);
     } catch (err) {
       console.error('Failed to save committee info', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setCommitteeInfoState(previous);
     }
   };
@@ -1033,7 +1054,7 @@ export default function App() {
       await updateDeveloperInfo(info);
     } catch (err) {
       console.error('Failed to save developer info', err);
-      alert(t('common.saveError') + (err && (err as any).message ? '\n\n' + (err as any).message : ''));
+      alert(friendlySaveError(err, t('common.saveError')));
       setDeveloperInfoState(previous);
     }
   };
