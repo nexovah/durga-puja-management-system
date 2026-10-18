@@ -157,6 +157,13 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const [advertiserQuery, setAdvertiserQuery] = useState('');
   const [quickAddAdvertiserOpen, setQuickAddAdvertiserOpen] = useState(false);
   const [phoneSameAsContact, setPhoneSameAsContact] = useState(true);
+  // Tracks WHO is picked on the Member tab regardless of source — formData.donorId
+  // must only ever hold a real `donors` table id (it's a foreign key there),
+  // never a standalone committee_members id, or saving fails with
+  // "violates foreign key constraint donation_ads_donor_id_fkey". This
+  // stays set for either source so the picked-person card/validation still
+  // work when a Member/Staff person (no donor row) is picked.
+  const [pickedPersonId, setPickedPersonId] = useState<string | null>(null);
 
   useEffect(() => {
     listAdvertisersRequest().then(setAdvertisers).catch(() => {});
@@ -356,7 +363,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       return;
     }
 
-    if (donorTab === 'member' && !formData.donorId) {
+    if (donorTab === 'member' && !pickedPersonId) {
       setToastType('error');
       setToastMessage(t('committee.pickDonorRequired'));
       return;
@@ -444,6 +451,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     const wasEditing = editingId;
     const resetBase = fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm;
     setFormData({ ...resetBase, collectedBy: currentUser?.name || '' });
+    setPickedPersonId(null);
     setDonorTab('thirdParty');
     setDonorQuery('');
     setAdvertiserQuery('');
@@ -461,6 +469,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const openAddForm = () => {
     setEditingId(null);
     setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory, collectedBy: currentUser?.name || '' } : { ...emptyForm, collectedBy: currentUser?.name || '' });
+    setPickedPersonId(null);
     setDonorTab('thirdParty');
     setDonorQuery('');
     setAdvertiserQuery('');
@@ -493,6 +502,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       donorId: item.donorId || null,
       advertiserId: item.advertiserId || null,
     });
+    setPickedPersonId(item.donorId || null);
     setDonorTab(item.donorId ? 'member' : 'thirdParty');
     setDonorQuery('');
     setAdvertiserQuery('');
@@ -517,6 +527,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
 
   const handleCancel = () => {
     setFormData(fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm);
+    setPickedPersonId(null);
     setDonorTab('thirdParty');
     setDonorQuery('');
     setAdvertiserQuery('');
@@ -802,7 +813,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             <div className="md:col-span-2 flex rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 p-1 gap-1">
               <button
                 type="button"
-                onClick={() => { setDonorTab('thirdParty'); setFormData(f => ({ ...f, donorId: null })); }}
+                onClick={() => { setDonorTab('thirdParty'); setFormData(f => ({ ...f, donorId: null })); setPickedPersonId(null); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold rounded-lg transition-colors ${donorTab === 'thirdParty' ? 'bg-white dark:bg-gray-900 text-orange-600 shadow-sm' : 'text-gray-600 dark:text-gray-400'}`}
               >
                 <UserIcon size={15} /> {t('chanda.thirdPartyTab')}
@@ -819,7 +830,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             {donorTab === 'member' && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('committee.pickMember')}</label>
-                {formData.donorId && formData.donorName ? (
+                {pickedPersonId && formData.donorName ? (
                   <div className="flex items-start justify-between gap-3 px-4 py-3 border border-orange-300 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 rounded-lg">
                     <div className="flex items-start gap-3 min-w-0">
                       <span className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-sm shrink-0">
@@ -843,7 +854,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                         </div>
                       </div>
                     </div>
-                    <button type="button" onClick={() => setFormData(f => ({ ...f, donorId: null, donorName: '', phone: '', phone2: '' }))} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
+                    <button type="button" onClick={() => { setFormData(f => ({ ...f, donorId: null, donorName: '', phone: '', phone2: '' })); setPickedPersonId(null); }} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
                   </div>
                 ) : (
                   <div className="relative">
@@ -859,7 +870,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                           <button
                             key={p.id}
                             type="button"
-                            onClick={() => { setFormData(f => ({ ...f, donorId: p.id, donorName: p.name, phone: p.phone })); setDonorQuery(''); }}
+                            onClick={() => { setFormData(f => ({ ...f, donorId: p.source === 'donor' ? p.id : null, donorName: p.name, phone: p.phone })); setPickedPersonId(p.id); setDonorQuery(''); }}
                             className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left hover:bg-orange-50 dark:hover:bg-orange-500/10"
                           >
                             <span className="text-gray-800 dark:text-gray-200 truncate">{p.name}{p.unit ? ` · ${p.unit}` : ''}</span>
@@ -1553,6 +1564,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
             const created = await createDonorRequest(input);
             setDonors([...donors, created]);
             setFormData(f => ({ ...f, donorId: created.id, donorName: donorFullName(created), phone: created.phone || '' }));
+            setPickedPersonId(created.id);
             setQuickAddDonorOpen(false);
           }}
         />
