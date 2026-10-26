@@ -1,11 +1,12 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart, Eye, EyeOff, CheckSquare, Square } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Download, Upload, Wallet, Gift, Megaphone, Users, MoreVertical, User as UserIcon, PieChart, Eye, EyeOff, CheckSquare, Square, ReceiptIndianRupee } from 'lucide-react';
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { DONUT_COLORS } from './DashboardDonut';
-import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount, User } from '../App';
-import { Donor, CommitteeMember, createDonorRequest, Advertiser, listAdvertisersRequest, createAdvertiserRequest } from '../lib/db';
+import { DonationAd, DonationAdCategory, PaidMethod, PaymentStatus, Member, Chanda, getDonationAdCreditAmount, User, CommitteeInfo } from '../App';
+import { Donor, CommitteeMember, createDonorRequest, Advertiser, listAdvertisersRequest, createAdvertiserRequest, uploadPaymentProofFile, ReceiptSettings } from '../lib/db';
+import { DonationAdReceiptModal } from './DonationAdReceiptModal';
 import { donorFullName, DonorFormModal } from './Donors';
 import { AdvertiserFormModal } from './Advertisers';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -60,12 +61,18 @@ interface DonationAdsCollectionProps {
   // (sponsorship) shortcut to pop the Add form open on arrival at this
   // page, same convention as ChandaCollection's initialAddRequestId.
   initialAddRequestId?: number;
+  // Shared with Collection's receipt system (ChandaCollection.tsx) — one
+  // receipt_settings config drives the look of all three receipt types.
+  committeeInfo: CommitteeInfo;
+  receiptSettings: ReceiptSettings;
+  tenantSlug: string | null;
 }
 
 const DONATION_ADS_FIELD_LABELS: Record<string, string> = {
   category: 'Category', donorName: "Donor's Name", companyName: 'Company Name', amount: 'Amount',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', inKind: 'In-Kind / Ads Category', date: 'Date', voucherNumber: 'Voucher Number',
   phone: 'Phone', phone2: 'Phone 2', collectedBy: 'Collected By', remarks: 'Remarks',
+  paymentReference: 'Transaction / UTR / Cheque No.', paymentProofUrl: 'Payment Proof', bankName: 'Bank Name', paymentDate: 'Cheque/Transfer Date',
 };
 
 export const ADS_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
@@ -146,9 +153,14 @@ const emptyForm = {
   remarks: '',
   donorId: null as string | null,
   advertiserId: null as string | null,
+  paymentReference: '',
+  paymentProofUrl: '',
+  bankName: '',
+  paymentDate: '',
 };
 
-export function DonationAdsCollection({ donationAdsList, setDonationAdsList, members, chandaList, canEdit, canDelete, canBulkImport, onLog, fixedCategory, donors, setDonors, committeeMembers, currentUser, users, initialAddRequestId }: DonationAdsCollectionProps) {
+export function DonationAdsCollection({ donationAdsList, setDonationAdsList, members, chandaList, canEdit, canDelete, canBulkImport, onLog, fixedCategory, donors, setDonors, committeeMembers, currentUser, users, initialAddRequestId, committeeInfo, receiptSettings, tenantSlug }: DonationAdsCollectionProps) {
+  const [receiptTarget, setReceiptTarget] = useState<DonationAd | null>(null);
   const { t, locale } = useLanguage();
   const [donorTab, setDonorTab] = useState<'member' | 'thirdParty'>('thirdParty');
   const [donorQuery, setDonorQuery] = useState('');
@@ -193,6 +205,23 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(() => (fixedCategory ? { ...emptyForm, category: fixedCategory } : emptyForm));
   const pickedDonor = useMemo(() => donors.find(d => d.id === formData.donorId) || null, [donors, formData.donorId]);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofError, setProofError] = useState('');
+  const handlePickProofFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setProofError('');
+    setProofUploading(true);
+    try {
+      const url = await uploadPaymentProofFile(f);
+      setFormData(prev => ({ ...prev, paymentProofUrl: url }));
+    } catch (err: any) {
+      setProofError(err?.message || 'Upload failed');
+    } finally {
+      setProofUploading(false);
+    }
+  };
   const [collectedBySuggestOpen, setCollectedBySuggestOpen] = useState(false);
   const [collectedBySuggestPos, setCollectedBySuggestPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const collectedByInputRef = useRef<HTMLInputElement>(null);
@@ -409,6 +438,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       remarks: formData.remarks,
       donorId: donorTab === 'member' ? formData.donorId : null,
       advertiserId: donorTab === 'thirdParty' && formData.category === 'ads' ? formData.advertiserId : null,
+      paymentReference: formData.paymentReference.trim() || undefined,
+      paymentProofUrl: formData.paymentProofUrl.trim() || undefined,
+      bankName: formData.bankName.trim() || undefined,
+      paymentDate: formData.paymentDate || undefined,
     };
 
     // Editing a record already marked Paid requires PIN confirmation —
@@ -501,6 +534,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
       remarks: item.remarks,
       donorId: item.donorId || null,
       advertiserId: item.advertiserId || null,
+      paymentReference: item.paymentReference || '',
+      paymentProofUrl: item.paymentProofUrl || '',
+      bankName: item.bankName || '',
+      paymentDate: item.paymentDate || '',
     });
     setPickedPersonId(item.donorId || null);
     setDonorTab(item.donorId ? 'member' : 'thirdParty');
@@ -548,6 +585,10 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'phone', label: t('donationAds.csv.phone'), value: item => item.phone },
     { id: 'phone2', label: t('donationAds.csv.phone2'), value: item => item.phone2 || '' },
     { id: 'remarks', label: t('donationAds.csv.remarks'), value: item => item.remarks },
+    { id: 'paymentReference', label: 'Transaction / UTR / Cheque No.', value: item => item.paymentReference || '' },
+    { id: 'bankName', label: 'Bank Name', value: item => item.bankName || '' },
+    { id: 'paymentDate', label: 'Cheque/Transfer Date', value: item => item.paymentDate || '' },
+    { id: 'paymentProofUrl', label: 'Payment Proof', value: item => item.paymentProofUrl || '' },
   ];
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -675,6 +716,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'amount', label: t('common.amount'), align: 'left', sortValue: d => d.amount },
     { id: 'paidMethod', label: t('common.paidMethod'), sortValue: d => paidMethodLabel(d.paidMethod || 'notSelected') },
     { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: d => d.paymentStatus || 'paid' },
+    { id: 'receiptNumber', label: 'Receipt no.', sortValue: d => d.receiptNumber || '' },
     ...(!fixedCategory ? [{ id: 'category', label: t('donationAds.category'), sortValue: (d: DonationAd) => categoryLabel(d.category) }] : []),
     { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), sortValue: d => inKindDisplay(d) || '' },
     { id: 'date', label: t('common.date'), sortValue: d => d.date },
@@ -1026,6 +1068,64 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               />
             </div>
 
+            <div className="md:col-span-2">
+              {formData.paidMethod !== 'cash' && formData.paidMethod !== 'notSelected' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction / UTR / Cheque No.</label>
+                    <input
+                      type="text"
+                      value={formData.paymentReference}
+                      onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment proof</label>
+                    {formData.paymentProofUrl ? (
+                      <div className="flex items-center gap-3 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <span className="text-sm text-green-600 dark:text-green-400 flex-1 truncate">✓ Uploaded</span>
+                        <button type="button" onClick={() => setFormData({ ...formData, paymentProofUrl: '' })} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:border-orange-400">
+                        <Upload size={16} className="shrink-0" />
+                        {proofUploading ? 'Uploading...' : 'Choose image or PDF'}
+                        <input type="file" accept="image/*,application/pdf" onChange={handlePickProofFile} disabled={proofUploading} className="hidden" />
+                      </label>
+                    )}
+                    {proofError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{proofError}</p>}
+                  </div>
+
+                  {(formData.paidMethod === 'onlineBanking' || formData.paidMethod === 'check') && (
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bank Name</label>
+                        <input
+                          type="text"
+                          value={formData.bankName}
+                          onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                        <input
+                          type="date"
+                          value={formData.paymentDate}
+                          onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
               <CustomSelect
@@ -1351,6 +1451,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                 {tableCols.isColumnVisible('paymentStatus') && (
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'paymentStatus')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
+                {tableCols.isColumnVisible('receiptNumber') && (
+                  <SortableTh column={donationAdsColumns.find(c => c.id === 'receiptNumber')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
+                )}
                 {!fixedCategory && tableCols.isColumnVisible('category') && (
                   <SortableTh column={donationAdsColumns.find(c => c.id === 'category')!} sortState={tableCols.sortState} onSort={tableCols.toggleSort} />
                 )}
@@ -1419,6 +1522,19 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                       </span>
                     </td>
                   )}
+                  {tableCols.isColumnVisible('receiptNumber') && (
+                    <td className="px-6 py-4 text-sm">
+                      {item.receiptNumber ? (
+                        <button
+                          type="button"
+                          onClick={() => setReceiptTarget(item)}
+                          className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                        >
+                          {item.receiptNumber}
+                        </button>
+                      ) : '-'}
+                    </td>
+                  )}
                   {!fixedCategory && tableCols.isColumnVisible('category') && (
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -1464,6 +1580,11 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                             {canEdit && (
                               <button onClick={() => { setOpenRowMenuId(null); handleEdit(item); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <Edit2 size={14} className="text-gray-400" /> Edit
+                              </button>
+                            )}
+                            {item.receiptNumber && (
+                              <button onClick={() => { setOpenRowMenuId(null); setReceiptTarget(item); }} className="w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <ReceiptIndianRupee size={14} className="text-orange-600" /> View Receipt
                               </button>
                             )}
                             {canDelete && (
@@ -1603,6 +1724,12 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
           { label: t('donationAds.collectedBy'), value: viewTarget.collectedBy || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
+          ...(viewTarget.paymentReference ? [{ label: 'Transaction / UTR / Cheque No.', value: viewTarget.paymentReference }] : []),
+          ...(viewTarget.bankName ? [{ label: 'Bank Name', value: viewTarget.bankName }] : []),
+          ...(viewTarget.paymentDate ? [{ label: 'Date', value: new Date(viewTarget.paymentDate).toLocaleDateString(locale) }] : []),
+          ...(viewTarget.paymentProofUrl ? [{ label: 'Payment Proof', value: (
+            <a href={viewTarget.paymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-orange-600 dark:text-orange-400 underline">View proof</a>
+          ) }] : []),
         ] : []}
       />
       <DeleteConfirmModal
@@ -1620,6 +1747,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         onCancel={() => setPendingSave(null)}
         onConfirm={confirmStatusChange}
       />
+      {receiptTarget && (
+        <DonationAdReceiptModal
+          donationAd={receiptTarget}
+          committeeInfo={committeeInfo}
+          receiptSettings={receiptSettings}
+          tenantSlug={tenantSlug}
+          onClose={() => setReceiptTarget(null)}
+        />
+      )}
     </div>
   );
 }

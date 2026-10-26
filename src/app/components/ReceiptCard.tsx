@@ -16,6 +16,8 @@ export interface ReceiptCardData {
   committeeRegNo: string | null;
   receiptNumber: string;
   donorName: string;
+  /** Sponsorship (Ads) receipts only — rendered as a bold line under the donor name when present. */
+  companyName?: string | null;
   phone: string | null;
   /** Always shown when present — not a user-toggleable setting, this is the chanda row's own bill number. */
   billNumber: string | null;
@@ -24,6 +26,11 @@ export interface ReceiptCardData {
   paidMethod: string;
   date: string;
   collectedBy: string | null;
+  /** Transaction/UTR/Cheque No., bank name and a separate payment date (e.g.
+   *  cheque date) — captured when paidMethod isn't Cash, shown only when present. */
+  paymentReference?: string | null;
+  bankName?: string | null;
+  paymentDate?: string | null;
   colorTheme: 'saffron' | 'rose' | 'emerald' | 'indigo' | 'custom';
   customColorHex: string | null;
   headerSymbol: string;
@@ -95,14 +102,17 @@ const LABELS: Record<ReceiptCardData['receiptLanguage'], Record<string, string>>
   en: {
     title: 'Contribution Receipt', receiptNo: 'Receipt no.', donor: 'Donor', phone: 'Phone', billNumber: 'Bill no.', persons: 'Persons',
     payment: 'Payment', date: 'Date', collectedBy: 'Collected by', upi: 'UPI ID', regNo: 'Reg. no.',
+    paymentRef: 'Transaction / UTR / Cheque no.', bankName: 'Bank', paymentDate: 'Payment date',
   },
   bn: {
     title: 'অনুদান রসিদ', receiptNo: 'রসিদ নং', donor: 'দাতা', phone: 'ফোন', billNumber: 'বিল নং', persons: 'ব্যক্তি',
     payment: 'পেমেন্ট', date: 'তারিখ', collectedBy: 'সংগ্রহকারী', upi: 'UPI আইডি', regNo: 'নিবন্ধন নং',
+    paymentRef: 'লেনদেন / ইউটিআর / চেক নং', bankName: 'ব্যাংক', paymentDate: 'পেমেন্টের তারিখ',
   },
   hi: {
     title: 'योगदान रसीद', receiptNo: 'रसीद सं.', donor: 'दाता', phone: 'फ़ोन', billNumber: 'बिल सं.', persons: 'व्यक्ति',
     payment: 'भुगतान', date: 'तारीख', collectedBy: 'संग्रहकर्ता', upi: 'UPI आईडी', regNo: 'पंजी. सं.',
+    paymentRef: 'ट्रांज़ैक्शन / यूटीआर / चेक सं.', bankName: 'बैंक', paymentDate: 'भुगतान तिथि',
   },
 };
 
@@ -228,11 +238,24 @@ export function ReceiptCard({ data }: { data: ReceiptCardData }) {
 
         <div className="px-5 py-3 divide-y divide-gray-100 text-sm">
           <Row label={labels.receiptNo} value={data.receiptNumber} bold />
-          <Row label={labels.donor} value={data.donorName} bold />
+          <div className="py-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-gray-500 shrink-0">{labels.donor}</span>
+              <span className="text-gray-900 text-right truncate font-semibold">{data.donorName}</span>
+            </div>
+            {data.companyName && (
+              <p className="text-right text-gray-900 font-bold text-sm mt-0.5">{data.companyName}</p>
+            )}
+          </div>
           {data.phone && <Row label={labels.phone} value={data.phone} />}
           {data.billNumber && <Row label={labels.billNumber} value={data.billNumber} />}
           {data.showPersons && data.numPersons != null && <Row label={labels.persons} value={String(data.numPersons)} />}
           {data.showPaymentMethod && <Row label={labels.payment} value={PAID_METHOD_LABEL[data.paidMethod] || data.paidMethod} />}
+          {data.paidMethod !== 'cash' && data.paymentReference && <Row label={labels.paymentRef} value={data.paymentReference} />}
+          {data.paidMethod !== 'cash' && data.bankName && <Row label={labels.bankName} value={data.bankName} />}
+          {data.paidMethod !== 'cash' && data.paymentDate && (
+            <Row label={labels.paymentDate} value={new Date(data.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} />
+          )}
           <Row label={labels.date} value={new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} />
           {data.showUpiId && data.upiId && <Row label={labels.upi} value={data.upiId} />}
         </div>

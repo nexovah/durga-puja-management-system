@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, X, Download, Upload, MoreVertical, PieChart, Eye, 
 import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { DashboardDonut, DONUT_COLORS } from './DashboardDonut';
 import { Expense, ExpensePaymentStatus, ExpensePartialPayment, PaidThrough, getExpenseCreditAmount } from '../App';
-import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest, createVendorRequest } from '../lib/db';
+import { diffFields, ActivityFieldChange, Vendor, listVendorsRequest, createVendorRequest, uploadPaymentProofFile } from '../lib/db';
 import { rankSearchMatches } from '../lib/searchRank';
 import { VendorFormModal } from './Vendors';
 import { PageHeading } from './PageHeading';
@@ -47,6 +47,7 @@ const EXPENSES_FIELD_LABELS: Record<string, string> = {
   title: 'Title', amount: 'Amount', paymentStatus: 'Payment Status', paidThrough: 'Paid Through',
   date: 'Date', category: 'Category', voucherNumber: 'Voucher Number', vendorName: 'Vendor Name',
   vendorContact: 'Vendor Contact', vendorContact2: 'Vendor Contact 01', remarks: 'Remarks',
+  paymentReference: 'Transaction / UTR / Cheque No.', paymentProofUrl: 'Payment Proof', bankName: 'Bank Name', paymentDate: 'Cheque/Transfer Date',
 };
 
 export const EXPENSE_CATEGORIES: { value: string; labelKey: TranslationKey }[] = [
@@ -105,6 +106,10 @@ const emptyForm = {
   vendorContact2: '',
   vendorId: null as string | null,
   remarks: '',
+  paymentReference: '',
+  paymentProofUrl: '',
+  bankName: '',
+  paymentDate: '',
 };
 
 export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImport, onLog, initialAddRequestId }: ExpensesProps) {
@@ -126,6 +131,23 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     return rankSearchMatches(vendorDirectory, vendorQuery, v => v.name);
   }, [vendorQuery, vendorDirectory]);
   const pickedVendor = useMemo(() => vendorDirectory.find(v => v.id === formData.vendorId) || null, [vendorDirectory, formData.vendorId]);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofError, setProofError] = useState('');
+  const handlePickProofFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setProofError('');
+    setProofUploading(true);
+    try {
+      const url = await uploadPaymentProofFile(f);
+      setFormData(prev => ({ ...prev, paymentProofUrl: url }));
+    } catch (err: any) {
+      setProofError(err?.message || 'Upload failed');
+    } finally {
+      setProofUploading(false);
+    }
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [widgetsVisible, toggleWidgets] = useWidgetsVisible('expenses');
@@ -288,6 +310,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       vendorContact2: formData.vendorContact2,
       vendorId: formData.vendorId || null,
       remarks: formData.remarks,
+      paymentReference: formData.paymentReference.trim() || undefined,
+      paymentProofUrl: formData.paymentProofUrl.trim() || undefined,
+      bankName: formData.bankName.trim() || undefined,
+      paymentDate: formData.paymentDate || undefined,
     };
 
     if (editingId) {
@@ -373,6 +399,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       vendorContact2: expense.vendorContact2 || '',
       vendorId: expense.vendorId || null,
       remarks: expense.remarks,
+      paymentReference: expense.paymentReference || '',
+      paymentProofUrl: expense.paymentProofUrl || '',
+      bankName: expense.bankName || '',
+      paymentDate: expense.paymentDate || '',
     });
     setEditingId(expense.id);
     setShowForm(true);
@@ -423,6 +453,10 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     { id: 'date', label: t('expenses.csv.date'), value: exp => exp.date },
     { id: 'category', label: t('expenses.csv.category'), value: exp => categoryLabel(exp.category) },
     { id: 'remarks', label: t('expenses.csv.remarks'), value: exp => exp.remarks },
+    { id: 'paymentReference', label: 'Transaction / UTR / Cheque No.', value: exp => exp.paymentReference || '' },
+    { id: 'bankName', label: 'Bank Name', value: exp => exp.bankName || '' },
+    { id: 'paymentDate', label: 'Cheque/Transfer Date', value: exp => exp.paymentDate || '' },
+    { id: 'paymentProofUrl', label: 'Payment Proof', value: exp => exp.paymentProofUrl || '' },
   ];
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -727,6 +761,62 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 placeholder={t('expenses.paidThrough.notSelected')}
               />
             </div>
+
+            {formData.paidThrough !== 'cash' && formData.paidThrough !== 'notSelected' && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction / UTR / Cheque No.</label>
+                  <input
+                    type="text"
+                    value={formData.paymentReference}
+                    onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment proof</label>
+                  {formData.paymentProofUrl ? (
+                    <div className="flex items-center gap-3 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                      <span className="text-sm text-green-600 dark:text-green-400 flex-1 truncate">✓ Uploaded</span>
+                      <button type="button" onClick={() => setFormData({ ...formData, paymentProofUrl: '' })} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:border-orange-400">
+                      <Upload size={16} className="shrink-0" />
+                      {proofUploading ? 'Uploading...' : 'Choose image or PDF'}
+                      <input type="file" accept="image/*,application/pdf" onChange={handlePickProofFile} disabled={proofUploading} className="hidden" />
+                    </label>
+                  )}
+                  {proofError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{proofError}</p>}
+                </div>
+
+                {(formData.paidThrough === 'onlineBanking' || formData.paidThrough === 'check') && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bank Name</label>
+                      <input
+                        type="text"
+                        value={formData.bankName}
+                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                      <input
+                        type="date"
+                        value={formData.paymentDate}
+                        onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {isPartial && (
               <div className="md:col-span-2">
@@ -1329,6 +1419,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           { label: t('expenses.vendorName'), value: viewTarget.vendorName || '-' },
           { label: t('expenses.vendorContact'), value: viewTarget.vendorContact || '-' },
           { label: t('expenses.vendorContact2'), value: viewTarget.vendorContact2 || '-' },
+          ...(viewTarget.paymentReference ? [{ label: 'Transaction / UTR / Cheque No.', value: viewTarget.paymentReference }] : []),
+          ...(viewTarget.bankName ? [{ label: 'Bank Name', value: viewTarget.bankName }] : []),
+          ...(viewTarget.paymentDate ? [{ label: 'Date', value: new Date(viewTarget.paymentDate).toLocaleDateString(locale) }] : []),
+          ...(viewTarget.paymentProofUrl ? [{ label: 'Payment Proof', value: (
+            <a href={viewTarget.paymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-orange-600 dark:text-orange-400 underline">
+              View proof
+            </a>
+          ) }] : []),
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
           ];
         })() : []}

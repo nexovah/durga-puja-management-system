@@ -5,7 +5,7 @@ import { useWidgetsVisible } from '../hooks/useWidgetsVisible';
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Chanda, ChandaCategory, PaymentStatus, PaidMethod, CommitteeInfo, Member, DonationAd, getChandaCreditAmount, User } from '../App';
 import { User as UserIcon, Gift, Users as UsersIcon } from 'lucide-react';
-import { Donor, CommitteeMember, createDonorRequest } from '../lib/db';
+import { Donor, CommitteeMember, createDonorRequest, uploadPaymentProofFile } from '../lib/db';
 import { donorFullName, DonorFormModal } from './Donors';
 import { DashboardDonut } from './DashboardDonut';
 import { ReceiptModal } from './ReceiptModal';
@@ -67,6 +67,7 @@ const CHANDA_FIELD_LABELS: Record<string, string> = {
   donorName: "Donor's Name", category: 'Category', numPersons: 'No. of Persons', amount: 'Amount', amount1: 'Amount 1', amount2: 'Amount 2',
   paidMethod: 'Paid Method', paymentStatus: 'Payment Status', partialAmount: 'Amount Paid So Far',
   date: 'Date', billNumber: 'Bill Number', phone: 'Phone', phone2: 'Phone 2', remarks: 'Remarks',
+  paymentReference: 'Transaction / UTR / Cheque No.', paymentProofUrl: 'Payment Proof', bankName: 'Bank Name', paymentDate: 'Cheque/Transfer Date',
 };
 
 const CHANDA_CATEGORIES: { value: ChandaCategory; label: string }[] = [
@@ -121,6 +122,10 @@ const emptyForm = {
   remarks: '',
   collectedBy: '',
   donorId: null as string | null,
+  paymentReference: '',
+  paymentProofUrl: '',
+  bankName: '',
+  paymentDate: '',
 };
 
 export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete, canBulkImport, onLog, committeeInfo, onUpdateCommitteeInfo, isAdmin, receiptSettings, tenantSlug, members, donationAdsList, initialAddRequestId, initialDonorId, donors, setDonors, committeeMembers, currentUser, users }: ChandaCollectionProps) {
@@ -128,6 +133,23 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofError, setProofError] = useState('');
+  const handlePickProofFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setProofError('');
+    setProofUploading(true);
+    try {
+      const url = await uploadPaymentProofFile(f);
+      setFormData(prev => ({ ...prev, paymentProofUrl: url }));
+    } catch (err: any) {
+      setProofError(err?.message || 'Upload failed');
+    } finally {
+      setProofUploading(false);
+    }
+  };
   const [donorTab, setDonorTab] = useState<'member' | 'thirdParty'>('member');
   const [phoneSameAsContact, setPhoneSameAsContact] = useState(true);
   const [donorQuery, setDonorQuery] = useState('');
@@ -429,6 +451,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       remarks: formData.remarks,
       collectedBy: formData.collectedBy.trim() || undefined,
       donorId: donorTab === 'member' ? formData.donorId : null,
+      paymentReference: formData.paymentReference.trim() || undefined,
+      paymentProofUrl: formData.paymentProofUrl.trim() || undefined,
+      bankName: formData.bankName.trim() || undefined,
+      paymentDate: formData.paymentDate || undefined,
     };
 
     // Editing a record that's already Paid — whether changing its status
@@ -507,6 +533,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
       remarks: chanda.remarks,
       collectedBy: chanda.collectedBy || '',
       donorId: chanda.donorId || null,
+      paymentReference: chanda.paymentReference || '',
+      paymentProofUrl: chanda.paymentProofUrl || '',
+      bankName: chanda.bankName || '',
+      paymentDate: chanda.paymentDate || '',
     });
     setPickedPersonId(chanda.donorId || null);
     setDonorTab(chanda.donorId ? 'member' : 'thirdParty');
@@ -551,6 +581,10 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
     { id: 'phone1', label: t('chanda.csv.phone'), value: c => c.phone },
     { id: 'phone2', label: t('chanda.csv.phone2'), value: c => c.phone2 || '' },
     { id: 'remarks', label: t('chanda.csv.remarks'), value: c => c.remarks },
+    { id: 'paymentReference', label: 'Transaction / UTR / Cheque No.', value: c => c.paymentReference || '' },
+    { id: 'bankName', label: 'Bank Name', value: c => c.bankName || '' },
+    { id: 'paymentDate', label: 'Cheque/Transfer Date', value: c => c.paymentDate || '' },
+    { id: 'paymentProofUrl', label: 'Payment Proof', value: c => c.paymentProofUrl || '' },
     { id: 'receiptNumber', label: t('chanda.digitalReceipt'), value: c => c.receiptNumber || '' },
   ];
 
@@ -992,6 +1026,62 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
                 placeholder={t('common.paidMethod.notSelected')}
               />
             </div>
+
+            {formData.paidMethod !== 'cash' && formData.paidMethod !== 'notSelected' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction / UTR / Cheque No.</label>
+                  <input
+                    type="text"
+                    value={formData.paymentReference}
+                    onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment proof</label>
+                  {formData.paymentProofUrl ? (
+                    <div className="flex items-center gap-3 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                      <span className="text-sm text-green-600 dark:text-green-400 flex-1 truncate">✓ Uploaded</span>
+                      <button type="button" onClick={() => setFormData({ ...formData, paymentProofUrl: '' })} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:border-orange-400">
+                      <Upload size={16} className="shrink-0" />
+                      {proofUploading ? 'Uploading...' : 'Choose image or PDF'}
+                      <input type="file" accept="image/*,application/pdf" onChange={handlePickProofFile} disabled={proofUploading} className="hidden" />
+                    </label>
+                  )}
+                  {proofError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{proofError}</p>}
+                </div>
+
+                {(formData.paidMethod === 'onlineBanking' || formData.paidMethod === 'check') && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bank Name</label>
+                      <input
+                        type="text"
+                        value={formData.bankName}
+                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                      <input
+                        type="date"
+                        value={formData.paymentDate}
+                        onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
@@ -1590,6 +1680,14 @@ export function ChandaCollection({ chandaList, setChandaList, canEdit, canDelete
           { label: t('chanda.billNumber'), value: viewTarget.billNumber || '-' },
           { label: t('chanda.phone1'), value: viewTarget.phone || '-' },
           { label: t('chanda.phone2'), value: viewTarget.phone2 || '-' },
+          ...(viewTarget.paymentReference ? [{ label: 'Transaction / UTR / Cheque No.', value: viewTarget.paymentReference }] : []),
+          ...(viewTarget.bankName ? [{ label: 'Bank Name', value: viewTarget.bankName }] : []),
+          ...(viewTarget.paymentDate ? [{ label: 'Date', value: new Date(viewTarget.paymentDate).toLocaleDateString(locale) }] : []),
+          ...(viewTarget.paymentProofUrl ? [{ label: 'Payment Proof', value: (
+            <a href={viewTarget.paymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-orange-600 dark:text-orange-400 underline">
+              View proof
+            </a>
+          ) }] : []),
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
         ] : []}
       />

@@ -1,0 +1,184 @@
+import { useRef, useState } from 'react';
+import { X, MessageCircle, Link as LinkIcon, Mail, FileDown, Check } from 'lucide-react';
+import { DonationAd, CommitteeInfo } from '../App';
+import { ReceiptSettings } from '../lib/db';
+import { ReceiptCard, ReceiptCardData } from './ReceiptCard';
+
+interface DonationAdReceiptModalProps {
+  donationAd: DonationAd;
+  committeeInfo: CommitteeInfo;
+  receiptSettings: ReceiptSettings;
+  tenantSlug: string | null;
+  onClose: () => void;
+}
+
+// Near-duplicate of ReceiptModal.tsx, built from a DonationAd instead of a
+// Chanda — same shared ReceiptCard, same WhatsApp/copy-link/email/PDF
+// sharing, but the public link carries an extra `donation-ads` path
+// segment so its token namespace never collides with Collection's.
+export function DonationAdReceiptModal({ donationAd, committeeInfo, receiptSettings, tenantSlug, onClose }: DonationAdReceiptModalProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const data: ReceiptCardData = {
+    committeeName: committeeInfo.name || 'Committee',
+    committeeAddress: committeeInfo.address || null,
+    committeeEmail: committeeInfo.email || null,
+    committeePhone: committeeInfo.mobile1 || committeeInfo.phone || null,
+    committeeLogo: committeeInfo.logo || null,
+    committeeRegNo: committeeInfo.regNumber || null,
+    receiptNumber: donationAd.receiptNumber || '-',
+    donorName: donationAd.donorName,
+    companyName: donationAd.companyName || null,
+    phone: donationAd.phone || null,
+    billNumber: donationAd.voucherNumber || null,
+    numPersons: null,
+    amount: donationAd.amount,
+    paidMethod: donationAd.paidMethod,
+    date: donationAd.date,
+    collectedBy: donationAd.collectedBy || null,
+    paymentReference: donationAd.paymentReference || null,
+    bankName: donationAd.bankName || null,
+    paymentDate: donationAd.paymentDate || null,
+    colorTheme: receiptSettings.colorTheme,
+    customColorHex: receiptSettings.customColorHex || null,
+    headerSymbol: receiptSettings.headerSymbol,
+    blessingLine: receiptSettings.blessingLine,
+    receiptLanguage: receiptSettings.receiptLanguage,
+    showAmountWords: receiptSettings.showAmountWords,
+    showPersons: receiptSettings.showPersons,
+    showPaymentMethod: receiptSettings.showPaymentMethod,
+    showCollectedBy: receiptSettings.showCollectedBy,
+    showLogo: receiptSettings.showLogo,
+    showAddress: receiptSettings.showAddress,
+    showContact: receiptSettings.showContact,
+    showRegNo: receiptSettings.showRegNo,
+    showUpiId: receiptSettings.showUpiId,
+    upiId: receiptSettings.upiId || null,
+    signatoryLabel: receiptSettings.signatoryLabel,
+    signatureUrl: receiptSettings.signatureUrl || null,
+    show80g: receiptSettings.show80g,
+    reg80g: receiptSettings.reg80g || null,
+    pan: receiptSettings.pan || null,
+    declarationText: receiptSettings.declarationText || null,
+    paperSize: receiptSettings.paperSize,
+    orientation: receiptSettings.orientation,
+    headerLogoUrl: receiptSettings.headerLogoUrl || null,
+    headerLogoSize: receiptSettings.headerLogoSize,
+    headerTitle: receiptSettings.headerTitle || null,
+    headerSubtitle1: receiptSettings.headerSubtitle1 || null,
+    headerSubtitle2: receiptSettings.headerSubtitle2 || null,
+    headerBandTitle: receiptSettings.headerBandTitle || null,
+    bandMode: receiptSettings.bandMode,
+    bandImageUrl: receiptSettings.bandImageUrl || null,
+  };
+
+  const publicUrl = tenantSlug
+    ? `${window.location.origin}/${tenantSlug}/receipt/donation-ads/${donationAd.receiptToken}`
+    : '';
+
+  // Same fallback rule as ReceiptCard's own header: the committee name
+  // shown in the share text follows whatever's configured in Settings ->
+  // Receipts -> Header (headerTitle), not the raw Committee Info name, so
+  // a tenant's own branding on the receipt and in the WhatsApp/email text
+  // always match.
+  const effectiveCommitteeName = receiptSettings.headerTitle || data.committeeName;
+  const amountLabel = `₹${data.amount.toLocaleString('en-IN')}`;
+  const billSuffix = data.billNumber ? ` (Voucher No. ${data.billNumber})` : '';
+
+  const handleWhatsApp = () => {
+    const text = `Dear ${data.donorName}, thank you for your contribution of ${amountLabel} to ${effectiveCommitteeName}. Your receipt no. ${data.receiptNumber}${billSuffix} is ready — view it here: ${publicUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleCopyLink = () => {
+    if (!publicUrl) return;
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  const handleEmail = () => {
+    const subject = `Contribution Receipt ${data.receiptNumber} — ${effectiveCommitteeName}`;
+    const body = `Dear ${data.donorName},\n\nThank you for your contribution of ${amountLabel} to ${effectiveCommitteeName}.\nReceipt No: ${data.receiptNumber}${billSuffix}\n\nView/download your receipt here: ${publicUrl}\n\nRegards,\n${effectiveCommitteeName}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvas(cardRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const widthMm = 100;
+      const heightMm = (canvas.height / canvas.width) * widthMm;
+      const pdf = new jsPDF({ unit: 'mm', format: [widthMm, heightMm] });
+      pdf.addImage(imgData, 'PNG', 0, 0, widthMm, heightMm);
+      pdf.save(`receipt-${data.receiptNumber}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 h-dvh bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Contribution receipt</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Receipt {data.receiptNumber}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+            <X size={22} />
+          </button>
+        </div>
+
+        <div className="p-6 bg-gray-50 dark:bg-gray-950">
+          <div ref={cardRef}>
+            <ReceiptCard data={data} />
+          </div>
+        </div>
+
+        <div className="p-6 pt-0 space-y-2">
+          <button
+            onClick={handleWhatsApp}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-colors"
+          >
+            <MessageCircle size={18} />
+            Send on WhatsApp
+          </button>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-60 transition-colors"
+            >
+              <FileDown size={16} />
+              {downloading ? '…' : 'PDF'}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              {copied ? <Check size={16} className="text-green-600" /> : <LinkIcon size={16} />}
+              {copied ? 'Copied' : 'Copy link'}
+            </button>
+            <button
+              onClick={handleEmail}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Mail size={16} />
+              Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

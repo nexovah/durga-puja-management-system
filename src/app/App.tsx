@@ -6,6 +6,7 @@ import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { LandingPage } from './components/LandingPage';
 import { LegalPage } from './components/LegalPage';
 import { ReceiptPublicPage } from './components/ReceiptPublicPage';
+import { DonationAdReceiptPublicPage } from './components/DonationAdReceiptPublicPage';
 import { TenantResetPassword } from './components/TenantResetPassword';
 import { CheckoutPage, CheckoutDoneUpdates } from './components/CheckoutPage';
 import { SuperAdminRoot } from './components/SuperAdminRoot';
@@ -226,6 +227,10 @@ export interface Chanda {
   receiptNumber: string | null; // DB-assigned on insert, read-only — see assign_chanda_receipt_number()
   receiptToken: string; // DB-assigned random token, the public receipt link's unique id
   donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
+  paymentReference?: string; // Transaction/UTR/Cheque No. — shown when paidMethod isn't Cash/Not Selected
+  paymentProofUrl?: string; // uploaded payment proof (image/PDF) — same condition as paymentReference
+  bankName?: string; // Online Banking / Cheque only
+  paymentDate?: string; // cheque/transfer date — distinct from `date`; Online Banking / Cheque only
 }
 
 // Turns a raw Postgres/Supabase error into something a non-technical user
@@ -301,6 +306,12 @@ export interface DonationAd {
   remarks: string;
   donorId?: string | null; // links to a standing Donor record when picked via the "Member" tab; null for Third-party/free-text entries
   advertiserId?: string | null; // links to a standing Advertiser record when picked via the Ads-category Third-party tab; null otherwise
+  receiptNumber: string | null; // DB-assigned on insert, read-only — see assign_donation_ad_receipt_number()
+  receiptToken: string; // DB-assigned random token, the public receipt link's unique id
+  paymentReference?: string; // Transaction/UTR/Cheque No. — shown when paidMethod isn't Cash/Not Selected
+  paymentProofUrl?: string; // uploaded payment proof (image/PDF) — same condition as paymentReference
+  bankName?: string; // Online Banking / Cheque only
+  paymentDate?: string; // cheque/transfer date — distinct from `date`; Online Banking / Cheque only
 }
 
 export type ExpensePaymentStatus = 'paid' | 'partial' | 'cancelled';
@@ -330,6 +341,10 @@ export interface Expense {
   vendorContact2?: string;
   vendorId?: string | null; // links to a standing Vendor record when the typed name matches one; null for one-off vendor names
   remarks: string;
+  paymentReference?: string; // Transaction/UTR/Cheque No. — shown when paidThrough isn't Cash/Not Selected
+  paymentProofUrl?: string; // uploaded payment proof (image/PDF) — same condition as paymentReference
+  bankName?: string; // Online Banking / Check only
+  paymentDate?: string; // cheque/transfer date — distinct from `date`; Online Banking / Check only
 }
 
 // The amount actually counted toward total expense, based on payment status:
@@ -1241,6 +1256,16 @@ export default function App() {
   // tenant RLS (fetched via the token-gated get_chanda_receipt_public()
   // RPC). Must be checked before every other gate since it works fully
   // logged-out, for any tenant, from a link shared with a donor.
+  //
+  // The Donation/Sponsorship variant uses an extra `donation-ads` path
+  // segment — checked first since it's the more specific pattern (though
+  // the Collection regex below only matches hex+dashes, and "donation-ads"
+  // contains letters outside [0-9a-f], so the two can never cross-match
+  // either way).
+  const donationAdReceiptMatch = window.location.pathname.match(/^\/([^/]+)\/receipt\/donation-ads\/([0-9a-f-]+)$/i);
+  if (donationAdReceiptMatch) {
+    return <DonationAdReceiptPublicPage tenantSlug={donationAdReceiptMatch[1]} token={donationAdReceiptMatch[2]} />;
+  }
   const receiptMatch = window.location.pathname.match(/^\/([^/]+)\/receipt\/([0-9a-f-]+)$/i);
   if (receiptMatch) {
     return <ReceiptPublicPage tenantSlug={receiptMatch[1]} token={receiptMatch[2]} />;
@@ -1680,6 +1705,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             currentUser={currentUser}
             users={users}
             initialAddRequestId={donationAddRequestId}
+            committeeInfo={committeeInfo}
+            receiptSettings={receiptSettings}
+            tenantSlug={tenantSlug}
           />
         )}
         {currentPage === 'ads' && (
@@ -1699,6 +1727,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}
             currentUser={currentUser}
             users={users}
             initialAddRequestId={adsAddRequestId}
+            committeeInfo={committeeInfo}
+            receiptSettings={receiptSettings}
+            tenantSlug={tenantSlug}
           />
         )}
         {currentPage === 'expenses' && (

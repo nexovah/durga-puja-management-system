@@ -86,6 +86,10 @@ export function fromChandaRow(row: any): Chanda {
     receiptNumber: row.receipt_number ?? null,
     receiptToken: row.receipt_token,
     donorId: row.donor_id ?? null,
+    paymentReference: row.payment_reference || '',
+    paymentProofUrl: row.payment_proof_url || '',
+    bankName: row.bank_name || '',
+    paymentDate: row.payment_date || '',
   };
 }
 // Deliberately omits receipt_number/receipt_token — those are DB-assigned
@@ -110,6 +114,10 @@ function toChandaRow(c: Chanda) {
     remarks: c.remarks,
     collected_by: c.collectedBy || null,
     donor_id: c.donorId || null,
+    payment_reference: c.paymentReference || null,
+    payment_proof_url: c.paymentProofUrl || null,
+    bank_name: c.bankName || null,
+    payment_date: c.paymentDate || null,
   };
 }
 
@@ -131,8 +139,17 @@ export function fromDonationAdRow(row: any): DonationAd {
     remarks: row.remarks || '',
     donorId: row.donor_id ?? null,
     advertiserId: row.advertiser_id ?? null,
+    paymentReference: row.payment_reference || '',
+    paymentProofUrl: row.payment_proof_url || '',
+    bankName: row.bank_name || '',
+    paymentDate: row.payment_date || '',
+    receiptNumber: row.receipt_number ?? null,
+    receiptToken: row.receipt_token,
   };
 }
+// Deliberately omits receipt_number/receipt_token — those are DB-assigned
+// (see assign_donation_ad_receipt_number() trigger, supabase/155_donation_ads_receipts.sql)
+// and must never be written back by the client.
 function toDonationAdRow(d: DonationAd) {
   return {
     id: d.id,
@@ -151,6 +168,10 @@ function toDonationAdRow(d: DonationAd) {
     remarks: d.remarks,
     donor_id: d.donorId || null,
     advertiser_id: d.advertiserId || null,
+    payment_reference: d.paymentReference || null,
+    payment_proof_url: d.paymentProofUrl || null,
+    bank_name: d.bankName || null,
+    payment_date: d.paymentDate || null,
   };
 }
 
@@ -177,6 +198,10 @@ export function fromExpenseRow(row: any): Expense {
     vendorContact2: row.vendor_contact2 || '',
     vendorId: row.vendor_id ?? null,
     remarks: row.remarks || '',
+    paymentReference: row.payment_reference || '',
+    paymentProofUrl: row.payment_proof_url || '',
+    bankName: row.bank_name || '',
+    paymentDate: row.payment_date || '',
   };
 }
 function toExpenseRow(e: Expense) {
@@ -195,6 +220,10 @@ function toExpenseRow(e: Expense) {
     vendor_contact2: e.vendorContact2 || null,
     vendor_id: e.vendorId || null,
     remarks: e.remarks,
+    payment_reference: e.paymentReference || null,
+    payment_proof_url: e.paymentProofUrl || null,
+    bank_name: e.bankName || null,
+    payment_date: e.paymentDate || null,
   };
 }
 
@@ -1473,6 +1502,15 @@ export async function uploadDocumentFile(file: File): Promise<string> {
   const { error } = await supabase.storage.from('documents').upload(path, file, { contentType: file.type });
   if (error) throw error;
   const { data } = supabase.storage.from('documents').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function uploadPaymentProofFile(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'pdf';
+  const path = `proof-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('payment-proofs').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
   return data.publicUrl;
 }
 

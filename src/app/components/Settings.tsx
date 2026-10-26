@@ -255,6 +255,31 @@ export function Settings({
     bandMode: receiptForm.bandMode,
     bandImageUrl: receiptForm.bandImageUrl || null,
   };
+  // 3-tab preview switcher for the Receipts tab's live preview panel —
+  // Collection/Donation/Sponsorship all share this one receiptForm config
+  // (no duplicated settings table); only the sample data fed into
+  // ReceiptCard changes per tab.
+  const [previewTab, setPreviewTab] = useState<'collection' | 'donation' | 'ads'>('collection');
+  const donationPreviewData: ReceiptCardData = {
+    ...receiptPreviewData,
+    donorName: 'Ananya Sen',
+    companyName: null,
+    phone: '98765 12340',
+    billNumber: '45',
+    numPersons: null,
+    amount: 5000,
+    paidMethod: 'onlineBanking',
+  };
+  const adsPreviewData: ReceiptCardData = {
+    ...receiptPreviewData,
+    donorName: 'Priya Banerjee',
+    companyName: 'Sunrise Traders Pvt. Ltd.',
+    phone: '98765 98760',
+    billNumber: null,
+    numPersons: null,
+    amount: 15000,
+    paidMethod: 'check',
+  };
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -1370,8 +1395,30 @@ export function Settings({
 
                 <div className="lg:w-[420px] shrink-0 mt-8 lg:mt-0 lg:ml-auto lg:sticky lg:top-24 lg:self-start">
                   <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 uppercase tracking-wide font-medium">{t('settings.receipt.livePreview')}</p>
-                    <ReceiptCard data={receiptPreviewData} />
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-medium">{t('settings.receipt.livePreview')}</p>
+                      <div className="flex items-center gap-1 bg-gray-200 dark:bg-gray-800 rounded-full p-0.5">
+                        {([
+                          { id: 'collection' as const, label: 'Collection' },
+                          { id: 'donation' as const, label: 'Donation' },
+                          { id: 'ads' as const, label: 'Sponsorship' },
+                        ]).map(tab => (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setPreviewTab(tab.id)}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                              previewTab === tab.id
+                                ? 'bg-white dark:bg-gray-700 text-orange-600 dark:text-orange-400 shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <ReceiptCard data={previewTab === 'collection' ? receiptPreviewData : previewTab === 'donation' ? donationPreviewData : adsPreviewData} />
                   </div>
                 </div>
               </div>
