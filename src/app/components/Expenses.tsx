@@ -1310,9 +1310,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                       <td className={`px-6 py-4 text-sm font-bold ${
                         status === 'cancelled'
                           ? 'text-red-600 line-through'
-                          : status === 'partial'
-                          ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
-                          : 'text-red-600'
+                          : status === 'partial' && !isFullyPaidPartial
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
                       }`}>₹{expense.amount.toLocaleString()}</td>
                     )}
                     {tableCols.isColumnVisible('paymentStatus') && (
@@ -1324,7 +1324,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         </span>
                         {status === 'partial' && (
                           <div className="text-xs mt-1 font-medium">
-                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-red-600'}>₹{partialSum.toLocaleString()}</span>
+                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}>₹{partialSum.toLocaleString()}</span>
                             <span className="text-gray-400 mx-0.5"> / </span>
                             <span className={isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}>₹{expense.amount.toLocaleString()}</span>
                           </div>
@@ -1503,9 +1503,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
             valueClassName: `font-bold ${
               status === 'cancelled'
                 ? 'text-red-600 line-through'
-                : status === 'partial'
-                ? (isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600')
-                : 'text-red-600'
+                : status === 'partial' && !isFullyPaidPartial
+                ? 'text-yellow-600'
+                : 'text-green-600'
             }`,
           },
           {
