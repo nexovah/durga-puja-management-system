@@ -333,7 +333,11 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const inKindDisplay = (item: DonationAd) =>
     item.category === 'ads' ? adsCategoryLabel(item.inKind) : item.inKind;
 
-  const inKindColumnLabel = fixedCategory === 'ads' ? t('donationAds.category') : t('donationAds.inKindOrAdsCategory');
+  const inKindColumnLabel = fixedCategory === 'ads'
+    ? t('donationAds.category')
+    : fixedCategory === 'donation'
+    ? t('donationAds.donationKindColumn')
+    : t('donationAds.inKindOrAdsCategory');
   const phone1ColumnLabel = fixedCategory === 'ads' ? t('donationAds.csv.phone') : t('common.phone1');
 
   const paidMethodLabel = (method: PaidMethod) => {
