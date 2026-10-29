@@ -1317,16 +1317,18 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                     )}
                     {tableCols.isColumnVisible('paymentStatus') && (
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                          status === 'partial' && isFullyPaidPartial ? STATUS_BADGE_CLASS.paid : STATUS_BADGE_CLASS[status]
-                        }`}>
-                          {statusLabel(status)}
-                        </span>
-                        {status === 'partial' && (
-                          <div className={`text-xs mt-1 font-medium ${isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}`}>
-                            {t('expenses.paidSoFar')}: ₹{partialSum.toLocaleString()}
-                          </div>
-                        )}
+                        <div className="inline-flex flex-col items-center">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                            status === 'partial' && isFullyPaidPartial ? STATUS_BADGE_CLASS.paid : STATUS_BADGE_CLASS[status]
+                          }`}>
+                            {statusLabel(status)}
+                          </span>
+                          {status === 'partial' && !isFullyPaidPartial && (
+                            <div className="text-xs mt-1 font-medium text-yellow-600">
+                              ₹{partialSum.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     )}
                     {tableCols.isColumnVisible('paidThrough') && (
@@ -1546,7 +1548,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                   <tfoot className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-200 dark:border-gray-700">
                     <tr>
                       <td colSpan={2} className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{partialSum.toLocaleString()}</td>
-                      <td colSpan={3} className={`px-3 py-2 text-sm font-medium ${isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}`}>{t('expenses.paidSoFar')}: ₹{partialSum.toLocaleString()}</td>
+                      <td colSpan={3} className={`px-3 py-2 text-sm font-medium ${isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}`}>{isFullyPaidPartial ? t('expenses.paidInFull') : t('expenses.paidSoFar')}: ₹{partialSum.toLocaleString()}</td>
                     </tr>
                   </tfoot>
                 </table>
