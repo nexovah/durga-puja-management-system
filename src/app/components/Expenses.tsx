@@ -1323,10 +1323,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                           {statusLabel(status)}
                         </span>
                         {status === 'partial' && (
-                          <div className="text-xs mt-1 font-medium">
-                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}>₹{partialSum.toLocaleString()}</span>
-                            <span className="text-gray-400 mx-0.5"> / </span>
-                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}>₹{expense.amount.toLocaleString()}</span>
+                          <div className={`text-xs mt-1 font-medium ${isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {t('expenses.paidSoFar')}: ₹{partialSum.toLocaleString()}
                           </div>
                         )}
                       </td>
@@ -1548,7 +1546,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                   <tfoot className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-200 dark:border-gray-700">
                     <tr>
                       <td colSpan={2} className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{partialSum.toLocaleString()}</td>
-                      <td colSpan={3} className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">{t('chanda.partialAmountLabel')}: ₹{partialSum.toLocaleString()} / ₹{viewTarget.amount.toLocaleString()}</td>
+                      <td colSpan={3} className={`px-3 py-2 text-sm font-medium ${isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}`}>{t('expenses.paidSoFar')}: ₹{partialSum.toLocaleString()}</td>
                     </tr>
                   </tfoot>
                 </table>
