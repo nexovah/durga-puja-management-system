@@ -321,6 +321,7 @@ export interface ExpensePartialPayment {
   amount: number;
   voucherNumber?: string;
   date?: string;
+  note?: string; // short reason for this installment, max 10 words — enforced client-side only
 }
 
 export interface Expense {

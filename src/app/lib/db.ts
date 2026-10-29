@@ -181,6 +181,7 @@ export function fromExpenseRow(row: any): Expense {
         amount: Number(p.amount) || 0,
         voucherNumber: p.voucherNumber || undefined,
         date: p.date || undefined,
+        note: p.note || undefined,
       }))
     : undefined;
   return {

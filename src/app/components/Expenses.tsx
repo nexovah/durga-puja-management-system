@@ -92,12 +92,41 @@ const STATUS_BADGE_CLASS: Record<ExpensePaymentStatus, string> = {
   cancelled: 'bg-red-100 text-red-700',
 };
 
+// Deliberately simpler/shorter than the receipt-number format (not meant
+// to double as a receipt) — just enough to be unique-looking and
+// traceable to when it was created. Always editable/clearable afterward.
+function generateMainVoucherNumber(): string {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  const rand = String(Math.floor(1000 + Math.random() * 9000));
+  return `EXP-${dd}${mm}${yy}-${rand}`;
+}
+
+// A partial payment is a sub-voucher of the main expense voucher — formatted
+// as <main>-<n> when a main voucher exists, else falls back to its own
+// standalone date+random code (same shape as generateMainVoucherNumber).
+function generateSubVoucherNumber(mainVoucher: string, index: number): string {
+  const trimmed = mainVoucher.trim();
+  return trimmed ? `${trimmed}-${index + 1}` : generateMainVoucherNumber();
+}
+
+// 10-word cap for a partial payment's note — blocks further typing once
+// the cap is hit rather than showing a separate validation error, since
+// this is meant to stay a short reason, not a full remarks field.
+function capAtTenWords(value: string, previous: string): string {
+  const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount > 10 && value.length > previous.length) return previous;
+  return value;
+}
+
 const emptyForm = {
   title: '',
   amount: '',
   paymentStatus: 'paid' as ExpensePaymentStatus,
-  partialPayments: [] as { amount: string; voucherNumber: string; date: string }[],
-  paidThrough: 'notSelected' as PaidThrough,
+  partialPayments: [] as { amount: string; voucherNumber: string; date: string; note: string }[],
+  paidThrough: 'cash' as PaidThrough,
   date: new Date().toISOString().split('T')[0],
   category: '',
   voucherNumber: '',
@@ -131,6 +160,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
     return rankSearchMatches(vendorDirectory, vendorQuery, v => v.name);
   }, [vendorQuery, vendorDirectory]);
   const pickedVendor = useMemo(() => vendorDirectory.find(v => v.id === formData.vendorId) || null, [vendorDirectory, formData.vendorId]);
+  const [mainVoucherDuplicate, setMainVoucherDuplicate] = useState(false);
+  const [partialVoucherDuplicates, setPartialVoucherDuplicates] = useState<Record<number, boolean>>({});
   const [proofUploading, setProofUploading] = useState(false);
   const [proofError, setProofError] = useState('');
   const handlePickProofFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,6 +274,30 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   const partialSumFromForm = () =>
     formData.partialPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
+  // Checks a candidate voucher number against EVERY voucher number in the
+  // Expenses table — other expenses' main voucher numbers, other
+  // expenses' partial-payment vouchers, AND this form's own other rows
+  // (main voucher + sibling partial rows) — since partial sub-vouchers
+  // share the same uniqueness space as the main field. `excludePartialIndex`
+  // lets a row ignore its own current value when checking itself.
+  const findDuplicateVoucherNumber = (candidate: string, excludePartialIndex?: number): boolean => {
+    const key = normalizeKey(candidate);
+    if (!key) return false;
+    const otherExpensesCollide = expenses.some(exp => {
+      if (exp.id === editingId) return false;
+      if (normalizeKey(exp.voucherNumber) === key) return true;
+      return (exp.partialPayments || []).some(p => normalizeKey(p.voucherNumber) === key);
+    });
+    if (otherExpensesCollide) return true;
+    const sameFormCollide = formData.partialPayments.some((p, i) => {
+      if (i === excludePartialIndex) return false;
+      return normalizeKey(p.voucherNumber) === key;
+    });
+    if (sameFormCollide) return true;
+    if (excludePartialIndex !== undefined && normalizeKey(formData.voucherNumber) === key) return true;
+    return false;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!e.currentTarget.checkValidity()) {
@@ -273,6 +328,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         amount: parseFloat(p.amount) || 0,
         voucherNumber: p.voucherNumber.trim() || undefined,
         date: p.date.trim() || undefined,
+        note: p.note.trim() || undefined,
       }));
     const partialSum = partialPayments.reduce((sum, p) => sum + p.amount, 0);
 
@@ -286,12 +342,17 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       return;
     }
 
-    const voucherKey = normalizeKey(formData.voucherNumber);
-    if (voucherKey) {
-      const isDuplicate = expenses.some(exp => exp.id !== editingId && normalizeKey(exp.voucherNumber) === voucherKey);
-      if (isDuplicate) {
+    if (findDuplicateVoucherNumber(formData.voucherNumber)) {
+      setToastType('error');
+      setToastMessage(t('expenses.voucherNumberDuplicate'));
+      setMainVoucherDuplicate(true);
+      return;
+    }
+    for (let i = 0; i < formData.partialPayments.length; i++) {
+      if (findDuplicateVoucherNumber(formData.partialPayments[i].voucherNumber, i)) {
         setToastType('error');
         setToastMessage(t('expenses.voucherNumberDuplicate'));
+        setPartialVoucherDuplicates(prev => ({ ...prev, [i]: true }));
         return;
       }
     }
@@ -368,7 +429,13 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
   };
 
   const openAddForm = () => {
-    setFormData(emptyForm);
+    let voucher = generateMainVoucherNumber();
+    for (let i = 0; i < 5 && findDuplicateVoucherNumber(voucher); i++) {
+      voucher = generateMainVoucherNumber();
+    }
+    setFormData({ ...emptyForm, voucherNumber: voucher });
+    setMainVoucherDuplicate(false);
+    setPartialVoucherDuplicates({});
     setEditingId(null);
     setShowForm(true);
   };
@@ -389,6 +456,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
         amount: String(p.amount),
         voucherNumber: p.voucherNumber || '',
         date: p.date || '',
+        note: p.note || '',
       })),
       paidThrough: expense.paidThrough || 'notSelected',
       date: expense.date,
@@ -404,6 +472,8 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
       bankName: expense.bankName || '',
       paymentDate: expense.paymentDate || '',
     });
+    setMainVoucherDuplicate(false);
+    setPartialVoucherDuplicates({});
     setEditingId(expense.id);
     setShowForm(true);
   };
@@ -424,23 +494,26 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
 
   const handleCancel = () => {
     setFormData(emptyForm);
+    setMainVoucherDuplicate(false);
+    setPartialVoucherDuplicates({});
     setShowForm(false);
     setEditingId(null);
   };
 
   // Partial payments are unlimited now, so a fixed set of CSV columns
   // can't represent them — packed into one column instead, each
-  // installment as "amount:voucherNumber:date", separated by ";".
+  // installment as "amount:voucherNumber:date:note", separated by ";".
   const packPartialPayments = (payments?: ExpensePartialPayment[]) =>
-    (payments || []).map(p => `${p.amount}:${p.voucherNumber || ''}:${p.date || ''}`).join(';');
+    (payments || []).map(p => `${p.amount}:${p.voucherNumber || ''}:${p.date || ''}:${p.note || ''}`).join(';');
 
   const unpackPartialPayments = (packed: string): ExpensePartialPayment[] =>
     packed.split(';').filter(Boolean).map(chunk => {
-      const [amountRaw, voucherNumber, date] = chunk.split(':');
+      const [amountRaw, voucherNumber, date, note] = chunk.split(':');
       return {
         amount: parseFloat((amountRaw || '').replace(/,/g, '')) || 0,
         voucherNumber: voucherNumber || undefined,
         date: date || undefined,
+        note: note || undefined,
       };
     });
 
@@ -823,47 +896,81 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('expenses.partialPayments')}
                 </label>
-                <div className="space-y-3">
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-3 bg-gray-50/50 dark:bg-gray-950/50">
                   {formData.partialPayments.map((payment, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={payment.amount}
-                        onChange={(e) => {
-                          const next = [...formData.partialPayments];
-                          next[index] = { ...next[index], amount: e.target.value };
-                          setFormData({ ...formData, partialPayments: next });
-                        }}
-                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                        placeholder={t('common.amount')}
-                      />
-                      <input
-                        type="text"
-                        value={payment.voucherNumber}
-                        onChange={(e) => {
-                          const next = [...formData.partialPayments];
-                          next[index] = { ...next[index], voucherNumber: e.target.value };
-                          setFormData({ ...formData, partialPayments: next });
-                        }}
-                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                        placeholder={t('expenses.voucherNumber')}
-                      />
-                      <input
-                        type="date"
-                        value={payment.date}
-                        onChange={(e) => {
-                          const next = [...formData.partialPayments];
-                          next[index] = { ...next[index], date: e.target.value };
-                          setFormData({ ...formData, partialPayments: next });
-                        }}
-                        className="w-full sm:flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                      />
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="shrink-0 w-5 pt-2.5 text-xs font-medium text-gray-400 dark:text-gray-500">{index + 1}</span>
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_0.7fr_1.2fr] gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={payment.amount}
+                          onChange={(e) => {
+                            const next = [...formData.partialPayments];
+                            next[index] = { ...next[index], amount: e.target.value };
+                            setFormData({ ...formData, partialPayments: next });
+                          }}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          placeholder={t('common.amount')}
+                        />
+                        <div>
+                          <input
+                            type="text"
+                            value={payment.voucherNumber}
+                            onChange={(e) => {
+                              const next = [...formData.partialPayments];
+                              next[index] = { ...next[index], voucherNumber: e.target.value };
+                              setFormData({ ...formData, partialPayments: next });
+                              if (partialVoucherDuplicates[index]) setPartialVoucherDuplicates(prev => ({ ...prev, [index]: false }));
+                            }}
+                            onBlur={() => {
+                              if (findDuplicateVoucherNumber(payment.voucherNumber, index)) {
+                                setPartialVoucherDuplicates(prev => ({ ...prev, [index]: true }));
+                              }
+                            }}
+                            className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none dark:bg-gray-800 dark:text-gray-100 ${
+                              partialVoucherDuplicates[index] ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                            }`}
+                            placeholder={t('expenses.voucherNumber')}
+                          />
+                          {partialVoucherDuplicates[index] && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('expenses.voucherNumberDuplicate')}</p>
+                          )}
+                        </div>
+                        <input
+                          type="date"
+                          value={payment.date}
+                          onChange={(e) => {
+                            const next = [...formData.partialPayments];
+                            next[index] = { ...next[index], date: e.target.value };
+                            setFormData({ ...formData, partialPayments: next });
+                          }}
+                          className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={payment.note}
+                          onChange={(e) => {
+                            const next = [...formData.partialPayments];
+                            next[index] = { ...next[index], note: capAtTenWords(e.target.value, payment.note) };
+                            setFormData({ ...formData, partialPayments: next });
+                          }}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                          placeholder={t('expenses.partialPaymentNotePlaceholder')}
+                        />
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, partialPayments: formData.partialPayments.filter((_, i) => i !== index) })}
-                        className="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        onClick={() => {
+                          setFormData({ ...formData, partialPayments: formData.partialPayments.filter((_, i) => i !== index) });
+                          setPartialVoucherDuplicates(prev => {
+                            const next = { ...prev };
+                            delete next[index];
+                            return next;
+                          });
+                        }}
+                        className="shrink-0 p-2 mt-0.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         aria-label={t('common.delete')}
                       >
                         <X size={18} />
@@ -872,7 +979,23 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                   ))}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, partialPayments: [...formData.partialPayments, { amount: '', voucherNumber: '', date: '' }] })}
+                    onClick={() => {
+                      const index = formData.partialPayments.length;
+                      let voucherNumber = generateSubVoucherNumber(formData.voucherNumber, index);
+                      // Retry only applies to the standalone-random fallback
+                      // (no main voucher set) — the <main>-N form is
+                      // positional, not random, so collisions there are
+                      // caught by the blur/submit duplicate check instead.
+                      if (!formData.voucherNumber.trim()) {
+                        for (let i = 0; i < 5 && findDuplicateVoucherNumber(voucherNumber, index); i++) {
+                          voucherNumber = generateSubVoucherNumber(formData.voucherNumber, index);
+                        }
+                      }
+                      setFormData({
+                        ...formData,
+                        partialPayments: [...formData.partialPayments, { amount: '', voucherNumber, date: new Date().toISOString().split('T')[0], note: '' }],
+                      });
+                    }}
                     className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
                   >
                     <Plus size={16} /> {t('expenses.addPartialPayment')}
@@ -888,34 +1011,47 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
-              <input
-                type="date"
-                required
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')}<RequiredMark /></label>
-              <CustomSelect
-                value={formData.category}
-                onChange={(v) => setFormData({ ...formData, category: v })}
-                placeholder={t('expenses.selectCategory')}
-                options={EXPENSE_CATEGORIES.map((cat) => ({ value: cat.value, label: t(cat.labelKey) }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.voucherNumber')}</label>
-              <input
-                type="text"
-                value={formData.voucherNumber}
-                onChange={(e) => setFormData({ ...formData, voucherNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                placeholder={t('expenses.voucherNumberPlaceholder')}
-              />
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('common.date')}<RequiredMark /></label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.category')}<RequiredMark /></label>
+                <CustomSelect
+                  value={formData.category}
+                  onChange={(v) => setFormData({ ...formData, category: v })}
+                  placeholder={t('expenses.selectCategory')}
+                  options={EXPENSE_CATEGORIES.map((cat) => ({ value: cat.value, label: t(cat.labelKey) }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('expenses.voucherNumber')}</label>
+                <input
+                  type="text"
+                  value={formData.voucherNumber}
+                  onChange={(e) => {
+                    setFormData({ ...formData, voucherNumber: e.target.value });
+                    if (mainVoucherDuplicate) setMainVoucherDuplicate(false);
+                  }}
+                  onBlur={() => {
+                    if (findDuplicateVoucherNumber(formData.voucherNumber)) setMainVoucherDuplicate(true);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none dark:bg-gray-800 dark:text-gray-100 ${
+                    mainVoucherDuplicate ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder={t('expenses.voucherNumberPlaceholder')}
+                />
+                {mainVoucherDuplicate && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('expenses.voucherNumberDuplicate')}</p>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('committee.pickVendor')}</label>
@@ -1181,14 +1317,16 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                     )}
                     {tableCols.isColumnVisible('paymentStatus') && (
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                          status === 'partial' && isFullyPaidPartial ? STATUS_BADGE_CLASS.paid : STATUS_BADGE_CLASS[status]
+                        }`}>
                           {statusLabel(status)}
                         </span>
                         {status === 'partial' && (
                           <div className="text-xs mt-1 font-medium">
-                            <span className="text-red-600">₹{partialSum.toLocaleString()}</span>
+                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-red-600'}>₹{partialSum.toLocaleString()}</span>
                             <span className="text-gray-400 mx-0.5"> / </span>
-                            <span className="text-yellow-600">₹{expense.amount.toLocaleString()}</span>
+                            <span className={isFullyPaidPartial ? 'text-green-600' : 'text-yellow-600'}>₹{expense.amount.toLocaleString()}</span>
                           </div>
                         )}
                       </td>
@@ -1373,7 +1511,9 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
           {
             label: t('expenses.paymentStatus'),
             value: (
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                status === 'partial' && isFullyPaidPartial ? STATUS_BADGE_CLASS.paid : STATUS_BADGE_CLASS[status]
+              }`}>
                 {statusLabel(status)}
               </span>
             ),
@@ -1391,6 +1531,7 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                       <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.amount')}</th>
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('expenses.voucherNumber')}</th>
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.date')}</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('expenses.partialPaymentNote')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -1400,13 +1541,14 @@ export function Expenses({ expenses, setExpenses, canEdit, canDelete, canBulkImp
                         <td className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{p.amount.toLocaleString()}</td>
                         <td className="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{p.voucherNumber || '-'}</td>
                         <td className="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{p.date ? new Date(p.date).toLocaleDateString(locale) : '-'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{p.note || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot className="bg-gray-50 dark:bg-gray-950 border-t-2 border-gray-200 dark:border-gray-700">
                     <tr>
                       <td colSpan={2} className="px-3 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100">₹{partialSum.toLocaleString()}</td>
-                      <td colSpan={2} className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">{t('chanda.partialAmountLabel')}: ₹{partialSum.toLocaleString()} / ₹{viewTarget.amount.toLocaleString()}</td>
+                      <td colSpan={3} className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">{t('chanda.partialAmountLabel')}: ₹{partialSum.toLocaleString()} / ₹{viewTarget.amount.toLocaleString()}</td>
                     </tr>
                   </tfoot>
                 </table>
