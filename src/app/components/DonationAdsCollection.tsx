@@ -1075,6 +1075,15 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
+              <CustomSelect
+                value={formData.paymentStatus}
+                onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus, partialAmount: '' })}
+                options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+              />
+            </div>
+
             <div className="md:col-span-2">
               {formData.paidMethod !== 'cash' && formData.paidMethod !== 'notSelected' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1131,15 +1140,6 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
                   )}
                 </div>
               )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('chanda.paymentStatus')}<RequiredMark /></label>
-              <CustomSelect
-                value={formData.paymentStatus}
-                onChange={(v) => setFormData({ ...formData, paymentStatus: v as PaymentStatus, partialAmount: '' })}
-                options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
-              />
             </div>
 
             {isDonation ? (
