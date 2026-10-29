@@ -333,6 +333,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
   const inKindDisplay = (item: DonationAd) =>
     item.category === 'ads' ? adsCategoryLabel(item.inKind) : item.inKind;
 
+  const inKindColumnLabel = fixedCategory === 'ads' ? t('donationAds.category') : t('donationAds.inKindOrAdsCategory');
+  const phone1ColumnLabel = fixedCategory === 'ads' ? t('donationAds.csv.phone') : t('common.phone1');
+
   const paidMethodLabel = (method: PaidMethod) => {
     const found = PAID_METHODS.find(m => m.value === method);
     return found ? t(found.labelKey) : method;
@@ -579,7 +582,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'companyName', label: t('donationAds.companyName'), value: item => item.companyName || '' },
     { id: 'amount', label: t('donationAds.csv.amount'), value: item => item.amount },
     { id: 'paidMethod', label: t('common.paidMethod'), value: item => paidMethodLabel(item.paidMethod || 'notSelected') },
-    { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), value: item => inKindDisplay(item) },
+    { id: 'inKind', label: inKindColumnLabel, value: item => inKindDisplay(item) },
     { id: 'date', label: t('donationAds.csv.date'), value: item => item.date },
     { id: 'voucherNumber', label: t('donationAds.csv.voucherNumber'), value: item => item.voucherNumber || '' },
     { id: 'phone', label: t('donationAds.csv.phone'), value: item => item.phone },
@@ -718,9 +721,9 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
     { id: 'paymentStatus', label: t('chanda.paymentStatus'), sortValue: d => d.paymentStatus || 'paid' },
     { id: 'receiptNumber', label: 'Receipt no.', sortValue: d => d.receiptNumber || '' },
     ...(!fixedCategory ? [{ id: 'category', label: t('donationAds.category'), sortValue: (d: DonationAd) => categoryLabel(d.category) }] : []),
-    { id: 'inKind', label: t('donationAds.inKindOrAdsCategory'), sortValue: d => inKindDisplay(d) || '' },
+    { id: 'inKind', label: inKindColumnLabel, sortValue: d => inKindDisplay(d) || '' },
     { id: 'date', label: t('common.date'), sortValue: d => d.date },
-    { id: 'phone', label: t('common.phone1'), sortValue: d => d.phone || '' },
+    { id: 'phone', label: phone1ColumnLabel, sortValue: d => d.phone || '' },
     { id: 'collectedBy', label: t('donationAds.collectedBy'), defaultVisible: false, sortValue: d => d.collectedBy || '' },
     { id: 'remarks', label: t('common.remarks'), defaultVisible: false, sortValue: d => d.remarks || '' },
     ...((canEdit || canDelete) ? [{ id: 'actions', label: t('common.action'), required: true, sortable: false, align: 'right' as const }] : []),
@@ -819,7 +822,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
         showDateRange
         showPhone
         inKindOptions={ADS_CATEGORIES.map(c => ({ value: c.value, label: t(c.labelKey) }))}
-        inKindLabel={t('donationAds.inKindOrAdsCategory')}
+        inKindLabel={inKindColumnLabel}
       />
       </CollapsibleSearchPanel>
 
@@ -1720,7 +1723,7 @@ export function DonationAdsCollection({ donationAdsList, setDonationAdsList, mem
           { label: t('donationAds.inKind'), value: inKindDisplay(viewTarget) || '-' },
           { label: t('common.date'), value: viewTarget.date ? new Date(viewTarget.date).toLocaleDateString(locale) : '-' },
           { label: t('donationAds.voucherNumber'), value: viewTarget.voucherNumber || '-' },
-          { label: t('common.phone1'), value: viewTarget.phone || '-' },
+          { label: phone1ColumnLabel, value: viewTarget.phone || '-' },
           { label: t('common.phone2'), value: viewTarget.phone2 || '-' },
           { label: t('donationAds.collectedBy'), value: viewTarget.collectedBy || '-' },
           { label: t('common.remarks'), value: viewTarget.remarks || '-', fullWidth: true },
